@@ -1,0 +1,24 @@
+apiVersion: appconnect.ibm.com/v1beta1
+kind: DesignerAuthoring
+metadata:
+  name: $my_cp_ace_designer_instance_name
+  namespace: $my_oc_project
+spec:
+  license:
+    accept: true
+    license: $my_ibm_cp_ace_license
+    use: CloudPakForIntegrationNonProduction
+  couchdb:
+    storage:
+      size: 10Gi
+      type: persistent-claim
+      class: ibmc-block-gold
+    replicas: 1
+  designerMappingAssist:
+    incrementalLearning:
+      schedule: Every 15 days
+    enabled: true
+  designerFlowsOperationMode: local
+  replicas: 1
+  useCommonServices: true
+  version: $my_ibm_cp_ace_version

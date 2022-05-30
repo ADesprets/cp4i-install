@@ -1,0 +1,65 @@
+﻿apiVersion: eventstreams.ibm.com/v1beta2
+kind: EventStreams
+metadata:
+  name: $my_cp_es_instance_name
+  namespace: $my_oc_project
+spec:
+  version: $my_ibm_cp_es_version
+  license:
+    accept: true
+    use: CloudPakForIntegrationNonProduction
+  requestIbmServices:
+    iam: false
+    monitoring: false
+  strimziOverrides:
+    kafka:
+      replicas: 3
+      authorization:
+        type: runas
+      config:
+        inter.broker.protocol.version: '3.0'
+        log.message.format.version: '3.0'
+        offsets.topic.replication.factor: 1
+        transaction.state.log.min.isr: 1
+        transaction.state.log.replication.factor: 1
+      metricsConfig:
+        valueFrom:
+          configMapKeyRef:
+            key: kafka-metrics-config.yaml
+            name: $my_cp_es_kafka_metricsConfig_name
+        type: jmxPrometheusExporter       
+      listeners:
+        external:
+          type: route
+          authentication:
+            type: scram-sha-512
+        tls:
+          authentication:
+            type: tls
+      storage:
+        type: persistent-claim
+        class: ibmc-block-gold
+      listeners:
+        - name: plain
+          port: 9092
+          tls: false
+          type: internal
+      replicas: 1
+    zookeeper:
+      replicas: 3
+      metricsConfig:
+        valueFrom:
+          configMapKeyRef:
+            key: zookeeper-metrics-config.yaml
+            name: $my_cp_es_zookeeper_metricsConfig_name
+        type: jmxPrometheusExporter
+      storage:
+        type: persistent-claim
+        class: ibmc-block-gold
+      replicas: 1
+  adminUI: {}
+  restProducer: {}
+  apicurioRegistry: {}
+  adminApi: {}
+  collector: {}
+  version: $my_ibm_cp_es_version

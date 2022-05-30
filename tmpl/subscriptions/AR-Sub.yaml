@@ -1,0 +1,11 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: ibm-integration-asset-repository
+  namespace: $my_oc_project
+spec:
+  channel: $my_ibm_ar_operator_channel
+  installPlanApproval: Automatic
+  name: ibm-integration-asset-repository
+  source: ibm-operator-catalog
+  sourceNamespace: openshift-marketplace

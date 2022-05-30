@@ -1,0 +1,14 @@
+apiVersion: integration.ibm.com/v1beta1
+kind: PlatformNavigator
+metadata:
+  name: $my_cp_navigator_instance_name
+  namespace: $my_oc_project
+spec:
+  license:
+    accept: true
+    license: $my_ibm_cp4i_license
+  mqDashboard: true
+  replicas: 1
+  storage:
+    class: ibmc-file-gold-gid
+  version: $my_ibm_cp_navigator_version

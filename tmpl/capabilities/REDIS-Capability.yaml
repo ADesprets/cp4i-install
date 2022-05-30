@@ -1,0 +1,14 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: ibm-cloud-databases-redis.v1.4.3
+  namespace: $my_oc_project
+spec:
+  version: $my_ibm_cp_redis_version
+  customresourcedefinitions:
+    owned:
+      - description: Represents a deployment of Redis Sentinel
+        displayName: Redis Sentinel
+  install:
+    strategy: deployment
+

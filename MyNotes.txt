@@ -1,7 +1,3 @@
-# cp4i-install
-
-
-# Directory structure
 scriptdir=$(dirname "$0")/	~/installcp4i/ibmcp4i-aspera-test/scripts/
 	delete-all.sh
 	provision_cluster-v2.sh
