@@ -6,7 +6,7 @@ metadata:
 spec:
   license:
     accept: true
-    license: $my_ibm_cp4i_license
+    license: $my_ibm_cp_navigator_license
   mqDashboard: true
   replicas: 1
   storage:

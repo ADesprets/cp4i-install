@@ -39,6 +39,7 @@ spec:
       storage:
         type: persistent-claim
         class: ibmc-block-gold
+        size: 4Gi
       listeners:
         - name: plain
           port: 9092
@@ -56,10 +57,11 @@ spec:
       storage:
         type: persistent-claim
         class: ibmc-block-gold
+        size: 2Gi
       replicas: 1
   adminUI: {}
   restProducer: {}
   apicurioRegistry: {}
   adminApi: {}
   collector: {}
-  version: $my_ibm_cp_es_version
+

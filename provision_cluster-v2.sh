@@ -52,7 +52,7 @@ CreateOpenshiftCluster () {
 }
 
 
-Wait4CkusterAvailability () {
+Wait4ClusterAvailability () {
 # wait for Cluster availability
   wait_for_state 'Cluster state' 'normal-All Workers Normal' "ibmcloud oc cluster get --cluster $my_ic_cluster_name --output json|jq -r '.state+\"-\"+.status'"
 
@@ -153,6 +153,145 @@ InstallAllWithCP4IOperator () {
   wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase'
 }
 
+ 
+Create_Subscriptions () {
+################################################
+# create subscriptions
+##-- Creating Navigator operator subscription
+  if $my_install_navigator;then
+    check_create_oc_yaml "subscription" ibm-integration-platform-navigator "${subscriptionsdir}Navigator-Sub.yaml" $my_oc_project
+    check_resource_availability clusterserviceversion ibm-integration-platform-navigator
+    wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase'
+  fi
+  
+  ##-- Creating Operational Dashboard operator subscription
+  if $my_install_od;then
+    check_create_oc_yaml "subscription" ibm-integration-operations-dashboard "${subscriptionsdir}Dashboard-Sub.yaml" $my_oc_project
+    check_resource_availability clusterserviceversion ibm-integration-operations-dashboard
+    wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase'
+  fi
+  
+  ##-- Creating ACE operator subscription
+  if $my_install_ace_dd; then
+    check_create_oc_yaml "subscription" ibm-appconnect "${subscriptionsdir}ACE-Sub.yaml" $my_oc_project
+    check_resource_availability clusterserviceversion ibm-appconnect
+    wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase'
+  fi
+  
+  ##-- Creating APIC operator subscription
+  if $my_install_apic;then
+    check_create_oc_yaml "subscription" ibm-apiconnect "${subscriptionsdir}APIC-Sub.yaml" $my_oc_project
+    check_resource_availability clusterserviceversion ibm-apiconnect
+    wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase'
+  fi
+  
+  ##-- Creating Asset Repository operator subscription
+  if $my_install_ar;then
+    check_create_oc_yaml "subscription" ibm-integration-asset-repository "${subscriptionsdir}AR-Sub.yaml" $my_oc_project
+    check_resource_availability clusterserviceversion ibm-integration-asset-repository
+    wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase'
+  fi
+  
+  
+  ##-- Creating EventStreams operator subscription
+  if $my_install_es;then
+    check_create_oc_yaml "subscription" ibm-eventstreams "${subscriptionsdir}ES-Sub.yaml" $my_oc_project
+    check_resource_availability clusterserviceversion ibm-eventstreams
+    wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase'
+  fi
+  
+  ##-- Creating MQ operator subscription
+  if $my_install_mq;then
+    check_create_oc_yaml "subscription" ibm-mq "${subscriptionsdir}MQ-Sub.yaml" $my_oc_project
+    check_resource_availability clusterserviceversion ibm-mq
+    wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase'
+  fi
+  
+  ##-- Creating Aspera HSTS operator subscription
+  # Special for HSTS : install IBM Redis version <1.5.0
+  if $my_install_hsts;then
+    check_create_oc_yaml "subscription" aspera-hsts-operator "${subscriptionsdir}HSTS-Sub.yaml" $my_oc_project
+    check_resource_availability clusterserviceversion aspera-hsts-operator
+    # ici pb avec operateur hsts qui installe une version redis avec le channel v1.2-eus
+    # pour corriger patcher vers 1.4 puis supprimer l'ancienne
+    check_resource_availability clusterserviceversion ibm-cloud-databases-redis-operator-v1.2-eus-ibm-operator-catalog-openshift-marketplace
+    oc patch subscription ibm-cloud-databases-redis-operator-v1.2-eus-ibm-operator-catalog-openshift-marketplace --type merge -p '{"spec":{"channel":"v1.4"}}'
+    oc delete csv ibm-cloud-databases-redis.v1.2.3
+    wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase'
+  fi
+  
+  # SB problème détecté au niveau de : IBM Automation Foundation Core
+  # IBM Automation Foundation Core 1.3.6 provided by IBM qui passait en 'failed'
+  # j'ai fini par trouver de fil en aiguille  et voici la solution .... qui n'a pas fonctionné en ligne de commande =>
+  # il a fallu faire le update manuel (approuver sur la console Openshift).
+  # saad@kubuntu2204:~/Mywork/Scripts$ oc patch subscription ibm-cert-manager-operator -n ibm-common-services --type merge -p '{"spec":{"installPlanApproval":"Automatic"}}'
+  #subscription.operators.coreos.com/ibm-cert-manager-operator patched
+  #saad@kubuntu2204:~/Mywork/Scripts$
+  
+}
+
+Create_Capabilities () {
+################################################
+# create capabilities
+  ##-- Creating Navigator instance
+  if $my_install_navigator;then
+    check_create_oc_yaml PlatformNavigator $my_cp_navigator_instance_name "${capabilitiesdir}Navigator-Capability.yaml" $my_oc_project
+    wait_for_oc_state PlatformNavigator "$my_cp_navigator_instance_name" Ready '.status.conditions[0].type'
+  fi
+  
+  
+  ##-- Creating Operational Dashboard instance
+  if $my_install_od;then
+    check_create_oc_yaml OperationsDashboard $my_cp_od_instance_name "${capabilitiesdir}Dashboard-Capability.yaml" $my_oc_project
+    wait_for_oc_state OperationsDashboard "$my_cp_od_instance_name" Ready '.status.conditions[0].type'
+  fi
+  
+  ##-- Creating ACE Dashboard instance
+  if $my_install_ace_dd;then
+    check_create_oc_yaml Dashboard $my_cp_ace_dashboard_instance_name "${capabilitiesdir}ACE-Dashboard-Capability.yaml" $my_oc_project
+    wait_for_oc_state Dashboard "$my_cp_ace_dashboard_instance_name" Ready '.status.conditions[0].type'
+  fi
+  
+  ##-- Creating ACE Designer instance
+  if $my_install_ace_dg;then
+    check_create_oc_yaml DesignerAuthoring $my_cp_ace_designer_instance_name "${capabilitiesdir}ACE-Designer-Capability.yaml" $my_oc_project
+    wait_for_oc_state DesignerAuthoring "$my_cp_ace_designer_instance_name" Ready '.status.conditions[0].type'
+  fi
+  
+  ##-- Creating MQ instance
+  if $my_install_mq;then
+    check_create_oc_yaml QueueManager $my_cp_mq_instance_name "${capabilitiesdir}MQ-Capability.yaml" $my_oc_project
+    wait_for_oc_state QueueManager "$my_cp_mq_instance_name" Running '.status.phase'
+  fi
+  
+  
+  ##-- Creating ASpera HSTS instance
+  if $my_install_hsts;then
+    check_create_oc_yaml IbmAsperaHsts $my_cp_hsts_instance_name "${capabilitiesdir}AsperaHSTS-Capability.yaml" $my_oc_project
+    wait_for_oc_state IbmAsperaHsts "$my_cp_hsts_instance_name" Ready '.status.conditions[0].type'
+  fi
+  
+  ##-- Creating EventStreams instance
+  if $my_install_es;then
+    check_create_oc_yaml ConfigMap $my_cp_es_kafka_metricsConfig_name "${capabilitiesdir}ES-kafka-metrics-ConfigMap.yaml" $my_oc_project
+    check_create_oc_yaml ConfigMap $my_cp_es_zookeeper_metricsConfig_name "${capabilitiesdir}ES-zookeeper-metrics-ConfigMap.yaml" $my_oc_project
+    check_create_oc_yaml EventStreams $my_cp_es_instance_name "${capabilitiesdir}ES-Capability.yaml" $my_oc_project
+    wait_for_oc_state EventStreams "$my_cp_es_instance_name" Ready '.status.phase'
+  fi
+  
+  ##-- Creating Asset Repository instance
+  if $my_install_ar;then
+    check_create_oc_yaml AssetRepository $my_cp_ar_instance_name ${capabilitiesdir}AR-Capability.yaml $my_oc_project
+    wait_for_oc_state AssetRepository "$my_cp_ar_instance_name" Ready '.status.phase'
+  fi
+  
+  ##-- Creating APIC instance
+  if $my_install_apic;then
+    check_create_oc_yaml APIConnectCluster $my_cp_apic_instance_name "${capabilitiesdir}APIC-Capability.yaml" $my_oc_project
+    wait_for_oc_state APIConnectCluster "$my_cp_apic_instance_name" Ready '.status.phase'
+  fi
+}
+
 
 ################################################################################################
 # Start of the script main entry
@@ -192,7 +331,7 @@ Login2IBMCloud
 CreateOpenshiftCluster
 
 ##-- wait for Cluster availability
-Wait4CkusterAvailability
+Wait4ClusterAvailability
 
 ##-- wait for ingress address availability
 Wait4IngressAddressAvailability
@@ -209,153 +348,22 @@ AddIBMEntitlement
 
 
 if $my_install_all_with_cp4i_operator;then
-  check_create_oc_yaml_redis "subscription" ibm-cloud-databases-redis-operator "${subscriptionsdir}Redis-Sub.yaml"
+  check_create_oc_yaml_redis "subscription" ibm-cloud-databases-redis-operator "${subscriptionsdir}Redis-Sub.yaml" $my_oc_project
   InstallAllWithCP4IOperator
-  exit
+else
+  ##-- add ibm catalog
+  check_create_oc_yaml "catalogsource" "ibm-operator-catalog" "${yamldir}ibm-operator-catalog.yaml" $my_oc_cs_ns 
+  
+  ##-- Creating operator subscriptions
+  check_create_oc_yaml "operatorgroup" $my_op_group "${yamldir}operator-group.yaml" $my_oc_project
+  
+  ##-- add CatalogSource resource common-services
+  #check_create_oc_yaml "catalogsource" "opencloud-operators" "${yamldir}operator-source-cs.yaml"
+  
+  ##-- instantiate subscriptions
+  Create_Subscriptions
 fi
 
 
-##-- add ibm catalog
-check_create_oc_yaml "catalogsource" "ibm-operator-catalog" "${yamldir}ibm-operator-catalog.yaml"
-
-
-##-- Creating operator subscriptions
-check_create_oc_yaml "operatorgroup" $my_op_group "${yamldir}operator-group.yaml"
-
-
-##-- add CatalogSource resource common-services
-#check_create_oc_yaml "catalogsource" "opencloud-operators" "${yamldir}operator-source-cs.yaml"
-
-
-##-- Creating Navigator operator subscription
-if $my_install_navigator;then
-  check_create_oc_yaml "subscription" ibm-integration-platform-navigator "${subscriptionsdir}Navigator-Sub.yaml"
-  check_resource_availability clusterserviceversion ibm-integration-platform-navigator
-  wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase'
-fi
-
-##-- Creating Operational Dashboard operator subscription
-if $my_install_od;then
-  check_create_oc_yaml "subscription" ibm-integration-operations-dashboard "${subscriptionsdir}Dashboard-Sub.yaml"
-  check_resource_availability clusterserviceversion ibm-integration-operations-dashboard
-  wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase'
-fi
-
-##-- Creating ACE operator subscription
-if $my_install_ace_dd; then
-  check_create_oc_yaml "subscription" ibm-appconnect "${subscriptionsdir}ACE-Sub.yaml"
-  check_resource_availability clusterserviceversion ibm-appconnect
-  wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase'
-fi
-
-##-- Creating APIC operator subscription
-if $my_install_apic;then
-  check_create_oc_yaml "subscription" ibm-apiconnect "${subscriptionsdir}APIC-Sub.yaml"
-  check_resource_availability clusterserviceversion ibm-apiconnect
-  wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase'
-fi
-
-##-- Creating Asset Repository operator subscription
-if $my_install_ar;then
-  check_create_oc_yaml "subscription" ibm-integration-asset-repository "${subscriptionsdir}AR-Sub.yaml"
-  check_resource_availability clusterserviceversion ibm-integration-asset-repository
-  wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase'
-fi
-
-
-##-- Creating EventStreams operator subscription
-if $my_install_es;then
-  check_create_oc_yaml "subscription" ibm-eventstreams "${subscriptionsdir}ES-Sub.yaml"
-  check_resource_availability clusterserviceversion ibm-eventstreams
-  wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase'
-fi
-
-##-- Creating MQ operator subscription
-if $my_install_mq;then
-  check_create_oc_yaml "subscription" ibm-mq "${subscriptionsdir}MQ-Sub.yaml"
-  check_resource_availability clusterserviceversion ibm-mq
-  wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase'
-fi
-
-##-- Creating Aspera HSTS operator subscription
-# Special for HSTS : install IBM Redis version <1.5.0
-if $my_install_hsts;then
-  check_create_oc_yaml "subscription" aspera-hsts-operator "${subscriptionsdir}HSTS-Sub.yaml"
-  check_resource_availability clusterserviceversion aspera-hsts-operator
-  # ici pb avec operateur hsts qui installe une version redis avec le channel v1.2-eus
-  # pour corriger patcher vers 1.4 puis supprimer l'ancienne
-  check_resource_availability clusterserviceversion ibm-cloud-databases-redis-operator-v1.2-eus-ibm-operator-catalog-openshift-marketplace
-  oc patch subscription ibm-cloud-databases-redis-operator-v1.2-eus-ibm-operator-catalog-openshift-marketplace --type merge -p '{"spec":{"channel":"v1.4"}}'
-  oc delete csv ibm-cloud-databases-redis.v1.2.3
-  wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase'
-fi
-
-# SB problème détecté au niveau de : IBM Automation Foundation Core
-# IBM Automation Foundation Core 1.3.6 provided by IBM qui passait en 'failed'
-# j'ai fini par trouver de fil en aiguille  et voici la solution .... qui n'a pas fonctionné en ligne de commande =>
-# il a fallu faire le update manuel (approuver sur la console Openshift).
-# saad@kubuntu2204:~/Mywork/Scripts$ oc patch subscription ibm-cert-manager-operator -n ibm-common-services --type merge -p '{"spec":{"installPlanApproval":"Automatic"}}'
-#subscription.operators.coreos.com/ibm-cert-manager-operator patched
-#saad@kubuntu2204:~/Mywork/Scripts$
-
-
-##-- Instantiating capabilities
-
-
-##-- Creating Navigator instance
-if $my_install_navigator;then
-  check_create_oc_yaml PlatformNavigator $my_cp_navigator_instance_name "${capabilitiesdir}Navigator-Capability.yaml"
-  wait_for_oc_state PlatformNavigator "$my_cp_navigator_instance_name" Ready '.status.conditions[0].type'
-fi
-
-
-##-- Creating Operational Dashboard instance
-if $my_install_od;then
-  check_create_oc_yaml OperationsDashboard $my_cp_od_instance_name "${capabilitiesdir}Dashboard-Capability.yaml"
-  wait_for_oc_state OperationsDashboard "$my_cp_od_instance_name" Ready '.status.conditions[0].type'
-fi
-
-##-- Creating ACE Dashboard instance
-if $my_install_ace_dd;then
-  check_create_oc_yaml Dashboard $my_cp_ace_dashboard_instance_name "${capabilitiesdir}ACE-Dashboard-Capability.yaml"
-  wait_for_oc_state Dashboard "$my_cp_ace_dashboard_instance_name" Ready '.status.conditions[0].type'
-fi
-
-##-- Creating ACE Designer instance
-if $my_install_ace_dg;then
-  check_create_oc_yaml DesignerAuthoring $my_cp_ace_designer_instance_name "${capabilitiesdir}ACE-Designer-Capability.yaml"
-  wait_for_oc_state DesignerAuthoring "$my_cp_ace_designer_instance_name" Ready '.status.conditions[0].type'
-fi
-
-##-- Creating MQ instance
-if $my_install_mq;then
-  check_create_oc_yaml QueueManager $my_cp_mq_instance_name "${capabilitiesdir}MQ-Capability.yaml"
-  wait_for_oc_state QueueManager "$my_cp_mq_instance_name" Ready '.status.conditions[0].type'
-fi
-
-
-##-- Creating ASpera HSTS instance
-if $my_install_hsts;then
-  check_create_oc_yaml IbmAsperaHsts $my_cp_hsts_instance_name "${capabilitiesdir}AsperaHSTS-Capability.yaml"
-  wait_for_oc_state IbmAsperaHsts "$my_cp_hsts_instance_name" Ready '.status.conditions[0].type'
-fi
-
-##-- Creating EventStreams instance
-if $my_install_es;then
-  check_create_oc_yaml ConfigMap $my_cp_es_kafka_metricsConfig_name "${capabilitiesdir}ES-kafka-metrics-ConfigMap.yaml"
-  check_create_oc_yaml ConfigMap $my_cp_es_zookeeper_metricsConfig_name "${capabilitiesdir}ES-zookeeper-metrics-ConfigMap.yaml"
-  check_create_oc_yaml EventStreams $my_cp_es_instance_name "${capabilitiesdir}ES-Capability.yaml"
-  wait_for_oc_state EventStreams "$my_cp_es_instance_name" Ready '.status.conditions[0].type'
-fi
-
-##-- Creating Asset Repository instance
-if $my_install_ar;then
-  check_create_oc_yaml AssetRepository $my_cp_ar_instance_name ${capabilitiesdir}AR-Capability.yaml
-  wait_for_oc_state AssetRepository "$my_cp_ar_instance_name" Ready '.status.conditions[0].type'
-fi
-
-##-- Creating APIC instance
-if $my_install_apic;then
-  check_create_oc_yaml APIConnectCluster $my_cp_apic_instance_name "${capabilitiesdir}APIC-Capability.yaml"
-  wait_for_oc_state APIConnectCluster "$my_cp_apic_instance_name" Ready '.status.conditions[0].type'
-fi
+##-- instantiate capabilities
+Create_Capabilities 

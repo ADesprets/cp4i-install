@@ -14,6 +14,7 @@ var_fail(){
 }
 
 # simple logging with colors
+# first param: level (info/warn/error/wait)
 mylog(){
 	p=
 	w=
@@ -67,15 +68,16 @@ wait_for_oc_state(){
 	local ocname=$2
 	local ocstate=$3
 	local ocpath=$4
-	wait_for_state "$octype $ocname $ocpath is $ocstate" "$ocstate" "oc get ${octype} ${ocname} --output json|jq -r '${ocpath}'"
+	wait_for_state "$octype $ocname $ocpath is $ocstate" "$ocstate" "oc get ${octype} ${ocname} -n $my_oc_project --output json|jq -r '${ocpath}'"
 }
 
 check_create_oc_yaml(){
 	local octype="$1"
 	local name="$2"
 	local yaml="$3"
+	local ns="$4"
 	mylog check "Checking ${octype} ${name}"
-	if oc get ${octype} ${name} > /dev/null 2>&1; then mylog ok;else
+	if oc get ${octype} ${name} -n ${ns} > /dev/null 2>&1; then mylog ok;else
 		envsubst < "${yaml}" | oc apply -f - || exit 1
 	fi
 }
@@ -93,9 +95,9 @@ check_create_oc_yaml_redis(){
 check_resource_availability () {
   local octype="$1"
   local name="$2"
-  var=`oc get $octype --ignore-not-found=true | grep $name | awk '{print $1}'`
+  var=`oc get $octype -n $my_oc_project --ignore-not-found=true | grep $name | awk '{print $1}'`
   while [ -z "$var" ]; do
-    var=`oc get $octype --ignore-not-found=true | grep $name | awk '{print $1}'`;
+    var=`oc get $octype -n $my_oc_project --ignore-not-found=true | grep $name | awk '{print $1}'`;
     #sleep 5
   done
 }
