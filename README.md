@@ -37,3 +37,28 @@ privatedir="${scriptdir}license-key/"	~/installcp4i/ibmcp4i-aspera-test/scripts/
 	aspera-license
 	apikey.json
 	ibm_container_entitlement_key.txt
+
+
+Post install
+
+## *Getting the initial admin password*
+https://www.ibm.com/docs/en/cloud-paks/cp-integration/2021.1?topic=installing-getting-initial-admin-password
+oc extract secret/platform-auth-idp-credentials -n ibm-common-services --to=-
+
+## *Fixing the certificate for the Web UI console*
+
+oc -n adcp4i get secret --field-selector type=kubernetes.io/tls | grep zen
+
+oc -n adcp4i get secret iaf-system-automationui-aui-zen-ca -o yaml |grep ca.crt
+
+base 64 decode dans un fichier 
+openssl x509 -in c:\temp\t.pem -text
+
+Dans browser imprt Root certificate c:\temp\t.pem 
+
+set srv=cp-console.adcp4i-par01-b34dfa42ccf328c7da72e2882c1627b1-0000.par01.containers.appdomain.cloud
+set srv=cpd-adcp4i.adcp4i-par01-b34dfa42ccf328c7da72e2882c1627b1-0000.par01.containers.appdomain.cloud
+openssl.exe s_client -showcerts -servername %srv% -connect %srv%:443
+
+
+oc extract secret/platform-auth-idp-credentials -n ibm-common-services --to=-

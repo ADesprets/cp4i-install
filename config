@@ -14,16 +14,20 @@ my_cluster_flavor=b3c.16x64
 my_cluster_workers=5
 
 # Name of IBM Cloud ROKS cluster (local param)
-my_ic_cluster_name=${my_unique_name}-${my_cluster_zone}-${my_cluster_flavor}
+my_ic_cluster_name=${my_unique_name}-${my_cluster_zone}
 # SB pour le test
 # my_ic_cluster_name=sb220513-wdc07-b3c.16x64
 
 # Name of project (Namespace) where operators will be installed
 my_oc_project=${my_unique_name}
 
+#Name of the namespace used for catalogsource
+my_oc_cs_ns=openshift-marketplace
+
 # global operator to install (from doc): https://www.ibm.com/docs/en/cloud-paks/cp-integration/2021.4?topic=installing-operators-using-openshift-console
 my_cp4i_operator_name=ibm-cp-integration
-my_cp4i_operator_channel=v1.5
+#my_cp4i_operator_channel=v1.5
+my_cp4i_operator_channel=latest
 
 # Capabilities operators channel: https://www.ibm.com/docs/en/cloud-paks/cp-integration/2021.4?topic=reference-operator-channel-versions-cloud-pak-integration-releases
 my_ibm_navigator_operator_channel=v5.3
@@ -41,6 +45,9 @@ my_ibm_cp4i_license=L-RJON-C7QG3S
 my_ibm_cp_ace_license=L-APEH-C9NCK6
 my_ibm_cp_apic_license=L-RJON-C7BJ42
 my_ibm_cp_ar_license=L-PNAA-C68928
+my_ibm_cp_mq_license=$my_ibm_cp4i_license
+my_ibm_cp_navigator_license=$my_ibm_cp4i_license
+
 
 # IBM CP4I capabilities versions and others
 my_ibm_cp_navigator_version=2021.4.1-2

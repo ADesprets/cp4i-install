@@ -6,7 +6,7 @@ metadata:
 spec:
   license:
     accept: true
-    license: $my_ibm_cp4i_license
+    license: $my_ibm_cp_mq_license
     use: NonProduction
   tracing:
     enabled: false
@@ -34,10 +34,6 @@ spec:
         - ALL
       privileged: false
       readOnlyRootFilesystem: false
-      runAsNonRoot: true
-      runAsUser: 1000
-        
-    name: QUICKSTART
     availability:
       type: NativeHA
       updateStrategy: RollingUpdate
@@ -45,5 +41,11 @@ spec:
       defaultClass: ibmc-file-gold-gid
       queueManager:
         class: ibmc-file-gold-gid
+        size: 2Gi
         deleteClaim: true
         type: persistent-claim
+  securityContext:
+     supplementalGroups: [99]
+     
+     
+     
