@@ -5,6 +5,17 @@ This manual shows how the setup of the following components using one script:
 * IBM RedHat Openshift Kubernetes Service (ROKS)
 * IBM Cloud Pak for Integration (CP4I) on ROKS
 
+## Pre-requisites
+
+The following command line tools are used:
+
+* `bash`: Or equivalent (`zsh...`). Command lines in this document assume that a shell such as bash or zsh is used. If another shell is used, adapt the command if necessary. As well as standard shell tools: `sed`, `base64` ...
+* `curl`: HTTPS operations are executed using the curl command
+* `jq`: jq is used to parse JSON results
+* `ibmcloud`: The IBM Cloud CLI.
+* `oc`: The Redhat OpenShift CLI.
+* `docker`: The Docker CLI
+
 ## Preparation
 
 Create a folder for private files:
@@ -99,7 +110,7 @@ base 64 decode dans un fichier
 openssl x509 -in c:\temp\t.pem -text
 ```
 
-Dans browser imprt Root certificate c:\temp\t.pem 
+Dans browser import Root certificate c:\temp\t.pem
 
 ```cmd
 set srv=cp-console.adcp4i-par01-b34dfa42ccf328c7da72e2882c1627b1-0000.par01.containers.appdomain.cloud
