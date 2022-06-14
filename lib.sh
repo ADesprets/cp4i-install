@@ -3,7 +3,7 @@
 # @param 2 error message, or name of method to call if begins with "fix"
 var_fail(){
 	if eval test -z '$'$1;then
-		mylog error "ERROR: missing config variable: $1" 1>&2
+		mylog error "missing config variable: $1" 1>&2
 		case "$2" in
 			fix*|echo*) eval $2 ;;
 			"") ;;
@@ -14,7 +14,7 @@ var_fail(){
 }
 
 # simple logging with colors
-# first param: level (info/warn/error/wait)
+# @param 1 level (info/error/warn/wait/check/ok/no)
 mylog(){
 	p=
 	w=

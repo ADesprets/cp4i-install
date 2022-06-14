@@ -302,7 +302,7 @@ scriptdir=$(dirname "$0")/
 yamldir="${scriptdir}tmpl/"
 subscriptionsdir="${scriptdir}tmpl/subscriptions/"
 capabilitiesdir="${scriptdir}tmpl/capabilities/"
-privatedir="${scriptdir}license-key/"
+privatedir="${scriptdir}private/"
 
 # load helper functions
 . "${scriptdir}"lib.sh
