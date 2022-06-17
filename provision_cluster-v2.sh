@@ -292,13 +292,13 @@ Create_Capabilities () {
   fi
 }
 
-
 ################################################################################################
 # Start of the script main entry
 ################################################################################################
 
 # end with / on purpose (if var not defined, uses CWD)
 scriptdir=$(dirname "$0")/
+ldapdir="${scriptdir}ldap/"
 yamldir="${scriptdir}tmpl/"
 subscriptionsdir="${scriptdir}tmpl/subscriptions/"
 capabilitiesdir="${scriptdir}tmpl/capabilities/"
@@ -367,3 +367,9 @@ fi
 
 ##-- instantiate capabilities
 Create_Capabilities 
+
+##-- Add OpenLdap app to openshift
+if $my_install_openldap;then
+    check_create_oc_openldap "deployment" "openldap-2441-centos7"
+fi
+
