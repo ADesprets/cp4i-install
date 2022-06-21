@@ -147,6 +147,21 @@ check_create_oc_yaml(){
 	fi
 }
 
+check_create_oc_openldap(){
+	local octype="$1"
+	local name="$2"
+	mylog check "Checking ${octype} ${name}"
+	if oc get ${octype} ${name} > /dev/null 2>&1; then mylog ok;else
+      oc new-app openshift/${name}
+      oc expose service/${name}
+      oc get service ${name} -o json  | jq '.spec.ports[0] += {"Nodeport":30389}' | jq '.spec.ports[1] += {"Nodeport":30686}' | jq '.spec.type |= "NodePort"' | oc apply -f -
+      port=`oc get service ${name} -o json  | jq -r '.spec.ports[0].nodePort'`
+      hostname=`oc get route ${name} -o json | jq -r '.spec.host'`
+      envsubst < "${ldapdir}Import.tmpl" > "${ldapdir}Import.ldiff"
+      ldapmodify -H ldap://$hostname:$port -D "$my_dn_openldap" -w admin -f ${ldapdir}Import.ldiff
+	fi
+}
+
 check_create_oc_yaml_redis(){
 	local octype="$1"
 	local name="$2"
