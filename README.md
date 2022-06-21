@@ -38,7 +38,9 @@ cp config private/config.mycluster
 
 ## Usage
 
-Execute the script with the configuration file as parameter. The script is **idempotent**, i.e. it can be stopped and re-executed, it will skip successfully executed commands.
+Execute the script with the configuration file as first parameter or by setting the env var `PC_CONFIG`.
+
+The script is **idempotent**, i.e. it can be stopped and re-executed, it will skip successfully executed commands.
 
 Note: once the Openshift cluster is created, it is required to login once using the web interface to trigger the activation of your api key in the cluster.
 

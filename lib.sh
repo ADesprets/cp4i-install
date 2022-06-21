@@ -1,4 +1,27 @@
-# asset that variablke is defined
+read_config_file(){
+	if test -n "$PC_CONFIG";then
+	  config_file="$PC_CONFIG"
+	else
+	  config_file="$1"
+	fi
+	if test -z "$config_file";then
+		mylog error "Usage: $0 <config file>" 1>&2
+		mylog info "Example: $0 ${scriptdir}cp4i.conf"
+		exit 1
+	fi
+
+	if test ! -e "${config_file}";then
+		mylog error "No such file: $config_file" 1>&2
+		exit 1
+	fi
+
+	# load user specific variables, "set -a" so that variables are part of environment for envsubst
+	set -a
+	. "${config_file}"
+	set +a
+}
+
+# assert that variable is defined
 # @param 1 name of variable
 # @param 2 error message, or name of method to call if begins with "fix"
 var_fail(){
@@ -31,6 +54,48 @@ mylog(){
 	esac
 	shift
 	echo $w "$(tput setaf $c)$p$@$s$(tput setaf 9)";
+}
+
+Login2IBMCloud () {
+################################################
+# Log in IBM Cloud
+  var_fail my_ic_apikey "Create and save API key JSON file from: https://cloud.ibm.com/iam/apikeys"
+  mylog check "Login to IBM Cloud"
+  if ! ibmcloud login -q --no-region --apikey $my_ic_apikey > /dev/null;then
+    mylog error "Fail to login to IBM Cloud, check API key: $my_ic_apikey" 1>&2
+    exit 1
+  else mylog ok
+  fi
+}
+
+Login2OpenshiftCluster () {
+################################################
+# Login to openshift cluster
+# note that this login requires that you login to the cluster once (using sso or web): not sure why
+  mylog check "Login to cluster"
+  while ! oc login -u apikey -p $my_ic_apikey --server=$my_server_url > /dev/null;do
+	mylog error "$(date) Fail to login to Cluster, retry in a while (login using web to unblock)" 1>&2
+	sleep 30
+  done
+  mylog ok
+}
+
+# set variable my_server_url
+Wait4ClusterAvailability () {
+# wait for Cluster availability
+  wait_for_state 'Cluster state' 'normal-All Workers Normal' "ibmcloud oc cluster get --cluster $my_ic_cluster_name --output json|jq -r '.state+\"-\"+.status'"
+
+  mylog check "Checking Cluster URL"
+  my_server_url=$(ibmcloud ks cluster get --cluster $my_ic_cluster_name --output json | jq -r .serverURL)
+  case "$my_server_url" in
+	https://*)
+	mylog ok " -> $my_server_url"
+	;;
+	*)
+	mylog error "Error getting cluster URL for $my_ic_cluster_name" 1>&2
+	exit 1
+	;;
+  esac
 }
 
 # wait for command to return specified value
