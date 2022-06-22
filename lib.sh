@@ -56,9 +56,9 @@ mylog(){
 	echo $w "$(tput setaf $c)$p$@$s$(tput setaf 9)";
 }
 
-Login2IBMCloud () {
 ################################################
 # Log in IBM Cloud
+Login2IBMCloud () {
   var_fail my_ic_apikey "Create and save API key JSON file from: https://cloud.ibm.com/iam/apikeys"
   mylog check "Login to IBM Cloud"
   if ! ibmcloud login -q --no-region --apikey $my_ic_apikey > /dev/null;then
@@ -68,34 +68,35 @@ Login2IBMCloud () {
   fi
 }
 
-Login2OpenshiftCluster () {
-################################################
-# Login to openshift cluster
-# note that this login requires that you login to the cluster once (using sso or web): not sure why
-  mylog check "Login to cluster"
-  while ! oc login -u apikey -p $my_ic_apikey --server=$my_server_url > /dev/null;do
-	mylog error "$(date) Fail to login to Cluster, retry in a while (login using web to unblock)" 1>&2
-	sleep 30
-  done
-  mylog ok
-}
-
-# set variable my_server_url
-Wait4ClusterAvailability () {
 # wait for Cluster availability
+# set variable my_cluster_url
+Wait4ClusterAvailability () {
   wait_for_state 'Cluster state' 'normal-All Workers Normal' "ibmcloud oc cluster get --cluster $my_ic_cluster_name --output json|jq -r '.state+\"-\"+.status'"
 
   mylog check "Checking Cluster URL"
-  my_server_url=$(ibmcloud ks cluster get --cluster $my_ic_cluster_name --output json | jq -r .serverURL)
-  case "$my_server_url" in
+  my_cluster_url=$(ibmcloud ks cluster get --cluster $my_ic_cluster_name --output json | jq -r .serverURL)
+  case "$my_cluster_url" in
 	https://*)
-	mylog ok " -> $my_server_url"
+	mylog ok " -> $my_cluster_url"
 	;;
 	*)
 	mylog error "Error getting cluster URL for $my_ic_cluster_name" 1>&2
 	exit 1
 	;;
   esac
+}
+
+################################################
+# Login to openshift cluster
+# note that this login requires that you login to the cluster once (using sso or web): not sure why
+# requires var my_cluster_url
+Login2OpenshiftCluster () {
+  mylog check "Login to cluster"
+  while ! oc login -u apikey -p $my_ic_apikey --server=$my_cluster_url > /dev/null;do
+	mylog error "$(date) Fail to login to Cluster, retry in a while (login using web to unblock)" 1>&2
+	sleep 30
+  done
+  mylog ok
 }
 
 # wait for command to return specified value
