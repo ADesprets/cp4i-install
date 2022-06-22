@@ -15,9 +15,12 @@ Wait4ClusterAvailability
 
 Login2OpenshiftCluster
 
-echo Navigator: \
-$(oc get secret --namespace ibm-common-services ibm-iam-bindinfo-platform-auth-idp-credentials --output jsonpath={.data.admin_username}|base64 --decode) \
+cat<<EOF
+Navigator:
+https://$(oc get route  --namespace lm1 ${my_cp_navigator_instance_name}-pn --output=jsonpath='{.spec.host}')
+$(oc get secret --namespace ibm-common-services ibm-iam-bindinfo-platform-auth-idp-credentials --output jsonpath={.data.admin_username}|base64 --decode)
 $(oc get secret --namespace ibm-common-services ibm-iam-bindinfo-platform-auth-idp-credentials --output jsonpath={.data.admin_password}|base64 --decode)
+EOF
 
 exit 0
 # TODO: for Aspera
