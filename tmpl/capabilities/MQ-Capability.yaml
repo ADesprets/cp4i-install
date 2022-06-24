@@ -41,11 +41,7 @@ spec:
       defaultClass: ibmc-file-gold-gid
       queueManager:
         class: ibmc-file-gold-gid
-        size: 2Gi
         deleteClaim: true
         type: persistent-claim
   securityContext:
      supplementalGroups: [99]
-     
-     
-     
