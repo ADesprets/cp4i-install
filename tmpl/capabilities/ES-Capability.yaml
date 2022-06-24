@@ -45,6 +45,12 @@ spec:
           port: 9092
           tls: false
           type: internal
+        - name: external
+          type: route
+          port: 9093
+          authentication:
+            type: scram-sha-512
+          tls: true
       replicas: 1
     zookeeper:
       replicas: 3

@@ -1,11 +1,10 @@
 --- TODO 1 --- APIC Initial Configuration ---
-
 Get Cloud Manager access token
 Get integration Endpoint
 Create Mail Server
 	Configuration du serveur de messagerie incorrect
 Install OpenLDAP Saad
-Configure Openldap Arnauld + Saad
+Configure OpenLDAP Arnauld + Saad
 Create user : ${ORG_USERNAME} 
 Retrieve user : ${ORG_USERNAME} 
 Create Org : ${PROVIDER_ORG} 
