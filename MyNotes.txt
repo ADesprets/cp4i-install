@@ -33,3 +33,15 @@ privatedir="${scriptdir}license-key/"	~/installcp4i/ibmcp4i-aspera-test/scripts/
 	aspera-license
 	apikey.json
 	ibm_container_entitlement_key.txt
+
+Dans le cloud pak for integration quand l'installation est faite, la topologie est déjà là.
+URL d'API Manager:
+https://cpd-adcp4i.adcp4i-par01-b34dfa42ccf328c7da72e2882c1627b1-0000.par01.containers.appdomain.cloud/integration/apis/adcp4i/adcp4i-apic/manager
+
+Noeud final d'API REST de plateforme pour les API d'administration et de fournisseur:
+https://cpd-adcp4i.adcp4i-par01-b34dfa42ccf328c7da72e2882c1627b1-0000.par01.containers.appdomain.cloud/integration/apis/adcp4i/adcp4i-apic/api
+
+Noeud final d'API REST de plateforme pour les API de consommateur:
+https://cpd-adcp4i.adcp4i-par01-b34dfa42ccf328c7da72e2882c1627b1-0000.par01.containers.appdomain.cloud/integration/apis/adcp4i/adcp4i-apic/consumer-api
+
+
