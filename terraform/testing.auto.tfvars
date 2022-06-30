@@ -6,8 +6,8 @@
 #ibmcloud_api_key = ""      # Set the variable export TF_VAR_ibmcloud_api_key=
 prefix         = "mytodo"
 region         = "eu-de" # eu-de for Frankfurt MZR
-resource_group = "mytodo"
-tags           = ["tf", "mytodo"]
+resource_group = "cp4i"
+tags           = ["tf", "cp4i"]
 
 
 ##############################################################################
