@@ -39,7 +39,7 @@ The following command line tools are used:
 
 > Duration time: ~ 40+ min
 
-Let's create an OpenShift cluster in VPC Infrastruture.
+Let's use Terraform to provision an OpenShift cluster in VPC Infrastruture.
 
 1. Export API credential tokens as environment variables
 
