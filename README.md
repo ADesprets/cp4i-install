@@ -2,7 +2,7 @@
 
 This manual shows how the setup of the following components using one script:
 
-* IBM RedHat Openshift Kubernetes Service (ROKS)
+* IBM Red Hat Openshift on IBM Cloud (ROKS)
 * IBM Cloud Pak for Integration (CP4I) on ROKS
 
 ## Pre-requisites
@@ -15,38 +15,93 @@ The following command line tools are used:
 * `ibmcloud`: The IBM Cloud CLI.
 * `oc`: The Redhat OpenShift CLI.
 * `docker`: The Docker CLI
+* `terraform`: The Terraform CLI.
 
 ## Preparation
 
-Create a folder for private files:
+1. Clone the repo locally on your machine
 
-```bash
-mkdir private
-```
+    ```bash
+    git clone https://github.com/ADesprets/cp4i-install
+    ```
 
-Save your IBM Cloud API key: Navigate to: [IBM Cloud &rarr; Manage &rarr; Access &rarr; API Keys](https://cloud.ibm.com/iam/apikeys), use or create a new API key, and save to file: `private/apikey.json`.
+1. Create a folder for private files:
 
-Save your IBM Marketplace entitlement key: Navigate to [My IBM &rarr; Container software library](https://myibm.ibm.com/products-services/containerlibrary) and save the key in file: `private/ibm_container_entitlement_key.txt`
+    ```bash
+    mkdir private
+    ```
+
+1. Navigate to: [IBM Cloud &rarr; Manage &rarr; Access &rarr; API Keys](https://cloud.ibm.com/iam/apikeys), use or create a new API key, and save your IBM Cloud API key to file: `private/apikey.json`.
+
+1. Navigate to [My IBM &rarr; Container software library](https://myibm.ibm.com/products-services/containerlibrary) and save your IBM Marketplace entitlement key in file: `private/ibm_container_entitlement_key.txt`
+
+## Create an OpenShift cluster in VPC Infrastructure
+
+> Duration time: ~ 40+ min
+
+Let's create an OpenShift cluster in VPC Infrastruture.
+
+1. Export API credential tokens as environment variables
+
+    ```bash
+    export TF_VAR_ibmcloud_api_key="Your IBM Cloud API Key"
+    ```
+
+1. Go to the terraform folder
+
+    ```bash
+    cd terraform
+    ```
+
+1. Terraform must fetch the IBM Cloud provider plug-in for Terraform from the Terraform Registry.
+
+    ```bash
+    terraform init
+    ```
+
+1. Edit the variables in testing.auto.tfvars if you want to change some services name.
+
+1. Start provisioning
+
+    ```bash
+    terraform apply -var-file="testing.auto.tfvars"
+    ```
 
 ## Configuration
 
-Copy and *customize* the sample configuration file: `config`
+1. Copy and *customize* the sample configuration file: `config`
 
-```bash
-cp config private/config.mycluster
-```
+    ```bash
+    cp cp4i.properties.tmpl private/cp4i.properties
+    ```
 
 ## Usage
 
-Execute the script with the configuration file as first parameter or by setting the env var `PC_CONFIG`.
+> Duration time for all CP4I components: 40 min
 
-The script is **idempotent**, i.e. it can be stopped and re-executed, it will skip successfully executed commands.
+1. Execute the script with the configuration file as first parameter or by setting the env var `PC_CONFIG`.
 
-Note: once the Openshift cluster is created, it is required to login once using the web interface to trigger the activation of your api key in the cluster.
+    ```bash
+    export PC_CONFIG="$PWD/private/cp4i.properties"
+    ```
+
+1. Launch the Shell script
+
+    ```bash
+    ./provision_cluster-v2.sh
+    ```
+
+> If you have already created a cluster in PVC, the script will install CP4I on top of the existing cluster.
+>
+> Note: The script is **idempotent**, i.e. it can be stopped and re-executed, it will skip successfully executed commands.
+>
+> Note: once the Openshift cluster is created, it is required to login once using the web interface to trigger the activation of your api key in the cluster.
 
 For long-running steps, a progress message is displayed.
 
 ## Directory structure
+
+Here is the post install directory structure:
 
 ```text
 /
@@ -85,8 +140,6 @@ For long-running steps, a progress message is displayed.
   apikey.json
   ibm_container_entitlement_key.txt
 ```
-
-Post install
 
 ## Getting the initial admin password
 

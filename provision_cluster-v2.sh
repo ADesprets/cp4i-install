@@ -44,7 +44,8 @@ Wait4IngressAddressAvailability () {
   mylog check "Checking Ingress address"
   firsttime=true
   while true;do
-	ingress_address=$(ibmcloud ks cluster get --cluster $my_ic_cluster_name --output json|jq -r .ingressHostname)
+	#classic ingress_address=$(ibmcloud ks cluster get --cluster $my_ic_cluster_name --output json|jq -r .ingressHostname) #classic
+  ingress_address=$(ibmcloud ks cluster get --cluster $my_ic_cluster_name --output json|jq -r .ingress.hostname) #vpc
 	if test -n "$ingress_address";then
 		mylog ok ", $ingress_address"
 		break
