@@ -111,13 +111,13 @@ variable "floating_ip" {
 variable "openshift_worker_pool_flavor" {
   description = " The flavor of the VPC worker node that you want to use."
   type        = string
-  default     = "b3c.16x64"
+  default     = "bx2.16x64"
 }
 
 variable "openshift_version" {
   description = "The OpenShift version that you want to set up in your cluster."
   type        = string
-  default     = "4.10.15_openshift"
+  default     = "4.10.17_openshift"
 }
 
 variable "openshift_worker_nodes_per_zone" {

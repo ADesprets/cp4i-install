@@ -21,7 +21,7 @@ vpc_enable_public_gateway     = true
 ##############################################################################
 ## Cluster OpenShift
 ##############################################################################
-openshift_worker_pool_flavor = "b3c.16x64"
+openshift_worker_pool_flavor = "bx2.16x64"
 openshift_version            = "4.10.17_openshift"
 # Possible values: MasterNodeReady, OneWorkerNodeReady, or IngressReady
 openshift_wait_till          = "IngressReady"
