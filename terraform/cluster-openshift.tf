@@ -22,13 +22,6 @@ module "vpc_openshift_cluster" {
   disable_public_service_endpoint = var.disable_public_service_endpoint
   cos_instance_crn                = module.cos.cos_instance_id
   force_delete_storage            = var.openshift_force_delete_storage
-  kms_config = [
-    {
-      instance_id      = ibm_resource_instance.key-protect.guid, # GUID of Key Protect instance
-      crk_id           = ibm_kp_key.key.key_id,                  # ID of customer root key
-      private_endpoint = true
-    }
-  ]
   entitlement = var.entitlement
   tags        = var.tags
   update_all_workers = var.openshift_update_all_workers
