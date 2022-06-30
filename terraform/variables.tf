@@ -108,12 +108,6 @@ variable "floating_ip" {
 # OpenShift
 ##############################################################################
 
-variable "openshift_cluster_name" {
-  description = "Name of the cluster"
-  type        = string
-  default     = "cp4i"
-}
-
 variable "openshift_worker_pool_flavor" {
   description = " The flavor of the VPC worker node that you want to use."
   type        = string

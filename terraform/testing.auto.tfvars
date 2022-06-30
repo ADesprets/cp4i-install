@@ -4,7 +4,7 @@
 ## Global Variables
 ##############################################################################
 #ibmcloud_api_key = ""      # Set the variable export TF_VAR_ibmcloud_api_key=
-prefix         = "mytodo"
+prefix         = "cp4i"
 region         = "eu-de" # eu-de for Frankfurt MZR
 resource_group = "cp4i"
 tags           = ["tf", "cp4i"]
@@ -21,7 +21,6 @@ vpc_enable_public_gateway     = true
 ##############################################################################
 ## Cluster OpenShift
 ##############################################################################
-openshift_cluster_name       = "cp4i-cluster"
 openshift_worker_pool_flavor = "b3c.16x64"
 openshift_version            = "4.10.17_openshift"
 # Possible values: MasterNodeReady, OneWorkerNodeReady, or IngressReady
