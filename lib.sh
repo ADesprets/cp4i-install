@@ -74,8 +74,7 @@ Wait4ClusterAvailability () {
   wait_for_state 'Cluster state' 'normal-All Workers Normal' "ibmcloud oc cluster get --cluster $my_ic_cluster_name --output json|jq -r '.state+\"-\"+.status'"
 
   mylog check "Checking Cluster URL"
-  #my_cluster_url=$(ibmcloud ks cluster get --cluster $my_ic_cluster_name --output json | jq -r .serverURL) # classic
-  my_cluster_url=$(ibmcloud ks cluster get --cluster $my_ic_cluster_name --output json | jq -r .masterURL) # vpc
+  my_cluster_url=$(ibmcloud ks cluster get --cluster $my_ic_cluster_name --output json | jq -r "$gbl_cluster_url_filter")
   case "$my_cluster_url" in
 	https://*)
 	mylog ok " -> $my_cluster_url"

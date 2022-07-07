@@ -1,9 +1,9 @@
 #!/bin/bash
 # Laurent 2021
 
-CreateOpenshiftCluster () {
 ################################################
-# Create openshift cluster
+# Create openshift cluster using classic infra
+CreateOpenshiftClusterClassic () {
   var_fail my_ic_cluster_name "Choose a unique name for the cluster"
   mylog check "Checking OpenShift: $my_ic_cluster_name"
   if ibmcloud ks cluster get --cluster $my_ic_cluster_name > /dev/null 2>&1; then mylog ok ", cluster exists"; else
@@ -39,13 +39,43 @@ CreateOpenshiftCluster () {
   fi
 }
 
+CreateOpenshiftClusterVPC () {
+  var_fail my_oc_version 'mylog warn "Choose one of:" 1>&2;ibmcloud ks versions -q --show-version OpenShift'
+  var_fail my_cluster_zone 'mylog warn "Choose one of:" 1>&2;ibmcloud ks zone ls -q --provider vpc-gen2'
+  var_fail my_cluster_flavor 'mylog warn "Choose one of:" 1>&2;ibmcloud ks flavors -q --zone $my_cluster_zone'
+  var_fail my_cluster_workers 'Speficy number of worker nodes in cluster'
+  echo "not implemented"
+  exit 1
+}
+
+CreateOpenshiftCluster () {
+  var_fail my_cluster_infra 'mylog warn "Choose one of: classic or vpc" 1>&2'
+  case "${my_cluster_infra}" in
+  classic)
+    CreateOpenshiftClusterClassic
+    gbl_ingress_hostname_filter=.ingressHostname
+    gbl_cluster_url_filter=.serverURL
+    ;;
+  vpc)
+    CreateOpenshiftClusterVPC
+    gbl_ingress_hostname_filter=.ingress.hostname
+    gbl_cluster_url_filter=.masterURL
+    ;;
+  *)
+    mylog error "only classic and vpc for my_cluster_infra"
+    ;;
+  esac
+}
+
 Wait4IngressAddressAvailability () {
 # wait for ingress address availability
   mylog check "Checking Ingress address"
   firsttime=true
+  case $my_cluster_infra in
+
+  esac
   while true;do
-	#classic ingress_address=$(ibmcloud ks cluster get --cluster $my_ic_cluster_name --output json|jq -r .ingressHostname) #classic
-  ingress_address=$(ibmcloud ks cluster get --cluster $my_ic_cluster_name --output json|jq -r .ingress.hostname) #vpc
+  ingress_address=$(ibmcloud ks cluster get --cluster $my_ic_cluster_name --output json|jq -r "$gbl_ingress_hostname_filter")
 	if test -n "$ingress_address";then
 		mylog ok ", $ingress_address"
 		break
