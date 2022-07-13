@@ -12,6 +12,9 @@ spec:
     iam: false
     monitoring: false
   strimziOverrides:
+    entityOperator:
+      topicOperator: {}
+      userOperator: {}
     kafka:
       replicas: 3
       authorization:
