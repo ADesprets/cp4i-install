@@ -43,10 +43,12 @@ CreateOpenshiftClusterClassic () {
 # Create openshift cluster using VPC infra
 # use terraform because creation is more complex than classic
 CreateOpenshiftClusterVPC () {
+  # check vars from config file
   var_fail my_oc_version 'mylog warn "Choose one of:" 1>&2;ibmcloud ks versions -q --show-version OpenShift'
   var_fail my_cluster_zone 'mylog warn "Choose one of:" 1>&2;ibmcloud ks zone ls -q --provider vpc-gen2'
   var_fail my_cluster_flavor 'mylog warn "Choose one of:" 1>&2;ibmcloud ks flavors -q --zone $my_cluster_zone'
   var_fail my_cluster_workers 'Speficy number of worker nodes in cluster'
+  # set variables for terraform
   export TF_VAR_ibmcloud_api_key="$my_ic_apikey"
   export TF_VAR_openshift_worker_pool_flavor="$my_cluster_flavor"
   export TF_VAR_prefix="$my_unique_name"
@@ -56,10 +58,8 @@ CreateOpenshiftClusterVPC () {
   export TF_VAR_openshift_cluster_name="$my_ic_cluster_name"
   pushd terraform
   terraform init
-  terraform apply -var-file="testing.auto.tfvars"
+  terraform apply -var-file=var_override.tfvars
   popd
-  #echo "CreateOpenshiftClusterVPC: not implemented"
-  #exit 1
 }
 
 CreateOpenshiftCluster () {

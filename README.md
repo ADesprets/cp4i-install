@@ -17,73 +17,50 @@ The following command line tools are used:
 * `docker`: The Docker CLI
 * `terraform`: The Terraform CLI.
 
-## Preparation
+## Installation
 
-1. Clone the repo locally on your machine
+Clone the repo locally on your machine:
 
-    ```bash
-    git clone https://github.com/ADesprets/cp4i-install
-    ```
-
-1. Create a folder for private files:
-
-    ```bash
-    mkdir private
-    ```
-
-1. Navigate to: [IBM Cloud &rarr; Manage &rarr; Access &rarr; API Keys](https://cloud.ibm.com/iam/apikeys), use or create a new API key, and save your IBM Cloud API key to file: `private/apikey.json`.
-
-1. Navigate to [My IBM &rarr; Container software library](https://myibm.ibm.com/products-services/containerlibrary) and save your IBM Marketplace entitlement key in file: `private/ibm_container_entitlement_key.txt`
-
-## Create an OpenShift cluster in VPC Infrastructure
-
-> Duration time: ~ 40+ min
-
-Let's use Terraform to provision an OpenShift cluster in VPC Infrastruture.
-
-1. Export API credential tokens as environment variables
-
-    ```bash
-    export TF_VAR_ibmcloud_api_key="Your IBM Cloud API Key"
-    ```
-
-1. Go to the terraform folder
-
-    ```bash
-    cd terraform
-    ```
-
-1. Terraform must fetch the IBM Cloud provider plug-in for Terraform from the Terraform Registry.
-
-    ```bash
-    terraform init
-    ```
-
-1. Edit the variables in testing.auto.tfvars if you want to change some services name.
-
-1. Start provisioning
-
-    ```bash
-    terraform apply -var-file="testing.auto.tfvars"
-    ```
+```bash
+git clone https://github.com/ADesprets/cp4i-install
+```
 
 ## Configuration
 
-1. Copy and *customize* the sample configuration file: `config`
+1. Create a folder for private configuration files:
+
+  ```bash
+  mkdir private
+  ```
+
+  Note that those files in `private` are ignored by git.
+
+1. Navigate to: [IBM Cloud &rarr; Manage &rarr; Access &rarr; API Keys](https://cloud.ibm.com/iam/apikeys), use or create a new API key, and save your IBM Cloud API key **JSON data** to file: `private/apikey.json`. Note that the default configuration file reads the JSON.
+
+1. Navigate to [My IBM &rarr; Container software library](https://myibm.ibm.com/products-services/containerlibrary) and save your IBM Marketplace entitlement key in file: `private/ibm_container_entitlement_key.txt`
+
+1. Copy the template configuration file:
 
     ```bash
-    cp cp4i.properties.tmpl private/cp4i.properties
+    cp tmpl/cp4i.properties.tmpl private/my-cp4i.properties
     ```
+
+  You may give a specific name to that file.
+
+1. **Customize** this file with your own parameters
 
 ## Usage
 
 > Duration time for all CP4I components: 40 min
 
-1. Execute the script with the configuration file as first parameter or by setting the env var `PC_CONFIG`.
+1. Set the env var `PC_CONFIG` to the path of the configuration file previously created.
 
     ```bash
-    export PC_CONFIG="$PWD/private/cp4i.properties"
+    export PC_CONFIG="$PWD/private/my-cp4i.properties"
     ```
+
+  Note that setting this env var is optional and the configuration file can also be provided as first parameter for the script.
+  Here we assume that the current working directory is the top directory.
 
 1. Launch the Shell script
 
@@ -176,3 +153,41 @@ openssl.exe s_client -showcerts -servername %srv% -connect %srv%:443
 ```cmd
 oc extract secret/platform-auth-idp-credentials -n ibm-common-services --to=-
 ```
+
+## Using terraform for VPC infrastructure
+
+When using VPC (not classic) infrastructure, terraform is used.
+
+Terraform variables are declared in `variables.tf` and have default values.
+
+The main variables (cluster name, flavor, etc...) of the configuration files are forwarded to terraform using env vars prefixed with `TF_VAR_`.
+
+Those variables can also be overriden in file `var_override.tfvars`.
+
+> Duration time: ~ 40+ min
+
+The main sc ript does the following:
+
+1. Export specific configuration values for terraform
+
+    ```bash
+    export TF_VAR_xxx=$my_ic_xxx
+    ```
+
+1. Go to the terraform folder
+
+    ```bash
+    cd terraform
+    ```
+
+1. Terraform must fetch the IBM Cloud provider plug-in for Terraform from the Terraform Registry.
+
+    ```bash
+    terraform init
+    ```
+
+1. Start provisioning
+
+    ```bash
+    terraform apply -var-file="testing.auto.tfvars"
+    ```
