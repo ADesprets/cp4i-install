@@ -1,9 +1,9 @@
 #!/bin/bash
 # Laurent 2021
 
-CreateOpenshiftCluster () {
 ################################################
-# Create openshift cluster
+# Create openshift cluster using classic infra
+CreateOpenshiftClusterClassic () {
   var_fail my_ic_cluster_name "Choose a unique name for the cluster"
   mylog check "Checking OpenShift: $my_ic_cluster_name"
   if ibmcloud ks cluster get --cluster $my_ic_cluster_name > /dev/null 2>&1; then mylog ok ", cluster exists"; else
@@ -39,13 +39,57 @@ CreateOpenshiftCluster () {
   fi
 }
 
+################################################
+# Create openshift cluster using VPC infra
+# use terraform because creation is more complex than classic
+CreateOpenshiftClusterVPC () {
+  # check vars from config file
+  var_fail my_oc_version 'mylog warn "Choose one of:" 1>&2;ibmcloud ks versions -q --show-version OpenShift'
+  var_fail my_cluster_zone 'mylog warn "Choose one of:" 1>&2;ibmcloud ks zone ls -q --provider vpc-gen2'
+  var_fail my_cluster_flavor 'mylog warn "Choose one of:" 1>&2;ibmcloud ks flavors -q --zone $my_cluster_zone'
+  var_fail my_cluster_workers 'Speficy number of worker nodes in cluster'
+  # set variables for terraform
+  export TF_VAR_ibmcloud_api_key="$my_ic_apikey"
+  export TF_VAR_openshift_worker_pool_flavor="$my_cluster_flavor"
+  export TF_VAR_prefix="$my_unique_name"
+  export TF_VAR_region="$my_cluster_region"
+  export TF_VAR_openshift_version=$(ibmcloud ks versions -q --show-version OpenShift|sed -Ene "s/^(${my_oc_version//./\\.}\.[^ ]*) .*$/\1/p")
+  export TF_VAR_resource_group="rg-$my_unique_name"
+  export TF_VAR_openshift_cluster_name="$my_ic_cluster_name"
+  pushd terraform
+  terraform init
+  terraform apply -var-file=var_override.tfvars
+  popd
+}
+
+CreateOpenshiftCluster () {
+  var_fail my_cluster_infra 'mylog warn "Choose one of: classic or vpc" 1>&2'
+  case "${my_cluster_infra}" in
+  classic)
+    CreateOpenshiftClusterClassic
+    gbl_ingress_hostname_filter=.ingressHostname
+    gbl_cluster_url_filter=.serverURL
+    ;;
+  vpc)
+    CreateOpenshiftClusterVPC
+    gbl_ingress_hostname_filter=.ingress.hostname
+    gbl_cluster_url_filter=.masterURL
+    ;;
+  *)
+    mylog error "only classic and vpc for my_cluster_infra"
+    ;;
+  esac
+}
+
 Wait4IngressAddressAvailability () {
 # wait for ingress address availability
   mylog check "Checking Ingress address"
   firsttime=true
+  case $my_cluster_infra in
+
+  esac
   while true;do
-	#classic ingress_address=$(ibmcloud ks cluster get --cluster $my_ic_cluster_name --output json|jq -r .ingressHostname) #classic
-  ingress_address=$(ibmcloud ks cluster get --cluster $my_ic_cluster_name --output json|jq -r .ingress.hostname) #vpc
+  ingress_address=$(ibmcloud ks cluster get --cluster $my_ic_cluster_name --output json|jq -r "$gbl_ingress_hostname_filter")
 	if test -n "$ingress_address";then
 		mylog ok ", $ingress_address"
 		break
@@ -80,7 +124,8 @@ AddIBMEntitlement () {
     mylog no
     var_fail my_entitlement_key "Missing entitlement key"
     mylog info "Checking ibm-entitlement-key validity"
-    if ! echo $my_entitlement_key | docker login cp.icr.io --username cp --password-stdin;then
+    docker -h > /dev/null 2>&1
+    if test $? -eq 0 && ! echo $my_entitlement_key | docker login cp.icr.io --username cp --password-stdin;then
       mylog error "Invalid entitlement key" 1>&2
       exit 1
     fi

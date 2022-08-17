@@ -1,27 +1,30 @@
 # This file contains values to be provisioned by the user for a specific installation
 
 # a unique name used as a base name for components (cluster, project, etc...)
-my_unique_name=cp4i
+my_unique_name=lm1
 
 # cluster definition
-#Run ibmcloud ks versions to see the supported Kubernetes versions including OpenShift.
+# To see the supported Kubernetes versions including OpenShift, run: ibmcloud ks versions -q --show-version OpenShift
 my_oc_version=4.10
-# Run ibmcloud ks zone ls --provider (classic|vpc-classic|vpc-gen2) to list available zones
-my_cluster_zone=par01
-# Run ibmcloud ks zones --provider classic to list zone names for classic provider and set the CLUSTER_ZONE accordingly.
-my_cluster_flavor=b3c.16x64
+# To list available zones, run: ibmcloud ks zone ls --provider (classic|vpc-classic|vpc-gen2) 
+my_cluster_zone=par01 # classic
+my_cluster_region=eu-de # vpc
+# To list available flavors, run: ibmcloud ks flavors -q --zone $my_cluster_zone
+#my_cluster_flavor=b3c.16x64.300gb # sur classic
+my_cluster_flavor=bx2.16x64 # sur vpc
 # To indicate the number of workers (local param)
 my_cluster_workers=5
+# use either classic or vpc
+my_cluster_infra=vpc
 
 # Name of IBM Cloud ROKS cluster (local param)
-my_ic_cluster_name=${my_unique_name}-${my_cluster_zone}
-# SB pour le test
-# my_ic_cluster_name=sb220513-wdc07-b3c.16x64
+#my_ic_cluster_name=${my_unique_name}-${my_cluster_zone}-${my_cluster_flavor}
+my_ic_cluster_name=${my_unique_name}-cluster
 
 # Name of project (Namespace) where operators will be installed
 my_oc_project=${my_unique_name}
 
-#Name of the namespace used for catalogsource
+# Name of the namespace used for catalogsource
 my_oc_cs_ns=openshift-marketplace
 
 # global operator to install (from doc): https://www.ibm.com/docs/en/cloud-paks/cp-integration/2021.4?topic=installing-operators-using-openshift-console
@@ -29,36 +32,9 @@ my_cp4i_operator_name=ibm-cp-integration
 #my_cp4i_operator_channel=v1.5
 my_cp4i_operator_channel=latest
 
-# Capabilities operators channel: https://www.ibm.com/docs/en/cloud-paks/cp-integration/2021.4?topic=reference-operator-channel-versions-cloud-pak-integration-releases
-my_ibm_navigator_operator_channel=v5.3
-my_ibm_od_operator_channel=v2.5
-my_ibm_ace_operator_channel=v4.1
-my_ibm_apic_operator_channel=v2.5
-my_ibm_ar_operator_channel=v1.4
-my_ibm_es_channel=v3.0
-my_ibm_hsts_operator_channel=v1.4
-my_ibm_mq_operator_channel=v1.8
-my_ibm_redis_operator_channel=v1.4
+# load specific versions for cp4i
+. ${yamldir}versions/cp4i-2021.4
 
-#IBM Cloud Pak for Integration 2021.4.1 (L-RJON-C7QG3S)
-my_ibm_cp4i_license=L-RJON-C7QG3S
-my_ibm_cp_ace_license=L-APEH-C9NCK6
-my_ibm_cp_apic_license=L-RJON-C7BJ42
-my_ibm_cp_ar_license=L-PNAA-C68928
-my_ibm_cp_mq_license=$my_ibm_cp4i_license
-my_ibm_cp_navigator_license=$my_ibm_cp4i_license
-
-# IBM CP4I capabilities versions and others
-my_ibm_cp_navigator_version=2021.4.1-2
-my_ibm_cp_ace_version=12.0.4.0-r1
-my_ibm_cp_apic_version=10.0.4.0-ifix3
-my_ibm_cp_ar_version=2021.4.1-4
-my_ibm_cp_apic_profile=n1xc7.m48
-my_ibm_cp_es_version=11.0.0
-my_ibm_cp_hsts_version=4.3.0
-my_ibm_cp_mq_version=9.2.5.0-r1
-my_ibm_cp_od_version=2021.4.1-4
-#my_ibm_cp_redis_version=1.4.3
 
 # Name of created objects for the installation
 my_op_group=${my_oc_project}-opgrp
@@ -81,7 +57,7 @@ my_cp_es_zookeeper_metricsConfig_name=${my_unique_name}-es-zookeeper-metrics
 # set to true/false to install, or not
 my_install_all_with_cp4i_operator=false
 my_install_navigator=true
-my_install_od=false
+my_install_od=true
 my_install_ace_dd=true
 my_install_ace_dg=true
 my_install_apic=true
