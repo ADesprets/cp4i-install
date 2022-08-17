@@ -8,7 +8,7 @@ module "vpc_openshift_cluster" {
 
   vpc_id             = ibm_is_vpc.vpc.id
   resource_group_id  = ibm_resource_group.resource_group.id
-  cluster_name       = "${var.prefix}-cluster"
+  cluster_name       = "${var.openshift_cluster_name}"
   worker_pool_flavor = var.openshift_worker_pool_flavor
   worker_zones = {
     "${var.region}-1" = { subnet_id = element(ibm_is_subnet.subnet.*.id, 0) },

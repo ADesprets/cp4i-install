@@ -108,8 +108,14 @@ variable "floating_ip" {
 # OpenShift
 ##############################################################################
 
+variable "openshift_cluster_name" {
+  description = "The name of cluster in cloud."
+  type        = string
+  default     = "my-oc-cluster"
+}
+
 variable "openshift_worker_pool_flavor" {
-  description = " The flavor of the VPC worker node that you want to use."
+  description = "The flavor of the VPC worker node that you want to use."
   type        = string
   default     = "bx2.16x64"
 }
@@ -135,7 +141,7 @@ variable "worker_labels" {
 variable "openshift_wait_till" {
   description = "specify the stage when Terraform to mark the cluster creation as completed."
   type        = string
-  default     = "OneWorkerNodeReady"
+  default     = "IngressReady"
 
   validation {
     error_message = "`openshift_wait_till` value must be one of `MasterNodeReady`, `OneWorkerNodeReady`, or `IngressReady`."
@@ -175,7 +181,6 @@ variable "openshift_update_all_workers" {
   type        = bool
   default     = true
 }
-
 
 
 ##############################################################################

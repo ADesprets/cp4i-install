@@ -53,7 +53,7 @@ CreateOpenshiftClusterVPC () {
   export TF_VAR_region="$my_cluster_region"
   export TF_VAR_openshift_version=$(ibmcloud ks versions -q --show-version OpenShift|sed -Ene "s/^(${my_oc_version//./\\.}\.[^ ]*) .*$/\1/p")
   export TF_VAR_resource_group="rg-$my_unique_name"
-
+  export TF_VAR_openshift_cluster_name="$my_ic_cluster_name"
   pushd terraform
   terraform init
   terraform apply -var-file="testing.auto.tfvars"
@@ -124,7 +124,8 @@ AddIBMEntitlement () {
     mylog no
     var_fail my_entitlement_key "Missing entitlement key"
     mylog info "Checking ibm-entitlement-key validity"
-    if ! echo $my_entitlement_key | docker login cp.icr.io --username cp --password-stdin;then
+    docker -h > /dev/null 2>&1
+    if test $? -eq 0 && ! echo $my_entitlement_key | docker login cp.icr.io --username cp --password-stdin;then
       mylog error "Invalid entitlement key" 1>&2
       exit 1
     fi
