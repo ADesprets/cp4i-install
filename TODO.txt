@@ -19,3 +19,6 @@ Load test API (Ping API) as a draft
 --- TODO 5 --- Create/Extract all certificates for Web UI ---
 --- TODO 6 --- Harmoniser les commandes soit en oc only soit oc + jq (avoid strings manipulation) ---
 --- TODO 7 --- Vérifier l'idempotence ---
+--- TODO 8 --- Check Daffy (wget http://get.daffy-installer.com/download-scripts/daffy-init.sh; chmod 777 daffy-init.sh;./daffy-init.sh )
+--- TODO 9 --- Test TerraForm
+--- TODO 10 --- VPC versus Classic Infrastructure
