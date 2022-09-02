@@ -2,7 +2,7 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
 metadata:
   name: ibm-integration-asset-repository
-  namespace: $my_oc_project
+  namespace: $my_oc_operators_project
 spec:
   channel: $my_ibm_ar_operator_channel
   installPlanApproval: Automatic

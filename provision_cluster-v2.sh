@@ -2,7 +2,7 @@
 # Laurent 2021
 
 ################################################
-# Create openshift cluster using classic infra
+# Create openshift cluster using classic infra function
 CreateOpenshiftClusterClassic () {
   var_fail my_ic_cluster_name "Choose a unique name for the cluster"
   mylog check "Checking OpenShift: $my_ic_cluster_name"
@@ -10,7 +10,7 @@ CreateOpenshiftClusterClassic () {
     mylog warn ", cluster does not exist"
     var_fail my_oc_version 'mylog warn "Choose one of:" 1>&2;ibmcloud ks versions -q --show-version OpenShift'
     var_fail my_cluster_zone 'mylog warn "Choose one of:" 1>&2;ibmcloud ks zone ls -q --provider classic'
-    var_fail my_cluster_flavor 'mylog warn "Choose one of:" 1>&2;ibmcloud ks flavors -q --zone $my_cluster_zone'
+    var_fail my_cluster_flavor_classic 'mylog warn "Choose one of:" 1>&2;ibmcloud ks flavors -q --zone $my_cluster_zone'
     var_fail my_cluster_workers 'Speficy number of worker nodes in cluster'
     mylog info "Getting current version for OC: $my_oc_version"
     oc_version_full=$(ibmcloud ks versions -q --show-version OpenShift|sed -Ene "s/^(${my_oc_version//./\\.}\.[^ ]*) .*$/\1/p")
@@ -27,7 +27,7 @@ CreateOpenshiftClusterClassic () {
       --name    $my_ic_cluster_name \
       --version $oc_version_full \
       --zone    $my_cluster_zone \
-      --flavor  $my_cluster_flavor \
+      --flavor  $my_cluster_flavor_classic \
       --workers $my_cluster_workers \
       --entitlement cloud_pak \
       --disable-disk-encrypt \
@@ -40,17 +40,17 @@ CreateOpenshiftClusterClassic () {
 }
 
 ################################################
-# Create openshift cluster using VPC infra
+# Create openshift cluster using VPC infra function
 # use terraform because creation is more complex than classic
 CreateOpenshiftClusterVPC () {
   # check vars from config file
   var_fail my_oc_version 'mylog warn "Choose one of:" 1>&2;ibmcloud ks versions -q --show-version OpenShift'
   var_fail my_cluster_zone 'mylog warn "Choose one of:" 1>&2;ibmcloud ks zone ls -q --provider vpc-gen2'
-  var_fail my_cluster_flavor 'mylog warn "Choose one of:" 1>&2;ibmcloud ks flavors -q --zone $my_cluster_zone'
+  var_fail my_cluster_flavor_vpc 'mylog warn "Choose one of:" 1>&2;ibmcloud ks flavors -q --zone $my_cluster_zone'
   var_fail my_cluster_workers 'Speficy number of worker nodes in cluster'
   # set variables for terraform
   export TF_VAR_ibmcloud_api_key="$my_ic_apikey"
-  export TF_VAR_openshift_worker_pool_flavor="$my_cluster_flavor"
+  export TF_VAR_openshift_worker_pool_flavor="$my_cluster_flavor_vpc"
   export TF_VAR_prefix="$my_unique_name"
   export TF_VAR_region="$my_cluster_region"
   export TF_VAR_openshift_version=$(ibmcloud ks versions -q --show-version OpenShift|sed -Ene "s/^(${my_oc_version//./\\.}\.[^ ]*) .*$/\1/p")
@@ -61,7 +61,7 @@ CreateOpenshiftClusterVPC () {
   terraform apply -var-file=var_override.tfvars
   popd
 }
-
+# function
 CreateOpenshiftCluster () {
   var_fail my_cluster_infra 'mylog warn "Choose one of: classic or vpc" 1>&2'
   case "${my_cluster_infra}" in
@@ -80,9 +80,8 @@ CreateOpenshiftCluster () {
     ;;
   esac
 }
-
+# wait for ingress address availability function
 Wait4IngressAddressAvailability () {
-# wait for ingress address availability
   mylog check "Checking Ingress address"
   firsttime=true
   case $my_cluster_infra in
@@ -103,9 +102,9 @@ Wait4IngressAddressAvailability () {
   done
 }
 
-CreateNameSpace () {
 ################################################
-# Create namespace
+# Create namespace function
+CreateNameSpace () {
   var_fail my_oc_project "Please define project name in config"
   mylog check "Checking project $my_oc_project"
   if oc get project $my_oc_project > /dev/null 2>&1; then mylog ok; else
@@ -116,9 +115,9 @@ CreateNameSpace () {
   fi
 }
 
-AddIBMEntitlement () {
 ################################################
-# add ibm entitlement key to namespace
+# add ibm entitlement key to namespace function
+AddIBMEntitlement () {
   mylog check "Checking ibm-entitlement-key in $my_oc_project"
   if oc get secret ibm-entitlement-key --namespace=$my_oc_project > /dev/null 2>&1; then mylog ok; else
     mylog no
@@ -136,10 +135,9 @@ AddIBMEntitlement () {
   fi
 }
 
-InstallAllWithCP4IOperator () {
 ################################################
-# install cloud pak operator
-
+# install cloud pak operator function
+InstallAllWithCP4IOperator () {
   # wait for cloud pak main operator availability
   while ! oc get packagemanifest $my_cp4i_operator_name -n openshift-marketplace > /dev/null 2>&1;do
     mylog wait "Package $my_cp4i_operator_name not yet available, waiting..." 1>&2
@@ -153,40 +151,40 @@ InstallAllWithCP4IOperator () {
   wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase'
 }
 
-Create_Subscriptions () {
 ################################################
-# create subscriptions
+# create subscriptions function
+Create_Subscriptions () {
 ##-- Creating Navigator operator subscription
   if $my_install_navigator;then
-    check_create_oc_yaml "subscription" ibm-integration-platform-navigator "${subscriptionsdir}Navigator-Sub.yaml" $my_oc_project
+    check_create_oc_yaml "subscription" ibm-integration-platform-navigator "${subscriptionsdir}Navigator-Sub.yaml" $my_oc_operators_project
     check_resource_availability clusterserviceversion ibm-integration-platform-navigator
     wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase'
   fi
   
   ##-- Creating Operational Dashboard operator subscription
   if $my_install_od;then
-    check_create_oc_yaml "subscription" ibm-integration-operations-dashboard "${subscriptionsdir}Dashboard-Sub.yaml" $my_oc_project
+    check_create_oc_yaml "subscription" ibm-integration-operations-dashboard "${subscriptionsdir}Dashboard-Sub.yaml" $my_oc_operators_project
     check_resource_availability clusterserviceversion ibm-integration-operations-dashboard
     wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase'
   fi
   
   ##-- Creating ACE operator subscription
   if $my_install_ace_dd; then
-    check_create_oc_yaml "subscription" ibm-appconnect "${subscriptionsdir}ACE-Sub.yaml" $my_oc_project
+    check_create_oc_yaml "subscription" ibm-appconnect "${subscriptionsdir}ACE-Sub.yaml" $my_oc_operators_project
     check_resource_availability clusterserviceversion ibm-appconnect
     wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase'
   fi
   
   ##-- Creating APIC operator subscription
   if $my_install_apic;then
-    check_create_oc_yaml "subscription" ibm-apiconnect "${subscriptionsdir}APIC-Sub.yaml" $my_oc_project
+    check_create_oc_yaml "subscription" ibm-apiconnect "${subscriptionsdir}APIC-Sub.yaml" $my_oc_operators_project
     check_resource_availability clusterserviceversion ibm-apiconnect
     wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase'
   fi
   
   ##-- Creating Asset Repository operator subscription
   if $my_install_ar;then
-    check_create_oc_yaml "subscription" ibm-integration-asset-repository "${subscriptionsdir}AR-Sub.yaml" $my_oc_project
+    check_create_oc_yaml "subscription" ibm-integration-asset-repository "${subscriptionsdir}AR-Sub.yaml" $my_oc_operators_project
     check_resource_availability clusterserviceversion ibm-integration-asset-repository
     wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase'
   fi
@@ -194,14 +192,14 @@ Create_Subscriptions () {
   
   ##-- Creating EventStreams operator subscription
   if $my_install_es;then
-    check_create_oc_yaml "subscription" ibm-eventstreams "${subscriptionsdir}ES-Sub.yaml" $my_oc_project
+    check_create_oc_yaml "subscription" ibm-eventstreams "${subscriptionsdir}ES-Sub.yaml" $my_oc_operators_project
     check_resource_availability clusterserviceversion ibm-eventstreams
     wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase'
   fi
   
   ##-- Creating MQ operator subscription
   if $my_install_mq;then
-    check_create_oc_yaml "subscription" ibm-mq "${subscriptionsdir}MQ-Sub.yaml" $my_oc_project
+    check_create_oc_yaml "subscription" ibm-mq "${subscriptionsdir}MQ-Sub.yaml" $my_oc_operators_project
     check_resource_availability clusterserviceversion ibm-mq
     wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase'
   fi
@@ -209,7 +207,7 @@ Create_Subscriptions () {
   ##-- Creating Aspera HSTS operator subscription
   # Special for HSTS : install IBM Redis version <1.5.0
   if $my_install_hsts;then
-    check_create_oc_yaml "subscription" aspera-hsts-operator "${subscriptionsdir}HSTS-Sub.yaml" $my_oc_project
+    check_create_oc_yaml "subscription" aspera-hsts-operator "${subscriptionsdir}HSTS-Sub.yaml" $my_oc_operators_project
     check_resource_availability clusterserviceversion aspera-hsts-operator
     # ici pb avec operateur hsts qui installe une version redis avec le channel v1.2-eus
     # pour corriger patcher vers 1.4 puis supprimer l'ancienne
@@ -230,7 +228,7 @@ Create_Subscriptions () {
 }
 
 ################################################
-# create capabilities
+# create capabilities function
 Create_Capabilities () {
   ##-- Creating Navigator instance
   if $my_install_navigator;then
@@ -323,23 +321,21 @@ Wait4IngressAddressAvailability
 ##-- Login to openshift cluster
 Login2OpenshiftCluster
 
-
 ##-- Create namespace
 CreateNameSpace
 
 ##-- add ibm entitlement key to namespace
 AddIBMEntitlement
 
-
 if $my_install_all_with_cp4i_operator;then
-  check_create_oc_yaml_redis "subscription" ibm-cloud-databases-redis-operator "${subscriptionsdir}Redis-Sub.yaml" $my_oc_project
+  check_create_oc_yaml_redis "subscription" ibm-cloud-databases-redis-operator "${subscriptionsdir}Redis-Sub.yaml" $my_oc_operators_project
   InstallAllWithCP4IOperator
 else
   ##-- add ibm catalog
   check_create_oc_yaml "catalogsource" "ibm-operator-catalog" "${yamldir}ibm-operator-catalog.yaml" $my_oc_cs_ns 
   
   ##-- Creating operator subscriptions
-  check_create_oc_yaml "operatorgroup" $my_op_group "${yamldir}operator-group.yaml" $my_oc_project
+  check_create_oc_yaml "operatorgroup" $my_op_group "${yamldir}operator-group.yaml" $my_oc_operators_project
   
   ##-- add CatalogSource resource common-services
   #check_create_oc_yaml "catalogsource" "opencloud-operators" "${yamldir}operator-source-cs.yaml"
@@ -348,7 +344,6 @@ else
   Create_Subscriptions
 fi
 
-
 ##-- instantiate capabilities
 Create_Capabilities 
 
@@ -356,4 +351,3 @@ Create_Capabilities
 if $my_install_openldap;then
     check_create_oc_openldap "deployment" "openldap-2441-centos7"
 fi
-
