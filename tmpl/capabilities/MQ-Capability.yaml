@@ -38,10 +38,13 @@ spec:
       type: NativeHA
       updateStrategy: RollingUpdate
     storage:
-      defaultClass: ibmc-file-gold-gid
+      defaultClass: ibmc-block-gold
+      persistedData:
+        enabled: false
       queueManager:
-        class: ibmc-file-gold-gid
-        deleteClaim: true
+        size: 2Gi
         type: persistent-claim
-  securityContext:
+      recoveryLogs:
+        enabled: false  
+    securityContext:
      supplementalGroups: [99]
