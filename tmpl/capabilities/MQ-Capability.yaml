@@ -1,4 +1,4 @@
-﻿apiVersion: mq.ibm.com/v1beta1
+apiVersion: mq.ibm.com/v1beta1
 kind: QueueManager
 metadata:
   name: $my_cp_mq_instance_name

@@ -1,4 +1,4 @@
-﻿apiVersion: integration.ibm.com/v1beta1
+apiVersion: integration.ibm.com/v1beta1
 kind: AssetRepository
 metadata:
   name: $my_cp_ar_instance_name

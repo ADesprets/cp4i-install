@@ -4,6 +4,7 @@ This manual shows how the setup of the following components using one script:
 
 * IBM Red Hat Openshift on IBM Cloud (ROKS)
 * IBM Cloud Pak for Integration (CP4I) on ROKS
+* This installation is deploying operators either on a single namespace or in all namespaces in automatic update option 
 
 ## Pre-requisites
 
