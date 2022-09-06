@@ -1,59 +1,66 @@
 read_config_file(){
-	if test -n "$PC_CONFIG";then
-	  config_file="$PC_CONFIG"
-	else
-	  config_file="$1"
-	fi
-	if test -z "$config_file";then
-		mylog error "Usage: $0 <config file>" 1>&2
-		mylog info "Example: $0 ${scriptdir}cp4i.conf"
-		exit 1
-	fi
+  if test -n "$PC_CONFIG";then
+    config_file="$PC_CONFIG"
+  else
+    config_file="$1"
+  fi
+  if test -z "$config_file";then
+    mylog error "Usage: $0 <config file>" 1>&2
+    mylog info "Example: $0 ${scriptdir}cp4i.conf"
+    exit 1
+  fi
 
-	if test ! -e "${config_file}";then
-		mylog error "No such file: $config_file" 1>&2
-		exit 1
-	fi
+  if test ! -e "${config_file}";then
+    mylog error "No such file: $config_file" 1>&2
+    exit 1
+  fi
 
-	# load user specific variables, "set -a" so that variables are part of environment for envsubst
-	set -a
-	. "${config_file}"
-	set +a
+  # load user specific variables, "set -a" so that variables are part of environment for envsubst
+  set -a
+  . "${config_file}"
+  set +a
 }
 
 # assert that variable is defined
 # @param 1 name of variable
 # @param 2 error message, or name of method to call if begins with "fix"
 var_fail(){
-	if eval test -z '$'$1;then
-		mylog error "missing config variable: $1" 1>&2
-		case "$2" in
-			fix*|echo*) eval $2 ;;
-			"") ;;
-			*) mylog log "$2" 1>&2;;
-		esac
-		exit 1
-	fi
+  if eval test -z '$'$1;then
+    mylog error "missing config variable: $1" 1>&2
+    case "$2" in
+      fix*|echo*) eval $2 ;;
+      "") ;;
+      *) mylog log "$2" 1>&2;;
+    esac
+    exit 1
+  fi
+}
+
+assert_args_fail(){
+  if test "$1" -ne "$2";then
+    mylog error "Wrong number of arguments, expect $1, have $2" 1>&2
+    exit 1
+  fi
 }
 
 # simple logging with colors
 # @param 1 level (info/error/warn/wait/check/ok/no)
 mylog(){
-	p=
-	w=
-	s=
-	case $1 in
-	info)c=2;;#green
-	error)c=1;p='ERROR: ';;#red
-	warn)c=3;;#yellow
-	wait)c=4;p="$(date) ";;#blue
-	check)c=6;w=-n;s=...;;#cyan
-	ok)c=2;p=OK;;#green
-	no)c=3;p=NO;;#yellow
-	*) c=9;;#default
-	esac
-	shift
-	echo $w "$(tput setaf $c)$p$@$s$(tput setaf 9)";
+  p=
+  w=
+  s=
+  case $1 in
+  info)c=2;;#green
+  error)c=1;p='ERROR: ';;#red
+  warn)c=3;;#yellow
+  wait)c=4;p="$(date) ";;#blue
+  check)c=6;w=-n;s=...;;#cyan
+  ok)c=2;p=OK;;#green
+  no)c=3;p=NO;;#yellow
+  *) c=9;;#default
+  esac
+  shift
+  echo $w "$(tput setaf $c)$p$@$s$(tput setaf 9)";
 }
 
 ################################################
@@ -76,13 +83,13 @@ Wait4ClusterAvailability () {
   mylog check "Checking Cluster URL"
   my_cluster_url=$(ibmcloud ks cluster get --cluster $my_ic_cluster_name --output json | jq -r "$gbl_cluster_url_filter")
   case "$my_cluster_url" in
-	https://*)
-	mylog ok " -> $my_cluster_url"
-	;;
-	*)
-	mylog error "Error getting cluster URL for $my_ic_cluster_name" 1>&2
-	exit 1
-	;;
+  https://*)
+  mylog ok " -> $my_cluster_url"
+  ;;
+  *)
+  mylog error "Error getting cluster URL for $my_ic_cluster_name" 1>&2
+  exit 1
+  ;;
   esac
 }
 
@@ -93,8 +100,8 @@ Wait4ClusterAvailability () {
 Login2OpenshiftCluster () {
   mylog check "Login to cluster"
   while ! oc login -u apikey -p $my_ic_apikey --server=$my_cluster_url > /dev/null;do
-	mylog error "$(date) Fail to login to Cluster, retry in a while (login using web to unblock)" 1>&2
-	sleep 30
+  mylog error "$(date) Fail to login to Cluster, retry in a while (login using web to unblock)" 1>&2
+  sleep 30
   done
   mylog ok
 }
@@ -104,81 +111,82 @@ Login2OpenshiftCluster () {
 # @param value expected state value from check command
 # @param command executed command that returns some state
 wait_for_state(){
-	local what=$1
-	local value=$2
-	local command=$3
-	# wait for HSTS availability
-	mylog check "Checking $what"
-	last_state=
-	while true;do
-		current_state=$(eval $command)
-		if test "$current_state" = "$value";then
-			mylog ok ", $current_state"
-			break
-		fi
-		# first time
-		if test -z "$last_state";then
-			mylog no
-		fi
-		if test "$last_state" != "$current_state";then
-			mylog wait "$current_state"
-			last_state=$current_state
-		fi
-		sleep 5
-	done
+  assert_args_fail 3 $#
+  local what=$1
+  local value=$2
+  local command=$3
+  # wait for HSTS availability
+  mylog check "Checking $what"
+  last_state=
+  while true;do
+    current_state=$(eval $command)
+    if test "$current_state" = "$value";then
+      mylog ok ", $current_state"
+      break
+    fi
+    # first time
+    if test -z "$last_state";then
+      mylog no
+    fi
+    if test "$last_state" != "$current_state";then
+      mylog wait "$current_state"
+      last_state=$current_state
+    fi
+    sleep 5
+  done
 }
 
 # wait for openshift entity to reach specified state
 wait_for_oc_state(){
-	local octype=$1
-	local ocname=$2
-	local ocstate=$3
-	local ocpath=$4
-	wait_for_state "$octype $ocname $ocpath is $ocstate" "$ocstate" "oc get ${octype} ${ocname} -n $my_oc_project --output json|jq -r '${ocpath}'"
+  assert_args_fail 4 $#
+  local octype=$1
+  local ocname=$2
+  local ocstate=$3
+  local ocpath=$4
+  wait_for_state "$octype $ocname $ocpath is $ocstate" "$ocstate" "oc get ${octype} ${ocname} -n $my_oc_project --output json|jq -r '${ocpath}'"
 }
 
 check_create_oc_yaml(){
-	local octype="$1"
-	local name="$2"
-	local yaml="$3"
-	local ns="$4"
-	mylog check "Checking ${octype} ${name}"
-	if oc get ${octype} ${name} -n ${ns} > /dev/null 2>&1; then mylog ok;else
-		envsubst < "${yaml}" | oc apply -f - || exit 1
-	fi
+  assert_args_fail 1 $#
+  local yaml="$1"
+  local ocns=$(envsubst < "${yaml}" | sed -n 's/^  namespace: *//p')
+  local octype=$(envsubst < "${yaml}" | sed -n 's/^kind: *//p')
+  local ocname=$(envsubst < "${yaml}" | sed -n 's/^  name: *//p'|head -n 1)
+  mylog check "Checking ${octype} ${ocname} in ${ocns}"
+  if oc get ${octype} ${ocname} -n ${ocns} > /dev/null 2>&1; then mylog ok;else
+    envsubst < "${yaml}" | oc apply -f - || exit 1
+  fi
 }
 
-check_create_oc_openldap(){
-	local octype="$1"
-	local name="$2"
-	mylog check "Checking ${octype} ${name}"
-	if oc get ${octype} ${name} > /dev/null 2>&1; then mylog ok;else
-      oc new-app openshift/${name}
-      oc expose service/${name}
-      oc get service ${name} -o json  | jq '.spec.ports[0] += {"Nodeport":30389}' | jq '.spec.ports[1] += {"Nodeport":30686}' | jq '.spec.type |= "NodePort"' | oc apply -f -
-      port=`oc get service ${name} -o json  | jq -r '.spec.ports[0].nodePort'`
-      hostname=`oc get route ${name} -o json | jq -r '.spec.host'`
-      envsubst < "${ldapdir}Import.tmpl" > "${ldapdir}Import.ldiff"
-      ldapmodify -H ldap://$hostname:$port -D "$my_dn_openldap" -w admin -f ${ldapdir}Import.ldiff
-	fi
+check_create_wait_oc_yaml(){
+  assert_args_fail 3 $#
+  local yaml="$1"
+  local state_path="$2"
+  local state_value="$3"
+  check_create_oc_yaml "${yaml}"
+  local octype=$(envsubst < "${yaml}" | sed -n 's/^kind: *//p')
+  local ocname=$(envsubst < "${yaml}" | sed -n 's/^  name: *//p'|head -n 1)
+  wait_for_oc_state ${octype} ${ocname} "${state_value}" "${state_path}"
 }
 
-check_create_oc_yaml_redis(){
-	local octype="$1"
-	local name="$2"
-	local yaml="$3"
-	mylog check "Checking ${octype} ${name} in openshift-operators"
-	if oc get ${octype} ${name} -n openshift-operators > /dev/null 2>&1; then mylog ok;else
-		envsubst < "${yaml}" | oc apply -f - || exit 1
-	fi
+check_create_wait_sub_oc_yaml(){
+  assert_args_fail 1 $#
+  local yaml="$1"
+  local ocname=$(envsubst < "${yaml}" | sed -n 's/^  name: *//p'|head -n 1)
+  check_create_oc_yaml "${yaml}"
+  check_resource_availability  ${ocname}
+  wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase'
 }
 
 check_resource_availability () {
-  local octype="$1"
-  local name="$2"
-  var=`oc get $octype -n $my_oc_project --ignore-not-found=true | grep $name | awk '{print $1}'`
-  while [ -z "$var" ]; do
-    var=`oc get $octype -n $my_oc_project --ignore-not-found=true | grep $name | awk '{print $1}'`;
-    #sleep 5
+  assert_args_fail 1 $#
+  local octype=clusterserviceversion
+  local name="$1"
+  var=''
+  while true; do
+    var=`oc get $octype -n $my_oc_project --ignore-not-found=true | grep $name | awk '{print $1}'`
+    test -n "$var" && break
+    mylog log "Waiting for $name"
+    sleep 1
   done
 }

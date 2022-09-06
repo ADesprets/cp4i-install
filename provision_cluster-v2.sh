@@ -13,7 +13,7 @@ CreateOpenshiftClusterClassic () {
     var_fail my_cluster_flavor_classic 'mylog warn "Choose one of:" 1>&2;ibmcloud ks flavors -q --zone $my_cluster_zone'
     var_fail my_cluster_workers 'Speficy number of worker nodes in cluster'
     mylog info "Getting current version for OC: $my_oc_version"
-    oc_version_full=$(ibmcloud ks versions -q --show-version OpenShift|sed -Ene "s/^(${my_oc_version//./\\.}\.[^ ]*) .*$/\1/p")
+    local oc_version_full=$(ibmcloud ks versions -q --show-version OpenShift|sed -Ene "s/^(${my_oc_version//./\\.}\.[^ ]*) .*$/\1/p")
     if test -z "${oc_version_full}";then
       mylog error "Failed to find full version for ${my_oc_version}" 1>&2
       fix_oc_version
@@ -22,7 +22,7 @@ CreateOpenshiftClusterClassic () {
     mylog info "Found: ${oc_version_full}"
     # create
     mylog info "Creating cluster: $my_ic_cluster_name"
-    vlans=$(ibmcloud ks vlan ls --zone $my_cluster_zone --output json|jq -j '.[]|" --" + .type + "-vlan " + .id')
+    local vlans=$(ibmcloud ks vlan ls --zone $my_cluster_zone --output json|jq -j '.[]|" --" + .type + "-vlan " + .id')
     if ! ibmcloud oc cluster create classic \
       --name    $my_ic_cluster_name \
       --version $oc_version_full \
@@ -48,7 +48,7 @@ CreateOpenshiftClusterVPC () {
   var_fail my_cluster_zone 'mylog warn "Choose one of:" 1>&2;ibmcloud ks zone ls -q --provider vpc-gen2'
   var_fail my_cluster_flavor_vpc 'mylog warn "Choose one of:" 1>&2;ibmcloud ks flavors -q --zone $my_cluster_zone'
   var_fail my_cluster_workers 'Speficy number of worker nodes in cluster'
-  # set variables for terraform
+  # set variables for terraform (defined in variables.tf)
   export TF_VAR_ibmcloud_api_key="$my_ic_apikey"
   export TF_VAR_openshift_worker_pool_flavor="$my_cluster_flavor_vpc"
   export TF_VAR_prefix="$my_unique_name"
@@ -61,7 +61,8 @@ CreateOpenshiftClusterVPC () {
   terraform apply -var-file=var_override.tfvars
   popd
 }
-# function
+
+# Create cluster: classic or VPC
 CreateOpenshiftCluster () {
   var_fail my_cluster_infra 'mylog warn "Choose one of: classic or vpc" 1>&2'
   case "${my_cluster_infra}" in
@@ -80,25 +81,23 @@ CreateOpenshiftCluster () {
     ;;
   esac
 }
+
 # wait for ingress address availability function
 Wait4IngressAddressAvailability () {
   mylog check "Checking Ingress address"
   firsttime=true
-  case $my_cluster_infra in
-
-  esac
   while true;do
-  ingress_address=$(ibmcloud ks cluster get --cluster $my_ic_cluster_name --output json|jq -r "$gbl_ingress_hostname_filter")
-	if test -n "$ingress_address";then
-		mylog ok ", $ingress_address"
-		break
-	fi
-	if $firsttime;then
-		mylog warn "not ready"
-		firsttime=false
-	fi
-	mylog wait "waiting for ingress address"
-	sleep 10
+    ingress_address=$(ibmcloud ks cluster get --cluster $my_ic_cluster_name --output json|jq -r "$gbl_ingress_hostname_filter")
+    if test -n "$ingress_address";then
+      mylog ok ", $ingress_address"
+      break
+    fi
+    if $firsttime;then
+      mylog warn "not ready"
+      firsttime=false
+    fi
+    mylog wait "waiting for ingress address"
+    sleep 10
   done
 }
 
@@ -138,82 +137,59 @@ AddIBMEntitlement () {
 ################################################
 # install cloud pak operator function
 InstallAllWithCP4IOperator () {
+  # TODO: comment: for aspera ?
+  check_create_oc_yaml "${subscriptionsdir}Redis-Sub.yaml"
+
+  check_create_oc_yaml "${subscriptionsdir}subscription.yaml"
+
   # wait for cloud pak main operator availability
   while ! oc get packagemanifest $my_cp4i_operator_name -n openshift-marketplace > /dev/null 2>&1;do
     mylog wait "Package $my_cp4i_operator_name not yet available, waiting..." 1>&2
     sleep 30
   done
 
-  check_create_oc_yaml OperatorGroup "${my_op_group}" "${yamldir}operator-group.yaml"
-  check_create_oc_yaml Subscription "${my_subscription}" "${subscriptionsdir}subscription.yaml"
-
-  check_resource_availability clusterserviceversion $my_cp4i_operator_name
+  check_resource_availability $my_cp4i_operator_name
   wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase'
 }
 
 ################################################
 # create subscriptions function
 Create_Subscriptions () {
-##-- Creating Navigator operator subscription
-  if $my_install_navigator;then
-    check_create_oc_yaml "subscription" ibm-integration-platform-navigator "${subscriptionsdir}Navigator-Sub.yaml" $my_oc_operators_project
-    check_resource_availability clusterserviceversion ibm-integration-platform-navigator
-    wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase'
-  fi
+  ##-- add CatalogSource resource common-services
+  check_create_oc_yaml "${yamldir}operator-source-cs.yaml"
   
-  ##-- Creating Operational Dashboard operator subscription
-  if $my_install_od;then
-    check_create_oc_yaml "subscription" ibm-integration-operations-dashboard "${subscriptionsdir}Dashboard-Sub.yaml" $my_oc_operators_project
-    check_resource_availability clusterserviceversion ibm-integration-operations-dashboard
-    wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase'
-  fi
+  ##-- Create Navigator operator subscription
+  $my_install_navigator && check_create_wait_sub_oc_yaml "${subscriptionsdir}Navigator-Sub.yaml"
   
-  ##-- Creating ACE operator subscription
-  if $my_install_ace_dd; then
-    check_create_oc_yaml "subscription" ibm-appconnect "${subscriptionsdir}ACE-Sub.yaml" $my_oc_operators_project
-    check_resource_availability clusterserviceversion ibm-appconnect
-    wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase'
-  fi
+  ##-- Create Operational Dashboard operator subscription
+  $my_install_od && check_create_wait_sub_oc_yaml "${subscriptionsdir}Dashboard-Sub.yaml"
   
-  ##-- Creating APIC operator subscription
-  if $my_install_apic;then
-    check_create_oc_yaml "subscription" ibm-apiconnect "${subscriptionsdir}APIC-Sub.yaml" $my_oc_operators_project
-    check_resource_availability clusterserviceversion ibm-apiconnect
-    wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase'
-  fi
+  ##-- Create ACE operator subscription
+  $my_install_ace_dd && check_create_wait_sub_oc_yaml "${subscriptionsdir}ACE-Sub.yaml"
   
-  ##-- Creating Asset Repository operator subscription
-  if $my_install_ar;then
-    check_create_oc_yaml "subscription" ibm-integration-asset-repository "${subscriptionsdir}AR-Sub.yaml" $my_oc_operators_project
-    check_resource_availability clusterserviceversion ibm-integration-asset-repository
-    wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase'
-  fi
+  ##-- Create APIC operator subscription
+  $my_install_apic && check_create_wait_sub_oc_yaml "${subscriptionsdir}APIC-Sub.yaml"
   
+  ##-- Create Asset Repository operator subscription
+  $my_install_ar && check_create_wait_sub_oc_yaml "${subscriptionsdir}AR-Sub.yaml"
   
-  ##-- Creating EventStreams operator subscription
-  if $my_install_es;then
-    check_create_oc_yaml "subscription" ibm-eventstreams "${subscriptionsdir}ES-Sub.yaml" $my_oc_operators_project
-    check_resource_availability clusterserviceversion ibm-eventstreams
-    wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase'
-  fi
+  ##-- Create EventStreams operator subscription
+  $my_install_es check_create_wait_sub_oc_yaml "${subscriptionsdir}ES-Sub.yaml"
   
-  ##-- Creating MQ operator subscription
-  if $my_install_mq;then
-    check_create_oc_yaml "subscription" ibm-mq "${subscriptionsdir}MQ-Sub.yaml" $my_oc_operators_project
-    check_resource_availability clusterserviceversion ibm-mq
-    wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase'
-  fi
+  ##-- Create MQ operator subscription
+  $my_install_mq && check_create_wait_sub_oc_yaml "${subscriptionsdir}MQ-Sub.yaml"
   
-  ##-- Creating Aspera HSTS operator subscription
+  ##-- Create Aspera HSTS operator subscription
   # Special for HSTS : install IBM Redis version <1.5.0
-  if $my_install_hsts;then
-    check_create_oc_yaml "subscription" aspera-hsts-operator "${subscriptionsdir}HSTS-Sub.yaml" $my_oc_operators_project
-    check_resource_availability clusterserviceversion aspera-hsts-operator
+  $my_install_hsts && check_create_wait_sub_oc_yaml "${subscriptionsdir}HSTS-Sub.yaml"
+  if false && $my_install_hsts;then
+    check_create_oc_yaml "${subscriptionsdir}HSTS-Sub.yaml"
     # ici pb avec operateur hsts qui installe une version redis avec le channel v1.2-eus
     # pour corriger patcher vers 1.4 puis supprimer l'ancienne
-    check_resource_availability clusterserviceversion ibm-cloud-databases-redis-operator-v1.2-eus-ibm-operator-catalog-openshift-marketplace
+    check_resource_availability ibm-cloud-databases-redis-operator-v1.2-eus-ibm-operator-catalog-openshift-marketplace
     oc patch subscription ibm-cloud-databases-redis-operator-v1.2-eus-ibm-operator-catalog-openshift-marketplace --type merge -p '{"spec":{"channel":"v1.4"}}'
     oc delete csv ibm-cloud-databases-redis.v1.2.3
+    check_resource_availability aspera-hsts-operator
     wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase'
   fi
   
@@ -224,68 +200,56 @@ Create_Subscriptions () {
   # saad@kubuntu2204:~/Mywork/Scripts$ oc patch subscription ibm-cert-manager-operator -n ibm-common-services --type merge -p '{"spec":{"installPlanApproval":"Automatic"}}'
   #subscription.operators.coreos.com/ibm-cert-manager-operator patched
   #saad@kubuntu2204:~/Mywork/Scripts$
-  
 }
 
 ################################################
 # create capabilities function
 Create_Capabilities () {
-  ##-- Creating Navigator instance
-  if $my_install_navigator;then
-    check_create_oc_yaml PlatformNavigator $my_cp_navigator_instance_name "${capabilitiesdir}Navigator-Capability.yaml" $my_oc_project
-    wait_for_oc_state PlatformNavigator "$my_cp_navigator_instance_name" Ready '.status.conditions[0].type'
-  fi
+  ##-- Create Navigator instance
+  $my_install_navigator && check_create_wait_oc_yaml "${capabilitiesdir}Navigator-Capability.yaml" '.status.conditions[0].type' Ready
   
+  ##-- Create Operational Dashboard instance
+  $my_install_od && check_create_wait_oc_yaml "${capabilitiesdir}Dashboard-Capability.yaml" '.status.conditions[0].type' Ready
   
-  ##-- Creating Operational Dashboard instance
-  if $my_install_od;then
-    check_create_oc_yaml OperationsDashboard $my_cp_od_instance_name "${capabilitiesdir}Dashboard-Capability.yaml" $my_oc_project
-    wait_for_oc_state OperationsDashboard "$my_cp_od_instance_name" Ready '.status.conditions[0].type'
-  fi
+  ##-- Create ACE Dashboard instance
+  $my_install_ace_dd && check_create_wait_oc_yaml "${capabilitiesdir}ACE-Dashboard-Capability.yaml" '.status.conditions[0].type' Ready
   
-  ##-- Creating ACE Dashboard instance
-  if $my_install_ace_dd;then
-    check_create_oc_yaml Dashboard $my_cp_ace_dashboard_instance_name "${capabilitiesdir}ACE-Dashboard-Capability.yaml" $my_oc_project
-    wait_for_oc_state Dashboard "$my_cp_ace_dashboard_instance_name" Ready '.status.conditions[0].type'
-  fi
+  ##-- Create ACE Designer instance
+  $my_install_ace_dg && check_create_wait_oc_yaml "${capabilitiesdir}ACE-Designer-Capability.yaml" '.status.conditions[0].type' Ready
   
-  ##-- Creating ACE Designer instance
-  if $my_install_ace_dg;then
-    check_create_oc_yaml DesignerAuthoring $my_cp_ace_designer_instance_name "${capabilitiesdir}ACE-Designer-Capability.yaml" $my_oc_project
-    wait_for_oc_state DesignerAuthoring "$my_cp_ace_designer_instance_name" Ready '.status.conditions[0].type'
-  fi
+  ##-- Create MQ instance
+  $my_install_mq && check_create_wait_oc_yaml "${capabilitiesdir}MQ-Capability.yaml" '.status.phase' Running
   
-  ##-- Creating MQ instance
-  if $my_install_mq;then
-    check_create_oc_yaml QueueManager $my_cp_mq_instance_name "${capabilitiesdir}MQ-Capability.yaml" $my_oc_project
-    wait_for_oc_state QueueManager "$my_cp_mq_instance_name" Running '.status.phase'
-  fi
+  ##-- Create ASpera HSTS instance
+  $my_install_hsts && check_create_wait_oc_yaml "${capabilitiesdir}AsperaHSTS-Capability.yaml" '.status.conditions[0].type' Ready
   
-  
-  ##-- Creating ASpera HSTS instance
-  if $my_install_hsts;then
-    check_create_oc_yaml IbmAsperaHsts $my_cp_hsts_instance_name "${capabilitiesdir}AsperaHSTS-Capability.yaml" $my_oc_project
-    wait_for_oc_state IbmAsperaHsts "$my_cp_hsts_instance_name" Ready '.status.conditions[0].type'
-  fi
-  
-  ##-- Creating EventStreams instance
+  ##-- Create EventStreams instance
   if $my_install_es;then
-    check_create_oc_yaml ConfigMap $my_cp_es_kafka_metricsConfig_name "${capabilitiesdir}ES-kafka-metrics-ConfigMap.yaml" $my_oc_project
-    check_create_oc_yaml ConfigMap $my_cp_es_zookeeper_metricsConfig_name "${capabilitiesdir}ES-zookeeper-metrics-ConfigMap.yaml" $my_oc_project
-    check_create_oc_yaml EventStreams $my_cp_es_instance_name "${capabilitiesdir}ES-Capability.yaml" $my_oc_project
-    wait_for_oc_state EventStreams "$my_cp_es_instance_name" Ready '.status.phase'
+    check_create_oc_yaml "${capabilitiesdir}ES-kafka-metrics-ConfigMap.yaml"
+    check_create_oc_yaml "${capabilitiesdir}ES-zookeeper-metrics-ConfigMap.yaml"
+    check_create_wait_oc_yaml "${capabilitiesdir}ES-Capability.yaml" '.status.phase' Ready
   fi
   
-  ##-- Creating Asset Repository instance
-  if $my_install_ar;then
-    check_create_oc_yaml AssetRepository $my_cp_ar_instance_name ${capabilitiesdir}AR-Capability.yaml $my_oc_project
-    wait_for_oc_state AssetRepository "$my_cp_ar_instance_name" Ready '.status.phase'
-  fi
+  ##-- Create Asset Repository instance
+  $my_install_ar && check_create_wait_oc_yaml ${capabilitiesdir}AR-Capability.yaml '.status.phase' Ready
   
-  ##-- Creating APIC instance
-  if $my_install_apic;then
-    check_create_oc_yaml APIConnectCluster $my_cp_apic_instance_name "${capabilitiesdir}APIC-Capability.yaml" $my_oc_project
-    wait_for_oc_state APIConnectCluster "$my_cp_apic_instance_name" Ready '.status.phase'
+  ##-- Create APIC instance
+  $my_install_apic && check_create_wait_oc_yaml "${capabilitiesdir}APIC-Capability.yaml" '.status.phase' Ready
+}
+
+Create_LDAP(){
+  assert_args_fail 0 $#
+  local octype=deployment
+  local ocname=openldap-2441-centos7
+  mylog check "Checking ${octype} ${ocname}"
+  if oc get ${octype} ${ocname} > /dev/null 2>&1; then mylog ok;else
+    oc new-app openshift/${ocname}
+    oc expose service/${ocname}
+    oc get service ${ocname} -o json  | jq '.spec.ports[0] += {"Nodeport":30389}' | jq '.spec.ports[1] += {"Nodeport":30686}' | jq '.spec.type |= "NodePort"' | oc apply -f -
+    port=`oc get service ${ocname} -o json  | jq -r '.spec.ports[0].nodePort'`
+    hostname=`oc get route ${ocname} -o json | jq -r '.spec.host'`
+    envsubst < "${ldapdir}Import.tmpl" > "${ldapdir}Import.ldiff"
+    ldapmodify -H ldap://$hostname:$port -D "$my_dn_openldap" -w admin -f ${ldapdir}Import.ldiff
   fi
 }
 
@@ -324,22 +288,20 @@ Login2OpenshiftCluster
 ##-- Create namespace
 CreateNameSpace
 
+##-- Create operator group in new namespace (if needed, not global: "global-operators": already exists)
+#if [ "$my_oc_operators_project" != openshift-operators ];then
+  check_create_oc_yaml "${yamldir}operator-group.yaml"
+#fi
+
 ##-- add ibm entitlement key to namespace
 AddIBMEntitlement
 
+##-- add ibm catalog
+check_create_oc_yaml "${yamldir}ibm-operator-catalog.yaml"
+
 if $my_install_all_with_cp4i_operator;then
-  check_create_oc_yaml_redis "subscription" ibm-cloud-databases-redis-operator "${subscriptionsdir}Redis-Sub.yaml" $my_oc_operators_project
   InstallAllWithCP4IOperator
 else
-  ##-- add ibm catalog
-  check_create_oc_yaml "catalogsource" "ibm-operator-catalog" "${yamldir}ibm-operator-catalog.yaml" $my_oc_cs_ns 
-  
-  ##-- Creating operator subscriptions
-  check_create_oc_yaml "operatorgroup" $my_op_group "${yamldir}operator-group.yaml" $my_oc_operators_project
-  
-  ##-- add CatalogSource resource common-services
-  #check_create_oc_yaml "catalogsource" "opencloud-operators" "${yamldir}operator-source-cs.yaml"
-  
   ##-- instantiate subscriptions
   Create_Subscriptions
 fi
@@ -348,6 +310,4 @@ fi
 Create_Capabilities 
 
 ##-- Add OpenLdap app to openshift
-if $my_install_openldap;then
-    check_create_oc_openldap "deployment" "openldap-2441-centos7"
-fi
+$my_install_openldap && Create_LDAP
