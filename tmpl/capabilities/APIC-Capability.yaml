@@ -1,4 +1,4 @@
-﻿apiVersion: apiconnect.ibm.com/v1beta1
+apiVersion: apiconnect.ibm.com/v1beta1
 kind: APIConnectCluster
 metadata:
   name: $my_cp_apic_instance_name
