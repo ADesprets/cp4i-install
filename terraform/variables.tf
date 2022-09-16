@@ -123,7 +123,7 @@ variable "openshift_worker_pool_flavor" {
 variable "openshift_version" {
   description = "The OpenShift version that you want to set up in your cluster."
   type        = string
-  default     = "4.10.17_openshift"
+  default     = "4.10.26_openshift"
 }
 
 variable "openshift_worker_nodes_per_zone" {
@@ -205,7 +205,7 @@ variable "cos_region" {
 variable "logdna_plan" {
   description = "plan type (14-day, 30-day, 7-day, hipaa-30-day and lite)"
   type        = string
-  default     = "30-day"
+  default     = "7-day"
 }
 
 variable "logdna_service_endpoints" {
