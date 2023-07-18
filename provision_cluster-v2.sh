@@ -1,5 +1,5 @@
 #!/bin/bash
-# Laurent 2021
+# Laurent 2021 - Uodated 2023 Saad / Arnauld
 
 ################################################
 # Create openshift cluster using classic infra function

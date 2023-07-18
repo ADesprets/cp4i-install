@@ -1,10 +1,28 @@
 # cp4i-install
 
+Objectives here:
+
+1 Bien documenté et partagé sur github
+
+2 Automatisée mais avec la possibilité toujours de choisir facilement ce que l'on veut faire, idempotent
+
+3 Installation, configuration initiale, configuration avancée
+
 This manual shows how the setup of the following components using one script:
 
 * IBM Red Hat Openshift on IBM Cloud (ROKS)
 * IBM Cloud Pak for Integration (CP4I) on ROKS
-* This installation is deploying operators either on a single namespace or in all namespaces in automatic update option 
+* This installation is deploying operators either on a single namespace or in all namespaces in automatic update option
+
+The following tasks will happen:
+
+1 Installation of the OpenShift cluster
+
+2 Installation of the operators of the cloud pak
+
+3 Deployment of the capabilities
+
+4 Configuration des capabilities
 
 ## Pre-requisites
 
