@@ -1,0 +1,57 @@
+# Here are the important links for cases, operator channels, and operand versions
+# https://ibm.github.io/event-automation/support/licensing/#calculating-licenses-required
+# https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.2?topic=images-adding-catalog-sources-cluster
+# https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.2?topic=reference-operator-channel-versions-this-release
+# CP4I capabilities versions, see https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.2?topic=reference-operator-channel-versions-this-release
+# For MQ: https://www.ibm.com/docs/en/ibm-mq/9.3?topic=openshift-release-history-mq-operator
+# For APIC: https://www.ibm.com/docs/en/api-connect/10.0.5.x_lts?topic=installation-operator-operand-case-versions
+# For ACE: https://www.ibm.com/docs/en/app-connect/container?topic=release-app-connect-operand-versions-features
+# For Event Streams: https://ibm.github.io/event-automation/support/matrix/
+# For Aspera: 
+# For DataPower: 
+
+# Cases versions
+my_ibm_integration_platform_navigator_case=7.1.0
+my_ibm_integration_asset_repository_case=1.5.9
+my_ibm_appconnect_case=8.2.1
+my_ibm_mq_case=2.4.0
+my_ibm_eventstreams_case=3.2.1
+my_ibm_datapower_operator_case=1.7.0
+my_ibm_aspera_hsts_operator_case=1.5.8
+my_ibm_cp_common_services_case=1.19.4
+
+# Capabilities operators channels
+my_ibm_navigator_operator_channel=v7.1
+my_ibm_ar_operator_channel=v1.5
+my_ibm_apic_operator_channel=v5.0
+my_ibm_ace_operator_channel=v8.2
+my_ibm_es_channel=v3.2
+my_ibm_hsts_operator_channel=v1.5
+my_ibm_mq_operator_channel=v2.4
+my_ibm_dpgw_operator_channel=v1.7
+
+# Operand versions
+my_ibm_cp_navigator_version=2023.2.1
+my_ibm_cp_ace_version=12.0.8.0-r2
+my_ibm_cp_apic_version=10.0.5.3 # LTS
+my_ibm_cp_ar_version=2022.2.1-5
+my_ibm_cp_apic_profile=n1xc7.m48
+my_ibm_cp_es_version=11.2.0
+my_ibm_cp_hsts_version=4.4.1
+my_ibm_cp_mq_version=9.3.3.0-r1 
+# my_ibm_cp_intassembly_version=2023.2.1
+
+# Licenses information
+# For APIC: https://www.ibm.com/docs/en/api-connect/10.0.x?topic=connect-api-licenses
+# For ACE: https://www.ibm.com/docs/en/app-connect/containers_cd?topic=resources-licensing-reference-app-connect-operator
+# For Event streams: https://ibm.biz/es-license.
+
+# Licenses for CP4I 2023.2.1
+my_ibm_cp4i_license=L-YBXJ-ADJNSM # CloudPakForIntegrationNonProduction
+my_ibm_cp_apic_license=L-VQYA-YNM22H # APIConnectEnterpriseV10.0.5.3
+my_ibm_cp_ace_license=L-MJTK-WUU8HE # AppConnectEnterpriseNonProduction
+my_ibm_cp_es_license=L-YBXJ-ADJNSM
+my_ibm_cp_ar_license=L-RJON-CD3JKX
+my_ibm_cp_mq_license=$my_ibm_cp4i_license
+my_ibm_cp_navigator_license=$my_ibm_cp4i_license
+my_ibm_cp_intassembly_license=L-RJON-CJR2TC
