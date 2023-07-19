@@ -2,11 +2,11 @@
 
 Objectives here:
 
-1 Bien documenté et partagé sur github
+1 Good quality documentation and shared in GitHub
 
-2 Automatisée mais avec la possibilité toujours de choisir facilement ce que l'on veut faire, idempotent
+2 Automation but customizable easily to choose what is needed, idempotent
 
-3 Installation, configuration initiale, configuration avancée
+3 Installation, initial configuration, Advanced configuration
 
 This manual shows how the setup of the following components using one script:
 
@@ -210,3 +210,7 @@ The main sc ript does the following:
     ```bash
     terraform apply -var-file="testing.auto.tfvars"
     ```
+
+
+To be moved
+in the subscription folder we have the definition of the operators. Since they are all equivalent we do not have one for each component, and use variables that are set at deployment.

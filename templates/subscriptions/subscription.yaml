@@ -1,10 +1,10 @@
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
 metadata:
-  name: $my_subscription
-  namespace: $my_oc_operators_project
+  name: $operator_name
+  namespace: $operators_project
 spec:
-  channel: $my_cp4i_operator_channel
-  name: $my_cp4i_operator_name
-  source: ibm-operator-catalog
+  channel: $current_channel
+  name: $operator_name
+  source: $catalog_source_name
   sourceNamespace: openshift-marketplace

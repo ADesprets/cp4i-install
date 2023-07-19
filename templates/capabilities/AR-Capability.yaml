@@ -4,8 +4,6 @@ metadata:
   name: $my_cp_ar_instance_name
   namespace: $my_oc_project
 spec:
-  designerAIFeatures:
-    enabled: true
   license:
     accept: true
     license: $my_ibm_cp_ar_license

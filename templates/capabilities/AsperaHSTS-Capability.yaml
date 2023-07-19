@@ -22,6 +22,7 @@ $my_aspera_license_text
   redis:
     persistence:
       enabled: false
+      storageClass: ibmc-file-gold-gid
   services:
     httpProxy:
       type: ClusterIP
