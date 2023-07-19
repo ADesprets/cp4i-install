@@ -421,6 +421,8 @@ Configure_ACE_IS () {
 
 ################################################
 # Login to both of IBM Cloud and OCS function
+# It also create the cluster if it does not exist
+# Since the creation steps used here are all idempotent, we have decided to do everything here.
 function Login2IBMCloud_and_OpenshiftCluster ()  {
   ##--Log in IBM Cloud
   Login2IBMCloud
