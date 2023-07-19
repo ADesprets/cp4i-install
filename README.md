@@ -61,7 +61,7 @@ git clone https://github.com/ADesprets/cp4i-install
 1. Copy the template configuration file:
 
     ```bash
-    cp tmpl/cp4i.properties.tmpl private/my-cp4i.properties
+    cp templates/cp4i.properties.tmpl private/my-cp4i.properties
     ```
 
   You may give a specific name to that file.
@@ -103,35 +103,23 @@ Here is the post install directory structure:
 /
   delete-all.sh
   provision_cluster-v2.sh
-/tmpl
+/templates
   ibm-operator-catalog.yaml
-  operator-group.yaml
-  operator-source-cs.yaml
-/tmpl/subscriptions
-  ACE-Sub.yaml
-  APIC-Sub.yaml
-  AR-Sub.yaml
-  Dashboard-Sub.yaml
-  ES-Sub.yaml
-  HSTS-Sub.yaml
-  MQ-Sub.yaml
-  Navigator-Sub.yaml
-  Redis-Sub.yaml
+  /templates/subscriptions
   subscription.yaml
-/tmpl/capabilities
+/templates/capabilities
   ACE-Dashboard-Capability.yaml
   ACE-Designer-Capability.yaml
   APIC-Capability.yaml
   AR-Capability.yaml
   AsperaHSTS-Capability.yaml
-  Dashboard-Capability.yaml
   ES-Capability.yaml
   ES-kafka-metrics-ConfigMap.yaml
   ES-zookeeper-metrics-ConfigMap.yaml
   MQ-Capability.yaml
   Navigator-Capability.yaml
   REDIS-Capability.yaml  
-/tmpl/license-key
+/templates/license-key
   aspera-license
   apikey.json
   ibm_container_entitlement_key.txt
