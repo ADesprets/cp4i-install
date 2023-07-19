@@ -58,36 +58,28 @@ git clone https://github.com/ADesprets/cp4i-install
 
 1. Navigate to [My IBM &rarr; Container software library](https://myibm.ibm.com/products-services/containerlibrary) and save your IBM Marketplace entitlement key in file: `private/ibm_container_entitlement_key.txt`
 
-1. Copy the template configuration file:
+1. **Customize** the cp4i.properties file with your own parameters
 
-    ```bash
-    cp templates/cp4i.properties.tmpl private/my-cp4i.properties
-    ```
-
-  You may give a specific name to that file.
-
-1. **Customize** this file with your own parameters
+Good practice:
+* Update the capabilities you want to be deployed
 
 ## Usage
 
 > Duration time for all CP4I components: 40 min
 
-1. Set the env var `PC_CONFIG` to the path of the configuration file previously created.
-
-    ```bash
-    export PC_CONFIG="$PWD/private/my-cp4i.properties"
-    ```
-
-  Note that setting this env var is optional and the configuration file can also be provided as first parameter for the script.
-  Here we assume that the current working directory is the top directory.
-
 1. Launch the Shell script
 
     ```bash
-    ./provision_cluster-v2.sh
+    ./provision_cluster-v2.sh <cp4i.properties file path> <namespace> <cluster_name>
     ```
 
-> If you have already created a cluster in PVC, the script will install CP4I on top of the existing cluster.
+    example
+
+    ```bash
+    ./provision_cluster-v2.sh ./cp4i.properties cp4i cp4i-cluster-2023
+    ```
+
+> If you have already created a cluster, the script will install CP4I on top of the existing cluster.
 >
 > Note: The script is **idempotent**, i.e. it can be stopped and re-executed, it will skip successfully executed commands.
 >
@@ -97,6 +89,7 @@ For long-running steps, a progress message is displayed.
 
 ## Directory structure
 
+TO BE REMOVED
 Here is the post install directory structure:
 
 ```text
@@ -169,11 +162,11 @@ Terraform variables are declared in `variables.tf` and have default values.
 
 The main variables (cluster name, flavor, etc...) of the configuration files are forwarded to terraform using env vars prefixed with `TF_VAR_`.
 
-Those variables can also be overriden in file `var_override.tfvars`.
+Those variables can also be overridden in file `var_override.tfvars`.
 
 > Duration time: ~ 40+ min
 
-The main sc ript does the following:
+The main script does the following:
 
 1. Export specific configuration values for terraform
 
@@ -199,6 +192,5 @@ The main sc ript does the following:
     terraform apply -var-file="testing.auto.tfvars"
     ```
 
-
 To be moved
-in the subscription folder we have the definition of the operators. Since they are all equivalent we do not have one for each component, and use variables that are set at deployment.
+In the subscription folder we have the definition of the operators. Since they are all equivalent we do not have one for each component, and use variables that are set at deployment.

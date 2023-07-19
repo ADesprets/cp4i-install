@@ -1,12 +1,13 @@
 #!/bin/bash
-# Laurent 2021 - Updated July 2023 Saad / Arnauld
+# Laurent 2021 
+# Updated July 2023 Saad / Arnauld
 
 ################################################
-# Create openshift cluster using classic infra function
+# Create openshift cluster using classic infrastructure
 CreateOpenshiftClusterClassic () {
-  var_fail my_ic_cluster_name "Choose a unique name for the cluster"
-  mylog check "Checking OpenShift: $my_ic_cluster_name"
-  if ibmcloud ks cluster get --cluster $my_ic_cluster_name > /dev/null 2>&1; then mylog ok ", cluster exists"; else
+  var_fail my_cluster_name "Choose a unique name for the cluster"
+  mylog check "Checking OpenShift: $my_cluster_name"
+  if ibmcloud ks cluster get --cluster $my_cluster_name > /dev/null 2>&1; then mylog ok ", cluster exists"; else
     mylog warn ", cluster does not exist"
     var_fail my_oc_version 'mylog warn "Choose one of:" 1>&2;ibmcloud ks versions -q --show-version OpenShift'
     var_fail my_cluster_zone 'mylog warn "Choose one of:" 1>&2;ibmcloud ks zone ls -q --provider classic'
@@ -21,10 +22,10 @@ CreateOpenshiftClusterClassic () {
     fi
     mylog info "Found: ${oc_version_full}"
     # create
-    mylog info "Creating cluster: $my_ic_cluster_name"
+    mylog info "Creating cluster: $my_cluster_name"
     vlans=$(ibmcloud ks vlan ls --zone $my_cluster_zone --output json|jq -j '.[]|" --" + .type + "-vlan " + .id')
     if ! ibmcloud oc cluster create classic \
-      --name    $my_ic_cluster_name \
+      --name    $my_cluster_name \
       --version $oc_version_full \
       --zone    $my_cluster_zone \
       --flavor  $my_cluster_flavor_classic \
@@ -51,16 +52,17 @@ CreateOpenshiftClusterVPC () {
   # set variables for terraform
   export TF_VAR_ibmcloud_api_key="$my_ic_apikey"
   export TF_VAR_openshift_worker_pool_flavor="$my_cluster_flavor_vpc"
-  export TF_VAR_prefix="$my_unique_name"
+  export TF_VAR_prefix="$my_oc_project"
   export TF_VAR_region="$my_cluster_region"
   export TF_VAR_openshift_version=$(ibmcloud ks versions -q --show-version OpenShift|sed -Ene "s/^(${my_oc_version//./\\.}\.[^ ]*) .*$/\1/p")
-  export TF_VAR_resource_group="rg-$my_unique_name"
-  export TF_VAR_openshift_cluster_name="$my_ic_cluster_name"
+  export TF_VAR_resource_group="rg-$my_oc_project"
+  export TF_VAR_openshift_cluster_name="$my_cluster_name"
   pushd terraform
   terraform init
   terraform apply -var-file=var_override.tfvars
   popd
 }
+
 # function
 CreateOpenshiftCluster () {
   var_fail my_cluster_infra 'mylog warn "Choose one of: classic or vpc" 1>&2'
@@ -80,6 +82,7 @@ CreateOpenshiftCluster () {
     ;;
   esac
 }
+
 # wait for ingress address availability function
 Wait4IngressAddressAvailability () {
   mylog check "Checking Ingress address"
@@ -88,7 +91,7 @@ Wait4IngressAddressAvailability () {
 
   esac
   while true;do
-  ingress_address=$(ibmcloud ks cluster get --cluster $my_ic_cluster_name --output json|jq -r "$gbl_ingress_hostname_filter")
+  ingress_address=$(ibmcloud ks cluster get --cluster $my_cluster_name --output json|jq -r "$gbl_ingress_hostname_filter")
 	if test -n "$ingress_address";then
 		mylog ok ", $ingress_address"
 		break
@@ -104,7 +107,7 @@ Wait4IngressAddressAvailability () {
 
 ################################################
 # Create namespace function
-# param ns namespace to be created
+# @param ns namespace to be created
 CreateNameSpace () {
   local ns=$1
   var_fail my_oc_project "Please define project name in config"
@@ -119,6 +122,7 @@ CreateNameSpace () {
 
 ################################################
 # add ibm entitlement key to namespace function
+# @param ns namespace where secret is created
 AddIBMEntitlement () {
   local ns=$1
   mylog check "Checking ibm-entitlement-key in $ns"
@@ -136,7 +140,6 @@ AddIBMEntitlement () {
     fi
   fi
 }
-
 
 ################################################
 # add catalog sources using ibm_pak plugin
@@ -292,6 +295,7 @@ Install_Operators () {
 
 ################################################
 # create capabilities function
+# @param ns namespace where capabilities are created
 Create_Capabilities () {
   local ns=$1
 
@@ -320,7 +324,6 @@ Create_Capabilities () {
     wait_for_oc_state DesignerAuthoring "$my_cp_ace_designer_instance_name" Ready '.status.conditions[0].type' $ns
   fi
 
-  # SB]20230208 suite aux pbs de creation du service hsts....
   ##-- Creating ASpera HSTS instance
   if $my_aspera_hsts_operator;then
     oc apply -f "${capabilitiesdir}AsperaCM-cp4i-hsts-prometheus-lock.yaml"
@@ -348,15 +351,12 @@ Create_Capabilities () {
     wait_for_oc_state EventStreams "$my_cp_es_instance_name" Ready '.status.phase' $ns
   fi
 
-  #SB]20230130 Ajout de Nexus Repository
+  #SB]20230130 Ajout de Nexus Repository (An open source repository for build artifacts)
   ##-- Creating Nexus Repository instance
-  ##-- Add a route so that this service can be accessed from outside cluster
-  if $my_install_nexus;then
+    if $my_install_nexus;then
     check_create_oc_yaml NexusRepo $my_nexus_instance_name ${capabilitiesdir}Nexus-Capability.yaml $ns
-    #wait_for_oc_state NexusRepo "$my_nexus_instance_name" Ready '.status.phase' $ns
     wait_for_oc_state NexusRepo "$my_nexus_instance_name" Deployed '[.status.conditions[].type][1]' $ns
-
-    # add route
+    # add route to access Nexus from outside cluster
     check_create_oc_yaml Route $my_nexus_route_name ${capabilitiesdir}Nexus-Route.yaml $ns
   fi
 
@@ -367,7 +367,6 @@ Create_Capabilities () {
     wait_for_oc_state DaemonSet $my_instana_agent_instance_name $my_cluster_workers '.status.numberReady' $my_instana_agent_project
   fi
 }
-
 
 ##SB]20230215 load bar files in nexus repository
 ################################################
@@ -403,7 +402,6 @@ Configure_ACE_IS () {
   ace_bar_secret=${my_ace_barauth_secret}-${my_global_index}
   ace_bar_auth=${my_ace_barauth}-${my_global_index}
   ace_is=${my_ace_is}-${my_global_index}
-
 
   # Create secret for barauth
   # Reference : https://www.ibm.com/docs/en/app-connect/containers_cd?topic=resources-configuration-reference#install__install_cli
@@ -444,7 +442,7 @@ function Login2IBMCloud_and_OpenshiftCluster ()  {
 # Start of the script main entry
 ################################################################################################
 
-# end with / on purpose (if var not defined, uses CWD)
+# end with / on purpose (if var not defined, uses CWD - Current Working Directory)
 scriptdir=$(dirname "$0")/
 ldapdir="${scriptdir}ldap/"
 yamldir="${scriptdir}templates/"
@@ -471,10 +469,8 @@ fi
 #            so I'll use the namespace name and the cluster name as input parameters to the main script
 # example of invocation : ./provision_cluster-v2.sh private/my-cp4i.properties sbtest cp4i-sb-cluster
 my_properties_file=$1
-my_unique_name=$2
-my_ic_cluster_name=$3
-
-my_oc_project=$my_unique_name
+my_oc_project=$2
+my_cluster_name=$3
 
 read_config_file "$my_properties_file"
 
@@ -485,7 +481,7 @@ Login2IBMCloud_and_OpenshiftCluster
 CreateNameSpace $my_oc_project
 
 ##-- add ibm entitlement key to namespace
-# SB]20230209 le service Aspera hsts ne se cr�ait pas � cause d un probl�me d image d� au ange de lentitlement dans le ns openshift-operators.
+# SB]20230209 Aspera hsts service cannot be reated because a problem with the entitlement, it muste be added in the openshift-operators namespace.
 AddIBMEntitlement $my_op_group_ns
 AddIBMEntitlement $my_oc_project
 

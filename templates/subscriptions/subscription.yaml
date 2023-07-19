@@ -7,4 +7,4 @@ spec:
   channel: $current_channel
   name: $operator_name
   source: $catalog_source_name
-  sourceNamespace: openshift-marketplace
+  sourceNamespace: $my_oc_cs_ns
