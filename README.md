@@ -93,29 +93,54 @@ TO BE REMOVED
 Here is the post install directory structure:
 
 ```text
-/
-  delete-all.sh
-  provision_cluster-v2.sh
-/templates
-  ibm-operator-catalog.yaml
-  /templates/subscriptions
-  subscription.yaml
-/templates/capabilities
-  ACE-Dashboard-Capability.yaml
-  ACE-Designer-Capability.yaml
-  APIC-Capability.yaml
-  AR-Capability.yaml
-  AsperaHSTS-Capability.yaml
-  ES-Capability.yaml
-  ES-kafka-metrics-ConfigMap.yaml
-  ES-zookeeper-metrics-ConfigMap.yaml
-  MQ-Capability.yaml
-  Navigator-Capability.yaml
-  REDIS-Capability.yaml  
-/templates/license-key
-  aspera-license
-  apikey.json
-  ibm_container_entitlement_key.txt
+D:.
+│   .gitignore
+│   cp4i.properties
+│   delete-all.sh
+│   lib.sh
+│   LICENSE
+│   provision_cluster-v2.sh
+│   README.md
+│   show_creds.sh
+│   TODO.txt
+├───ldap
+│       Import.ldiff
+│       Import.tmpl
+├───private
+├───resources
+│       design.drawio
+│       structure.txt
+├───templates
+│   │   ibm-operator-catalog.yaml
+│   │   operator-source-cs.yaml
+│   ├───capabilities
+│   │       ACE-Dashboard-Capability.yaml
+│   │       ACE-Designer-Capability.yaml
+│   │       APIC-Capability.yaml
+│   │       AR-Capability.yaml
+│   │       AsperaHSTS-Capability.yaml
+│   │       ES-Capability.yaml
+│   │       MQ-Capability.yaml
+│   │       Navigator-Capability.yaml
+│   ├───monitoring
+│   │       cluster-monitoring-config.yaml
+│   └───subscriptions
+│           subscription.yaml
+├───terraform
+│       cluster-openshift.tf
+│       cos.tf
+│       log-analysis.tf
+│       monitoring-sysdig.tf
+│       network.tf
+│       provider.tf
+│       resource-group.tf
+│       terraform.tfstate
+│       variables.tf
+│       var_override.tfvars
+└───versions
+        cp4i-2021.4
+        cp4i-2022.2
+        cp4i-2023.2
 ```
 
 ## Getting the initial admin password

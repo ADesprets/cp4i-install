@@ -1,4 +1,4 @@
---- TODO 1 --- APIC Initial Configuration ---
+--- TODO 0 --- APIC Initial Configuration ---
 Get Cloud Manager access token
 Get integration Endpoint
 Create Mail Server
@@ -13,6 +13,7 @@ Create Catalogs
 Clear Ping API
 Load test API (Ping API) as a draft
 
+--- TODO 1 --- Manque DP capabilities
 --- TODO 2 --- Improve README  ---
 --- TODO 3 --- Improve code documentation  ---
 --- TODO 4 --- E2E Initial Configuration ---
