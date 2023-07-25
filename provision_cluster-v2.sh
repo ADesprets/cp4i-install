@@ -1,6 +1,11 @@
 #!/bin/bash
 # Laurent 2021 
 # Updated July 2023 Saad / Arnauld
+################################################
+@param $1 cp4i.properties file path 
+@param $2 namespace
+@param $3 cluster_name
+################################################
 
 ################################################
 # Create openshift cluster using classic infrastructure
@@ -22,7 +27,7 @@ CreateOpenshiftClusterClassic () {
     fi
     mylog info "Found: ${oc_version_full}"
     # create
-    mylog info "Creating cluster: $my_cluster_name"
+    mylog info "Creating OpenShift cluster: $my_cluster_name"
     vlans=$(ibmcloud ks vlan ls --zone $my_cluster_zone --output json|jq -j '.[]|" --" + .type + "-vlan " + .id')
     if ! ibmcloud oc cluster create classic \
       --name    $my_cluster_name \
@@ -83,6 +88,7 @@ CreateOpenshiftCluster () {
   esac
 }
 
+################################################
 # wait for ingress address availability function
 Wait4IngressAddressAvailability () {
   mylog check "Checking Ingress address"

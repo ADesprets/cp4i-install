@@ -32,6 +32,7 @@ The following command line tools are used:
 * `curl`: HTTPS operations are executed using the curl command
 * `jq`: jq is used to parse JSON results
 * `ibmcloud`: The IBM Cloud CLI.
+* ` ibm-pak` plugin: explanation: [installation instructions](https://github.com/IBM/ibm-pak#download-and-verify-software).
 * `oc`: The Redhat OpenShift CLI.
 * `docker`: The Docker CLI
 * `terraform`: The Terraform CLI.

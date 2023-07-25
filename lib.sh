@@ -189,3 +189,18 @@ check_resource_availability () {
     #sleep 5
   done
 }
+
+##SB]20230201 use ibm-pak oc plugin
+check_add_cs_ibm_pak(){
+  local CASE_NAME="$1"
+  local CASE_VERSION="$2"
+  local ARCH="$3"
+
+  oc ibm-pak get ${CASE_NAME} --version ${CASE_VERSION}
+  oc ibm-pak generate mirror-manifests ${CASE_NAME} icr.io --version ${CASE_VERSION}
+  #cat ~/.ibm-pak/data/mirror/${CASE_NAME}/${CASE_VERSION}/catalog-sources.yaml
+  #cat ~/.ibm-pak/data/mirror/${CASE_NAME}/${CASE_VERSION}/catalog-sources-linux-${ARCH}.yaml
+  oc apply -f ~/.ibm-pak/data/mirror/${CASE_NAME}/${CASE_VERSION}/catalog-sources.yaml
+  oc apply -f ~/.ibm-pak/data/mirror/${CASE_NAME}/${CASE_VERSION}/catalog-sources-linux-${ARCH}.yaml
+  oc get catalogsource -n openshift-marketplace
+}
