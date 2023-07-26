@@ -128,7 +128,7 @@ wait_for_state(){
 	done
 }
 
-# wait for openshift entity to reach specified state
+# Wait for openshift entity to reach specified state
 # @param octype: kubernetes resource class, example: "clusterserviceversion"
 # @param ocname: name of the resource, example: ""
 # @param ocstate: Value in the json of the status of a resource, example: "Succeeded"
@@ -140,6 +140,9 @@ wait_for_oc_state(){
 	local ocpath=$4
 	wait_for_state "$octype $ocname $ocpath is $ocstate" "$ocstate" "oc get ${octype} ${ocname} -n $my_oc_project --output json|jq -r '${ocpath}'"
 }
+
+# Check if the resource of type octype with name name exists in the namespace ns.
+# If it does not exist use the subscription yaml file, with the appropriate variable.
 # @param octype: kubernetes resource class, example: "subscription"
 # @param name: name of the resource, example: "ibm-integration-platform-navigator"
 # @param yaml: the file with the definition of the resource, example: "${subscriptionsdir}Navigator-Sub.yaml"
@@ -180,6 +183,9 @@ check_create_oc_yaml_redis(){
 	fi
 }
 
+# Check if the resource exists.
+# @param octype: kubernetes resource class, example: "subscription"
+# @param name: name of the resource, example: "ibm-integration-platform-navigator"
 check_resource_availability () {
   local octype="$1"
   local name="$2"
