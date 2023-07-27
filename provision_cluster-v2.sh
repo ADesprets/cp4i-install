@@ -19,7 +19,7 @@ CreateOpenshiftClusterClassic () {
     var_fail my_cluster_flavor_classic 'mylog warn "Choose one of:" 1>&2;ibmcloud ks flavors -q --zone $my_cluster_zone'
     var_fail my_cluster_workers 'Speficy number of worker nodes in cluster'
     mylog info "Getting current version for OC: $my_oc_version"
-    oc_version_full=$(ibmcloud ks versions -q --show-version OpenShift|grep $my_oc_version)
+    oc_version_full=$(ibmcloud ks versions -q --show-version OpenShift|grep $my_oc_version| awk '{print $1}')
     if test -z "${oc_version_full}";then
       mylog error "Failed to find full version for ${my_oc_version}" 1>&2
       fix_oc_version

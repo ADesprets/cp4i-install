@@ -1,0 +1,49 @@
+dn: o=$my_org_openldap,dc=example,dc=com
+changetype: add
+objectClass: top
+objectClass: organization
+o: $my_org_openldap
+
+dn: ou=${my_org_openldap}Unit,o=$my_org_openldap,dc=example,dc=com
+changetype: add
+ou: ${my_org_openldap}Unit
+objectClass: top
+objectClass: organizationalUnit
+
+dn: cn=$my_admin_uid,ou=${my_org_openldap}Unit,o=$my_org_openldap,dc=example,dc=com
+changetype: add
+uid: $my_admin_uid
+mail: $my_admin_email
+sn: $my_admin_uid
+cn: cloud admin
+userPassword: $my_admin_password
+objectClass: top
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: person
+
+dn: cn=$my_developer_uid,ou=${my_org_openldap}Unit,o=$my_org_openldap,dc=example,dc=com
+changetype: add
+uid: $my_developer_uid
+mail: saad.benachi@hotmail.com
+sn: $my_developer_uid
+cn: cloud developer
+userPassword: $my_developer_password
+objectClass: top
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: person
+
+dn: cn=authorized,ou=${my_org_openldap}Unit,o=$my_org_openldap,dc=example,dc=com
+changetype: add
+objectclass: groupOfNames
+objectclass: top
+cn: authorized
+member: uid=$my_admin_uid,ou=${my_org_openldap}Unit,o=$my_org_openldap,dc=example,dc=com
+
+dn: cn=nonauthorized,ou=${my_org_openldap}Unit,o=$my_org_openldap,dc=example,dc=com
+changetype: add
+objectclass: groupOfNames
+objectclass: top
+cn: nonauthorized
+member: uid=$my_developer_uid,ou=${my_org_openldap}Unit,o=$my_org_openldap,dc=example,dc=com
