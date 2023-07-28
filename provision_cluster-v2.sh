@@ -83,7 +83,7 @@ CreateOpenshiftCluster () {
     gbl_cluster_url_filter=.masterURL
     ;;
   *)
-    mylog error "only classic and vpc for my_cluster_infra"
+    mylog error "Only classic and vpc for my_cluster_infra"
     ;;
   esac
 }
@@ -189,7 +189,7 @@ Install_Operators () {
   local ns=$1
 
   ##-- Creating Navigator operator subscription
-  if $my_ibm_integration_platform_navigator;then
+  if $my_ibm_navigator;then
     export operator_name=ibm-integration-platform-navigator
     export current_channel=$my_ibm_navigator_operator_channel
     export catalog_source_name=ibm-integration-platform-navigator-catalog
@@ -200,7 +200,7 @@ Install_Operators () {
   fi
 
   ##-- Creating Asset Repository operator subscription
-  if $my_ibm_integration_asset_repository;then
+  if $my_ibm_asset_repository;then
     export operator_name=ibm-integration-asset-repository
     export current_channel=$my_ibm_ar_operator_channel
     export catalog_source_name=ibm-integration-asset-repository-catalog
@@ -256,7 +256,7 @@ Install_Operators () {
 
   ##-- Creating DP Gateway operator subscription
   ## SB]202302001 attention au dp la souscription porte un nom particulier voir la variable dp ci-dessous.
-  if $my_datapower_operator;then
+  if $my_ibm_datapower;then
     export operator_name=datapower-operator
     export current_channel=$my_ibm_dpgw_operator_channel
     export catalog_source_name=ibm-datapower-operator-catalog
@@ -268,7 +268,7 @@ Install_Operators () {
   fi
 
   ##-- Creating Aspera HSTS operator subscription
-  if $my_aspera_hsts_operator;then
+  if $my_ibm_aspera_hsts;then
     export operator_name=aspera-hsts-operator
     export current_channel=$my_ibm_hsts_operator_channel
     export catalog_source_name=aspera-operators
@@ -306,7 +306,7 @@ Create_Capabilities () {
   local ns=$1
 
   ##-- Creating Navigator instance
-  if $my_ibm_integration_platform_navigator;then
+  if $my_ibm_navigator;then
     check_create_oc_yaml PlatformNavigator $my_cp_navigator_instance_name "${capabilitiesdir}Navigator-Capability.yaml" $ns
     wait_for_oc_state PlatformNavigator "$my_cp_navigator_instance_name" Ready '.status.conditions[0].type' $ns
   fi
@@ -331,7 +331,7 @@ Create_Capabilities () {
   fi
 
   ##-- Creating ASpera HSTS instance
-  if $my_aspera_hsts_operator;then
+  if $my_ibm_aspera_hsts;then
     oc apply -f "${capabilitiesdir}AsperaCM-cp4i-hsts-prometheus-lock.yaml"
     oc apply -f "${capabilitiesdir}AsperaCM-cp4i-hsts-engine-lock.yaml"
 
@@ -346,7 +346,7 @@ Create_Capabilities () {
   fi
 
   ##-- Creating Asset Repository instance
-  if $my_ibm_integration_asset_repository;then
+  if $my_ibm_asset_repository;then
     check_create_oc_yaml AssetRepository $my_cp_ar_instance_name ${capabilitiesdir}AR-Capability.yaml $ns
     wait_for_oc_state AssetRepository "$my_cp_ar_instance_name" Ready '.status.phase' $ns
   fi
@@ -437,7 +437,7 @@ function Login2IBMCloud_and_OpenshiftCluster ()  {
   CreateOpenshiftCluster
 
   ##-- wait for Cluster availability
-  Wait4ClusterAvailability
+  wait_for_cluster_availability
 
   ##-- wait for ingress address availability
   Wait4IngressAddressAvailability
@@ -511,6 +511,11 @@ Create_Capabilities $my_oc_project
 oc project $my_oc_project
 if $my_install_openldap;then
     check_create_oc_openldap "deployment" "openldap-2441-centos7"
+fi
+
+## Display information to access CP4I
+if $my_cp_navigator_instance_name;then
+  get_navigator_access
 fi
 
 #work in progress

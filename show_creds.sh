@@ -11,7 +11,7 @@ read_config_file $1
 
 Login2IBMCloud
 
-Wait4ClusterAvailability
+wait_for_cluster_availability
 
 Login2OpenshiftCluster
 

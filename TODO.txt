@@ -16,7 +16,7 @@ Load test API (Ping API) as a draft
 --- TODO 1 --- Manque DP capabilities
 --- TODO 2 --- Improve README  ---
 --- TODO 3 --- Improve code documentation  ---
---- TODO 4 --- E2E Initial Configuration ---
+--- TODO 4 --- E2E Initial Customisation ---
 --- TODO 5 --- Create/Extract all certificates for Web UI ---
 --- TODO 6 --- Harmoniser les commandes soit en oc only soit oc + jq (avoid strings manipulation) ---
 --- TODO 7 --- Vérifier l'idempotence ---
@@ -24,6 +24,8 @@ Load test API (Ping API) as a draft
 --- TODO 9 --- Test TerraForm
 --- TODO 10 --- VPC versus Classic Infrastructure
 --- TODO 11 --- Verifier les outils et fournir le lien d'installation
+--- TODO 12 --- Envoie email (voir Joel Gomez)
+
 	ibmcloud https://cloud.ibm.com/docs/cli?topic=cli-getting-started
 	ibmcloud plugin install container-service vpc-infrastructure
 	oc https://docs.openshift.com/container-platform/4.11/cli_reference/openshift_cli/getting-started-cli.html

@@ -1,4 +1,6 @@
-read_config_file(){
+################################################
+# function
+read_config_file() {
 	if test -n "$PC_CONFIG";then
 	  config_file="$PC_CONFIG"
 	else
@@ -21,10 +23,12 @@ read_config_file(){
 	set +a
 }
 
+################################################
 # assert that variable is defined
 # @param 1 name of variable
 # @param 2 error message, or name of method to call if begins with "fix"
-var_fail(){
+# function
+var_fail() {
 	if eval test -z '$'$1;then
 		mylog error "missing config variable: $1" 1>&2
 		case "$2" in
@@ -36,9 +40,11 @@ var_fail(){
 	fi
 }
 
+################################################
 # simple logging with colors
 # @param 1 level (info/error/warn/wait/check/ok/no)
-mylog(){
+# function
+mylog() {
 	p=
 	w=
 	s=
@@ -57,7 +63,64 @@ mylog(){
 }
 
 ################################################
+# Check that all required executables are installed
+# function
+check_exec_prereqs() {
+	if ! command -v oc >/dev/null 2>&1; then
+		echo "Executable 'oc' does not exist or is not executable, exiting."
+		exit 1
+	fi
+
+	if ! command -v docker >/dev/null 2>&1; then
+		echo "Executable 'docker' does not exist or is not executable, exiting."
+		exit 1
+	fi
+
+	if ! command -v jq >/dev/null 2>&1; then
+		echo "Executable 'jq' does not exist or is not executable, exiting."
+		exit 1
+	fi
+
+	if ! command -v curl >/dev/null 2>&1; then
+		echo "Executable 'curl' does not exist or is not executable, exiting."
+		exit 1
+	fi
+
+	if ! command -v ibmcloud >/dev/null 2>&1; then
+		echo "Executable 'ibmcloud' does not exist or is not executable, exiting."
+		exit 1
+	fi
+
+	if ! command -v keytool >/dev/null 2>&1; then
+		echo "Executable 'keytool' does not exist or is not executable, exiting."
+		exit 1
+	fi
+
+	if ! command -v openssl >/dev/null 2>&1; then
+		echo "Executable 'openssl' does not exist or is not executable, exiting."
+		exit 1
+	fi
+
+	if ! command -v awk >/dev/null 2>&1; then
+		echo "Executable 'awk' does not exist or is not executable, exiting."
+		exit 1
+	fi
+}
+
+################################################
+# Send email
+# @param mail_def, exemple 159.8.70.38:2525
+# function
+send-email() {
+  curl --url "smtp://$mail_def" \
+    --mail-from cp4i-admin@ibm.com \
+    --mail-rcpt cp4i-user@ibm.com \
+    --upload-file ${scriptdir}templates/emails/test-email.txt
+}
+
+################################################
 # Log in IBM Cloud
+# function
 Login2IBMCloud () {
   var_fail my_ic_apikey "Create and save API key JSON file from: https://cloud.ibm.com/iam/apikeys"
   mylog check "Login to IBM Cloud"
@@ -68,9 +131,25 @@ Login2IBMCloud () {
   fi
 }
 
+################################################
+# Login to openshift cluster
+# note that this login requires that you login to the cluster once (using sso or web): not sure why
+# requires var my_cluster_url
+# function
+Login2OpenshiftCluster () {
+  mylog check "Login to cluster"
+  while ! oc login -u apikey -p $my_ic_apikey --server=$my_cluster_url > /dev/null;do
+	mylog error "$(date) Fail to login to Cluster, retry in a while (login using web to unblock)" 1>&2
+	sleep 30
+  done
+  mylog ok
+}
+
+################################################
 # wait for Cluster availability
 # set variable my_cluster_url
-Wait4ClusterAvailability () {
+# function
+wait_for_cluster_availability () {
   wait_for_state 'Cluster state' 'normal-All Workers Normal' "ibmcloud oc cluster get --cluster $my_cluster_name --output json|jq -r '.state+\"-\"+.status'"
 
   mylog check "Checking Cluster URL"
@@ -87,23 +166,12 @@ Wait4ClusterAvailability () {
 }
 
 ################################################
-# Login to openshift cluster
-# note that this login requires that you login to the cluster once (using sso or web): not sure why
-# requires var my_cluster_url
-Login2OpenshiftCluster () {
-  mylog check "Login to cluster"
-  while ! oc login -u apikey -p $my_ic_apikey --server=$my_cluster_url > /dev/null;do
-	mylog error "$(date) Fail to login to Cluster, retry in a while (login using web to unblock)" 1>&2
-	sleep 30
-  done
-  mylog ok
-}
-
 # wait for command to return specified value
 # @param what description of waited state
 # @param value expected state value from check command
 # @param command executed command that returns some state
-wait_for_state(){
+# function
+wait_for_state() {
 	local what=$1
 	local value=$2
 	local command=$3
@@ -128,12 +196,14 @@ wait_for_state(){
 	done
 }
 
+################################################
 # Wait for openshift entity to reach specified state
 # @param octype: kubernetes resource class, example: "clusterserviceversion"
 # @param ocname: name of the resource, example: ""
 # @param ocstate: Value in the json of the status of a resource, example: "Succeeded"
 # @param ocpath: path in the json to get the state of the resource, example: ".status.phase"
-wait_for_oc_state(){
+# function
+wait_for_oc_state() {
 	local octype=$1
 	local ocname=$2
 	local ocstate=$3
@@ -141,13 +211,15 @@ wait_for_oc_state(){
 	wait_for_state "$octype $ocname $ocpath is $ocstate" "$ocstate" "oc get ${octype} ${ocname} -n $my_oc_project --output json|jq -r '${ocpath}'"
 }
 
+################################################
 # Check if the resource of type octype with name name exists in the namespace ns.
 # If it does not exist use the subscription yaml file, with the appropriate variable.
 # @param octype: kubernetes resource class, example: "subscription"
 # @param name: name of the resource, example: "ibm-integration-platform-navigator"
 # @param yaml: the file with the definition of the resource, example: "${subscriptionsdir}Navigator-Sub.yaml"
 # @param ns: name space where the reousrce is created, example: $operators_project
-check_create_oc_yaml(){
+# function
+check_create_oc_yaml() {
 	local octype="$1"
 	local name="$2"
 	local yaml="$3"
@@ -158,7 +230,9 @@ check_create_oc_yaml(){
 	fi
 }
 
-check_create_oc_openldap(){
+################################################
+# function
+check_create_oc_openldap() {
 	local octype="$1"
 	local name="$2"
 	mylog check "Checking ${octype} ${name}"
@@ -173,7 +247,9 @@ check_create_oc_openldap(){
 	fi
 }
 
-check_create_oc_yaml_redis(){
+################################################
+# function
+check_create_oc_yaml_redis() {
 	local octype="$1"
 	local name="$2"
 	local yaml="$3"
@@ -183,9 +259,11 @@ check_create_oc_yaml_redis(){
 	fi
 }
 
+################################################
 # Check if the resource exists.
 # @param octype: kubernetes resource class, example: "subscription"
 # @param name: name of the resource, example: "ibm-integration-platform-navigator"
+# function
 check_resource_availability () {
   local octype="$1"
   local name="$2"
@@ -196,8 +274,10 @@ check_resource_availability () {
   done
 }
 
+################################################
 ##SB]20230201 use ibm-pak oc plugin
-check_add_cs_ibm_pak(){
+# function
+check_add_cs_ibm_pak() {
   local CASE_NAME="$1"
   local CASE_VERSION="$2"
   local ARCH="$3"
@@ -209,4 +289,17 @@ check_add_cs_ibm_pak(){
   oc apply -f ~/.ibm-pak/data/mirror/${CASE_NAME}/${CASE_VERSION}/catalog-sources.yaml
   oc apply -f ~/.ibm-pak/data/mirror/${CASE_NAME}/${CASE_VERSION}/catalog-sources-linux-${ARCH}.yaml
   oc get catalogsource -n openshift-marketplace
+}
+
+################################################
+# Get useful information to start using the stack
+# Need to check that the resource exist.
+# function
+get_navigator_access() {
+	cp4i_url=$(oc get platformnavigator cp4i-navigator -n $my_oc_project -o jsonpath='{range .status.endpoints[?(@.name=="navigator")]}{.uri}{end}')
+	cp4i_uid=$(oc get secret ibm-iam-bindinfo-platform-auth-idp-credentials -n $my_oc_project -o jsonpath={.data.admin_username} | base64 -d)
+	cp4i_pwd=$(oc get secret ibm-iam-bindinfo-platform-auth-idp-credentials -n $my_oc_project -o jsonpath={.data.admin_password} | base64 -d)
+	echo "CP4I Platform UI URL: " $cp4i_url
+	echo "CP4I admin user: " $cp4i_uid
+	echo "CP4I admin password: " $cp4i_pwd
 }
