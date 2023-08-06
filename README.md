@@ -112,8 +112,6 @@ D:.
 │       design.drawio
 │       structure.txt
 ├───templates
-│   │   ibm-operator-catalog.yaml
-│   │   operator-source-cs.yaml
 │   ├───capabilities
 │   │       ACE-Dashboard-Capability.yaml
 │   │       ACE-Designer-Capability.yaml
@@ -123,8 +121,6 @@ D:.
 │   │       ES-Capability.yaml
 │   │       MQ-Capability.yaml
 │   │       Navigator-Capability.yaml
-│   ├───monitoring
-│   │       cluster-monitoring-config.yaml
 │   └───subscriptions
 │           subscription.yaml
 ├───terraform

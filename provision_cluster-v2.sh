@@ -1,5 +1,6 @@
 #!/bin/bash
-# Laurent 2021 
+# Main program to install CP4I end to end with customisation
+# Laurent 2021
 # Updated July 2023 Saad / Arnauld
 ################################################
 @param $1 cp4i.properties file path 

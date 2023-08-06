@@ -1,0 +1,22 @@
+# APIC endpoint
+# 
+# Ingress subdomain
+export STACK_HOST=a10cad-par01-b34dfa42ccf328c7da72e2882c1627b1-0001.par01.containers.appdomain.cloud
+
+# Organisation
+export PROVIDER_ORG=demoOrg
+
+# Username & Password for provider Org.
+export ORG_USERNAME=fred
+export ORG_PASSWORD=XXXXXXXXXX
+export ORG_USEREMAIL=user@think.com
+
+# SMTP Server
+export SMTP_SERVER=smtp.server.net
+export SMTP_SERVERPORT=25
+export SMTP_USERNAME=
+export SMTP_PASSWORD=
+
+# Password and Email to configure admin access
+export ADMIN_EMAIL="admin@think.com"
+export ADMIN_PASSWORD=XXXXXXXXXXXX

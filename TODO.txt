@@ -23,8 +23,7 @@ Load test API (Ping API) as a draft
 --- TODO 8 --- Check Daffy (wget http://get.daffy-installer.com/download-scripts/daffy-init.sh; chmod 777 daffy-init.sh;./daffy-init.sh ) and also https://production-gitops.dev/ and https://ibm.github.io/cloud-pak-deployer/
 --- TODO 9 --- Test TerraForm
 --- TODO 10 --- VPC versus Classic Infrastructure
---- TODO 11 --- Verifier les outils et fournir le lien d'installation
---- TODO 12 --- Envoie email (voir Joel Gomez)
+--- TODO 11 --- Envoie email (voir Joel Gomez)
 
 	ibmcloud https://cloud.ibm.com/docs/cli?topic=cli-getting-started
 	ibmcloud plugin install container-service vpc-infrastructure
