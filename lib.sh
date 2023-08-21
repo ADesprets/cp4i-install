@@ -282,6 +282,7 @@ check_add_cs_ibm_pak() {
   local CASE_VERSION="$2"
   local ARCH="$3"
 
+  SECONDS=0
   oc ibm-pak get ${CASE_NAME} --version ${CASE_VERSION}
   oc ibm-pak generate mirror-manifests ${CASE_NAME} icr.io --version ${CASE_VERSION}
   #cat ~/.ibm-pak/data/mirror/${CASE_NAME}/${CASE_VERSION}/catalog-sources.yaml
@@ -289,6 +290,7 @@ check_add_cs_ibm_pak() {
   oc apply -f ~/.ibm-pak/data/mirror/${CASE_NAME}/${CASE_VERSION}/catalog-sources.yaml
   oc apply -f ~/.ibm-pak/data/mirror/${CASE_NAME}/${CASE_VERSION}/catalog-sources-linux-${ARCH}.yaml
   oc get catalogsource -n openshift-marketplace
+  mylog info "Adding case $CASE_NAME took $SECONDS seconds to execute." 1>&2
 }
 
 ################################################

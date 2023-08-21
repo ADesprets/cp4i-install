@@ -3,9 +3,9 @@
 # Laurent 2021
 # Updated July 2023 Saad / Arnauld
 ################################################
-@param $1 cp4i.properties file path 
-@param $2 namespace
-@param $3 cluster_name
+# @param $1 cp4i.properties file path 
+# @param $2 namespace
+# @param $3 cluster_name
 ################################################
 
 ################################################
@@ -29,6 +29,8 @@ CreateOpenshiftClusterClassic () {
     mylog info "Found: ${oc_version_full}"
     # create
     mylog info "Creating OpenShift cluster: $my_cluster_name"
+
+    SECONDS=0
     vlans=$(ibmcloud ks vlan ls --zone $my_cluster_zone --output json|jq -j '.[]|" --" + .type + "-vlan " + .id')
     if ! ibmcloud oc cluster create classic \
       --name    $my_cluster_name \
@@ -43,6 +45,7 @@ CreateOpenshiftClusterClassic () {
       mylog error "Failed to create cluster" 1>&2
       exit 1
     fi
+    mylog info "Creation of the cluster took $SECONDS seconds." 1>&2
   fi
 }
 
@@ -97,19 +100,22 @@ Wait4IngressAddressAvailability () {
   case $my_cluster_infra in
 
   esac
+  SECONDS=0
   while true;do
-  ingress_address=$(ibmcloud ks cluster get --cluster $my_cluster_name --output json|jq -r "$gbl_ingress_hostname_filter")
-	if test -n "$ingress_address";then
-		mylog ok ", $ingress_address"
-		break
-	fi
-	if $firsttime;then
-		mylog warn "not ready"
-		firsttime=false
-	fi
-	mylog wait "waiting for ingress address"
-	sleep 10
+    ingress_address=$(ibmcloud ks cluster get --cluster $my_cluster_name --output json|jq -r "$gbl_ingress_hostname_filter")
+	  if test -n "$ingress_address";then
+		  mylog ok ", $ingress_address"
+		  break
+	  fi
+	  if $firsttime;then
+		  mylog warn "not ready"
+		  firsttime=false
+	  fi
+	  mylog wait "waiting for ingress address"
+    # It takes about 15 minutes (21 Aug 2023)
+	  sleep 90
   done
+  mylog info "To have ingress available took $SECONDS seconds to execute." 1>&2
 }
 
 ################################################
@@ -191,17 +197,20 @@ Install_Operators () {
 
   ##-- Creating Navigator operator subscription
   if $my_ibm_navigator;then
+    SECONDS=0
     export operator_name=ibm-integration-platform-navigator
     export current_channel=$my_ibm_navigator_operator_channel
     export catalog_source_name=ibm-integration-platform-navigator-catalog
 
     check_create_oc_yaml "subscription" ibm-integration-platform-navigator "${subscriptionsdir}subscription.yaml" $ns
     check_resource_availability clusterserviceversion ibm-integration-platform-navigator $ns
-    wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase' $ns 
+    wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase' $ns
+    mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
   fi
 
   ##-- Creating Asset Repository operator subscription
   if $my_ibm_asset_repository;then
+    SECONDS=0
     export operator_name=ibm-integration-asset-repository
     export current_channel=$my_ibm_ar_operator_channel
     export catalog_source_name=ibm-integration-asset-repository-catalog
@@ -209,10 +218,12 @@ Install_Operators () {
     check_create_oc_yaml "subscription" ibm-integration-asset-repository "${subscriptionsdir}subscription.yaml" $ns
     check_resource_availability clusterserviceversion ibm-integration-asset-repository $ns
     wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase' $ns
+    mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
   fi
 
   ##-- Creating ACE operator subscription
   if $my_ibm_appconnect;then
+    SECONDS=0
     export operator_name=ibm-appconnect
     export current_channel=$my_ibm_ace_operator_channel
     export catalog_source_name=appconnect-operator-catalogsource
@@ -220,10 +231,12 @@ Install_Operators () {
     check_create_oc_yaml "subscription" ibm-appconnect "${subscriptionsdir}subscription.yaml" $ns
     check_resource_availability clusterserviceversion ibm-appconnect $ns
     wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase' $ns
+    mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
   fi
 
   ##-- Creating APIC operator subscription
   if $my_ibm_apiconnect;then
+    SECONDS=0
     export operator_name=ibm-apiconnect
     export current_channel=$my_ibm_apic_operator_channel
     export catalog_source_name=ibm-apiconnect-catalog
@@ -231,10 +244,12 @@ Install_Operators () {
     check_create_oc_yaml "subscription" ibm-apiconnect "${subscriptionsdir}subscription.yaml" $ns
     check_resource_availability clusterserviceversion ibm-apiconnect $ns
     wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase' $ns
+    mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
   fi
 
   ##-- Creating MQ operator subscription
   if $my_ibm_mq;then
+    SECONDS=0
     export operator_name=ibm-mq
     export current_channel=$my_ibm_mq_operator_channel
     export catalog_source_name=ibmmq-operator-catalogsource
@@ -242,10 +257,12 @@ Install_Operators () {
     check_create_oc_yaml "subscription" ibm-mq "${subscriptionsdir}subscription.yaml" $ns
     check_resource_availability clusterserviceversion ibm-mq $ns
     wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase' $ns
+    mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
   fi
 
   ##-- Creating EventStreams operator subscription
   if $my_ibm_eventstreams;then
+    SECONDS=0
     export operator_name=ibm-eventstreams
     export current_channel=$my_ibm_es_channel
     export catalog_source_name=ibm-eventstreams
@@ -253,11 +270,13 @@ Install_Operators () {
     check_create_oc_yaml "subscription" ibm-eventstreams "${subscriptionsdir}subscription.yaml" $ns
     check_resource_availability clusterserviceversion ibm-eventstreams $ns
     wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase' $ns
+    mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
   fi
 
   ##-- Creating DP Gateway operator subscription
   ## SB]202302001 attention au dp la souscription porte un nom particulier voir la variable dp ci-dessous.
   if $my_ibm_datapower;then
+    SECONDS=0
     export operator_name=datapower-operator
     export current_channel=$my_ibm_dpgw_operator_channel
     export catalog_source_name=ibm-datapower-operator-catalog
@@ -266,10 +285,12 @@ Install_Operators () {
     check_create_oc_yaml "subscription" $dp "${subscriptionsdir}subscription.yaml" $ns
     check_resource_availability clusterserviceversion datapower-operator $ns
     wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase' $ns
+    mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
   fi
 
   ##-- Creating Aspera HSTS operator subscription
   if $my_ibm_aspera_hsts;then
+    SECONDS=0
     export operator_name=aspera-hsts-operator
     export current_channel=$my_ibm_hsts_operator_channel
     export catalog_source_name=aspera-operators
@@ -277,19 +298,23 @@ Install_Operators () {
     check_create_oc_yaml "subscription" aspera-hsts-operator "${subscriptionsdir}subscription.yaml" $ns
     check_resource_availability clusterserviceversion aspera-hsts-operator $ns
     wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase' $ns
+    mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
   fi
 
   #SB]20230130 Ajout du repository Nexus
-  ##-- Creating Nexus perator subscription
+  ##-- Creating Nexus operator subscription
   if $my_install_nexus;then
+    SECONDS=0
     check_create_oc_yaml "subscription" nxrm-operator-certified "${subscriptionsdir}Nexus-Sub.yaml" $ns
     check_resource_availability clusterserviceversion nxrm-operator-certified $ns
     wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase' $ns
+    mylog info "Creation of Nexus operator took $SECONDS seconds to execute." 1>&2
   fi
 
   #SB]20230201 Ajout d'Instana
   ##-- Creating Instana operator subscription
   if $my_instana_agent_operator;then
+    SECONDS=0
     ##-- Create namespace for Instana agent. The instana agent must be istalled in instana-agent namespace.
     CreateNameSpace $my_instana_agent_project
     oc adm policy add-scc-to-user privileged -z instana-agent -n $my_instana_agent_project
@@ -297,6 +322,7 @@ Install_Operators () {
     check_create_oc_yaml "subscription" instana-agent-operator "${subscriptionsdir}Instana-Sub.yaml" $ns
     check_resource_availability clusterserviceversion instana-agent-operator $ns
     wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase' $ns
+    mylog info "Creation of Instana agent operator took $SECONDS seconds to execute." 1>&2
   fi
 }
 
@@ -309,69 +335,89 @@ Create_Capabilities () {
   ##-- Creating Navigator instance
   if $my_ibm_navigator;then
     check_create_oc_yaml PlatformNavigator $my_cp_navigator_instance_name "${capabilitiesdir}Navigator-Capability.yaml" $ns
+    SECONDS=0
     wait_for_oc_state PlatformNavigator "$my_cp_navigator_instance_name" Ready '.status.conditions[0].type' $ns
+    mylog info "Creation of Navigator instance took $SECONDS seconds to execute." 1>&2
   fi
 
   #SB]20230201 Utilisation de l'integration Assembly
   ##-- Creating Integration Assembly instance
   if $my_ibm_intassembly;then
     check_create_oc_yaml IntegrationAssembly $my_cp_intassembly_instance_name "${capabilitiesdir}IntegrationAssembly-Capability.yaml" $ns
+    SECONDS=0
     wait_for_oc_state IntegrationAssembly "$my_cp_intassembly_instance_name" Ready '.status.conditions[0].type' $ns
+    mylog info "Creation of Integration Assembly instance took $SECONDS seconds to execute." 1>&2
   fi
   
   ##-- Creating ACE Dashboard instance
   if $my_ibm_appconnect;then
     check_create_oc_yaml Dashboard $my_cp_ace_dashboard_instance_name "${capabilitiesdir}ACE-Dashboard-Capability.yaml" $ns
+    SECONDS=0
     wait_for_oc_state Dashboard "$my_cp_ace_dashboard_instance_name" Ready '.status.conditions[0].type' $ns
+    mylog info "Creation of ACE Dashboard instance took $SECONDS seconds to execute." 1>&2    
   fi
   
   ##-- Creating ACE Designer instance
   if $my_ibm_appconnect;then
     check_create_oc_yaml DesignerAuthoring $my_cp_ace_designer_instance_name "${capabilitiesdir}ACE-Designer-Capability.yaml" $ns
+    SECONDS=0
     wait_for_oc_state DesignerAuthoring "$my_cp_ace_designer_instance_name" Ready '.status.conditions[0].type' $ns
+    mylog info "Creation of ACE Designer instance took $SECONDS seconds to execute." 1>&2    
   fi
 
-  ##-- Creating ASpera HSTS instance
+  ##-- Creating Aspera HSTS instance
   if $my_ibm_aspera_hsts;then
     oc apply -f "${capabilitiesdir}AsperaCM-cp4i-hsts-prometheus-lock.yaml"
     oc apply -f "${capabilitiesdir}AsperaCM-cp4i-hsts-engine-lock.yaml"
 
     check_create_oc_yaml IbmAsperaHsts $my_cp_hsts_instance_name "${capabilitiesdir}AsperaHSTS-Capability.yaml" $ns
+    SECONDS=0
     wait_for_oc_state IbmAsperaHsts "$my_cp_hsts_instance_name" Ready '.status.conditions[0].type' $ns
+    mylog info "Creation of Aspera HSTS instance took $SECONDS seconds to execute." 1>&2    
   fi
 
   ##-- Creating APIC instance
   if $my_ibm_apiconnect;then
     check_create_oc_yaml APIConnectCluster $my_cp_apic_instance_name "${capabilitiesdir}APIC-Capability.yaml" $ns
+    SECONDS=0
     wait_for_oc_state APIConnectCluster "$my_cp_apic_instance_name" Ready '.status.phase' $ns
+    mylog info "Creation of APIC instance took $SECONDS seconds to execute." 1>&2    
   fi
 
   ##-- Creating Asset Repository instance
   if $my_ibm_asset_repository;then
     check_create_oc_yaml AssetRepository $my_cp_ar_instance_name ${capabilitiesdir}AR-Capability.yaml $ns
+    SECONDS=0
     wait_for_oc_state AssetRepository "$my_cp_ar_instance_name" Ready '.status.phase' $ns
+    mylog info "Creation of Asset Repository instance took $SECONDS seconds to execute." 1>&2    
   fi
 
-  ##-- Creating Eventstream instance
+  ##-- Creating Event Streams instance
   if $my_ibm_eventstreams;then
     check_create_oc_yaml EventStreams $my_cp_es_instance_name ${capabilitiesdir}ES-Capability.yaml $ns
+    SECONDS=0
     wait_for_oc_state EventStreams "$my_cp_es_instance_name" Ready '.status.phase' $ns
+    mylog info "Creation of Event Streams instance took $SECONDS seconds to execute." 1>&2    
   fi
 
   #SB]20230130 Ajout de Nexus Repository (An open source repository for build artifacts)
   ##-- Creating Nexus Repository instance
     if $my_install_nexus;then
     check_create_oc_yaml NexusRepo $my_nexus_instance_name ${capabilitiesdir}Nexus-Capability.yaml $ns
+    SECONDS=0
     wait_for_oc_state NexusRepo "$my_nexus_instance_name" Deployed '[.status.conditions[].type][1]' $ns
     # add route to access Nexus from outside cluster
     check_create_oc_yaml Route $my_nexus_route_name ${capabilitiesdir}Nexus-Route.yaml $ns
+    mylog info "Creation of Nexus instance took $SECONDS seconds to execute." 1>&2    
   fi
 
   #SB]20230201 Ajout Instana
   ##-- Creating Instana agent
   if $my_instana_agent_operator;then
     check_create_oc_yaml InstanaAgent $my_instana_agent_instance_name ${capabilitiesdir}Instana-Agent-Capability-CloudIBM.yaml $my_instana_agent_project
+    SECONDS=0
     wait_for_oc_state DaemonSet $my_instana_agent_instance_name $my_cluster_workers '.status.numberReady' $my_instana_agent_project
+    mylog info "Creation of Instana agent instance took $SECONDS seconds to execute." 1>&2    
   fi
 }
 
@@ -515,7 +561,7 @@ if $my_install_openldap;then
 fi
 
 ## Display information to access CP4I
-if $my_cp_navigator_instance_name;then
+if $my_ibm_navigator;then
   get_navigator_access
 fi
 
