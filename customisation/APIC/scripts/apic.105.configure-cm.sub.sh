@@ -60,7 +60,7 @@ libdir="${scriptdir}../../../"
 
 read_config_file "${configdir}apic.properties"
 
-# Calculate the various routes for APIC components
+# Retrieve the various routes for APIC components
 # API Manager URL
 EP_API=$(oc get route "${my_cp_apic_instance_name}-mgmt-platform-api" -n ${my_apic_project} -o jsonpath="{.spec.host}")
 echo "EP_API: ${EP_API}"
@@ -109,6 +109,8 @@ echo "APIC_INSTANCE: ${APIC_INSTANCE}"
 
 PLATFORM_API_URL=$(oc get apiconnectcluster -n "${APIC_PROJECT}" "${APIC_INSTANCE}" -o=jsonpath='{.status.endpoints[?(@.name=="platformApi")].uri}')
 echo "PLATFORM_API_URL: ${PLATFORM_API_URL}"
+
+echo "Downloading toolkit"
 oc cp -n "${APIC_PROJECT}" "$(oc get po -n "${APIC_PROJECT}" -l app.kubernetes.io/name=client-downloads-server,app.kubernetes.io/part-of="${APIC_INSTANCE}" -o=jsonpath='{.items[0].metadata.name}')":dist/toolkit-linux.tgz toolkit-linux.tgz
 tar -xf toolkit-linux.tgz  && mv apic-slim apic
 
@@ -122,18 +124,26 @@ yes | apic client-creds:set creds.json
 
 APIC_APIKEY=$(curl -ks --fail -X POST "${PLATFORM_API_URL}"/cloud/api-keys -H "Authorization: Bearer ${ZEN_TOKEN}" -H "Accept: application/json" -H "Content-Type: application/json" -d '{"client_type":"toolkit","description":"Tookit API key"}' | jq -r .api_key)
 echo "APIC_APIKEY: ${APIC_APIKEY}"
+
 APIM_ENDPOINT=$(oc -n "${APIC_PROJECT}" get mgmt "${APIC_INSTANCE}-mgmt" -o jsonpath='{.status.zenRoute}')
 echo "APIM_ENDPOINT: ${APIM_ENDPOINT}"
 
-./apic login --context admin --server https://"${APIM_ENDPOINT}" --sso --apiKey "${APIC_APIKEY}"
+# ./apic login --context admin --server https://"${APIM_ENDPOINT}" --sso --apiKey "${APIC_APIKEY}"
 
+# The goal is to get the apikey defined in the realm provider/common-services, get the credentials for the toolkit, then use  the token endpoint to get an oauth token for Cloud Manager from API Key
+TOOLKIT_CLIENT_ID=62f88b12-cb95-4dd2-b222-02d9b591fb8e
+TOOLKIT_CLIENT_SECRET=55805aeb-3dba-4ba4-90cc-1a5d0286164e
+
+cmToken=$(curl -k --fail -X POST "$PLATFORM_API_URL/token" \
+ -H 'Content-Type: application/json' \
+ -H 'Accept: application/json' \
+ -H "X-Ibm-Client-Id: $TOOLKIT_CLIENT_ID" \
+ -H "X-Ibm-Client-Secret: $TOOLKIT_CLIENT_SECRET" \
+ --data-binary  "{\"api_key\":\"$APIC_APIKEY\",\"client_id\":\"$TOOLKIT_CLIENT_ID\",\"client_secret\":\"$TOOLKIT_CLIENT_SECRET\",\"grant_type\":\"api_key\"}" | jq .access_token)
+
+echo "cmToken: $cmToken"
 
 exit 1
-
-
-
-
-
 
 
 # admin ORG

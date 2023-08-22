@@ -437,13 +437,14 @@ Load_ACE_Bars () {
   for barfile in ${directory}*.bar
   do 
     artifactid=`basename $barfile .bar` 
-    curl --user "admin:bvn4KHQ*nep*zeb!qrp" -F "maven2.generate-pom=true" \
-                                            -F "maven2.groupId=$my_maven2_groupid" \
-                                            -F "maven2.artifactId=$artifactid" \
-                                            -F "maven2.packaging=bar" \
-                                            -F "version=$my_maven2_asset_version" \
-                                            -F "maven2.asset${i}=@${barfile};type=$my_maven2_type" \
-                                            -F "maven2.asset${i}.extension=bar" "http://${my_nexus_url}/service/rest/v1/components?repository=$my_nexus_repository"
+    curl --user "admin:bvn4KHQ*nep*zeb!qrp" \
+      -F "maven2.generate-pom=true" \
+      -F "maven2.groupId=$my_maven2_groupid" \
+      -F "maven2.artifactId=$artifactid" \
+      -F "maven2.packaging=bar" \
+      -F "version=$my_maven2_asset_version" \
+      -F "maven2.asset${i}=@${barfile};type=$my_maven2_type" \
+      -F "maven2.asset${i}.extension=bar" "http://${my_nexus_url}/service/rest/v1/components?repository=$my_nexus_repository"
     i=i+1
   done
 }
