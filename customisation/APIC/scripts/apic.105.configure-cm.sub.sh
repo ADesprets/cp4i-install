@@ -13,37 +13,37 @@ function decho() {
 # @param mail_server_ip: Port of the mail server, example: 2525
 # function
 CreateMailServer () {
-
 local mail_server_ip=$1
 local mail_server_port=$2
 
-mylog info "Creating Mail Server $mail_server_ip:$mail_server_port"
+mailServerUrl=$(curl -sk "https://$EP_API/api/orgs/admin/mail-servers/generatedemailserver?fields=url" \
+ -H "Accept: application/json" \
+ --compressed \
+ -H "authorization: Bearer $access_token" \
+ -H "content-type: application/json" \
+ -H "Connection: keep-alive")
 
-decho "Check if Mail Server already exists"
+if [ -z "$mailServerUrl" ] || [ "$mailServerUrl" = "null" ]; then
+  mylog info "Creating mail server"
+  mailServerUrl=$(curl -sk "https://$EP_API/api/orgs/admin/mail-servers" \
+  -H "Accept: application/json" \
+  --compressed \
+  -H "authorization: Bearer $access_token" \
+  -H "content-type: application/json" \
+  -H "Connection: keep-alive" \
+  --data "{\"title\":\"GeneratedEMailServer\",\"name\":\"generatedemailserver\",\"host\":\"$mail_server_ip\",\"port\":$mail_server_port,\"credentials\":{\"username\":\"$SMTP_USERNAME\",\"password\":\"$SMTP_PASSWORD\"}}" | jq .url );
+  mylog info "mailServerUrl: $mailServerUrl"
+else
+  mylog info "Mail Server generatedemailserver already exists, use it."
+fi
 
-mailServerUrl=$(curl -sk "https://$EP_API/api/orgs/admin/mail-servers"\
- -H "Accept: application/json"\
- --compressed\
- -H "authorization: Bearer $cmToken"\
- -H "content-type: application/json"\
- -H "Connection: keep-alive"\
- --data "{\"title\":\"GeneratedEMailServer\",\"name\":\"generatedemailserver\",\"host\":\"$SMTP_SERVER\",\"port\":$SMTP_SERVERPORT,\"credentials\":{\"username\":\"$SMTP_USERNAME\",\"password\":\"$SMTP_PASSWORD\"}}" | jq .url );
-
-mylog info "mailServerUrl: $mailServerUrl"
-
-exit 1
-
-echo ---------
-echo "set MailServer"
-echo ---------
-
+# No check needed, it is a modification (PUT)
 setReplyTo=$(curl -sk "https://$EP_API/api/cloud/settings"\
  -X PUT\
  -H "Accept: application/json"\
- -H "authorization: Bearer $cmToken" \
+ -H "authorization: Bearer $access_token" \
  -H "content-type: application/json"\
  --data "{\"mail_server_url\":$mailServerUrl,\"email_sender\":{\"name\":\"APIC Administrator\",\"address\":\"$ADMIN_EMAIL\"}}");
-
 }
 
 ################################################################################################
@@ -63,64 +63,55 @@ read_config_file "${configdir}apic.properties"
 # Retrieve the various routes for APIC components
 # API Manager URL
 EP_API=$(oc get route "${my_cp_apic_instance_name}-mgmt-platform-api" -n ${my_apic_project} -o jsonpath="{.spec.host}")
-echo "EP_API: ${EP_API}"
 # gwv6-gateway-manager
 EP_GWD=$(oc get route "${my_cp_apic_instance_name}-gw-gateway-manager" -n ${my_apic_project} -o jsonpath="{.spec.host}")
-echo "EP_GWD: ${EP_GWD}"
 # gwv6-gateway
 EP_GW=$(oc get route "${my_cp_apic_instance_name}-gw-gateway" -n ${my_apic_project} -o jsonpath="{.spec.host}")
-echo "EP_GW: ${EP_GW}"
 # analytics-ai-endpoint
 EP_AI=$(oc get route "${my_cp_apic_instance_name}-a7s-ai-endpoint" -n ${my_apic_project} -o jsonpath="{.spec.host}")
-echo "EP_AI: ${EP_AI}"
 # portal-portal-director
 EP_PADMIN=$(oc get route "${my_cp_apic_instance_name}-ptl-portal-director" -n ${my_apic_project} -o jsonpath="{.spec.host}")
-echo "EP_PADMIN: ${EP_PADMIN}"
 # portal-portal-web
 EP_PORTAL=$(oc get route "${my_cp_apic_instance_name}-ptl-portal-web" -n ${my_apic_project} -o jsonpath="{.spec.host}")
-echo "EP_PORTAL: ${EP_PORTAL}"
 # Zen
 EP_ZEN=$(oc get route cpd -n ${my_apic_project} -o jsonpath="{.spec.host}")
-echo "EP_ZEN: ${EP_ZEN}"
 # Cloud pak administration console
 EP_CPADM=$(oc -n kube-public get cm ibmcloud-cluster-info -o jsonpath='{.data.cluster_address}')
 echo "EP_CPADM: ${EP_CPADM}"
 
 # Common service namespace
 CS_PROJECT=$(oc get commonservice -A -o jsonpath='{..namespace}')
-echo "CS_PROJECT: ${CS_PROJECT}"
 # Cloud pak admin uid
 CP_ADMIN_UID=$(oc get secret -n "${CS_PROJECT}" platform-auth-idp-credentials -o=jsonpath='{.data.admin_username}' | base64 --decode)
-echo "CP_ADMIN_UID: ${CP_ADMIN_UID}"
 # Cloud pak admin password
 CP_ADMIN_PASSWORD=$(oc get secret -n "${CS_PROJECT}" platform-auth-idp-credentials -o=jsonpath='{.data.admin_password}' | base64 --decode)
 echo "CP_ADMIN_PASSWORD: ${CP_ADMIN_PASSWORD}"
 
 IAM_TOKEN=$(curl -kfs -X POST -H 'Content-Type: application/x-www-form-urlencoded' -H 'Accept: application/json' -d "grant_type=password&username=${CP_ADMIN_UID}&password=${CP_ADMIN_PASSWORD}&scope=openid" "https://${EP_CPADM}"/v1/auth/identitytoken | jq -r .access_token)
-echo "IAM_TOKEN: ${IAM_TOKEN}"
 ZEN_TOKEN=$(curl -kfs https://"${EP_ZEN}"/v1/preauth/validateAuth -H "username: ${CP_ADMIN_UID}" -H "iam-token: ${IAM_TOKEN}" | jq -r .accessToken)
-echo "ZEN_TOKEN: ${ZEN_TOKEN}"
 
 APIC_PROJECT=$(oc get apiconnectcluster -A -o jsonpath='{..namespace}')
-echo "APIC_PROJECT: ${APIC_PROJECT}"
-
 APIC_INSTANCE=$(oc get apiconnectcluster -n "${NAMESPACE}" -o=jsonpath='{.items[0].metadata.name}')
-echo "APIC_INSTANCE: ${APIC_INSTANCE}"
+echo "APIC_PROJECT/APIC_INSTANCE: ${APIC_PROJECT}/${APIC_INSTANCE}"
 
 PLATFORM_API_URL=$(oc get apiconnectcluster -n "${APIC_PROJECT}" "${APIC_INSTANCE}" -o=jsonpath='{.status.endpoints[?(@.name=="platformApi")].uri}')
 echo "PLATFORM_API_URL: ${PLATFORM_API_URL}"
 
-echo "Downloading toolkit"
-oc cp -n "${APIC_PROJECT}" "$(oc get po -n "${APIC_PROJECT}" -l app.kubernetes.io/name=client-downloads-server,app.kubernetes.io/part-of="${APIC_INSTANCE}" -o=jsonpath='{.items[0].metadata.name}')":dist/toolkit-linux.tgz toolkit-linux.tgz
-tar -xf toolkit-linux.tgz  && mv apic-slim apic
+if test ! -e "toolkit-linux.tgz";then
+	mylog info "Downloading toolkit" 1>&2
+  oc cp -n "${APIC_PROJECT}" "$(oc get po -n "${APIC_PROJECT}" -l app.kubernetes.io/name=client-downloads-server,app.kubernetes.io/part-of="${APIC_INSTANCE}" -o=jsonpath='{.items[0].metadata.name}')":dist/toolkit-linux.tgz toolkit-linux.tgz
+  tar -xf toolkit-linux.tgz  && mv apic-slim apic
+fi
 
 TOOLKIT_CREDS_URL="${PLATFORM_API_URL}/cloud/settings/toolkit-credentials"
-echo "TOOLKIT_CREDS_URL: ${TOOLKIT_CREDS_URL}"
 
-echo "Downloading apic config json file"
-curl -ks "${TOOLKIT_CREDS_URL}" -H "Authorization: Bearer ${ZEN_TOKEN}" -H "Accept: application/json" -H "Content-Type: application/json" -o creds.json
-yes | apic client-creds:set creds.json
-[[ -e creds.json ]] && rm creds.json
+# always download the credential.json
+# if test ! -e "~/.apiconnect/config-apim";then
+	mylog info "Downloading apic config json file" 1>&2
+	curl -ks "${TOOLKIT_CREDS_URL}" -H "Authorization: Bearer ${ZEN_TOKEN}" -H "Accept: application/json" -H "Content-Type: application/json" -o creds.json
+	yes | apic client-creds:set creds.json
+	[[ -e creds.json ]] && rm creds.json
+# fi
 
 APIC_APIKEY=$(curl -ks --fail -X POST "${PLATFORM_API_URL}"/cloud/api-keys -H "Authorization: Bearer ${ZEN_TOKEN}" -H "Accept: application/json" -H "Content-Type: application/json" -d '{"client_type":"toolkit","description":"Tookit API key"}' | jq -r .api_key)
 echo "APIC_APIKEY: ${APIC_APIKEY}"
@@ -130,36 +121,16 @@ echo "APIM_ENDPOINT: ${APIM_ENDPOINT}"
 
 # ./apic login --context admin --server https://"${APIM_ENDPOINT}" --sso --apiKey "${APIC_APIKEY}"
 
-# The goal is to get the apikey defined in the realm provider/common-services, get the credentials for the toolkit, then use  the token endpoint to get an oauth token for Cloud Manager from API Key
-TOOLKIT_CLIENT_ID=62f88b12-cb95-4dd2-b222-02d9b591fb8e
-TOOLKIT_CLIENT_SECRET=55805aeb-3dba-4ba4-90cc-1a5d0286164e
+# The goal is to get the apikey defined in the realm provider/common-services, get the credentials for the toolkit, then use the token endpoint to get an oauth token for Cloud Manager from API Key
+TOOLKIT_CLIENT_ID=$(grep "^toolkit_client_id:" ~/.apiconnect/config-apim | cut -d ':' -f2- | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+TOOLKIT_CLIENT_SECRET=$(grep "^toolkit_client_secret:" ~/.apiconnect/config-apim | cut -d ':' -f2- | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
 
 cmToken=$(curl -k --fail -X POST "$PLATFORM_API_URL/token" \
  -H 'Content-Type: application/json' \
  -H 'Accept: application/json' \
  -H "X-Ibm-Client-Id: $TOOLKIT_CLIENT_ID" \
  -H "X-Ibm-Client-Secret: $TOOLKIT_CLIENT_SECRET" \
- --data-binary  "{\"api_key\":\"$APIC_APIKEY\",\"client_id\":\"$TOOLKIT_CLIENT_ID\",\"client_secret\":\"$TOOLKIT_CLIENT_SECRET\",\"grant_type\":\"api_key\"}" | jq .access_token)
-
-echo "cmToken: $cmToken"
-
-exit 1
-
-
-# admin ORG
-ADMIN_ORG_NAME='admin'
-API_MANAGER_LUR='api-manager-lur'
-
-echo "Test if change password is necessary" 
-
-# Need to better manage client_id/client_secret
-
-cmToken=$(curl -k "https://$EP_API/api/token" \
- -H 'Content-Type: application/json' \
- -H 'Accept: application/json' \
- --data-binary '{"username":"admin","password":"$APIC_CMC_ADMIN_PASSWORD","realm":"admin/default-idp-1","client_id":"caa87d9a-8cd7-4686-8b6e-ee2cdc5ee267","client_secret":"3ecff363-7eb3-44be-9e07-6d4386c48b0b","grant_type":"password"}')
-
-decho "cmToken: $cmToken"
+ --data-binary  "{\"api_key\":\"$APIC_APIKEY\",\"client_id\":\"$TOOLKIT_CLIENT_ID\",\"client_secret\":\"$TOOLKIT_CLIENT_SECRET\",\"grant_type\":\"api_key\"}")
 
 if [ $(echo $cmToken | jq .status ) = "401" ] ; then
   decho "Error with login -> $cmToken"
@@ -167,51 +138,34 @@ if [ $(echo $cmToken | jq .status ) = "401" ] ; then
 
   elif [ $(echo $cmToken | jq .access_token) != "null" ]
     then
-      echo "Try to Change password"
+      # echo "Try to Change password"
       access_token=$(echo $cmToken | jq .access_token | sed -e s/\"//g);
-
-      decho ">>> login response: $cmToken"
-      decho ">>> access token: $access_token"
-
-      curl -kv "https://$EP_API/api/me" \
+      apicme=$(curl -k "https://$EP_API/api/me" \
         -X PUT \
         -H "Authorization: Bearer $access_token" \
         -H 'Content-Type: application/json' \
         -H 'Accept: application/json' \
-        --data-binary "{\"email\":\"$ADMIN_EMAIL\"}" 
+        --data-binary "{\"email\":\"$ADMIN_EMAIL\"}" | jq 'del(.url)')
+      decho $apicme 
 
-      curl -kv "https://$EP_API/api/me/change-password" \
-        -H "Authorization: Bearer $access_token" \
-        -H 'Content-Type: application/json' \
-        -H 'Accept: application/json' \
-        --data-binary "{\"current_password\":\"7iron-hide\",\"password\":\"$ADMIN_PASSWORD\"}" 
+#      curl -kv "https://$EP_API/api/me/change-password" \
+#        -H "Authorization: Bearer $access_token" \
+#        -H 'Content-Type: application/json' \
+#        -H 'Accept: application/json' \
+#        --data-binary "{\"current_password\":\"7iron-hide\",\"password\":\"$ADMIN_PASSWORD\"}" 
 fi
-
-echo "EP_API: $EP_API"
-
-cmToken=$(curl -sk  "https://$EP_API/api/token" \
- -H 'Content-Type: application/json' \
- -H 'Accept: application/json' \
- --data-binary "{\"username\":\"admin\",\"password\":\"$ADMIN_PASSWORD\",\"realm\":\"admin/default-idp-1\",\"client_id\":\"3c60c74b-6a9f-4916-8ff2-95467e939db4\",\"client_secret\":\"d490558d-1d86-4e09-86cd-d88d48961161\",\"grant_type\":\"password\"}" |  jq .access_token | sed -e s/\"//g  )
-
-retVal=$?
-if [ $retVal -ne 0 ] || [ -z "$cmToken" ] || [ "$cmToken" = "null" ]; then
-    	echo "Error with login -> $retVal"
-	exit 1
-fi
-
-decho "Cloud Manager access token: $cmToken"
 
 CreateMailServer "${SMTP_SERVER}" "${SMTP_SERVERPORT}"
 
 exit 1
 
+# admin ORG
+ADMIN_ORG_NAME='admin'
+API_MANAGER_LUR='api-manager-lur'
+
 echo Get integration Endpoint
-
-integration_url=$(curl -sk  "https://$EP_API/api/cloud/integrations/gateway-service/datapower-api-gateway" -H "Authorization: Bearer $cmToken" -H 'Accept-Encoding: gzip, deflate, br' -H 'Accept-Language: en-GB,en-US;q=0.9,en;q=0.8'  -H 'Accept: application/json'  -H 'Connection: keep-alive' --compressed | jq .url | sed -e s/\"//g)
-
+integration_url=$(curl -sk  "https://$EP_API/api/cloud/integrations/gateway-service/datapower-api-gateway" -H "Authorization: Bearer $access_token" -H 'Accept-Encoding: gzip, deflate, br' -H 'Accept-Language: en-GB,en-US;q=0.9,en;q=0.8'  -H 'Accept: application/json'  -H 'Connection: keep-alive' --compressed | jq .url | sed -e s/\"//g)
 retVal=$?
-
 echo "integration_url: $integration_url"
 
 
@@ -221,46 +175,45 @@ if [ $retVal -ne 0 ] || [ -z "$integration_url" ] || [ "$integration_url" = "nul
 fi
 
 # orgUrl=$(curl -sk "https://$EP_API/api/cloud/orgs" \
-#  -H "Authorization: Bearer $cmToken" \
+#  -H "Authorization: Bearer $access_token" \
 #  -H 'Accept: application/json' \
 #  --compressed | jq .results[0].url | sed -e s/\"//g);
 
 # orgList=$(curl -sk "https://$EP_API/api/cloud/orgs" \
-#  -H "Authorization: Bearer $cmToken" \
+#  -H "Authorization: Bearer $access_token" \
 #  -H 'Accept: application/json' \
 #  --compressed)
 
 decho "orgList: $orgList"
 
 # userregistriesList=$(curl -sk "$orgUrl/user-registries" \
-#  -H "Authorization: Bearer $cmToken" \
+#  -H "Authorization: Bearer $access_token" \
 #  -H 'Accept: application/json' \
 #  --compressed)
 
-# userrList=$(curl -sk "https://$EP_API/api/user-registries/$ADMIN_ORG_NAME/$API_MANAGER_LUR/users" \
-#  -H "Authorization: Bearer $cmToken" \
+# userList=$(curl -sk "https://$EP_API/api/user-registries/$ADMIN_ORG_NAME/$API_MANAGER_LUR/users" \
+#  -H "Authorization: Bearer $access_token" \
 #  -H 'Accept: application/json' \
 #  --compressed)
 
-decho "userList: $userrList"
-
+decho "userList: $userList"
 
 tlsServer=$(curl -sk "https://$EP_API/api/orgs/admin/tls-server-profiles" \
- -H "Authorization: Bearer $cmToken" \
+ -H "Authorization: Bearer $access_token" \
  -H 'Accept: application/json' --compressed | jq .results[0].url  | sed -e s/\"//g);
 
 tlsClientDefault=$(curl -sk "https://$EP_API/api/orgs/admin/tls-client-profiles" \
- -H "Authorization: Bearer $cmToken" \
+ -H "Authorization: Bearer $access_token" \
  -H 'Accept: application/json' --compressed | jq '.results[] | select(.name=="tls-client-profile-default")| .url' | sed -e s/\"//g);
 
 tlsClientAnalytics=$(curl -sk "https://$EP_API/api/orgs/admin/tls-client-profiles" \
- -H "Authorization: Bearer $cmToken" \
+ -H "Authorization: Bearer $access_token" \
  -H 'Accept: application/json' --compressed | jq '.results[] | select(.name=="analytics-client-default")| .url' | sed -e s/\"//g);
 
 echo Create gateway Service
 
 dpUrl=$(curl -sk "https://$EP_API/api/orgs/admin/availability-zones/availability-zone-default/gateway-services" \
- -H "Authorization: Bearer $cmToken" \
+ -H "Authorization: Bearer $access_token" \
  -H 'Content-Type: application/json' \
  -H 'Accept: application/json' \
  -H 'Connection: keep-alive' \
@@ -270,7 +223,7 @@ dpUrl=$(curl -sk "https://$EP_API/api/orgs/admin/availability-zones/availability
 echo Set gateway Service as default for catalogs
 
 setGWdefault=$(curl -sk --request PUT "https://$EP_API/api/cloud/settings" \
-  -H "Authorization: Bearer $cmToken" \
+  -H "Authorization: Bearer $access_token" \
   -H 'Content-Type: application/json' \
   -H 'Accept: application/json' \
   -H 'Connection: keep-alive' \
@@ -281,7 +234,7 @@ decho $setGWdefault
 echo Create Analytics Service
 
 analytUrl=$(curl -sk "https://$EP_API/api/orgs/admin/availability-zones/availability-zone-default/analytics-services" \
- -H "Authorization: Bearer $cmToken"\
+ -H "Authorization: Bearer $access_token"\
  -H 'Content-Type: application/json'\
  -H 'Accept: application/json'\
  -H 'Connection: keep-alive'\
@@ -295,7 +248,7 @@ echo Associate Analytics Service with Gateway
 analytGwy=$(curl -sk -X PATCH \
   "https://$EP_API/api/orgs/admin/availability-zones/availability-zone-default/gateway-services/apigateway-service" \
  -H 'Accept: application/json' \
- -H "Authorization: Bearer $cmToken"\
+ -H "Authorization: Bearer $access_token"\
  -H 'Cache-Control: no-cache' \
  -H 'Content-Type: application/json' \
  --data-binary "{\"analytics_service_url\":	\"$analytUrl\" }");
@@ -307,7 +260,7 @@ echo "Create Portal Service"
 
 createPortal=$(curl -sk "https://$EP_API/api/orgs/admin/availability-zones/availability-zone-default/portal-services"\
  -H "Accept: application/json"\
- -H "authorization: Bearer $cmToken"\
+ -H "authorization: Bearer $access_token"\
  -H "content-type: application/json"\
  --data "{\"title\":\"API Portal Service\",\"name\":\"portal-service\",\"endpoint\":\"https://$EP_PADMIN\",\"web_endpoint_base\":\"https://$EP_PORTAL\",\"visibility\":{\"group_urls\":null,\"org_urls\":null,\"type\":\"public\"}}");
 
@@ -318,7 +271,7 @@ echo Create user : ${ORG_USERNAME}
 userOrg=$(curl -sk --request POST "https://$EP_API/api/user-registries/admin/api-manager-lur/users" \
  -H 'Accept: application/json' \
  -H 'Content-Type: application/json' \
- -H "authorization: Bearer $cmToken" \
+ -H "authorization: Bearer $access_token" \
 --data "{\"type\":\"user\",\"api_version\":\"2.0.0\",\"name\":\"$ORG_USERNAME\",\"title\":\"$ORG_USERNAME\",\"state\":\"enabled\",\"identity_provider\": \"default-idp-2\",\"email\":\"$ORG_USEREMAIL\",\"first_name\":\"$ORG_USERNAME\",\"last_name\":\"consumer\",\"username\":\"$ORG_USERNAME\",\"password\":\"$ORG_PASSWORD\"}");
 
 decho "Result of user creation : $userOrg"
@@ -326,7 +279,7 @@ decho "Result of user creation : $userOrg"
 echo Retrieve user : ${ORG_USERNAME} 
 
 userUrl=$(curl -sk "https://$EP_API/api/user-registries/$ADMIN_ORG_NAME/$API_MANAGER_LUR/users/$ORG_USERNAME" \
- -H "Authorization: Bearer $cmToken" \
+ -H "Authorization: Bearer $access_token" \
  -H 'Accept: application/json' --compressed | jq .url  | sed -e s/\"//g);
 
 decho "userUrl: $userUrl"
@@ -338,7 +291,7 @@ lowercaseOrg=$(echo "$PROVIDER_ORG" | awk '{print tolower($0)}')
 createOrg=$(curl -sk --request POST "https://$EP_API/api/cloud/orgs" \
  -H 'Accept: application/json' \
  -H 'Content-Type: application/json' \
- -H "authorization: Bearer $cmToken" \
+ -H "Authorization: Bearer $access_token" \
 --data "{\"name\":\"$lowercaseOrg\",\"title\":\"$PROVIDER_ORG\",\"summary\":\"$PROVIDER_ORG Organization\",\"org_type\":\"provider\",\"state\":\"enabled\",\"owner_url\":\"$userUrl\"}");
 
 decho "createOrg: $createOrg"
