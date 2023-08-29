@@ -63,7 +63,7 @@ CreateOrg() {
   #   -H 'Accept: application/json' \
   #   --compressed)
 
-  # Create owner user of the organisation in the LUR of the admin organisation (We use the default-idp-2 identity provider)
+  # Create owner of the organisation in the LUR of the admin organisation (We use the default-idp-2 identity provider valid for CP4I)
   userUrl=$(curl -sk "https://$EP_API/api/user-registries/admin/api-manager-lur/users/$org_owner_id?fields=url" \
   -H "Authorization: Bearer $access_token" \
   -H 'Accept: application/json' \
@@ -96,7 +96,7 @@ CreateOrg() {
   -H 'Accept: application/json' \
   -H 'Content-Type: application/json' \
   -H "Authorization: Bearer $access_token" \
-  --data "{\"name\":\"$lowercaseOrg\",\"title\":\"$org_name\",\"summary\":\"$org_name Organization\",\"org_type\":\"provider\",\"state\":\"enabled\",\"owner_url\":\"$userUrl\"}" | jq .url  | sed -e s/\"//g)
+  --data "{\"name\":\"$lowercaseOrg\",\"title\":\"$org_name\",\"summary\":\"$org_name organization\",\"org_type\":\"provider\",\"state\":\"enabled\",\"owner_url\":\"$userUrl\"}" | jq .url  | sed -e s/\"//g)
   #  mylog info "orgUrl: $orgUrl"
   else
     mylog info "$org_name already exists, use it."
@@ -167,6 +167,8 @@ CreateTopology() {
 ################################################################################################
 # Start of the script main entry
 # main
+
+starting=$(date);
 
 # end with / on purpose (if var not defined, uses CWD - Current Working Directory)
 scriptdir=$(dirname "$0")/
@@ -276,29 +278,27 @@ fi
 CreateMailServer "${SMTP_SERVER}" "${SMTP_SERVERPORT}"
 CreateOrg "Org1" "org1owner" "Passw0rd!" "org1owner@fr.ibm.com"
 
-exit 1
-
 tlsServer=$(curl -sk "https://$EP_API/api/orgs/admin/tls-server-profiles" \
  -H "Authorization: Bearer $access_token" \
  -H 'Accept: application/json' --compressed | jq .results[0].url  | sed -e s/\"//g);
+ echo "tlsServer: $tlsServer"
 
 tlsClientDefault=$(curl -sk "https://$EP_API/api/orgs/admin/tls-client-profiles" \
  -H "Authorization: Bearer $access_token" \
  -H 'Accept: application/json' --compressed | jq '.results[] | select(.name=="tls-client-profile-default")| .url' | sed -e s/\"//g);
+ echo "tlsClientDefault: $tlsClientDefault"
 
-tlsClientAnalytics=$(curl -sk "https://$EP_API/api/orgs/admin/tls-client-profiles" \
- -H "Authorization: Bearer $access_token" \
- -H 'Accept: application/json' --compressed | jq '.results[] | select(.name=="analytics-client-default")| .url' | sed -e s/\"//g);
+# Removed analytics-client-default not used anymore
 
-echo "--------------- Endpoint ---------------------"
-echo " Cloud manager : https://$MGMT_ADMIN_EP.$STACK_HOST (admin/$ADMIN_PASSWORD)"
-echo " API manager : https://$MGMT_API_EP.$STACK_HOST ($ORG_USERNAME/$ORG_PASSWORD)"
-echo "----------------------------------------------"
+# echo "--------------- Endpoint ---------------------"
+# echo " Cloud manager : https://$MGMT_ADMIN_EP.$STACK_HOST (admin/$ADMIN_PASSWORD)"
+# echo " API manager : https://$MGMT_API_EP.$STACK_HOST ($ORG_USERNAME/$ORG_PASSWORD)"
+# echo "----------------------------------------------"
 
 duration=$SECONDS
 ending=$(date);
-echo "------------------------------------"
+# echo "------------------------------------"
 echo "start: $starting - end: $ending"
 echo "$(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."
-echo "------------------------------------"
+# echo "------------------------------------"
 
