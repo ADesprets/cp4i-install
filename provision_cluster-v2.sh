@@ -119,21 +119,6 @@ Wait4IngressAddressAvailability () {
 }
 
 ################################################
-# Create namespace function
-# @param ns namespace to be created
-CreateNameSpace () {
-  local ns=$1
-  var_fail my_oc_project "Please define project name in config"
-  mylog check "Checking project $ns"
-  if oc get project $ns > /dev/null 2>&1; then mylog ok; else
-    mylog info "Creating project $ns"
-    if ! oc new-project $ns; then
-      exit 1
-    fi
-  fi
-}
-
-################################################
 # add ibm entitlement key to namespace function
 # @param ns namespace where secret is created
 AddIBMEntitlement () {

@@ -1,13 +1,6 @@
 --- TODO 0 --- APIC Initial Configuration ---
-Get Cloud Manager access token
-Get integration Endpoint
-Create Mail Server
-	Configuration du serveur de messagerie incorrect
 Install OpenLDAP Saad
 Configure OpenLDAP Arnauld + Saad
-Create user : ${ORG_USERNAME} 
-Retrieve user : ${ORG_USERNAME} 
-Create Org : ${PROVIDER_ORG} 
 
 Create Catalogs
 Clear Ping API
@@ -17,6 +10,14 @@ Load test API (Ping API) as a draft
 --- TODO 2 --- Improve README  ---
 --- TODO 3 --- Improve code documentation  ---
 --- TODO 4 --- E2E Initial Customisation ---
+	ES:
+	MQ:
+	APIC: 
+		Configure and get route to DataPower console
+		Load Taxi Locator/... (call-back-end-simulator_1.0.0.yaml, flightlandings_1.0.0.yaml, passenger_1.0.0.zip, passenger_airshopping-v02.wsdl_1.0.0.zip, taxi-locator_1.0.0.yaml, taxi-messaging_1.0.0.yaml)
+	ACE:
+	LDAP:
+	Load simulator application for taxi test
 --- TODO 5 --- Create/Extract all certificates for Web UI ---
 --- TODO 6 --- Harmoniser les commandes soit en oc only soit oc + jq (avoid strings manipulation) ---
 --- TODO 7 --- Vérifier l'idempotence ---

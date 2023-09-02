@@ -232,12 +232,19 @@ check_create_oc_yaml() {
 
 ################################################
 # function
+# @param octype: kubernetes resource class, example: "deployment"
+# @param ocname: name of the resource, example: "openldap-2441-centos7"
 check_create_oc_openldap() {
 	local octype="$1"
 	local name="$2"
+	local ns="$3"
+
+	# create namespace if needed
+	CreateNameSpace ${ns}
+	
 	mylog check "Checking ${octype} ${name}"
 	if oc get ${octype} ${name} > /dev/null 2>&1; then mylog ok;else
-      oc new-app openshift/${name}
+      oc new-app openshift/${name} -n ${ns}
       oc expose service/${name}
       oc get service ${name} -o json  | jq '.spec.ports[0] += {"Nodeport":30389}' | jq '.spec.ports[1] += {"Nodeport":30686}' | jq '.spec.type |= "NodePort"' | oc apply -f -
       port=`oc get service ${name} -o json  | jq -r '.spec.ports[0].nodePort'`
@@ -257,6 +264,21 @@ check_create_oc_yaml_redis() {
 	if oc get ${octype} ${name} -n openshift-operators > /dev/null 2>&1; then mylog ok;else
 		envsubst < "${yaml}" | oc apply -f - || exit 1
 	fi
+}
+
+################################################
+# Create namespace function
+# @param ns namespace to be created
+CreateNameSpace () {
+  local ns=$1
+  var_fail my_oc_project "Please define project name in config"
+  mylog check "Checking project $ns"
+  if oc get project $ns > /dev/null 2>&1; then mylog ok; else
+    mylog info "Creating project $ns"
+    if ! oc new-project $ns; then
+      exit 1
+    fi
+  fi
 }
 
 ################################################

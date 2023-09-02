@@ -80,7 +80,7 @@ CreateOrg() {
     --data "{\"type\":\"user\",\"api_version\":\"2.0.0\",\"name\":\"$org_owner_id\",\"title\":\"$org_owner_id\",\"state\":\"enabled\",\"identity_provider\": \"default-idp-2\",\"email\":\"$org_owner_email\",\"first_name\":\"$org_owner_id\",\"last_name\":\"consumer\",\"username\":\"$org_owner_id\",\"password\":\"$org_owner_pwd\"}" | jq .url  | sed -e s/\"//g)
   #  mylog info "userUrl: $userUrl"
   else
-    mylog info "User org_owner_id already exists, use it."
+    mylog info "User $org_owner_id already exists, use it."
   fi
 
   # Create organisation org_name
@@ -152,7 +152,6 @@ CreateTopology() {
 
   decho "analytGwy: $analytGwy"
 
-
   echo "Create Portal Service"
 
   createPortal=$(curl -sk "https://$EP_API/api/orgs/admin/availability-zones/availability-zone-default/portal-services"\
@@ -162,6 +161,63 @@ CreateTopology() {
   --data "{\"title\":\"API Portal Service\",\"name\":\"portal-service\",\"endpoint\":\"https://$EP_PADMIN\",\"web_endpoint_base\":\"https://$EP_PORTAL\",\"visibility\":{\"group_urls\":null,\"org_urls\":null,\"type\":\"public\"}}");
 
   decho "createPortal: $createPortal"
+}
+
+################################################
+# function to create a catalog in an organisation
+# catalogs specifications of the 3 catalogs are hard coded
+# @param org_name: The name of the organisation.
+CreateCatalog() {
+  local org_name=$(echo "$1" | awk '{print tolower($0)}')
+
+# decho "url: https://$EP_API/api/orgs/$org_name/catalogs and token: $amToken"
+
+# Hard coded values
+catalog_title=("Prod" "UAT" "QA")
+catalog_name=("prod" "uat" "qa")
+catalog_summary=("Production" "UAT" "Quality and Acceptance")
+
+  portalServiceURL=$(curl -sk -X GET "$PLATFORM_API_URL/orgs/$org_name/portal-services?fields=url" \
+    -H "Authorization: Bearer $amToken" \
+    -H 'accept: application/json' \
+    -H 'content-type: application/json' \
+    -H 'Connection: keep-alive' \
+    --compressed | jq .results[0].url | sed -e s/\"//g);
+
+for index in ${!catalog_name[@]}
+    do
+      catURL=$(curl -sk -X GET "$PLATFORM_API_URL/catalogs/$org_name/${catalog_name[$index]}?fields=url" \
+        -H "Authorization: Bearer $amToken" \
+        -H 'accept: application/json' \
+        -H 'content-type: application/json' \
+        -H 'Connection: keep-alive' | jq .url | sed -e s/\"//g)
+      # decho "Catalog url: $catURL"
+
+      if [ -z "$catURL" ] || [ "$catURL" = "null" ]; then
+        mylog info "Creating Catalog: "${catalog_name[$index]}" ("${catalog_summary[$index]}") in org $org_name";
+        catURL=$(curl -sk -X POST "$PLATFORM_API_URL/orgs/$org_name/catalogs" \
+        -H "Authorization: Bearer $amToken" \
+        -H 'accept: application/json' \
+        -H 'content-type: application/json' \
+        -H 'Connection: keep-alive' \
+        --data-binary "{\"name\":\"${catalog_name[$index]}\",\"title\":\"${catalog_title[$index]}\",\"summary\":\"${catalog_summary[$index]}\"}" \
+        --compressed | jq .url | sed -e s/\"//g);
+      else
+        mylog info "Catalog ${catalog_name[$index]} already exists, use it."
+      fi
+      bash ./sleep.util.sh 1
+
+      # TODO Check if we can skeep this action if already done
+
+      decho "Create the portal site in Drupal for: "${catalog_summary[$index]}"";
+      res=$(curl -sk -X PUT "$catURL/settings" \
+       -H "Authorization: Bearer $amToken" \
+       -H 'accept: application/json' \
+       -H 'content-type: application/json' \
+       -H 'Connection: keep-alive' \
+       --data-binary "{\"portal\": {\"endpoint\": \"https://$EP_PORTAL/$org_name/${catalog_name[$index]}\",\"portal_service_url\": \"$portalServiceURL\", \"type\": \"drupal\"},\"application_lifecycle\": {} }" | jq .portal.endpoint);
+      decho "Portal endpoint for: "${catalog_summary[$index]}": $res"
+    done
 }
 
 ################################################################################################
@@ -183,6 +239,7 @@ read_config_file "${configdir}apic.properties"
 # Retrieve the various routes for APIC components
 # API Manager URL
 EP_API=$(oc get route "${my_cp_apic_instance_name}-mgmt-platform-api" -n ${my_apic_project} -o jsonpath="{.spec.host}")
+decho "EP_API: ${EP_API}"
 # gwv6-gateway-manager
 EP_GWD=$(oc get route "${my_cp_apic_instance_name}-gw-gateway-manager" -n ${my_apic_project} -o jsonpath="{.spec.host}")
 # gwv6-gateway
@@ -193,6 +250,7 @@ EP_AI=$(oc get route "${my_cp_apic_instance_name}-a7s-ai-endpoint" -n ${my_apic_
 EP_PADMIN=$(oc get route "${my_cp_apic_instance_name}-ptl-portal-director" -n ${my_apic_project} -o jsonpath="{.spec.host}")
 # portal-portal-web
 EP_PORTAL=$(oc get route "${my_cp_apic_instance_name}-ptl-portal-web" -n ${my_apic_project} -o jsonpath="{.spec.host}")
+decho "EP_PORTAL: $EP_PORTAL"
 # Zen
 EP_ZEN=$(oc get route cpd -n ${my_apic_project} -o jsonpath="{.spec.host}")
 # Cloud pak administration console
@@ -225,12 +283,13 @@ fi
 
 TOOLKIT_CREDS_URL="${PLATFORM_API_URL}/cloud/settings/toolkit-credentials"
 
+# toto
 # always download the credential.json
 # if test ! -e "~/.apiconnect/config-apim";then
-	mylog info "Downloading apic config json file" 1>&2
-	curl -ks "${TOOLKIT_CREDS_URL}" -H "Authorization: Bearer ${ZEN_TOKEN}" -H "Accept: application/json" -H "Content-Type: application/json" -o creds.json
-	yes | apic client-creds:set creds.json
-	[[ -e creds.json ]] && rm creds.json
+ 	mylog info "Downloading apic config json file" 1>&2
+ 	curl -ks "${TOOLKIT_CREDS_URL}" -H "Authorization: Bearer ${ZEN_TOKEN}" -H "Accept: application/json" -H "Content-Type: application/json" -o creds.json
+# 	yes | apic client-creds:set creds.json
+# 	[[ -e creds.json ]] && rm creds.json
 # fi
 
 APIC_APIKEY=$(curl -ks --fail -X POST "${PLATFORM_API_URL}"/cloud/api-keys -H "Authorization: Bearer ${ZEN_TOKEN}" -H "Accept: application/json" -H "Content-Type: application/json" -d '{"client_type":"toolkit","description":"Tookit API key"}' | jq -r .api_key)
@@ -245,7 +304,7 @@ decho "APIM_ENDPOINT: ${APIM_ENDPOINT}"
 TOOLKIT_CLIENT_ID=$(grep "^toolkit_client_id:" ~/.apiconnect/config-apim | cut -d ':' -f2- | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
 TOOLKIT_CLIENT_SECRET=$(grep "^toolkit_client_secret:" ~/.apiconnect/config-apim | cut -d ':' -f2- | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
 
-cmToken=$(curl -k --fail -X POST "$PLATFORM_API_URL/token" \
+cmToken=$(curl -ks --fail -X POST "$PLATFORM_API_URL/token" \
  -H 'Content-Type: application/json' \
  -H 'Accept: application/json' \
  -H "X-Ibm-Client-Id: $TOOLKIT_CLIENT_ID" \
@@ -260,13 +319,13 @@ if [ $(echo $cmToken | jq .status ) = "401" ] ; then
     then
       # echo "Try to Change password"
       access_token=$(echo $cmToken | jq .access_token | sed -e s/\"//g);
-      apicme=$(curl -k "https://$EP_API/api/me" \
+      apicme=$(curl -ks "https://$EP_API/api/me" \
         -X PUT \
         -H "Authorization: Bearer $access_token" \
         -H 'Content-Type: application/json' \
         -H 'Accept: application/json' \
         --data-binary "{\"email\":\"$ADMIN_EMAIL\"}" | jq 'del(.url)')
-      decho $apicme 
+      decho $apicme
 
 #      curl -kv "https://$EP_API/api/me/change-password" \
 #        -H "Authorization: Bearer $access_token" \
@@ -275,18 +334,41 @@ if [ $(echo $cmToken | jq .status ) = "401" ] ; then
 #        --data-binary "{\"current_password\":\"7iron-hide\",\"password\":\"$ADMIN_PASSWORD\"}" 
 fi
 
-CreateMailServer "${SMTP_SERVER}" "${SMTP_SERVERPORT}"
-CreateOrg "Org1" "org1owner" "Passw0rd!" "org1owner@fr.ibm.com"
+# toto
+# CreateMailServer "${SMTP_SERVER}" "${SMTP_SERVERPORT}"
+# CreateOrg "${PROVIDER_ORG1}" "${ORG1_USERNAME}" "${ORG1_PASSWORD}!" "${ORG1_USEREMAIL}"
 
-tlsServer=$(curl -sk "https://$EP_API/api/orgs/admin/tls-server-profiles" \
- -H "Authorization: Bearer $access_token" \
- -H 'Accept: application/json' --compressed | jq .results[0].url  | sed -e s/\"//g);
- echo "tlsServer: $tlsServer"
+amToken=$(curl -sk  --fail -X POST "$PLATFORM_API_URL/token" \
+ -H 'Content-Type: application/json' \
+ -H 'Accept: application/json' \
+ --data-binary "{\"username\":\"$ORG1_USERNAME\",\"password\":\"$ORG1_PASSWORD\",\"realm\":\"provider/default-idp-2\",\"client_id\":\"$TOOLKIT_CLIENT_ID\",\"client_secret\":\"$TOOLKIT_CLIENT_SECRET\",\"grant_type\":\"password\"}" |  jq .access_token | sed -e s/\"//g  )
 
-tlsClientDefault=$(curl -sk "https://$EP_API/api/orgs/admin/tls-client-profiles" \
- -H "Authorization: Bearer $access_token" \
- -H 'Accept: application/json' --compressed | jq '.results[] | select(.name=="tls-client-profile-default")| .url' | sed -e s/\"//g);
- echo "tlsClientDefault: $tlsClientDefault"
+retVal=$?
+if [ $retVal -ne 0 ] || [ -z "$amToken" ] || [ "$amToken" = "null" ]; then
+        echo "Error with login -> $retVal"
+        exit 1
+fi
+
+apicme=$(curl -ks "https://$EP_API/api/me" \
+  -X PUT \
+  -H "Authorization: Bearer $amToken" \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json' | jq 'del(.url)')
+
+decho $apicme
+
+# toto
+# CreateCatalog "${PROVIDER_ORG1}"
+
+# tlsServer=$(curl -sk "https://$EP_API/api/orgs/admin/tls-server-profiles" \
+#  -H "Authorization: Bearer $access_token" \
+#  -H 'Accept: application/json' --compressed | jq .results[0].url  | sed -e s/\"//g);
+# echo "tlsServer: $tlsServer"
+
+# tlsClientDefault=$(curl -sk "https://$EP_API/api/orgs/admin/tls-client-profiles" \
+#  -H "Authorization: Bearer $access_token" \
+#  -H 'Accept: application/json' --compressed | jq '.results[] | select(.name=="tls-client-profile-default")| .url' | sed -e s/\"//g);
+# echo "tlsClientDefault: $tlsClientDefault"
 
 # Removed analytics-client-default not used anymore
 
@@ -298,7 +380,5 @@ tlsClientDefault=$(curl -sk "https://$EP_API/api/orgs/admin/tls-client-profiles"
 duration=$SECONDS
 ending=$(date);
 # echo "------------------------------------"
-echo "start: $starting - end: $ending"
-echo "$(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."
-# echo "------------------------------------"
-
+mylog info "Start: $starting - end: $ending" 1>&2
+mylog info "$(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."  1>&2
