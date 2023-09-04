@@ -231,9 +231,10 @@ check_create_oc_yaml() {
 }
 
 ################################################
-# function
 # @param octype: kubernetes resource class, example: "deployment"
-# @param ocname: name of the resource, example: "openldap-2441-centos7"
+# @param ocname: name of the resource, example: "openldap"
+# See https://github.com/osixia/docker-openldap for more details especialy all the configurations possible
+# function
 check_create_oc_openldap() {
 	local octype="$1"
 	local name="$2"
@@ -241,16 +242,37 @@ check_create_oc_openldap() {
 
 	# create namespace if needed
 	CreateNameSpace ${ns}
-	
-	mylog check "Checking ${octype} ${name}"
-	if oc get ${octype} ${name} > /dev/null 2>&1; then mylog ok;else
-      oc new-app openshift/${name} -n ${ns}
-      oc expose service/${name}
-      oc get service ${name} -o json  | jq '.spec.ports[0] += {"Nodeport":30389}' | jq '.spec.ports[1] += {"Nodeport":30686}' | jq '.spec.type |= "NodePort"' | oc apply -f -
-      port=`oc get service ${name} -o json  | jq -r '.spec.ports[0].nodePort'`
-      hostname=`oc get route ${name} -o json | jq -r '.spec.host'`
-      envsubst < "${ldapdir}Import.tmpl" > "${ldapdir}Import.ldiff"
-      ldapmodify -H ldap://$hostname:$port -D "$my_dn_openldap" -w admin -f ${ldapdir}Import.ldiff
+
+	# check if deploment already performed
+	mylog check "Checking ${octype} ${name} in ${ns}"
+	if oc get ${octype} ${name} -n ${ns} > /dev/null 2>&1; then mylog ok;else
+		mylog info "Creating LDAP server"
+		oc adm policy add-scc-to-group anyuid system:serviceaccounts:${ns}
+		
+		# handle persitence for Openldap
+		oc create -f ${yamldir}kube_resources/ldap-pvc.main.yaml -n ${ns}
+		oc create -f ${yamldir}kube_resources/ldap-pvc.config.yaml -n ${ns}
+		wait_for_state "pvc pvc-ldap-config status.phase is Bound" "Bound" "oc get pvc pvc-ldap-config -n ${ns} --output json|jq -r '.status.phase'"
+		wait_for_state "pvc pvc-ldap-main status.phase is Bound" "Bound" "oc get pvc pvc-ldap-main -n ${ns} --output json|jq -r '.status.phase'"
+
+		# deploy openldap and take in account the PVCs just created
+    	oc -n ${ns} new-app osixia/${name}
+		oc -n ${ns} get deployment.apps/openldap -o json | jq '. | del(."status")' > ${workingdir}dp-openldap.json
+		jq -s '.[0] * .[1] ' ${workingdir}dp-openldap.json ${yamldir}kube_resources/ldap-config.json > ${workingdir}dp-openldap.new.json
+		oc apply -n ldap -f ${workingdir}dp-openldap.new.json
+
+		# expose service externaly and get host and port
+		oc -n ${ns} expose service/${name} --target-port=389 --name=openldap-external
+		oc -n ${ns} get service ${name} -o json  | jq '.spec.ports[0] += {"Nodeport":30389}' | jq '.spec.ports[1] += {"Nodeport":30686}' | jq '.spec.type |= "NodePort"' | oc apply -f -
+    	port=`oc -n ${ns} get service ${name} -o json  | jq -r '.spec.ports[0].nodePort'`
+		# oc -n ${ns} create route simple ldap-route --service=${openldap-external} --port=389
+    	hostname=`oc -n ${ns} get route openldap-external -o json | jq -r '.spec.host'`
+
+		# load users and groups into LDAP
+    	envsubst < "${ldapdir}Import.tmpl" > "${ldapdir}Import.ldiff"
+		ldapadd -H ldap://$hostname:$port -D "cn=admin,dc=ibm,dc=com" -w "uLgH75o@At+9?zY0RBB" -f ${yamldir}kube_resources/ldap-users.ldif
+    	# ldapmodify -H ldap://$hostname:$port -D "$my_dn_openldap" -w admin -f ${ldapdir}Import.ldiff
+		# ldapsearch -H ldap://${host}:${port} -x -D "cn=admin,dc=ibm,dc=com" -w "uLgH75o@At+9?zY0RBB" -b "dc=ibm,dc=com" -s sub -a always -z 1000 "(objectClass=*)"
 	fi
 }
 
@@ -267,8 +289,9 @@ check_create_oc_yaml_redis() {
 }
 
 ################################################
-# Create namespace function
+# Create namespace
 # @param ns namespace to be created
+# function
 CreateNameSpace () {
   local ns=$1
   var_fail my_oc_project "Please define project name in config"

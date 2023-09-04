@@ -50,8 +50,9 @@ CreateOpenshiftClusterClassic () {
 }
 
 ################################################
-# Create openshift cluster using VPC infra function
+# Create openshift cluster using VPC infra
 # use terraform because creation is more complex than classic
+# function
 CreateOpenshiftClusterVPC () {
   # check vars from config file
   var_fail my_oc_version 'mylog warn "Choose one of:" 1>&2;ibmcloud ks versions -q --show-version OpenShift'
@@ -93,7 +94,8 @@ CreateOpenshiftCluster () {
 }
 
 ################################################
-# wait for ingress address availability function
+# wait for ingress address availability
+# function
 Wait4IngressAddressAvailability () {
   mylog check "Checking Ingress address"
   firsttime=true
@@ -119,8 +121,9 @@ Wait4IngressAddressAvailability () {
 }
 
 ################################################
-# add ibm entitlement key to namespace function
+# add ibm entitlement key to namespace
 # @param ns namespace where secret is created
+# function
 AddIBMEntitlement () {
   local ns=$1
   mylog check "Checking ibm-entitlement-key in $ns"
@@ -312,8 +315,9 @@ Install_Operators () {
 }
 
 ################################################
-# create capabilities function
+# create capabilities
 # @param ns namespace where capabilities are created
+# function
 Create_Capabilities () {
   local ns=$1
 
@@ -459,10 +463,11 @@ Configure_ACE_IS () {
 }
 
 ################################################
-# Login to both of IBM Cloud and OCS function
+# Login to both of IBM Cloud and OCS
 # It also create the cluster if it does not exist
 # Since the creation steps used here are all idempotent, we have decided to do everything here.
-function Login2IBMCloud_and_OpenshiftCluster ()  {
+# function 
+Login2IBMCloud_and_OpenshiftCluster ()  {
   ##--Log in IBM Cloud
   Login2IBMCloud
 
@@ -482,6 +487,14 @@ function Login2IBMCloud_and_OpenshiftCluster ()  {
 ################################################################################################
 # Start of the script main entry
 ################################################################################################
+# @param my_properties_file: file path and name of the properties file
+# @param my_oc_project: namespace where to create the operators and capabilities
+# @param my_cluster_name: name of the cluster
+# example of invocation: ./provision_cluster-v2.sh private/my-cp4i.properties sbtest cp4i-sb-cluster
+# other example: ./provision_cluster-v2.sh ./cp4i.properties cp4i cp4iad22023
+my_properties_file=$1
+my_oc_project=$2
+my_cluster_name=$3
 
 # end with / on purpose (if var not defined, uses CWD - Current Working Directory)
 scriptdir=$(dirname "$0")/
@@ -490,6 +503,7 @@ yamldir="${scriptdir}templates/"
 subscriptionsdir="${scriptdir}templates/subscriptions/"
 capabilitiesdir="${scriptdir}templates/capabilities/"
 privatedir="${scriptdir}private/"
+workingdir="${scriptdir}working/"
 
 #SB]20230214 Ajout des variables de configuration ACE ...
 resourcedir="${scriptdir}templates/resources/"
@@ -505,13 +519,6 @@ fi
 
 # load helper functions
 . "${scriptdir}"lib.sh
-
-#SB]20230201 sometimes we want just to create many ns in the same ic cluster (de, int, prod, ...)
-#            so I'll use the namespace name and the cluster name as input parameters to the main script
-# example of invocation : ./provision_cluster-v2.sh private/my-cp4i.properties sbtest cp4i-sb-cluster
-my_properties_file=$1
-my_oc_project=$2
-my_cluster_name=$3
 
 read_config_file "$my_properties_file"
 
@@ -543,7 +550,7 @@ Create_Capabilities $my_oc_project
 ##-- Add OpenLdap app to openshift
 oc project $my_oc_project
 if $my_install_openldap;then
-    check_create_oc_openldap "deployment" "openldap-2441-centos7"
+    check_create_oc_openldap "deployment" "openldap" "ldap"
 fi
 
 ## Display information to access CP4I

@@ -1,0 +1,859 @@
+{
+    "type": "oauth_provider",
+    "api_version": "2.0.0",
+    "id": "e5f45a6d-c124-47ca-bb8f-697c3faa4e6c",
+    "name": "nativeprovider",
+    "title": "NativeProvider",
+    "debug": false,
+    "owned": true,
+    "provider_type": "native",
+    "scopes": {
+        "openid": "Support OIDC",
+        "details": "Provides elevated access"
+    },
+    "grants": [
+        "access_code",
+        "application",
+        "password",
+        "implicit"
+    ],
+    "gateway_version": "6000",
+    "advanced_scope": {
+        "override_endpoint_from_api": false
+    },
+    "native_provider": {
+        "clients": [
+            "confidential",
+            "public"
+        ],
+        "authorize_path": "/oauth2/authorize",
+        "token_path": "/oauth2/token",
+        "pkce": {
+            "enabled": true,
+            "required": false,
+            "allow_plain": false
+        },
+        "native_provider_5000": {
+            "identity_extraction": {
+                "type": "default_form"
+            },
+            "authorization": {
+                "type": "authenticated"
+            },
+            "authentication": {},
+            "scope_validators": {}
+        },
+        "advanced_scope_security": {
+            "enabled": false,
+            "mode": [
+                "basic-auth"
+            ],
+            "basic_auth": {
+                "request_headername": "x-advanced-scope-basic-authorization-header"
+            }
+        },
+        "access_code_ttl": 300,
+        "access_token_ttl": 3600,
+        "access_token_one_time_use": false,
+        "maximum_consent_ttl": 0,
+        "refresh_token": {
+            "enabled": true,
+            "count": 2048,
+            "ttl": 2682000,
+            "one_time_use": true
+        },
+        "revocation": {
+            "enabled": true,
+            "type": "native",
+            "resource_owner_revocation_path": "/oauth2/issued",
+            "client_revocation_path": "/oauth2/revoke",
+            "application_revocation": {
+                "enabled": true,
+                "apprevoke_path": "/oauth2/revoke"
+            },
+            "owner_revocation": {
+                "enabled": true,
+                "owner_revoke_path": "/oauth2/issued"
+            },
+            "third_party_fail_on_error": true
+        },
+        "token_introspection": {
+            "enabled": true,
+            "introspection_path": "/oauth2/introspect"
+        },
+        "token_metadata": {
+            "enabled": true,
+            "source": [
+                "authentication_url"
+            ],
+            "header_name_payload": "X-API-OAUTH-METADATA-FOR-PAYLOAD",
+            "header_name_token": "X-API-OAUTH-METADATA-FOR-ACCESSTOKEN"
+        },
+        "openid_connect": {
+            "enabled": true,
+            "supported_response_types": [
+                "code_id_token"
+            ]
+        },
+        "default_scopes": "",
+        "api": {
+            "info": {
+                "description": "Internal OAuth Provider shared among organisations",
+                "x-ibm-name": "nativeprovidere5f45a6d-c124-47ca-bb8f-697c3faa4e6c",
+                "version": "1.0.0",
+                "title": "nativeprovider"
+            },
+            "x-ibm-configuration": {
+                "gateway": "datapower-api-gateway",
+                "assembly": {
+                    "execute": [
+                        {
+                            "oauth": {
+                                "title": "oauth-auto-generated-1",
+                                "version": "2.0.0",
+                                "description": "This oauth policy performs all OAuth/OpenID Connect protocol steps that are needed for OAuth Validation by default. The inputs and outputs of each of the steps are driven by documented context variables. Add or remove the Supported OAuth Components as required.",
+                                "oauth-provider-settings-ref": {
+                                    "default": "nativeprovider"
+                                },
+                                "supported-oauth-components": [
+                                    "OAuthValidateRequest"
+                                ]
+                            }
+                        },
+                        {
+                            "switch": {
+                                "version": "2.0.0",
+                                "title": "oauth-auto-generated-switch",
+                                "case": [
+                                    {
+                                        "condition": "($operationPath() = '/oauth2/issued')",
+                                        "execute": [
+                                            {
+                                                "user-security": {
+                                                    "title": "user-security-auto-generated-issued",
+                                                    "version": "2.1.0",
+                                                    "description": "This user security policy performs EI(basic) and AU(auth url) check for oauth assembly. Change the security check method as required",
+                                                    "factor-id": "default",
+                                                    "extract-identity-method": "basic",
+                                                    "ei-stop-on-error": false,
+                                                    "user-auth-method": "user-registry",
+                                                    "au-stop-on-error": false,
+                                                    "user-az-method": "authenticated",
+                                                    "az-stop-on-error": true,
+                                                    "auth-response-headers-pattern": "(?i)x-api*",
+                                                    "auth-response-header-credential": "X-API-Authenticated-Credential",
+                                                    "user-registry": "url_registry"
+                                                }
+                                            },
+                                            {
+                                                "oauth": {
+                                                    "title": "oauth-auto-generated-5",
+                                                    "version": "2.0.0",
+                                                    "description": "This oauth policy performs all OAuth protocol steps that are needed for issued path by default. The inputs and outputs of each of the steps are driven by documented context variables. Add or remove the Supported OAuth Components as required.",
+                                                    "oauth-provider-settings-ref": {
+                                                        "default": "nativeprovider"
+                                                    },
+                                                    "supported-oauth-components": [
+                                                        "OAuthRevokeToken"
+                                                    ]
+                                                }
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "condition": "($operationPath() = '/oauth2/token')",
+                                        "execute": [
+                                            {
+                                                "user-security": {
+                                                    "title": "user-security-auto-generated-password",
+                                                    "version": "2.1.0",
+                                                    "description": "",
+                                                    "factor-id": "default",
+                                                    "extract-identity-method": "context-var",
+                                                    "ei-stop-on-error": false,
+                                                    "user-auth-method": "user-registry",
+                                                    "au-stop-on-error": false,
+                                                    "user-az-method": "authenticated",
+                                                    "az-stop-on-error": true,
+                                                    "auth-response-headers-pattern": "(?i)x-api*",
+                                                    "auth-response-header-credential": "X-API-Authenticated-Credential",
+                                                    "pass-context-var": "request.parameters.password.values",
+                                                    "user-context-var": "request.parameters.username.values",
+                                                    "user-registry": "url_registry"
+                                                }
+                                            },
+                                            {
+                                                "oauth": {
+                                                    "title": "oauth-auto-generated-3",
+                                                    "version": "2.0.0",
+                                                    "description": "This oauth policy performs all OAuth/OpenID Connect protocol steps that are needed for token path by default. The inputs and outputs of each of the steps are driven by documented context variables. Add or remove the Supported OAuth Components as required.",
+                                                    "oauth-provider-settings-ref": {
+                                                        "default": "nativeprovider"
+                                                    },
+                                                    "supported-oauth-components": [
+                                                        "OAuthGenerateAccessToken",
+                                                        "OAuthVerifyAZCode",
+                                                        "OAuthVerifyRefreshToken",
+                                                        "OAuthCollectMetadata"
+                                                    ]
+                                                }
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "condition": "($operationPath() = '/oauth2/authorize')",
+                                        "execute": [
+                                            {
+                                                "user-security": {
+                                                    "title": "user-security-auto-generated",
+                                                    "version": "2.1.0",
+                                                    "description": "This user security policy performs EI(basic) and AU(auth url) check for oauth assembly. Change the security check method as required",
+                                                    "factor-id": "default",
+                                                    "extract-identity-method": "basic",
+                                                    "ei-stop-on-error": true,
+                                                    "user-auth-method": "user-registry",
+                                                    "au-stop-on-error": true,
+                                                    "user-az-method": "authenticated",
+                                                    "az-stop-on-error": true,
+                                                    "auth-response-headers-pattern": "(?i)x-api*",
+                                                    "auth-response-header-credential": "X-API-Authenticated-Credential",
+                                                    "user-registry": "url_registry"
+                                                }
+                                            },
+                                            {
+                                                "oauth": {
+                                                    "title": "oauth-auto-generated-2",
+                                                    "version": "2.0.0",
+                                                    "description": "This oauth policy performs all OAuth/OpenID Connect protocol steps that are needed for az code path by default. The inputs and outputs of each of the steps are driven by documented context variables. Add or remove the Supported OAuth Components as required.",
+                                                    "oauth-provider-settings-ref": {
+                                                        "default": "nativeprovider"
+                                                    },
+                                                    "supported-oauth-components": [
+                                                        "OAuthGenerateAZCode",
+                                                        "OAuthGenerateAccessToken",
+                                                        "OAuthVerifyAZCode",
+                                                        "OAuthCollectMetadata"
+                                                    ]
+                                                }
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "otherwise": [
+                                            {
+                                                "oauth": {
+                                                    "title": "oauth-auto-generated-4",
+                                                    "version": "2.0.0",
+                                                    "description": "This oauth policy performs all OAuth/OpenID Connect protocol steps that are needed for all other paths by default. The inputs and outputs of each of the steps are driven by documented context variables. Add or remove the Supported OAuth Components as required.",
+                                                    "oauth-provider-settings-ref": {
+                                                        "default": "nativeprovider"
+                                                    },
+                                                    "supported-oauth-components": [
+                                                        "OAuthIntrospectToken",
+                                                        "OAuthRevokeToken"
+                                                    ]
+                                                }
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "type": "oauth",
+                "testable": true,
+                "enforced": true,
+                "phase": "realized",
+                "cors": {
+                    "enabled": true
+                },
+                "properties": {
+                    "JWSSignKeyKID": {
+                        "value": "",
+                        "description": "x-ibm-oauth-oidc-auto-generated-JWSSignKeyKID",
+                        "encoded": false
+                    }
+                }
+            },
+            "basePath": "/nativeprovider",
+            "swagger": "2.0",
+            "host": "$(catalog.host)",
+            "schemes": [
+                "https"
+            ],
+            "paths": {
+                "/oauth2/authorize": {
+                    "get": {
+                        "produces": [
+                            "text/html"
+                        ],
+                        "summary": "Endpoint for Authorization Code and Implicit grants",
+                        "description": "This endpoint allows an access token (Implicit) or access code (Authorization Code) request with the following parameters:\n              - Implicit (response_type = token, client_id, scope, redirect_uri(*), state(*), response_mode(*))\n              - Authorization Code (response_type = code, client_id, scope, redirect_uri(*), state(*), response_mode(*))",
+                        "parameters": [
+                            {
+                                "name": "response_type",
+                                "in": "query",
+                                "description": "request an authorization code or an access token (implicit)",
+                                "required": true,
+                                "type": "string",
+                                "enum": [
+                                    "code",
+                                    "token"
+                                ]
+                            },
+                            {
+                                "name": "response_mode",
+                                "in": "query",
+                                "description": "If included, must have the value 'form_post'",
+                                "required": false,
+                                "type": "string"
+                            },
+                            {
+                                "name": "client_id",
+                                "in": "query",
+                                "description": "client_id of the application which product is subscribed to",
+                                "required": true,
+                                "type": "string"
+                            },
+                            {
+                                "name": "scope",
+                                "in": "query",
+                                "description": "Scope being requested",
+                                "type": "string",
+                                "required": true
+                            },
+                            {
+                                "name": "redirect_uri",
+                                "in": "query",
+                                "type": "string",
+                                "description": "URI where user is redirected to after authorization",
+                                "required": false
+                            },
+                            {
+                                "name": "state",
+                                "in": "query",
+                                "type": "string",
+                                "description": "This string will be echoed back to application when user is redirected",
+                                "required": false
+                            }
+                        ],
+                        "responses": {
+                            "200": {
+                                "description": "An HTML form for authentication or authorization of this request."
+                            },
+                            "302": {
+                                "description": "Redirect to the clients redirect_uri containing one of the following\n- **authorization code** for Authorization code grant\n- **access token** for Implicit grant\n- **error** in case of errors, such as the user has denied the request\n"
+                            }
+                        }
+                    },
+                    "post": {
+                        "consumes": [
+                            "application/x-www-form-urlencoded"
+                        ],
+                        "produces": [
+                            "text/html"
+                        ],
+                        "summary": "Endpoint for Authorization Code and Implicit grants",
+                        "description": "Submit approval to access token.",
+                        "security": [],
+                        "parameters": [
+                            {
+                                "name": "response_type",
+                                "in": "formData",
+                                "description": "request an authorization code or an access token (implicit)",
+                                "required": true,
+                                "type": "string",
+                                "enum": [
+                                    "code",
+                                    "token"
+                                ]
+                            },
+                            {
+                                "name": "client_id",
+                                "in": "formData",
+                                "description": "application requesting the access code or token",
+                                "required": true,
+                                "type": "string"
+                            },
+                            {
+                                "name": "scope",
+                                "in": "formData",
+                                "description": "requested scope of this authorization",
+                                "required": true,
+                                "type": "string"
+                            },
+                            {
+                                "name": "redirect_uri",
+                                "in": "formData",
+                                "description": "URI the application is requesting this code or token to be redirected to",
+                                "required": false,
+                                "type": "string"
+                            }
+                        ],
+                        "responses": {
+                            "200": {
+                                "description": "200 OK"
+                            }
+                        }
+                    }
+                },
+                "/oauth2/token": {
+                    "post": {
+                        "consumes": [
+                            "application/x-www-form-urlencoded"
+                        ],
+                        "produces": [
+                            "application/json"
+                        ],
+                        "summary": "Endpoint for obtaining access token using Authorization code, Application and Password grants",
+                        "description": "This endpoint allows requesting an access token following one of the flows below:\n        - Access Code (exchange access code for an access token)\n        - Client Credentials (2-legged, resource owner credentials are not obtained)\n        - Resource Owner Password Credentials (2-legged, client provides resource owner name and password)\n        - Refresh Token (exchange refresh token for a new access token)",
+                        "parameters": [
+                            {
+                                "name": "grant_type",
+                                "in": "formData",
+                                "required": true,
+                                "type": "string",
+                                "enum": [
+                                    "authorization_code",
+                                    "password",
+                                    "client_credentials",
+                                    "refresh_token",
+                                    "urn:ietf:params:oauth:grant-type:jwt-bearer"
+                                ]
+                            },
+                            {
+                                "name": "client_id",
+                                "in": "formData",
+                                "description": "application requesting the token, if there is no Authorization header in the request, this parameter is required",
+                                "required": false,
+                                "type": "string"
+                            },
+                            {
+                                "name": "client_secret",
+                                "in": "formData",
+                                "description": "application requesting the token, if the provider is confidential, this parameter is required",
+                                "required": false,
+                                "type": "string"
+                            },
+                            {
+                                "name": "scope",
+                                "in": "formData",
+                                "description": "requested scope of this authorization",
+                                "required": true,
+                                "type": "string"
+                            },
+                            {
+                                "name": "code",
+                                "in": "formData",
+                                "description": "access code generated from the az get request, required in Access code flow",
+                                "required": false,
+                                "type": "string"
+                            },
+                            {
+                                "name": "refresh_token",
+                                "in": "formData",
+                                "description": "refresh token generated from the last token request, required in refresh token flow",
+                                "required": false,
+                                "type": "string"
+                            },
+                            {
+                                "name": "assertion",
+                                "in": "formData",
+                                "description": "id_token in the JWT request, required in JWT flow",
+                                "required": false,
+                                "type": "string"
+                            }
+                        ],
+                        "responses": {
+                            "200": {
+                                "description": "200 OK"
+                            }
+                        }
+                    }
+                },
+                "/oauth2/revoke": {
+                    "post": {
+                        "responses": {
+                            "200": {
+                                "description": "response from revocation",
+                                "schema": {
+                                    "$ref": "#/definitions/token_revoke_response"
+                                }
+                            }
+                        },
+                        "description": "This endpoint revokes a given access_token or refresh_token\n",
+                        "parameters": [
+                            {
+                                "required": true,
+                                "type": "string",
+                                "description": "The client id for the subscriber",
+                                "in": "formData",
+                                "name": "client_id"
+                            },
+                            {
+                                "required": false,
+                                "type": "string",
+                                "description": "This parameter is required for the confidential provider",
+                                "in": "formData",
+                                "name": "client_secret"
+                            },
+                            {
+                                "required": true,
+                                "type": "string",
+                                "description": "String value of the access_token, or refresh_token to be revoked",
+                                "in": "formData",
+                                "name": "token"
+                            },
+                            {
+                                "required": true,
+                                "type": "string",
+                                "enum": [
+                                    "access_token",
+                                    "refresh_token"
+                                ],
+                                "description": "This must contain 'access_token' or 'refresh_token' to indicate the token type",
+                                "in": "formData",
+                                "name": "token_type_hint"
+                            }
+                        ],
+                        "produces": [
+                            "application/json"
+                        ],
+                        "security": [],
+                        "consumes": [
+                            "application/x-www-form-urlencoded"
+                        ],
+                        "summary": "Revoke a given access_token or refresh_token"
+                    }
+                },
+                "/oauth2/issued": {
+                    "get": {
+                        "produces": [
+                            "application/json"
+                        ],
+                        "summary": "Returns list of permission granted to the owner",
+                        "description": "This endpoint allows the return of all the issued permission(s) for a given authenticated owner per owner authentication \ndefined in the user security configuration\n",
+                        "parameters": [
+                            {
+                                "name": "username",
+                                "in": "query",
+                                "description": "username's permission to be queried if the authenticated resource has admin privileges",
+                                "required": false,
+                                "type": "string"
+                            },
+                            {
+                                "name": "X-IBM-Client-Id",
+                                "in": "header",
+                                "description": "The client ID of the subscriber",
+                                "required": true,
+                                "type": "string"
+                            },
+                            {
+                                "name": "X-IBM-Client-Secret",
+                                "in": "header",
+                                "description": "The client secret of the subscriber and it is required for an API that is confidential",
+                                "required": false,
+                                "type": "string"
+                            }
+                        ],
+                        "responses": {
+                            "200": {
+                                "description": "json document containing issued information, etc.",
+                                "schema": {
+                                    "$ref": "#/definitions/issued_responses"
+                                }
+                            },
+                            "401": {
+                                "description": "failure in retreiving issued list"
+                            }
+                        }
+                    },
+                    "delete": {
+                        "consumes": [
+                            "application/x-www-form-urlencoded"
+                        ],
+                        "produces": [
+                            "application/json"
+                        ],
+                        "summary": "Revoke an application/client permission by the authorized owner",
+                        "description": "Revoke an application/client permission by the authorized owner",
+                        "parameters": [
+                            {
+                                "name": "client_id",
+                                "in": "query",
+                                "description": "client_id is the OAuth client id or application id to be revoked",
+                                "required": true,
+                                "type": "string"
+                            },
+                            {
+                                "name": "username",
+                                "in": "query",
+                                "description": "username's permission to be revoked if the authenticated resource has admin privileges",
+                                "required": false,
+                                "type": "string"
+                            },
+                            {
+                                "name": "X-IBM-Client-Id",
+                                "in": "header",
+                                "description": "The client ID of the subscriber",
+                                "required": true,
+                                "type": "string"
+                            },
+                            {
+                                "name": "X-IBM-Client-Secret",
+                                "in": "header",
+                                "description": "The client secret of the subscriber and it is required for an API that is confidential",
+                                "required": false,
+                                "type": "string"
+                            }
+                        ],
+                        "responses": {
+                            "200": {
+                                "description": "OK"
+                            }
+                        }
+                    }
+                },
+                "/oauth2/introspect": {
+                    "post": {
+                        "consumes": [
+                            "application/x-www-form-urlencoded"
+                        ],
+                        "produces": [
+                            "application/json"
+                        ],
+                        "summary": "Introspect a given access_token or refresh_token supported",
+                        "description": "This endpoint introspects a given access_token or refresh_token\n",
+                        "security": [],
+                        "parameters": [
+                            {
+                                "required": true,
+                                "type": "string",
+                                "description": "The client id for the subscriber",
+                                "in": "formData",
+                                "name": "client_id"
+                            },
+                            {
+                                "required": false,
+                                "type": "string",
+                                "description": "This parameter is required if the API is confidential",
+                                "in": "formData",
+                                "name": "client_secret"
+                            },
+                            {
+                                "name": "token",
+                                "in": "formData",
+                                "description": "String value of the access_token or refresh_token to be introspected",
+                                "required": true,
+                                "type": "string"
+                            },
+                            {
+                                "name": "token_type_hint",
+                                "in": "formData",
+                                "description": "This must contain 'access_token' or 'refresh_token' to indicate the token type",
+                                "required": false,
+                                "type": "string",
+                                "enum": [
+                                    "access_token",
+                                    "refresh_token"
+                                ]
+                            }
+                        ],
+                        "responses": {
+                            "200": {
+                                "description": "json document containing access_token or refresh_token information, etc.",
+                                "schema": {
+                                    "$ref": "#/definitions/introspect_response"
+                                }
+                            },
+                            "401": {
+                                "description": "failure"
+                            }
+                        }
+                    }
+                }
+            },
+            "definitions": {
+                "access_token_response": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "access_token"
+                    ],
+                    "properties": {
+                        "access_token": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "token_revoke_response": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "properties": {
+                        "status": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "issued_response": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "clientId",
+                        "owner",
+                        "scope",
+                        "issuedAt",
+                        "expiredAt",
+                        "refreshTokenIssued"
+                    ],
+                    "properties": {
+                        "clientId": {
+                            "type": "string"
+                        },
+                        "clientName": {
+                            "type": "string"
+                        },
+                        "owner": {
+                            "type": "string"
+                        },
+                        "scope": {
+                            "type": "string"
+                        },
+                        "issuedAt": {
+                            "type": "string"
+                        },
+                        "expiredAt": {
+                            "type": "string"
+                        },
+                        "refreshTokenIssued": {
+                            "type": "boolean"
+                        },
+                        "miscInfo": {
+                            "type": "string"
+                        },
+                        "consentedOn": {
+                            "type": "string"
+                        },
+                        "appId": {
+                            "type": "string"
+                        },
+                        "org": {
+                            "type": "string"
+                        },
+                        "orgId": {
+                            "type": "string"
+                        },
+                        "provider": {
+                            "type": "string"
+                        },
+                        "providerId": {
+                            "type": "string"
+                        },
+                        "catalog": {
+                            "type": "string"
+                        },
+                        "catalogId": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "issued_responses": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/issued_response"
+                    }
+                },
+                "introspect_response": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "active",
+                        "client_id",
+                        "client_name",
+                        "username",
+                        "sub",
+                        "exp",
+                        "expstr",
+                        "iat",
+                        "nbf",
+                        "nbfstr",
+                        "scope"
+                    ],
+                    "properties": {
+                        "active": {
+                            "type": "boolean"
+                        },
+                        "client_id": {
+                            "type": "string"
+                        },
+                        "client_name": {
+                            "type": "string"
+                        },
+                        "username": {
+                            "type": "string"
+                        },
+                        "sub": {
+                            "type": "string"
+                        },
+                        "exp": {
+                            "type": "string"
+                        },
+                        "expstr": {
+                            "type": "string"
+                        },
+                        "iat": {
+                            "type": "string"
+                        },
+                        "nbf": {
+                            "type": "string"
+                        },
+                        "nbfstr": {
+                            "type": "string"
+                        },
+                        "scope": {
+                            "type": "string"
+                        },
+                        "miscinfo": {
+                            "type": "string"
+                        },
+                        "consented_on": {
+                            "type": "string"
+                        },
+                        "consented_on_str": {
+                            "type": "string"
+                        },
+                        "grant_type": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "securityDefinitions": {
+                "clientIdHeader": {
+                    "in": "header",
+                    "type": "apiKey",
+                    "x-key-type": "client_id",
+                    "name": "client_id"
+                },
+                "clientSecretHeader": {
+                    "in": "header",
+                    "type": "apiKey",
+                    "x-key-type": "client_secret",
+                    "name": "client_secret"
+                }
+            }
+        }
+    },
+    "visibility": {
+        "type": "public"
+    },
+    "user_registry_urls": [
+        "https://cpd-cp4i.cp4iad22023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/integration/apis/cp4i/cp4i-apic/api/user-registries/e80b4f5d-c5ea-45d7-8dd4-52242c088f97/de85fcb8-9680-402f-9fa6-c6d0142a150b"
+    ],
+    "tls_client_profile_urls": [],
+    "created_at": "2023-09-04T06:14:03.000Z",
+    "updated_at": "2023-09-04T06:17:09.000Z",
+    "org_url": "https://cpd-cp4i.cp4iad22023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/integration/apis/cp4i/cp4i-apic/api/orgs/e80b4f5d-c5ea-45d7-8dd4-52242c088f97",
+    "url": "https://cpd-cp4i.cp4iad22023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/integration/apis/cp4i/cp4i-apic/api/orgs/e80b4f5d-c5ea-45d7-8dd4-52242c088f97/oauth-providers/e5f45a6d-c124-47ca-bb8f-697c3faa4e6c"
+}

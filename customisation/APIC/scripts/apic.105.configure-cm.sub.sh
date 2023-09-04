@@ -8,23 +8,24 @@ function decho() {
 }
 
 ################################################
-# function to create mail server configuration
+# Create mail server configuration
 # @param mail_server_ip: IP of the mail server, example: 
 # @param mail_server_ip: Port of the mail server, example: 2525
+# function
 CreateMailServer() {
   local mail_server_ip=$1
   local mail_server_port=$2
 
-  mailServerUrl=$(curl -sk "https://$EP_API/api/orgs/admin/mail-servers/generatedemailserver?fields=url" \
+  mailServerUrl=$(curl -sk "$PLATFORM_API_URL/orgs/admin/mail-servers/generatedemailserver?fields=url" \
   -H "Accept: application/json" \
   --compressed \
   -H "authorization: Bearer $access_token" \
   -H "content-type: application/json" \
   -H "Connection: keep-alive")
 
-  if [ -z "$mailServerUrl" ] || [ "$mailServerUrl" = "null" ]; then
+  if [ $(echo $mailServerUrl | jq .status ) = "404" ] || [ -z "$mailServerUrl" ] || [ "$mailServerUrl" = "null" ]; then
     mylog info "Creating mail server"
-    mailServerUrl=$(curl -sk "https://$EP_API/api/orgs/admin/mail-servers" \
+    mailServerUrl=$(curl -sk "$PLATFORM_API_URL/orgs/admin/mail-servers" \
     -H "Accept: application/json" \
     --compressed \
     -H "authorization: Bearer $access_token" \
@@ -37,7 +38,7 @@ CreateMailServer() {
   fi
 
   # No check needed, it is a modification (PUT)
-  setReplyTo=$(curl -sk "https://$EP_API/api/cloud/settings"\
+  setReplyTo=$(curl -sk "$PLATFORM_API_URL/cloud/settings"\
   -X PUT\
   -H "Accept: application/json"\
   -H "authorization: Bearer $access_token" \
@@ -46,53 +47,63 @@ CreateMailServer() {
 }
 
 ################################################
-# function to create an organisation owned a specific user
+# Create an organisation owned a specific user
 # @param org_name: The name of the organisation. It allows upper cases, the id will be lowered, but the orignal value will be used elsewhere (title, summary)
 # @param org_owner_id: The id of the owner of the organisation, it is used for his firstname and lastname
 # @param org_owner_pwd: The password of the owner of the organisation
 # @param org_owner_email: The email of the owner of the organisation
-
+# function
 CreateOrg() {
   local org_name=$1
   local org_owner_id=$2
   local org_owner_pwd=$3
   local org_owner_email=$4
 
-  # userRegistryUrl=$(curl -sk "https://$EP_API/api/orgs/admin/user-registries" \
+  decho "params: $org_name, $org_owner_id, $org_owner_pwd, $org_owner_email"
+
+  # userRegistryUrl=$(curl -sk "$PLATFORM_API_URL/orgs/admin/user-registries" \
   #   -H "Authorization: Bearer $access_token" \
   #   -H 'Accept: application/json' \
   #   --compressed)
 
   # Create owner of the organisation in the LUR of the admin organisation (We use the default-idp-2 identity provider valid for CP4I)
-  userUrl=$(curl -sk "https://$EP_API/api/user-registries/admin/api-manager-lur/users/$org_owner_id?fields=url" \
+  userUrl=$(curl -sk "$PLATFORM_API_URL/user-registries/admin/api-manager-lur/users/$org_owner_id?fields=url" \
   -H "Authorization: Bearer $access_token" \
   -H 'Accept: application/json' \
   --compressed | jq .url  | sed -e s/\"//g)
 
-  if [ -z "$userUrl" ] || [ "$userUrl" = "null" ]; then
+  decho "userUrl: $userUrl"
+
+  # Need to check if it exists, and then check if url ok
+  status=$(echo $userUrl | jq .status )
+  # TODO error in handling 404
+  decho "status: $status"
+  if [ "$status" != "null" ] && [ status = "404" ] || [ -z "$userUrl" ] || [ "$userUrl" = "null" ]; then
     mylog info "Creating $org_owner_id owner of the $org_name organisation"
-    userUrl=$(curl -sk "https://$EP_API/api/orgs/admin/mail-servers" \
+    userUrl=$(curl -sk "$PLATFORM_API_URL/user-registries/admin/api-manager-lur/users" \
     -H "Accept: application/json" \
     --compressed \
     -H "Authorization: Bearer $access_token" \
     -H "Content-type: application/json" \
     -H "Connection: keep-alive" \
-    --data "{\"type\":\"user\",\"api_version\":\"2.0.0\",\"name\":\"$org_owner_id\",\"title\":\"$org_owner_id\",\"state\":\"enabled\",\"identity_provider\": \"default-idp-2\",\"email\":\"$org_owner_email\",\"first_name\":\"$org_owner_id\",\"last_name\":\"consumer\",\"username\":\"$org_owner_id\",\"password\":\"$org_owner_pwd\"}" | jq .url  | sed -e s/\"//g)
+    --data "{\"type\":\"user\",\"api_version\":\"2.0.0\",\"name\":\"$org_owner_id\",\"title\":\"$org_owner_id\",\"state\":\"enabled\",\"identity_provider\": \"default-idp-2\",\"email\":\"$org_owner_email\",\"first_name\":\"$org_owner_id\",\"last_name\":\"$org_owner_id\",\"username\":\"$org_owner_id\",\"password\":\"$org_owner_pwd\"}" | jq .url  | sed -e s/\"//g)
   #  mylog info "userUrl: $userUrl"
   else
     mylog info "User $org_owner_id already exists, use it."
   fi
 
+  decho "userUrl: $userUrl"
+
   # Create organisation org_name
   lowercaseOrg=$(echo "$org_name" | awk '{print tolower($0)}')
-  orgUrl=$(curl -sk "https://$EP_API/api/orgs/$lowercaseOrg?fields=url" \
+  orgUrl=$(curl -sk "$PLATFORM_API_URL/orgs/$lowercaseOrg?fields=url" \
   -H "Authorization: Bearer $access_token" \
   -H 'Accept: application/json' \
   --compressed | jq .url | sed -e s/\"//g)
 
-  if [ -z "$orgUrl" ] || [ "$orgUrl" = "null" ]; then
+  if [ $(echo $orgUrl | jq .status ) = "404" ] || [ -z "$orgUrl" ] || [ "$orgUrl" = "null" ]; then
     mylog info "Creating $org_name organisation"
-    orgUrl=$(curl -sk --request POST "https://$EP_API/api/cloud/orgs" \
+    orgUrl=$(curl -sk --request POST "$PLATFORM_API_URL/cloud/orgs" \
   -H 'Accept: application/json' \
   -H 'Content-Type: application/json' \
   -H "Authorization: Bearer $access_token" \
@@ -105,11 +116,12 @@ CreateOrg() {
 }
 
 ################################################
-# function to create the topology (not needed for cp4i installation)
+# Create the topology (not needed for cp4i installation)
+# function
 CreateTopology() {
   echo Create gateway Service
 
-  dpUrl=$(curl -sk "https://$EP_API/api/orgs/admin/availability-zones/availability-zone-default/gateway-services" \
+  dpUrl=$(curl -sk "$PLATFORM_API_URL/orgs/admin/availability-zones/availability-zone-default/gateway-services" \
   -H "Authorization: Bearer $access_token" \
   -H 'Content-Type: application/json' \
   -H 'Accept: application/json' \
@@ -119,7 +131,7 @@ CreateTopology() {
 
   echo Set gateway Service as default for catalogs
 
-  setGWdefault=$(curl -sk --request PUT "https://$EP_API/api/cloud/settings" \
+  setGWdefault=$(curl -sk --request PUT "$PLATFORM_API_URL/cloud/settings" \
     -H "Authorization: Bearer $access_token" \
     -H 'Content-Type: application/json' \
     -H 'Accept: application/json' \
@@ -130,7 +142,7 @@ CreateTopology() {
 
   echo Create Analytics Service
 
-  analytUrl=$(curl -sk "https://$EP_API/api/orgs/admin/availability-zones/availability-zone-default/analytics-services" \
+  analytUrl=$(curl -sk "$PLATFORM_API_URL/orgs/admin/availability-zones/availability-zone-default/analytics-services" \
   -H "Authorization: Bearer $access_token"\
   -H 'Content-Type: application/json'\
   -H 'Accept: application/json'\
@@ -143,7 +155,7 @@ CreateTopology() {
   echo Associate Analytics Service with Gateway
 
   analytGwy=$(curl -sk -X PATCH \
-    "https://$EP_API/api/orgs/admin/availability-zones/availability-zone-default/gateway-services/apigateway-service" \
+    "$PLATFORM_API_URL/orgs/admin/availability-zones/availability-zone-default/gateway-services/apigateway-service" \
   -H 'Accept: application/json' \
   -H "Authorization: Bearer $access_token"\
   -H 'Cache-Control: no-cache' \
@@ -154,7 +166,7 @@ CreateTopology() {
 
   echo "Create Portal Service"
 
-  createPortal=$(curl -sk "https://$EP_API/api/orgs/admin/availability-zones/availability-zone-default/portal-services"\
+  createPortal=$(curl -sk "$PLATFORM_API_URL/orgs/admin/availability-zones/availability-zone-default/portal-services"\
   -H "Accept: application/json"\
   -H "authorization: Bearer $access_token"\
   -H "content-type: application/json"\
@@ -164,13 +176,14 @@ CreateTopology() {
 }
 
 ################################################
-# function to create a catalog in an organisation
+# Create a catalog in an organisation
 # catalogs specifications of the 3 catalogs are hard coded
 # @param org_name: The name of the organisation.
+# function
 CreateCatalog() {
   local org_name=$(echo "$1" | awk '{print tolower($0)}')
 
-# decho "url: https://$EP_API/api/orgs/$org_name/catalogs and token: $amToken"
+# decho "url: $PLATFORM_API_URL/orgs/$org_name/catalogs and token: $amToken"
 
 # Hard coded values
 catalog_title=("Prod" "UAT" "QA")
@@ -288,7 +301,7 @@ TOOLKIT_CREDS_URL="${PLATFORM_API_URL}/cloud/settings/toolkit-credentials"
 # if test ! -e "~/.apiconnect/config-apim";then
  	mylog info "Downloading apic config json file" 1>&2
  	curl -ks "${TOOLKIT_CREDS_URL}" -H "Authorization: Bearer ${ZEN_TOKEN}" -H "Accept: application/json" -H "Content-Type: application/json" -o creds.json
-# 	yes | apic client-creds:set creds.json
+	yes | apic client-creds:set creds.json
 # 	[[ -e creds.json ]] && rm creds.json
 # fi
 
@@ -311,23 +324,25 @@ cmToken=$(curl -ks --fail -X POST "$PLATFORM_API_URL/token" \
  -H "X-Ibm-Client-Secret: $TOOLKIT_CLIENT_SECRET" \
  --data-binary  "{\"api_key\":\"$APIC_APIKEY\",\"client_id\":\"$TOOLKIT_CLIENT_ID\",\"client_secret\":\"$TOOLKIT_CLIENT_SECRET\",\"grant_type\":\"api_key\"}")
 
+ decho "cmToken: $cmToken"
+
 if [ $(echo $cmToken | jq .status ) = "401" ] ; then
   decho "Error with login -> $cmToken"
   echo "Probably don't need to change password"
 
-  elif [ $(echo $cmToken | jq .access_token) != "null" ]
-    then
-      # echo "Try to Change password"
-      access_token=$(echo $cmToken | jq .access_token | sed -e s/\"//g);
-      apicme=$(curl -ks "https://$EP_API/api/me" \
-        -X PUT \
-        -H "Authorization: Bearer $access_token" \
-        -H 'Content-Type: application/json' \
-        -H 'Accept: application/json' \
-        --data-binary "{\"email\":\"$ADMIN_EMAIL\"}" | jq 'del(.url)')
-      decho $apicme
+elif [ $(echo $cmToken | jq .access_token) != "null" ]
+  then
+    # echo "Try to Change password"
+    access_token=$(echo $cmToken | jq .access_token | sed -e s/\"//g);
+    apicme=$(curl -ks "$PLATFORM_API_URL/me" \
+      -X PUT \
+      -H "Authorization: Bearer $access_token" \
+      -H 'Content-Type: application/json' \
+      -H 'Accept: application/json' \
+      --data-binary "{\"email\":\"$ADMIN_EMAIL\"}" | jq 'del(.url)')
+    decho $apicme
 
-#      curl -kv "https://$EP_API/api/me/change-password" \
+#      curl -kv "$PLATFORM_API_URL/me/change-password" \
 #        -H "Authorization: Bearer $access_token" \
 #        -H 'Content-Type: application/json' \
 #        -H 'Accept: application/json' \
@@ -335,21 +350,25 @@ if [ $(echo $cmToken | jq .status ) = "401" ] ; then
 fi
 
 # toto
-# CreateMailServer "${SMTP_SERVER}" "${SMTP_SERVERPORT}"
-# CreateOrg "${PROVIDER_ORG1}" "${ORG1_USERNAME}" "${ORG1_PASSWORD}!" "${ORG1_USEREMAIL}"
+CreateMailServer "${SMTP_SERVER}" "${SMTP_SERVERPORT}"
+CreateOrg "${PROVIDER_ORG1}" "${ORG1_USERNAME}" "${ORG1_PASSWORD}" "${ORG1_USEREMAIL}"
 
+decho "orgowner login: {\"username\":\"$ORG1_USERNAME\",\"password\":\"$ORG1_PASSWORD\",\"realm\":\"provider/default-idp-2\",\"client_id\":\"$TOOLKIT_CLIENT_ID\",\"client_secret\":\"$TOOLKIT_CLIENT_SECRET\",\"grant_type\":\"password\"}"
+
+decho "url: $PLATFORM_API_URL/token"
 amToken=$(curl -sk  --fail -X POST "$PLATFORM_API_URL/token" \
  -H 'Content-Type: application/json' \
  -H 'Accept: application/json' \
  --data-binary "{\"username\":\"$ORG1_USERNAME\",\"password\":\"$ORG1_PASSWORD\",\"realm\":\"provider/default-idp-2\",\"client_id\":\"$TOOLKIT_CLIENT_ID\",\"client_secret\":\"$TOOLKIT_CLIENT_SECRET\",\"grant_type\":\"password\"}" |  jq .access_token | sed -e s/\"//g  )
 
+decho "amToken: $amToken"
 retVal=$?
 if [ $retVal -ne 0 ] || [ -z "$amToken" ] || [ "$amToken" = "null" ]; then
         echo "Error with login -> $retVal"
         exit 1
 fi
 
-apicme=$(curl -ks "https://$EP_API/api/me" \
+apicme=$(curl -ks "https://$EP_API/me" \
   -X PUT \
   -H "Authorization: Bearer $amToken" \
   -H 'Content-Type: application/json' \
@@ -358,14 +377,32 @@ apicme=$(curl -ks "https://$EP_API/api/me" \
 decho $apicme
 
 # toto
-# CreateCatalog "${PROVIDER_ORG1}"
+CreateCatalog "${PROVIDER_ORG1}"
 
-# tlsServer=$(curl -sk "https://$EP_API/api/orgs/admin/tls-server-profiles" \
+# Push API into draft
+# Check if ping API exist
+draftAPICLEAR=$(curl -sk --request DELETE "$PLATFORM_API_URL/orgs/$PROVIDER_ORG1/drafts/draft-apis/pingapi?confirm=$PROVIDER_ORG1" -H "Accept: application/json" -H "authorization: Bearer $amToken");
+decho $draftAPICLEAR;
+
+decho "Load test API (Ping API) as a draft"
+
+api=`cat $customisationdir/APIC/config/apis/pingapi_1.0.0.json`;
+
+draftAPI=$(curl -sk "$PLATFORM_API_URL/api/orgs/$PROVIDER_ORG1/drafts/draft-apis"\
+ -H "Accept: application/json"\
+ --compressed\
+ -H "authorization: Bearer $amToken"\
+ -H "content-type: application/json"\
+ -H "Connection: keep-alive"\
+ --data "{\"draft_api\":$api}" );
+decho $draftAPI;
+
+# tlsServer=$(curl -sk "$PLATFORM_API_URL/orgs/admin/tls-server-profiles" \
 #  -H "Authorization: Bearer $access_token" \
 #  -H 'Accept: application/json' --compressed | jq .results[0].url  | sed -e s/\"//g);
 # echo "tlsServer: $tlsServer"
 
-# tlsClientDefault=$(curl -sk "https://$EP_API/api/orgs/admin/tls-client-profiles" \
+# tlsClientDefault=$(curl -sk "$PLATFORM_API_URL/orgs/admin/tls-client-profiles" \
 #  -H "Authorization: Bearer $access_token" \
 #  -H 'Accept: application/json' --compressed | jq '.results[] | select(.name=="tls-client-profile-default")| .url' | sed -e s/\"//g);
 # echo "tlsClientDefault: $tlsClientDefault"

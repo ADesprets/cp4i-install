@@ -1,0 +1,84 @@
+swagger: '2.0'
+info:
+  title: Ping API
+  x-ibm-name: pingapi
+  x-ibm-summary: Simple test API used to validate the installation
+  version: 1.0.0
+  description: Simple test API
+schemes:
+  - https
+basePath: /pingapi/v1
+produces:
+  - application/json
+consumes:
+  - application/json
+security:
+  - clientID: []
+securityDefinitions:
+  clientID:
+    type: apiKey
+    in: header
+    name: X-IBM-Client-Id
+paths:
+  /hello:
+    get:
+      responses:
+        '200':
+          description: success
+          schema:
+            type: string
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: name
+          in: query
+          type: string
+          description: Name you want to say hello
+host: $(catalog.host)
+x-ibm-configuration:
+  cors:
+    enabled: true
+  gateway: datapower-api-gateway
+  properties: {}
+  assembly:
+    execute:
+      - log:
+          version: 2.1.0
+          title: log
+          log-level: default
+          mode: gather-only
+      - set-variable:
+          version: 2.0.0
+          title: set-variable
+          actions:
+            - set: log.custom_data.myField
+              value: toto
+              type: string
+      - gatewayscript:
+          version: 2.0.0
+          title: gatewayscript
+          source: |-
+            var parameters = context.get('request.parameters');
+            var api_info = context.get('api');
+
+            const mergedObject = {
+              ...api_info,
+              ...parameters
+            };
+
+            context.message.body.write(mergedObject);
+            console.debug('>>> api_info: ' + JSON.stringify(mergedObject))
+    catch: []
+    finally: []
+  type: rest
+  phase: realized
+  enforced: true
+  testable: true
+  activity-log:
+    enabled: true
+    success-content: activity
+    error-content: payload
+tags:
+  - name: animal/pet/cat
