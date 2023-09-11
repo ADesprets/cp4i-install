@@ -79,18 +79,17 @@ ibmcloud target -r eu-de
 ibmcloud target -g default
 
 cost=$(ibmcloud billing account-usage --output json | jq .Summary.resources.billable_cost)
+mylog info "Updating ~/billing/ibmcloud-cost.txt, current cost is $cost." 1>&2
 echo "`date` : $cost" >> ~/billing/ibmcloud-cost.txt
+
 my_cluster_name=cp4iad22023
-
-fcluster_name=$(ibmcloud ks cluster ls -q| awk '{print $1}' | grep -E "^$cluster_name$")
-
-if [ -z "$fcluster_name" ] || [ "$fcluster_name" = "null" ] || [ "$fcluster_name" = "" ]; then
-  echo "Cluster $my_cluster_name does not exist, do not attempt to login"
+if ! ibmcloud ks cluster get --cluster $my_cluster_name --output json > /dev/null 2>&1; then
+  mylog info "Cluster $my_cluster_name does not exist, do not attempt to login"
 else
   gbl_cluster_url_filter=.serverURL
   my_cluster_url=$(ibmcloud ks cluster get --cluster $my_cluster_name --output json | jq -r "$gbl_cluster_url_filter")
   SECONDS=0
-  echo "my_cluster_url: $my_cluster_url"
+  mylog info "my_cluster_url: $my_cluster_url"
   Login2OpenshiftCluster
   mylog info "Login in to Openshift cluster took $SECONDS seconds to execute." 1>&2
 fi
