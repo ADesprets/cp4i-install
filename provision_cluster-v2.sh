@@ -367,9 +367,9 @@ Create_Capabilities () {
 
   ##-- Creating APIC instance
   if $my_ibm_apiconnect;then
-    check_create_oc_yaml APIConnectCluster $my_cp_apic_instance_name "${capabilitiesdir}APIC-Capability.yaml" $ns
+    check_create_oc_yaml APIConnectCluster $apic_instance_name "${capabilitiesdir}APIC-Capability.yaml" $ns
     SECONDS=0
-    wait_for_oc_state APIConnectCluster "$my_cp_apic_instance_name" Ready '.status.phase' $ns
+    wait_for_oc_state APIConnectCluster "$apic_instance_name" Ready '.status.phase' $ns
     mylog info "Creation of APIC instance took $SECONDS seconds to execute." 1>&2    
   fi
 
@@ -472,13 +472,19 @@ Login2IBMCloud_and_OpenshiftCluster ()  {
   Login2IBMCloud
 
   ##--Create openshift cluster
+  SECONDS=0
   CreateOpenshiftCluster
+  mylog info "Creation of the cluster took $SECONDS seconds to execute." 1>&2
 
   ##-- wait for Cluster availability
+  SECONDS=0
   wait_for_cluster_availability
+  mylog info "Availability of the took $SECONDS seconds to execute." 1>&2
 
   ##-- wait for ingress address availability
+  SECONDS=0
   Wait4IngressAddressAvailability
+  mylog info "To have ingres available took $SECONDS seconds to execute." 1>&2
 
   ##-- Login to openshift cluster
   Login2OpenshiftCluster
@@ -504,6 +510,7 @@ subscriptionsdir="${scriptdir}templates/subscriptions/"
 capabilitiesdir="${scriptdir}templates/capabilities/"
 privatedir="${scriptdir}private/"
 workingdir="${scriptdir}working/"
+customisationdir="${scriptdir}customisation/"
 
 #SB]20230214 Ajout des variables de configuration ACE ...
 resourcedir="${scriptdir}templates/resources/"

@@ -18,7 +18,7 @@
         "type": "public"
     },
     "configuration": {
-        "admin_dn": "cn=admin,dc=ibm,dc=com",
+        "admin_dn": "$ldap_admin_dn",
         "admin_password": "********",
         "search_dn_base": "dc=ibm,dc=com",
         "protocol_version": "3",

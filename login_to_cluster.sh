@@ -1,0 +1,96 @@
+#!/bin/bash
+
+################################################
+# simple logging with colors
+# @param 1 level (info/error/warn/wait/check/ok/no)
+# function
+mylog() {
+	p=
+	w=
+	s=
+	case $1 in
+	info)c=2;;#green
+	error)c=1;p='ERROR: ';;#red
+	warn)c=3;;#yellow
+	wait)c=4;p="$(date) ";;#blue
+	check)c=6;w=-n;s=...;;#cyan
+	ok)c=2;p=OK;;#green
+	no)c=3;p=NO;;#yellow
+	*) c=9;;#default
+	esac
+	shift
+	echo $w "$(tput setaf $c)$p$@$s$(tput setaf 9)";
+}
+
+################################################
+# assert that variable is defined
+# @param 1 name of variable
+# @param 2 error message, or name of method to call if begins with "fix"
+# function
+var_fail() {
+	if eval test -z '$'$1;then
+		mylog error "missing config variable: $1" 1>&2
+		case "$2" in
+			fix*|echo*) eval $2 ;;
+			"") ;;
+			*) mylog log "$2" 1>&2;;
+		esac
+		exit 1
+	fi
+}
+
+# Log in IBM Cloud
+# function
+Login2IBMCloud () {
+  var_fail my_ic_apikey "Create and save API key JSON file from: https://cloud.ibm.com/iam/apikeys"
+  mylog check "Login to IBM Cloud"
+  if ! ibmcloud login -q --no-region --apikey $my_ic_apikey > /dev/null;then
+    mylog error "Fail to login to IBM Cloud, check API key: $my_ic_apikey" 1>&2
+    exit 1
+  else mylog ok
+  fi
+}
+
+################################################
+# Login to openshift cluster
+# note that this login requires that you login to the cluster once (using sso or web): not sure why
+# requires var my_cluster_url
+# function
+Login2OpenshiftCluster () {
+  mylog check "Login to cluster"
+  while ! oc login -u apikey -p $my_ic_apikey --server=$my_cluster_url > /dev/null;do
+	mylog error "$(date) Fail to login to Cluster, retry in a while (login using web to unblock)" 1>&2
+	sleep 30
+  done
+  mylog ok
+}
+
+################################################################################################
+# Start of the script main entry
+################################################################################################
+scriptdir=$(dirname "$0")/
+privatedir="${scriptdir}private/"
+
+my_ic_apikey=$(jq -r .apikey < "${privatedir}apikey.json")
+SECONDS=0
+Login2IBMCloud
+mylog info "Login in to IBM Cloud took $SECONDS seconds to execute." 1>&2
+ibmcloud target -r eu-de
+ibmcloud target -g default
+
+cost=$(ibmcloud billing account-usage --output json | jq .Summary.resources.billable_cost)
+echo "`date` : $cost" >> ~/billing/ibmcloud-cost.txt
+my_cluster_name=cp4iad22023
+
+fcluster_name=$(ibmcloud ks cluster ls -q| awk '{print $1}' | grep -E "^$cluster_name$")
+
+if [ -z "$fcluster_name" ] || [ "$fcluster_name" = "null" ] || [ "$fcluster_name" = "" ]; then
+  echo "Cluster $my_cluster_name does not exist, do not attempt to login"
+else
+  gbl_cluster_url_filter=.serverURL
+  my_cluster_url=$(ibmcloud ks cluster get --cluster $my_cluster_name --output json | jq -r "$gbl_cluster_url_filter")
+  SECONDS=0
+  echo "my_cluster_url: $my_cluster_url"
+  Login2OpenshiftCluster
+  mylog info "Login in to Openshift cluster took $SECONDS seconds to execute." 1>&2
+fi

@@ -31,7 +31,7 @@ CreateMailServer() {
     -H "authorization: Bearer $access_token" \
     -H "content-type: application/json" \
     -H "Connection: keep-alive" \
-    --data "{\"title\":\"GeneratedEMailServer\",\"name\":\"generatedemailserver\",\"host\":\"$mail_server_ip\",\"port\":$mail_server_port,\"credentials\":{\"username\":\"$SMTP_USERNAME\",\"password\":\"$SMTP_PASSWORD\"}}" | jq .url );
+    --data "{\"title\":\"GeneratedEMailServer\",\"name\":\"generatedemailserver\",\"host\":\"$mail_server_ip\",\"port\":$mail_server_port,\"credentials\":{\"username\":\"$apic_smtp_username\",\"password\":\"$apic_smtp_password\"}}" | jq .url );
     mylog info "mailServerUrl: $mailServerUrl"
   else
     mylog info "Mail Server generatedemailserver already exists, use it."
@@ -43,7 +43,7 @@ CreateMailServer() {
   -H "Accept: application/json"\
   -H "authorization: Bearer $access_token" \
   -H "content-type: application/json"\
-  --data "{\"mail_server_url\":$mailServerUrl,\"email_sender\":{\"name\":\"APIC Administrator\",\"address\":\"$ADMIN_EMAIL\"}}");
+  --data "{\"mail_server_url\":$mailServerUrl,\"email_sender\":{\"name\":\"APIC Administrator\",\"address\":\"$apic_admin_email\"}}");
 }
 
 ################################################
@@ -241,7 +241,7 @@ starting=$(date);
 
 # end with / on purpose (if var not defined, uses CWD - Current Working Directory)
 scriptdir=$(dirname "$0")/
-configdir="${scriptdir}config/"
+configdir="${scriptdir}/../config/"
 libdir="${scriptdir}../../../"
 
 # load helper functions
@@ -251,21 +251,21 @@ read_config_file "${configdir}apic.properties"
 
 # Retrieve the various routes for APIC components
 # API Manager URL
-EP_API=$(oc get route "${my_cp_apic_instance_name}-mgmt-platform-api" -n ${my_apic_project} -o jsonpath="{.spec.host}")
+EP_API=$(oc get route "${apic_instance_name}-mgmt-platform-api" -n ${apic_project} -o jsonpath="{.spec.host}")
 decho "EP_API: ${EP_API}"
 # gwv6-gateway-manager
-EP_GWD=$(oc get route "${my_cp_apic_instance_name}-gw-gateway-manager" -n ${my_apic_project} -o jsonpath="{.spec.host}")
+EP_GWD=$(oc get route "${apic_instance_name}-gw-gateway-manager" -n ${apic_project} -o jsonpath="{.spec.host}")
 # gwv6-gateway
-EP_GW=$(oc get route "${my_cp_apic_instance_name}-gw-gateway" -n ${my_apic_project} -o jsonpath="{.spec.host}")
+EP_GW=$(oc get route "${apic_instance_name}-gw-gateway" -n ${apic_project} -o jsonpath="{.spec.host}")
 # analytics-ai-endpoint
-EP_AI=$(oc get route "${my_cp_apic_instance_name}-a7s-ai-endpoint" -n ${my_apic_project} -o jsonpath="{.spec.host}")
+EP_AI=$(oc get route "${apic_instance_name}-a7s-ai-endpoint" -n ${apic_project} -o jsonpath="{.spec.host}")
 # portal-portal-director
-EP_PADMIN=$(oc get route "${my_cp_apic_instance_name}-ptl-portal-director" -n ${my_apic_project} -o jsonpath="{.spec.host}")
+EP_PADMIN=$(oc get route "${apic_instance_name}-ptl-portal-director" -n ${apic_project} -o jsonpath="{.spec.host}")
 # portal-portal-web
-EP_PORTAL=$(oc get route "${my_cp_apic_instance_name}-ptl-portal-web" -n ${my_apic_project} -o jsonpath="{.spec.host}")
+EP_PORTAL=$(oc get route "${apic_instance_name}-ptl-portal-web" -n ${apic_project} -o jsonpath="{.spec.host}")
 decho "EP_PORTAL: $EP_PORTAL"
 # Zen
-EP_ZEN=$(oc get route cpd -n ${my_apic_project} -o jsonpath="{.spec.host}")
+EP_ZEN=$(oc get route cpd -n ${apic_project} -o jsonpath="{.spec.host}")
 # Cloud pak administration console
 EP_CPADM=$(oc -n kube-public get cm ibmcloud-cluster-info -o jsonpath='{.data.cluster_address}')
 decho "EP_CPADM: ${EP_CPADM}"
@@ -339,27 +339,29 @@ elif [ $(echo $cmToken | jq .access_token) != "null" ]
       -H "Authorization: Bearer $access_token" \
       -H 'Content-Type: application/json' \
       -H 'Accept: application/json' \
-      --data-binary "{\"email\":\"$ADMIN_EMAIL\"}" | jq 'del(.url)')
+      --data-binary "{\"email\":\"$apic_admin_email\"}" | jq 'del(.url)')
     decho $apicme
 
 #      curl -kv "$PLATFORM_API_URL/me/change-password" \
 #        -H "Authorization: Bearer $access_token" \
 #        -H 'Content-Type: application/json' \
 #        -H 'Accept: application/json' \
-#        --data-binary "{\"current_password\":\"7iron-hide\",\"password\":\"$ADMIN_PASSWORD\"}" 
+#        --data-binary "{\"current_password\":\"7iron-hide\",\"password\":\"$apic_admin_password\"}" 
 fi
 
 # toto
-CreateMailServer "${SMTP_SERVER}" "${SMTP_SERVERPORT}"
-CreateOrg "${PROVIDER_ORG1}" "${ORG1_USERNAME}" "${ORG1_PASSWORD}" "${ORG1_USEREMAIL}"
+CreateMailServer "${apic_smtp_server}" "${apic_smtp_server_port}"
+CreateOrg "${apic_provider_org1}" "${apic_org1_username}" "${apic_org1_password}" "${apic_org1_user_email}"
 
-decho "orgowner login: {\"username\":\"$ORG1_USERNAME\",\"password\":\"$ORG1_PASSWORD\",\"realm\":\"provider/default-idp-2\",\"client_id\":\"$TOOLKIT_CLIENT_ID\",\"client_secret\":\"$TOOLKIT_CLIENT_SECRET\",\"grant_type\":\"password\"}"
+decho "orgowner login: {\"username\":\"$apic_org1_username\",\"password\":\"$apic_org1_password\",\"realm\":\"provider/default-idp-2\",\"client_id\":\"$TOOLKIT_CLIENT_ID\",\"client_secret\":\"$TOOLKIT_CLIENT_SECRET\",\"grant_type\":\"password\"}"
 
 decho "url: $PLATFORM_API_URL/token"
+
+# get token for the API Manager for 
 amToken=$(curl -sk  --fail -X POST "$PLATFORM_API_URL/token" \
  -H 'Content-Type: application/json' \
  -H 'Accept: application/json' \
- --data-binary "{\"username\":\"$ORG1_USERNAME\",\"password\":\"$ORG1_PASSWORD\",\"realm\":\"provider/default-idp-2\",\"client_id\":\"$TOOLKIT_CLIENT_ID\",\"client_secret\":\"$TOOLKIT_CLIENT_SECRET\",\"grant_type\":\"password\"}" |  jq .access_token | sed -e s/\"//g  )
+ --data-binary "{\"username\":\"$apic_org1_username\",\"password\":\"$apic_org1_password\",\"realm\":\"provider/default-idp-2\",\"client_id\":\"$TOOLKIT_CLIENT_ID\",\"client_secret\":\"$TOOLKIT_CLIENT_SECRET\",\"grant_type\":\"password\"}" |  jq .access_token | sed -e s/\"//g  )
 
 decho "amToken: $amToken"
 retVal=$?
@@ -377,18 +379,18 @@ apicme=$(curl -ks "https://$EP_API/me" \
 decho $apicme
 
 # toto
-CreateCatalog "${PROVIDER_ORG1}"
+CreateCatalog "${apic_provider_org1}"
 
 # Push API into draft
 # Check if ping API exist
-draftAPICLEAR=$(curl -sk --request DELETE "$PLATFORM_API_URL/orgs/$PROVIDER_ORG1/drafts/draft-apis/pingapi?confirm=$PROVIDER_ORG1" -H "Accept: application/json" -H "authorization: Bearer $amToken");
+draftAPICLEAR=$(curl -sk --request DELETE "$PLATFORM_API_URL/orgs/$apic_provider_org1/drafts/draft-apis/pingapi?confirm=$apic_provider_org1" -H "Accept: application/json" -H "authorization: Bearer $amToken");
 decho $draftAPICLEAR;
 
 decho "Load test API (Ping API) as a draft"
 
 api=`cat $customisationdir/APIC/config/apis/pingapi_1.0.0.json`;
 
-draftAPI=$(curl -sk "$PLATFORM_API_URL/api/orgs/$PROVIDER_ORG1/drafts/draft-apis"\
+draftAPI=$(curl -sk "$PLATFORM_API_URL/api/orgs/$apic_provider_org1/drafts/draft-apis"\
  -H "Accept: application/json"\
  --compressed\
  -H "authorization: Bearer $amToken"\
@@ -410,7 +412,7 @@ decho $draftAPI;
 # Removed analytics-client-default not used anymore
 
 # echo "--------------- Endpoint ---------------------"
-# echo " Cloud manager : https://$MGMT_ADMIN_EP.$STACK_HOST (admin/$ADMIN_PASSWORD)"
+# echo " Cloud manager : https://$MGMT_ADMIN_EP.$STACK_HOST (admin/$apic_admin_password)"
 # echo " API manager : https://$MGMT_API_EP.$STACK_HOST ($ORG_USERNAME/$ORG_PASSWORD)"
 # echo "----------------------------------------------"
 

@@ -18,15 +18,15 @@
             "env": [
               {
                 "name": "LDAP_DOMAIN",
-                "value": "ibm.com"
+                "value": "$ldap_domain"
               },
               {
                 "name": "LDAP_ORGANISATION",
-                "value": "ibm integration"
+                "value": "$ldap_organisation"
               },
               {
                 "name": "LDAP_ADMIN_PASSWORD",
-                "value": "uLgH75o@At+9?zY0RBB"
+                "value": "$ldap_admin_password"
               }
             ]
           }

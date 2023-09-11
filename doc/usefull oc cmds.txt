@@ -1,0 +1,54 @@
+oc get routes -n ibm-common-services | grep ibm-licensing-service-instance | awk '{print $2}')
+oc adm policy add-scc-to-user privileged -z instana-agent -n instana-agent
+oc apply -f <yaml file>
+oc create -f <yaml file>
+oc create secret <data>
+oc extract secret/${ES_INST_NAME}-cluster-ca-cert -n ${ES_NAMESPACE} --keys=ca.crt
+oc get OperandConfig common-service -n ibm-common-services -o json > opconfig.json
+oc get apiconnectcluster --no-headers -n tools
+oc get assetrepository --no-headers -n tools
+oc get csv --no-headers -n ibm-common-services
+oc get csv --no-headers -n instana-agent
+oc get csv --no-headers -n openshift-distributed-tracing
+oc get csv --no-headers -n openshift-logging
+oc get csv --no-headers -n openshift-operators
+oc get csv --no-headers -n openshift-operators-redhat
+oc get dashboard --no-headers -n tools
+oc get designerauthoring --no-headers -n tools
+oc get eventgatewaycluster ${APIC_INST_NAME}-egw -n ${APIC_NAMESPACE} -o=jsonpath='{range .status.endpoints[*]}{.name}{" "}{.uri}{"\n"}{end}' | awk '$1=="eventGateway" {print $2}')
+oc get eventstreams ${ES_INST_NAME} -n ${ES_NAMESPACE} -o=jsonpath='{range .status.kafkaListeners[*]}{.type} {.bootstrapServers}{"\n"}{end}' | awk '$1=="external" {print $2}')
+oc get eventstreams --no-headers -n tools
+oc get gatewaycluster --no-headers -n tools
+oc get integrationruntime jgr-designer-sfleads -n tools -o jsonpath='{.status.endpoints[0].uri}')'/SFLeads/lead'
+oc get integrationruntime jgr-mqapi-dflt -n tools -o jsonpath='{.status.endpoints[0].uri}')
+oc get integrationruntime jgr-mqapi-prem -n tools -o jsonpath='{.status.endpoints[0].uri}')
+oc get integrationserver jgr-designer-sfleads -n tools -o jsonpath='{.status.endpoints[0].uri}')'/SFLeads/lead'
+oc get integrationserver jgr-mqapi-dflt -n tools -o jsonpath='{.status.endpoints[0].uri}')
+oc get jaeger --no-headers jaeger-all-in-one-inmemory -n openshift-distributed-tracing
+oc get nodes
+oc get operationsdashboard --no-headers -n tools
+oc get platformnavigator --no-headers -n tools
+oc get pods --no-headers -n instana-agent
+oc get pods --no-headers -n openshift-logging
+oc get pods -n $EEM_NAMESPACE | grep ${EEM_INST_NAME}-ibm-eem-manager
+oc get pods -n $EP_NAMESPACE | grep ${EP_INST_NAME}-ibm-ep-sts
+oc get pods -n $FLINK_NAMESPACE | grep $FLINK_INST_NAME
+oc get pods -n ibm-common-services | grep ibm-license-service-reporter-instance
+oc get pods -n ibm-common-services | grep ibm-licensing-service-instance
+oc get queuemanager --no-headers -n tools
+oc get route "${APIC_INST_NAME}-mgmt-platform-api" -n $APIC_NAMESPACE -o jsonpath="{.spec.host}")
+oc get route "${EEM_INST_NAME}-ibm-eem-gateway" -n $EEM_NAMESPACE -o jsonpath="{.spec.host}")
+oc get route ${APIC_INST_NAME}-egw-event-gw-client -n ${APIC_NAMESPACE} -o jsonpath='{.spec.host}')
+oc get route cp-console -n ibm-common-services -o jsonpath='{.status.ingress[0].host}')
+oc get route default-route -n openshift-image-registry --template='{{ .spec.host }}')
+oc get route qmgr-demo-ibm-mq-qm -n tools -o jsonpath="{.spec.host}")
+oc get secret "${APIC_INST_NAME}-mgmt-admin-pass" -n $APIC_NAMESPACE -o jsonpath="{.data.password}"| base64 -d)
+oc get statefulset "${APIC_INST_NAME}-gw" -n $APIC_NAMESPACE -o json > gw-statefulset.json
+oc get switchserver --no-headers -n tools | awk '{print $4}') != "Ready" ]
+oc new-project $NS
+oc new-project instana-agent
+oc patch configs.imageregistry.operator.openshift.io/cluster --patch '{"spec":{"defaultRoute":true}}' --type=merge
+oc patch secret ${EEM_INST_NAME}-ibm-eem-user-credentials -n $EEM_NAMESPACE --patch '{"data":{"user-credentials.json":"$SECRET_DATA_BASE64"}}' --type=merge
+oc patch storageclass ocs-storagecluster-ceph-rbd -p '{"metadata": {"annotations": {"storageclass.kubernetes.io/is-default-class": "true"}}}'
+oc patch storageclass thin -p '{"metadata": {"annotations": {"storageclass.kubernetes.io/is-default-class": "false"}}}'
+podman login -u $(oc whoami) -p $(oc whoami -t) $HOST

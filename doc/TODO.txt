@@ -1,5 +1,4 @@
 --- TODO 0 --- APIC Initial Configuration ---
-Install OpenLDAP Arnauld
 Configure OpenLDAP Arnauld + Saad
 
 Create Catalogs
@@ -15,7 +14,7 @@ Load test API (Ping API) as a draft
 		Create native HA cluster
 	APIC: 
 		Manage 404 if not present
-		Configure and get route to DataPower console
+		Add a route to DataPower Gateway console
 		Load Taxi Locator/... (call-back-end-simulator_1.0.0.yaml, flightlandings_1.0.0.yaml, passenger_1.0.0.zip, passenger_airshopping-v02.wsdl_1.0.0.zip, taxi-locator_1.0.0.yaml, taxi-messaging_1.0.0.yaml)
 		Create OAuth
 		Create LDAP user registry
@@ -30,8 +29,6 @@ Load test API (Ping API) as a draft
 
 	Load simulator application for taxi test
 		Container eem-demo-rest-apis, quay.io/dale-lane/eem-demo-apis
--
--
 --- TODO 5 --- Create/Extract all certificates for Web UI ---
 		Need a few certificate to get it including gateway, login, cdp, ... Attention the nginx is passthrough
 --- TODO 6 --- Harmoniser les commandes soit en oc only soit oc + jq (avoid strings manipulation) ---
@@ -47,3 +44,54 @@ Load test API (Ping API) as a draft
 	brew install openshift-cli
 --- TODO 12 --- Check if reuse from https://github.ibm.com/kskhong/terraform-cp4i
 --- TODO 13 --- Variabiliser le stockage pour les capabilities
+
+
+------------------------------------------------------------
+Yaml to create a topic resource
+------------------------------------------------------------
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: my-topic
+  labels:
+    strimzi.io/cluster: my-cluster  # Replace with your Kafka cluster name
+spec:
+  partitions: 3
+  replicas: 3
+------------------------------------------------------------
+Creation of the topic
+------------------------------------------------------------
+oc apply -f my-topic.yaml
+------------------------------------------------------------
+Validation and get topics
+------------------------------------------------------------
+oc get kafkatopics
+------------------------------------------------------------
+Yaml for user
+------------------------------------------------------------
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaUser
+metadata:
+  name: my-user
+  labels:
+    strimzi.io/cluster: my-cluster  # Replace with your Kafka cluster name
+spec:
+  authentication:
+    type: tls
+  authorization:
+    acls:
+    - resource:
+        type: topic
+        name: my-topic  # Replace with the topic name you want to grant access to
+      operation: Read
+    - resource:
+        type: topic
+        name: my-topic  # Replace with the topic name you want to grant access to
+      operation: Write
+
+------------------------------------------------------------
+Validation and get users
+------------------------------------------------------------
+oc get kafkausers
+------------------------------------------------------------
+
