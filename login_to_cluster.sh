@@ -9,14 +9,14 @@ mylog() {
 	w=
 	s=
 	case $1 in
-	info)c=2;;#green
-	error)c=1;p='ERROR: ';;#red
-	warn)c=3;;#yellow
-	wait)c=4;p="$(date) ";;#blue
-	check)c=6;w=-n;s=...;;#cyan
-	ok)c=2;p=OK;;#green
-	no)c=3;p=NO;;#yellow
-	*) c=9;;#default
+		"info" ) c=2;; # green
+		"error" ) c=1;p='ERROR: ';; # red
+		"warn" ) c=3;; # yellow
+		"wait" ) c=4;p="$(date) ";; # blue
+		"check" ) c=6;w=-n;s=...;; # cyan
+		"ok" ) c=2;p=OK;; # green
+		"no" ) c=3;p=NO;; # yellow
+		* ) c=9;; # default
 	esac
 	shift
 	echo $w "$(tput setaf $c)$p$@$s$(tput setaf 9)";
