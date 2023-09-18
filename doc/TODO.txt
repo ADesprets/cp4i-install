@@ -10,7 +10,9 @@ Load test API (Ping API) as a draft
 --- TODO 3 --- Improve code documentation  ---
 --- TODO 4 --- E2E Initial Customisation ---
 	ES:
+		TOPICs
 	MQ:
+		MQ Queue Managers
 		Create native HA cluster
 	APIC: 
 		Manage 404 if not present

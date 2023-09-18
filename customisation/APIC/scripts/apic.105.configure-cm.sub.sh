@@ -8,20 +8,6 @@ function decho() {
 }
 
 ################################################
-# Wait n secs
-# @param secs: number of seconds to wait for
-# function 
-function waitn() {
-  local secs=$1
-  mylog info "Sleeping $secs"
-  while [ $secs -gt 0 ]; do
-    echo -ne "$secs\033[0K\r"
-    sleep 1
-    : $((secs--))
-  done
-}
-
-################################################
 # Create mail server configuration
 # @param mail_server_ip: IP of the mail server, example: 
 # @param mail_server_ip: Port of the mail server, example: 2525
@@ -61,7 +47,7 @@ CreateMailServer() {
 }
 
 ################################################
-# Create an organisation owned a specific user
+# Create an organisation owned by a specific user
 # @param org_name: The name of the organisation. It allows upper cases, the id will be lowered, but the orignal value will be used elsewhere (title, summary)
 # @param org_owner_id: The id of the owner of the organisation, it is used for his firstname and lastname
 # @param org_owner_pwd: The password of the owner of the organisation

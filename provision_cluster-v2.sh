@@ -183,7 +183,7 @@ Add_Catalog_Sources_ibm_pak () {
 Install_Operators () {
   local ns=$1
 
-  ##-- Creating Navigator operator subscription
+  # Creating Navigator operator subscription
   if $my_ibm_navigator;then
     SECONDS=0
     export operator_name=ibm-integration-platform-navigator
@@ -196,7 +196,7 @@ Install_Operators () {
     mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
   fi
 
-  ##-- Creating Asset Repository operator subscription
+  # Creating Asset Repository operator subscription
   if $my_ibm_asset_repository;then
     SECONDS=0
     export operator_name=ibm-integration-asset-repository
@@ -209,7 +209,7 @@ Install_Operators () {
     mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
   fi
 
-  ##-- Creating ACE operator subscription
+  # Creating ACE operator subscription
   if $my_ibm_appconnect;then
     SECONDS=0
     export operator_name=ibm-appconnect
@@ -222,7 +222,7 @@ Install_Operators () {
     mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
   fi
 
-  ##-- Creating APIC operator subscription
+  # Creating APIC operator subscription
   if $my_ibm_apiconnect;then
     SECONDS=0
     export operator_name=ibm-apiconnect
@@ -235,7 +235,7 @@ Install_Operators () {
     mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
   fi
 
-  ##-- Creating MQ operator subscription
+  # Creating MQ operator subscription
   if $my_ibm_mq;then
     SECONDS=0
     export operator_name=ibm-mq
@@ -248,7 +248,7 @@ Install_Operators () {
     mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
   fi
 
-  ##-- Creating EventStreams operator subscription
+  # Creating EventStreams operator subscription
   if $my_ibm_eventstreams;then
     SECONDS=0
     export operator_name=ibm-eventstreams
@@ -261,7 +261,7 @@ Install_Operators () {
     mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
   fi
 
-  ##-- Creating DP Gateway operator subscription
+  # Creating DP Gateway operator subscription
   ## SB]202302001 attention au dp la souscription porte un nom particulier voir la variable dp ci-dessous.
   if $my_ibm_datapower;then
     SECONDS=0
@@ -276,7 +276,7 @@ Install_Operators () {
     mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
   fi
 
-  ##-- Creating Aspera HSTS operator subscription
+  # Creating Aspera HSTS operator subscription
   if $my_ibm_aspera_hsts;then
     SECONDS=0
     export operator_name=aspera-hsts-operator
@@ -290,7 +290,7 @@ Install_Operators () {
   fi
 
   #SB]20230130 Ajout du repository Nexus
-  ##-- Creating Nexus operator subscription
+  # Creating Nexus operator subscription
   if $my_install_nexus;then
     SECONDS=0
     check_create_oc_yaml "subscription" nxrm-operator-certified "${subscriptionsdir}Nexus-Sub.yaml" $ns
@@ -300,10 +300,10 @@ Install_Operators () {
   fi
 
   #SB]20230201 Ajout d'Instana
-  ##-- Creating Instana operator subscription
+  # Creating Instana operator subscription
   if $my_instana_agent_operator;then
     SECONDS=0
-    ##-- Create namespace for Instana agent. The instana agent must be istalled in instana-agent namespace.
+    # Create namespace for Instana agent. The instana agent must be istalled in instana-agent namespace.
     CreateNameSpace $my_instana_agent_project
     oc adm policy add-scc-to-user privileged -z instana-agent -n $my_instana_agent_project
 
@@ -321,7 +321,7 @@ Install_Operators () {
 Create_Capabilities () {
   local ns=$1
 
-  ##-- Creating Navigator instance
+  # Creating Navigator instance
   if $my_ibm_navigator;then
     check_create_oc_yaml PlatformNavigator $my_cp_navigator_instance_name "${capabilitiesdir}Navigator-Capability.yaml" $ns
     SECONDS=0
@@ -329,8 +329,7 @@ Create_Capabilities () {
     mylog info "Creation of Navigator instance took $SECONDS seconds to execute." 1>&2
   fi
 
-  #SB]20230201 Utilisation de l'integration Assembly
-  ##-- Creating Integration Assembly instance
+  # Creating Integration Assembly instance
   if $my_ibm_intassembly;then
     check_create_oc_yaml IntegrationAssembly $my_cp_intassembly_instance_name "${capabilitiesdir}IntegrationAssembly-Capability.yaml" $ns
     SECONDS=0
@@ -338,7 +337,7 @@ Create_Capabilities () {
     mylog info "Creation of Integration Assembly instance took $SECONDS seconds to execute." 1>&2
   fi
   
-  ##-- Creating ACE Dashboard instance
+  # Creating ACE Dashboard instance
   if $my_ibm_appconnect;then
     check_create_oc_yaml Dashboard $my_cp_ace_dashboard_instance_name "${capabilitiesdir}ACE-Dashboard-Capability.yaml" $ns
     SECONDS=0
@@ -346,7 +345,7 @@ Create_Capabilities () {
     mylog info "Creation of ACE Dashboard instance took $SECONDS seconds to execute." 1>&2    
   fi
   
-  ##-- Creating ACE Designer instance
+  # Creating ACE Designer instance
   if $my_ibm_appconnect;then
     check_create_oc_yaml DesignerAuthoring $my_cp_ace_designer_instance_name "${capabilitiesdir}ACE-Designer-Capability.yaml" $ns
     SECONDS=0
@@ -354,7 +353,7 @@ Create_Capabilities () {
     mylog info "Creation of ACE Designer instance took $SECONDS seconds to execute." 1>&2    
   fi
 
-  ##-- Creating Aspera HSTS instance
+  # Creating Aspera HSTS instance
   if $my_ibm_aspera_hsts;then
     oc apply -f "${capabilitiesdir}AsperaCM-cp4i-hsts-prometheus-lock.yaml"
     oc apply -f "${capabilitiesdir}AsperaCM-cp4i-hsts-engine-lock.yaml"
@@ -365,7 +364,7 @@ Create_Capabilities () {
     mylog info "Creation of Aspera HSTS instance took $SECONDS seconds to execute." 1>&2    
   fi
 
-  ##-- Creating APIC instance
+  # Creating APIC instance
   if $my_ibm_apiconnect;then
     check_create_oc_yaml APIConnectCluster $apic_instance_name "${capabilitiesdir}APIC-Capability.yaml" $ns
     SECONDS=0
@@ -373,7 +372,7 @@ Create_Capabilities () {
     mylog info "Creation of APIC instance took $SECONDS seconds to execute." 1>&2    
   fi
 
-  ##-- Creating Asset Repository instance
+  # Creating Asset Repository instance
   if $my_ibm_asset_repository;then
     check_create_oc_yaml AssetRepository $my_cp_ar_instance_name ${capabilitiesdir}AR-Capability.yaml $ns
     SECONDS=0
@@ -381,7 +380,7 @@ Create_Capabilities () {
     mylog info "Creation of Asset Repository instance took $SECONDS seconds to execute." 1>&2    
   fi
 
-  ##-- Creating Event Streams instance
+  # Creating Event Streams instance
   if $my_ibm_eventstreams;then
     check_create_oc_yaml EventStreams $my_cp_es_instance_name ${capabilitiesdir}ES-Capability.yaml $ns
     SECONDS=0
@@ -389,8 +388,7 @@ Create_Capabilities () {
     mylog info "Creation of Event Streams instance took $SECONDS seconds to execute." 1>&2    
   fi
 
-  #SB]20230130 Ajout de Nexus Repository (An open source repository for build artifacts)
-  ##-- Creating Nexus Repository instance
+  # Creating Nexus Repository instance (An open source repository for build artifacts)
     if $my_install_nexus;then
     check_create_oc_yaml NexusRepo $my_nexus_instance_name ${capabilitiesdir}Nexus-Capability.yaml $ns
     SECONDS=0
@@ -400,8 +398,7 @@ Create_Capabilities () {
     mylog info "Creation of Nexus instance took $SECONDS seconds to execute." 1>&2    
   fi
 
-  #SB]20230201 Ajout Instana
-  ##-- Creating Instana agent
+  # Creating Instana agent
   if $my_instana_agent_operator;then
     check_create_oc_yaml InstanaAgent $my_instana_agent_instance_name ${capabilitiesdir}Instana-Agent-Capability-CloudIBM.yaml $my_instana_agent_project
     SECONDS=0
@@ -468,25 +465,25 @@ Configure_ACE_IS () {
 # Since the creation steps used here are all idempotent, we have decided to do everything here.
 # function 
 Login2IBMCloud_and_OpenshiftCluster ()  {
-  ##--Log in IBM Cloud
+  # Log in IBM Cloud
   Login2IBMCloud
 
-  ##--Create openshift cluster
+  # Create openshift cluster
   SECONDS=0
   CreateOpenshiftCluster
   mylog info "Creation of the cluster took $SECONDS seconds to execute." 1>&2
 
-  ##-- wait for Cluster availability
+  # Wait for Cluster availability
   SECONDS=0
   wait_for_cluster_availability
   mylog info "Availability of the took $SECONDS seconds to execute." 1>&2
 
-  ##-- wait for ingress address availability
+  # Wait for ingress address availability
   SECONDS=0
   Wait4IngressAddressAvailability
   mylog info "To have ingres available took $SECONDS seconds to execute." 1>&2
 
-  ##-- Login to openshift cluster
+  # Login to openshift cluster
   Login2OpenshiftCluster
 }
 
@@ -502,20 +499,10 @@ my_properties_file=$1
 my_oc_project=$2
 my_cluster_name=$3
 
-# end with / on purpose (if var not defined, uses CWD - Current Working Directory)
-scriptdir=$(dirname "$0")/
-ldapdir="${scriptdir}ldap/"
-yamldir="${scriptdir}templates/"
-subscriptionsdir="${scriptdir}templates/subscriptions/"
-capabilitiesdir="${scriptdir}templates/capabilities/"
-privatedir="${scriptdir}private/"
-workingdir="${scriptdir}working/"
-customisationdir="${scriptdir}customisation/"
+check_exec_prereqs
 
-#SB]20230214 Ajout des variables de configuration ACE ...
-resourcedir="${scriptdir}templates/resources/"
-aceconfigdir="${scriptdir}templates/configuration/ACE/"
-acebardir="${resourcedir}ACE/Bar/"
+# end with / on purpose (if var not defined, uses CWD - Current Working Directory)
+mainscriptdir=$(dirname "$0")/
 
 if (($# < 3)); then
   echo "the number of arguments should be be 3"
@@ -524,37 +511,36 @@ elif (($# > 3)); then
 else echo "The provided arguments are: $@"
 fi
 
-# load helper functions
-. "${scriptdir}"lib.sh
-
+# Read all the properties
 read_config_file "$my_properties_file"
 
-##--Log
+# load helper functions
+. "${mainscriptdir}"lib.sh
+
+# Log
 Login2IBMCloud_and_OpenshiftCluster
 
-##-- Create project namespace.
+# Create project namespace.
 CreateNameSpace $my_oc_project
 
-##-- add ibm entitlement key to namespace
+# Add ibm entitlement key to namespace
 # SB]20230209 Aspera hsts service cannot be reated because a problem with the entitlement, it muste be added in the openshift-operators namespace.
 AddIBMEntitlement $my_op_group_ns
 AddIBMEntitlement $my_oc_project
 
 #SB]202300201 https://www.ibm.com/docs/en/cloud-paks/cp-integration/2022.4?topic=images-adding-catalog-sources-cluster
-##-- instantiate catalog sources
+# Instantiate catalog sources
 if $my_ibm_pak; then
   Add_Catalog_Sources_ibm_pak
 fi
 
-##-- install operators
+# Install operators
 Install_Operators $my_op_group_ns
-#Install_Operators $my_oc_project
-#END_COMMENT
 
-##-- instantiate capabilities
+# Instantiate capabilities
 Create_Capabilities $my_oc_project
 
-##-- Add OpenLdap app to openshift
+# Add OpenLdap app to openshift
 oc project $my_oc_project
 if $my_install_openldap;then
     check_create_oc_openldap "deployment" "openldap" "ldap"

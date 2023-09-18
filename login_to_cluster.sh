@@ -68,8 +68,8 @@ Login2OpenshiftCluster () {
 ################################################################################################
 # Start of the script main entry
 ################################################################################################
-scriptdir=$(dirname "$0")/
-privatedir="${scriptdir}private/"
+mainscriptdir=$(dirname "$0")/
+privatedir="${mainscriptdir}private/"
 
 my_ic_apikey=$(jq -r .apikey < "${privatedir}apikey.json")
 SECONDS=0

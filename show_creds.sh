@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # end with / on purpose (if var not defined, uses CWD)
-scriptdir=$(dirname "$0")/
-privatedir="${scriptdir}private/"
+mainscriptdir=$(dirname "$0")/
+privatedir="${mainscriptdir}private/"
 
 # load helper functions
-. "${scriptdir}"lib.sh
+. "${mainscriptdir}"lib.sh
 
 read_config_file $1
 

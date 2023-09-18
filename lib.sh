@@ -8,7 +8,7 @@ read_config_file() {
 	fi
 	if test -z "$config_file";then
 		mylog error "Usage: $0 <config file>" 1>&2
-		mylog info "Example: $0 ${scriptdir}cp4i.conf"
+		mylog info "Example: $0 ${mainscriptdir}cp4i.conf"
 		exit 1
 	fi
 
@@ -108,6 +108,20 @@ check_exec_prereqs() {
 }
 
 ################################################
+# Wait n secs
+# @param secs: number of seconds to wait for and displays it on the same line
+# function 
+function waitn() {
+  local secs=$1
+  mylog info "Sleeping $secs"
+  while [ $secs -gt 0 ]; do
+    echo -ne "$secs\033[0K\r"
+    sleep 1
+    : $((secs--))
+  done
+}
+
+################################################
 # Send email
 # @param mail_def, exemple 159.8.70.38:2525
 # function
@@ -115,7 +129,7 @@ send-email() {
   curl --url "smtp://$mail_def" \
     --mail-from cp4i-admin@ibm.com \
     --mail-rcpt cp4i-user@ibm.com \
-    --upload-file ${scriptdir}templates/emails/test-email.txt
+    --upload-file ${mainscriptdir}templates/emails/test-email.txt
 }
 
 ################################################
@@ -175,7 +189,6 @@ wait_for_state() {
 	local what=$1
 	local value=$2
 	local command=$3
-	# wait for HSTS availability
 	mylog check "Checking $what"
 	last_state=
 	while true;do
@@ -202,18 +215,20 @@ wait_for_state() {
 # @param ocname: name of the resource, example: ""
 # @param ocstate: Value in the json of the status of a resource, example: "Succeeded"
 # @param ocpath: path in the json to get the state of the resource, example: ".status.phase"
+# @param ns: namespace/project
 # function
 wait_for_oc_state() {
 	local octype=$1
 	local ocname=$2
 	local ocstate=$3
 	local ocpath=$4
-	wait_for_state "$octype $ocname $ocpath is $ocstate" "$ocstate" "oc get ${octype} ${ocname} -n $my_oc_project --output json|jq -r '${ocpath}'"
+	local ns=$5
+	wait_for_state "$octype $ocname $ocpath is $ocstate" "$ocstate" "oc get ${octype} ${ocname} -n ${ns} --output json|jq -r '${ocpath}'"
 }
 
 ################################################
 # Check if the resource of type octype with name name exists in the namespace ns.
-# If it does not exist use the subscription yaml file, with the appropriate variable.
+# If it does not exist use the yaml file, with the appropriate variable.
 # @param octype: kubernetes resource class, example: "subscription"
 # @param name: name of the resource, example: "ibm-integration-platform-navigator"
 # @param yaml: the file with the definition of the resource, example: "${subscriptionsdir}Navigator-Sub.yaml"
@@ -224,9 +239,9 @@ check_create_oc_yaml() {
 	local name="$2"
 	local yaml="$3"
 	local ns="$4"
-	mylog check "Checking ${octype} ${name}"
+	mylog check "Checking ${octype} ${name} in ${ns} project"
 	if oc get ${octype} ${name} -n ${ns} > /dev/null 2>&1; then mylog ok;else
-		envsubst < "${yaml}" | oc apply -f - || exit 1
+		envsubst < "${yaml}" | oc -n ${ns} apply -f - || exit 1
 	fi
 }
 
@@ -285,18 +300,6 @@ check_create_oc_openldap() {
 }
 
 ################################################
-# function
-check_create_oc_yaml_redis() {
-	local octype="$1"
-	local name="$2"
-	local yaml="$3"
-	mylog check "Checking ${octype} ${name} in openshift-operators"
-	if oc get ${octype} ${name} -n openshift-operators > /dev/null 2>&1; then mylog ok;else
-		envsubst < "${yaml}" | oc apply -f - || exit 1
-	fi
-}
-
-################################################
 # Create namespace
 # @param ns namespace to be created
 # function
@@ -316,13 +319,15 @@ CreateNameSpace () {
 # Check if the resource exists.
 # @param octype: kubernetes resource class, example: "subscription"
 # @param name: name of the resource, example: "ibm-integration-platform-navigator"
+# @param ns: namespace/project o perfrom the search
 # function
 check_resource_availability () {
   local octype="$1"
   local name="$2"
-  var=`oc get $octype -n $my_oc_project --ignore-not-found=true | grep $name | awk '{print $1}'`
+  local ns="$3"
+  var=`oc get $octype -n $ns --ignore-not-found=true | grep $name | awk '{print $1}'`
   while [ -z "$var" ]; do
-    var=`oc get $octype -n $my_oc_project --ignore-not-found=true | grep $name | awk '{print $1}'`;
+    var=`oc get $octype -n $ns --ignore-not-found=true | grep $name | awk '{print $1}'`;
     #sleep 5
   done
 }
