@@ -15,11 +15,6 @@ mainscriptdir="${scriptdir}../../../"
 read_config_file "${mainscriptdir}cp4i.properties"
 read_config_file "${configdir}mq.properties"
 
-echo "mainscriptdir: $mainscriptdir"
-echo "configdir: $configdir"
-echo "mq_project: $mq_project"
-echo "mq_instance_name: $mq_instance_name"
-
 # Creation d'un Queue Manager
 SECONDS=0
 check_create_oc_yaml "QueueManager" "QM1" "${configdir}QM1.yaml" $mq_project

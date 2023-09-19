@@ -30,6 +30,7 @@ Load test API (Ping API) as a draft
 		Display ldapsearch command
 
 	Load simulator application for taxi test
+		Box note: https://ibm.ent.box.com/notes/953089231688
 		Container eem-demo-rest-apis, quay.io/dale-lane/eem-demo-apis
 --- TODO 5 --- Create/Extract all certificates for Web UI ---
 		Need a few certificate to get it including gateway, login, cdp, ... Attention the nginx is passthrough
@@ -46,54 +47,3 @@ Load test API (Ping API) as a draft
 	brew install openshift-cli
 --- TODO 12 --- Check if reuse from https://github.ibm.com/kskhong/terraform-cp4i
 --- TODO 13 --- Variabiliser le stockage pour les capabilities
-
-
-------------------------------------------------------------
-Yaml to create a topic resource
-------------------------------------------------------------
-apiVersion: kafka.strimzi.io/v1beta2
-kind: KafkaTopic
-metadata:
-  name: my-topic
-  labels:
-    strimzi.io/cluster: my-cluster  # Replace with your Kafka cluster name
-spec:
-  partitions: 3
-  replicas: 3
-------------------------------------------------------------
-Creation of the topic
-------------------------------------------------------------
-oc apply -f my-topic.yaml
-------------------------------------------------------------
-Validation and get topics
-------------------------------------------------------------
-oc get kafkatopics
-------------------------------------------------------------
-Yaml for user
-------------------------------------------------------------
-apiVersion: kafka.strimzi.io/v1beta2
-kind: KafkaUser
-metadata:
-  name: my-user
-  labels:
-    strimzi.io/cluster: my-cluster  # Replace with your Kafka cluster name
-spec:
-  authentication:
-    type: tls
-  authorization:
-    acls:
-    - resource:
-        type: topic
-        name: my-topic  # Replace with the topic name you want to grant access to
-      operation: Read
-    - resource:
-        type: topic
-        name: my-topic  # Replace with the topic name you want to grant access to
-      operation: Write
-
-------------------------------------------------------------
-Validation and get users
-------------------------------------------------------------
-oc get kafkausers
-------------------------------------------------------------
-

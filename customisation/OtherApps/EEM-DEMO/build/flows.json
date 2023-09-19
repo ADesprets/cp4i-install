@@ -1,0 +1,448 @@
+[
+    {
+        "id": "d6da6139.ae3948",
+        "type": "tab",
+        "label": "acme travel apis",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "6bd6a702c946d0a6",
+        "type": "tab",
+        "label": "weather apis",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "925de6fe.fdad",
+        "type": "http in",
+        "z": "d6da6139.ae3948",
+        "name": "find taxis near coordinates",
+        "url": "/api/v1/findtaxis",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 200,
+        "y": 60,
+        "wires": [
+            [
+                "b3012782.3f3208"
+            ]
+        ]
+    },
+    {
+        "id": "b3012782.3f3208",
+        "type": "function",
+        "z": "d6da6139.ae3948",
+        "name": "generate list of taxi ids",
+        "func": "function getRandomInt(min, max) {\n    min = Math.ceil(min);\n    max = Math.floor(max);\n    return Math.floor(Math.random() * (max - min + 1)) + min;\n}\n\nfunction isNum(val) {\n    return val && !isNaN(parseFloat(val));\n}\n\n\nif (msg.req.query.lat && msg.req.query.lon &&\n    isNum(msg.req.query.lat) && \n    isNum(msg.req.query.lon))\n{    \n    msg.statusCode = 200;\n    \n    var numTaxis = getRandomInt(2, 12);\n    var taxiids = [];\n    for (var i=0; i < numTaxis; i++) {\n        taxiids.push(getRandomInt(101, 399));\n    }\n    msg.payload = {\n        taxis :  [...new Set(taxiids)].sort((a,b)=>a-b)\n    };\n}\nelse {\n    msg.payload = {\n        error : \"Query parameters lat and lon are required\"\n    };\n    msg.statusCode = 400;\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 480,
+        "y": 60,
+        "wires": [
+            [
+                "5e2aa9ef.084f68"
+            ]
+        ]
+    },
+    {
+        "id": "5e2aa9ef.084f68",
+        "type": "http response",
+        "z": "d6da6139.ae3948",
+        "name": "response",
+        "statusCode": "",
+        "headers": {},
+        "x": 720,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "b8367294.6f01d",
+        "type": "http in",
+        "z": "d6da6139.ae3948",
+        "name": "send message to taxis",
+        "url": "/api/v1/taxialert",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 200,
+        "y": 140,
+        "wires": [
+            [
+                "f03e084b.b76d4"
+            ]
+        ]
+    },
+    {
+        "id": "f03e084b.b76d4",
+        "type": "function",
+        "z": "d6da6139.ae3948",
+        "name": "generate ack",
+        "func": "function isArrayOfInts(val) {\n    return val && \n           Array.isArray(val) &&\n           val.length > 0 && \n           val.every(Number.isInteger);\n}\nfunction isString(val) {\n    return val && typeof val === 'string' && val.length > 0;\n}\n\n\nif (msg.req && msg.req.body && \n    isArrayOfInts(msg.req.body.taxis) && \n    isString(msg.req.body.message))\n{\n    msg.statusCode = 201;\n    \n    msg.payload = {\n        sent : 'ok'\n    };\n}\nelse {\n    msg.payload = {\n        error : \"taxi ids and message are required\"\n    };\n    msg.statusCode = 400;\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 460,
+        "y": 140,
+        "wires": [
+            [
+                "768f7a63.cb4c9c"
+            ]
+        ]
+    },
+    {
+        "id": "768f7a63.cb4c9c",
+        "type": "http response",
+        "z": "d6da6139.ae3948",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 720,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "c23bc0cd395a3adc",
+        "type": "function",
+        "z": "6bd6a702c946d0a6",
+        "name": "cache API response",
+        "func": "const CACHE_EXPIRE_MINS = 10;\n\n\nflow.set('invokecache-' + msg.vars.location, \n         msg.payload);\n         \nflow.set('invokeexpiry-' + msg.vars.location, \n    new Date(Date.now() + (CACHE_EXPIRE_MINS * 60000)).getTime());\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1600,
+        "y": 600,
+        "wires": [
+            [
+                "1c9a94c15caf1084"
+            ]
+        ]
+    },
+    {
+        "id": "bbca9b4ea61be82f",
+        "type": "switch",
+        "z": "6bd6a702c946d0a6",
+        "name": "checks cache",
+        "property": "cacheexpires",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "lte",
+                "v": "now",
+                "vt": "msg"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "false",
+        "repair": false,
+        "outputs": 2,
+        "x": 1000,
+        "y": 700,
+        "wires": [
+            [
+                "3de8544e679c6a13"
+            ],
+            [
+                "89341ce02858fca8"
+            ]
+        ]
+    },
+    {
+        "id": "89341ce02858fca8",
+        "type": "function",
+        "z": "6bd6a702c946d0a6",
+        "name": "retrieve from cache",
+        "func": "msg.payload = flow.get('invokecache-' + msg.vars.location);\nmsg.headers = {\n  'X-weather-cached' : true,\n  'X-weather-expiry' : msg.cacheexpires\n};\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1470,
+        "y": 860,
+        "wires": [
+            [
+                "1c9a94c15caf1084"
+            ]
+        ]
+    },
+    {
+        "id": "3413a8802e41b354",
+        "type": "function",
+        "z": "6bd6a702c946d0a6",
+        "name": "loads cache expiry info",
+        "func": "msg.now = Date.now();\n\n\nvar cacheexpires = flow.get('invokeexpiry-' + msg.vars.location);\nif (cacheexpires) {\n    msg.cacheexpires = new Date(cacheexpires).getTime();\n}\nelse {\n    msg.cacheexpires = msg.now;\n}\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 950,
+        "y": 640,
+        "wires": [
+            [
+                "bbca9b4ea61be82f"
+            ]
+        ]
+    },
+    {
+        "id": "222d4f2064c6ebe2",
+        "type": "http in",
+        "z": "6bd6a702c946d0a6",
+        "name": "",
+        "url": "/api/v1/weather/hursley",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 160,
+        "y": 540,
+        "wires": [
+            [
+                "aeb6c54bd55219a0"
+            ]
+        ]
+    },
+    {
+        "id": "1c9a94c15caf1084",
+        "type": "http response",
+        "z": "6bd6a702c946d0a6",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 1910,
+        "y": 700,
+        "wires": []
+    },
+    {
+        "id": "3de8544e679c6a13",
+        "type": "template",
+        "z": "6bd6a702c946d0a6",
+        "name": "generate Weather Company URL",
+        "field": "url",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "https://api.weather.com/v3/wx/observations/current?geocode={{vars.latlon}}&units=h&language=en-US&format=json&apiKey={{vars.apikey}}",
+        "output": "str",
+        "x": 1380,
+        "y": 420,
+        "wires": [
+            [
+                "f98167a9c804f05f"
+            ]
+        ]
+    },
+    {
+        "id": "f98167a9c804f05f",
+        "type": "http request",
+        "z": "6bd6a702c946d0a6",
+        "name": "submit request to Weather Company",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "authType": "",
+        "x": 1490,
+        "y": 480,
+        "wires": [
+            [
+                "cc6e796e871fa0f7"
+            ]
+        ]
+    },
+    {
+        "id": "aeb6c54bd55219a0",
+        "type": "function",
+        "z": "6bd6a702c946d0a6",
+        "name": "setup Hursley variables",
+        "func": "msg.vars = {\n    location : 'Hursley',\n    latlon   : '51.02662549333716,-1.3989376217283982',\n    apikey   : env.get('WEATHER_APIKEY') \n};\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 450,
+        "y": 540,
+        "wires": [
+            [
+                "3413a8802e41b354"
+            ]
+        ]
+    },
+    {
+        "id": "cc6e796e871fa0f7",
+        "type": "function",
+        "z": "6bd6a702c946d0a6",
+        "name": "parse API response",
+        "func": "msg.payload = {\n    wx_icon     : msg.payload.iconCode,\n    wind_speed  : msg.payload.windSpeed,\n    temperature : msg.payload.temperature,\n    humidity    : msg.payload.relativeHumidity\n};\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1520,
+        "y": 540,
+        "wires": [
+            [
+                "c23bc0cd395a3adc"
+            ]
+        ]
+    },
+    {
+        "id": "d5ffa329a39e4a9b",
+        "type": "http in",
+        "z": "6bd6a702c946d0a6",
+        "name": "",
+        "url": "/api/v1/weather/southbank",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 170,
+        "y": 600,
+        "wires": [
+            [
+                "707430f15960bf9c"
+            ]
+        ]
+    },
+    {
+        "id": "707430f15960bf9c",
+        "type": "function",
+        "z": "6bd6a702c946d0a6",
+        "name": "setup South Bank variables",
+        "func": "msg.vars = {\n    location : 'SouthBank',\n    latlon   : '51.506864491787404,-0.11251838622884296',\n    apikey   : env.get('WEATHER_APIKEY') \n};\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 460,
+        "y": 600,
+        "wires": [
+            [
+                "3413a8802e41b354"
+            ]
+        ]
+    },
+    {
+        "id": "dc119b2121d06959",
+        "type": "http in",
+        "z": "6bd6a702c946d0a6",
+        "name": "",
+        "url": "/api/v1/weather/northharbour",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 180,
+        "y": 660,
+        "wires": [
+            [
+                "3c3f84ad61c39e25"
+            ]
+        ]
+    },
+    {
+        "id": "3c3f84ad61c39e25",
+        "type": "function",
+        "z": "6bd6a702c946d0a6",
+        "name": "setup North Harbour variables",
+        "func": "msg.vars = {\n    location : 'NorthHarbour',\n    latlon   : '50.842714584019824,-1.0857524893677295',\n    apikey   : env.get('WEATHER_APIKEY') \n};\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 470,
+        "y": 660,
+        "wires": [
+            [
+                "3413a8802e41b354"
+            ]
+        ]
+    },
+    {
+        "id": "5de1f6d4dbaeb8ae",
+        "type": "http in",
+        "z": "6bd6a702c946d0a6",
+        "name": "",
+        "url": "/api/v1/weather/armonk",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 160,
+        "y": 720,
+        "wires": [
+            [
+                "d01febddca1bcab6"
+            ]
+        ]
+    },
+    {
+        "id": "d01febddca1bcab6",
+        "type": "function",
+        "z": "6bd6a702c946d0a6",
+        "name": "setup Armonk variables",
+        "func": "msg.vars = {\n    location : 'Armonk',\n    latlon   : '41.10854027272708,-73.72042478476526',\n    apikey   : env.get('WEATHER_APIKEY') \n};\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 450,
+        "y": 720,
+        "wires": [
+            [
+                "3413a8802e41b354"
+            ]
+        ]
+    },
+    {
+        "id": "a0a72670f66c5943",
+        "type": "http in",
+        "z": "6bd6a702c946d0a6",
+        "name": "",
+        "url": "/api/v1/weather/paris",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 150,
+        "y": 780,
+        "wires": [
+            [
+                "364e56f3137afd3f"
+            ]
+        ]
+    },
+    {
+        "id": "364e56f3137afd3f",
+        "type": "function",
+        "z": "6bd6a702c946d0a6",
+        "name": "setup Paris variables",
+        "func": "msg.vars = {\n    location : 'Paris',\n    latlon   : '48.93292092012496,2.254305825529693',\n    apikey   : env.get('WEATHER_APIKEY') \n};\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 440,
+        "y": 780,
+        "wires": [
+            [
+                "3413a8802e41b354"
+            ]
+        ]
+    }
+]

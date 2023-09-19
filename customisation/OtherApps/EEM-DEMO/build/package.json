@@ -1,0 +1,14 @@
+{
+    "name": "eem-demo-apis",
+    "description": "Node-RED Project",
+    "version": "0.0.1",
+    "private": true,
+    "dependencies": {
+        "node-red": "2.0.5",
+        "node-red-contrib-rdkafka-secure": "0.3.0",
+        "node-red-contrib-plugin-asyncapi": "0.0.15"
+    },
+    "scripts": {
+        "start": "node $NODE_OPTIONS node_modules/node-red/red.js $FLOWS"
+    }
+}

@@ -1,0 +1,47 @@
+apiVersion: eventstreams.ibm.com/v1beta2
+kind: KafkaUser
+metadata:
+  name: es-all-access
+  labels:
+    eventstreams.ibm.com/cluster: ${es_instance}
+spec:
+  authentication:
+    type: scram-sha-512
+  authorization:
+    acls:
+      - operation: Write
+        resource:
+          name: '*'
+          patternType: literal
+          type: topic
+      - operation: Read
+        resource:
+          name: '*'
+          patternType: literal
+          type: topic
+      - operation: Create
+        resource:
+          name: '*'
+          patternType: literal
+          type: topic
+      - operation: Read
+        resource:
+          name: '*'
+          patternType: literal
+          type: group
+      - operation: Read
+        resource:
+          name: __schema_
+          patternType: prefix
+          type: topic
+      - operation: Alter
+        resource:
+          name: __schema_
+          patternType: prefix
+          type: topic
+      - operation: Write
+        resource:
+          name: '*'
+          patternType: literal
+          type: transactionalId
+    type: simple
