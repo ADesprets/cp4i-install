@@ -319,7 +319,8 @@ CreateNameSpace () {
 # Check if the resource exists.
 # @param octype: kubernetes resource class, example: "subscription"
 # @param name: name of the resource, example: "ibm-integration-platform-navigator"
-# @param ns: namespace/project o perfrom the search
+# @param ns: namespace/project to perform the search
+# TODO The var variable is initialised for another function, this is not good
 # function
 check_resource_availability () {
   local octype="$1"
@@ -343,8 +344,6 @@ check_add_cs_ibm_pak() {
   SECONDS=0
   oc ibm-pak get ${CASE_NAME} --version ${CASE_VERSION}
   oc ibm-pak generate mirror-manifests ${CASE_NAME} icr.io --version ${CASE_VERSION}
-  #cat ~/.ibm-pak/data/mirror/${CASE_NAME}/${CASE_VERSION}/catalog-sources.yaml
-  #cat ~/.ibm-pak/data/mirror/${CASE_NAME}/${CASE_VERSION}/catalog-sources-linux-${ARCH}.yaml
   oc apply -f ~/.ibm-pak/data/mirror/${CASE_NAME}/${CASE_VERSION}/catalog-sources.yaml
   oc apply -f ~/.ibm-pak/data/mirror/${CASE_NAME}/${CASE_VERSION}/catalog-sources-linux-${ARCH}.yaml
   oc get catalogsource -n openshift-marketplace

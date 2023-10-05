@@ -32,7 +32,7 @@ The following command line tools are used:
 * `curl`: HTTPS operations are executed using the curl command
 * `jq`: jq is used to parse JSON results
 * `ibmcloud`: The IBM Cloud CLI.
-* ` ibm-pak` plugin: explanation: [installation instructions](https://github.com/IBM/ibm-pak#download-and-verify-software).
+* `ibm-pak-plugin`: explanation: [installation instructions](https://github.com/IBM/ibm-pak#download-and-verify-software).
 * `oc`: The Redhat OpenShift CLI.
 * `docker`: The Docker CLI
 * `terraform`: The Terraform CLI.
@@ -49,9 +49,15 @@ git clone https://github.com/ADesprets/cp4i-install
 
 1. Create a folder for private configuration files:
 
-  ```bash
+```bash
   mkdir private
-  ```
+```
+
+In this folder you can add the various specific files that you are going to use to connect to ibmcloud and access image registry.
+It contains:
+
+* apikey.json to login to ibmcloud.
+* ibm_container_entitlement_key.txt to access the image registry.
 
   Note that those files in `private` are ignored by git.
 
@@ -66,7 +72,22 @@ Good practice:
 
 ## Usage
 
-> Duration time for all CP4I components: 40 min
+cd <directory where provision_cluster-v2.sh exists>
+
+> Duration time for all CP4I components including cluster creation: 2 hours 30 min
+
+|===
+| Cluster creation | ~ 40 minutes |
+| To have ingress available | ~ 10 minutes |
+| Adding case | ~ 10 minutes |
+| Creation of the operators | ~ 10 minutes |
+| Creation of the Navigator instance | ~ 40 minutes |
+| Creation of ACE Dashboard instance | ~ 2 minutes |
+| Creation of ACE Designer instance | ~ 6 minutes |
+| Creation of APIC instance | ~ 30 minutes |
+| Creation of Asset Repository instance | ~ 4 minutes |
+| Creation of Event Streams instance | ~ 7 minutes |
+|===
 
 1. Launch the Shell script
 
@@ -87,6 +108,11 @@ Good practice:
 > Note: once the Openshift cluster is created, it is required to login once using the web interface to trigger the activation of your api key in the cluster.
 
 For long-running steps, a progress message is displayed.
+
+## Login helper
+
+There is also a helper script to login to ibmcloud and to the cluster if it exists.
+You need to change the name of the cluster which is hard coded inside the script or you can pass it as a parameter.
 
 ## Directory structure
 
@@ -164,7 +190,7 @@ base 64 decode dans un fichier
 openssl x509 -in c:\temp\t.pem -text
 ```
 
-Dans browser import Root certificate c:\temp\t.pem
+In your favorite browser import the Root CA certificate c:\temp\t.pem
 
 ```cmd
 set srv=cp-console.adcp4i-par01-b34dfa42ccf328c7da72e2882c1627b1-0000.par01.containers.appdomain.cloud

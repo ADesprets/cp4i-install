@@ -1,1 +1,3 @@
 Container eem-demo-rest-apis, quay.io/dale-lane/eem-demo-apis
+
+Voir deploy-APIs.sh

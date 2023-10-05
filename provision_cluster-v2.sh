@@ -172,6 +172,9 @@ Add_Catalog_Sources_ibm_pak () {
 
   ## ibm-cp-common-services
   check_add_cs_ibm_pak ibm-cp-common-services $my_ibm_cp_common_services_case amd64
+
+  ## event-endpoint-management
+  check_add_cs_ibm_pak ibm-eventendpointmanagement $my_ibm_eventendpointmanagement_case amd64
 }
 
 ################################################
@@ -183,6 +186,8 @@ Add_Catalog_Sources_ibm_pak () {
 Install_Operators () {
   local ns=$1
 
+  # export are important because they are used to replace the variable in the subscription.yaml (envsubst command)
+  
   # Creating Navigator operator subscription
   if $my_ibm_navigator;then
     SECONDS=0
@@ -190,8 +195,8 @@ Install_Operators () {
     export current_channel=$my_ibm_navigator_operator_channel
     export catalog_source_name=ibm-integration-platform-navigator-catalog
 
-    check_create_oc_yaml "subscription" ibm-integration-platform-navigator "${subscriptionsdir}subscription.yaml" $ns
-    check_resource_availability clusterserviceversion ibm-integration-platform-navigator $ns
+    check_create_oc_yaml "subscription" "${operator_name}" "${subscriptionsdir}subscription.yaml" $ns
+    check_resource_availability "clusterserviceversion" "${operator_name}" $ns
     wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase' $ns
     mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
   fi
@@ -203,8 +208,8 @@ Install_Operators () {
     export current_channel=$my_ibm_ar_operator_channel
     export catalog_source_name=ibm-integration-asset-repository-catalog
 
-    check_create_oc_yaml "subscription" ibm-integration-asset-repository "${subscriptionsdir}subscription.yaml" $ns
-    check_resource_availability clusterserviceversion ibm-integration-asset-repository $ns
+    check_create_oc_yaml "subscription" "${operator_name}" "${subscriptionsdir}subscription.yaml" $ns
+    check_resource_availability clusterserviceversion "${operator_name}" $ns
     wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase' $ns
     mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
   fi
@@ -216,8 +221,8 @@ Install_Operators () {
     export current_channel=$my_ibm_ace_operator_channel
     export catalog_source_name=appconnect-operator-catalogsource
 
-    check_create_oc_yaml "subscription" ibm-appconnect "${subscriptionsdir}subscription.yaml" $ns
-    check_resource_availability clusterserviceversion ibm-appconnect $ns
+    check_create_oc_yaml "subscription" "${operator_name}" "${subscriptionsdir}subscription.yaml" $ns
+    check_resource_availability clusterserviceversion "${operator_name}" $ns
     wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase' $ns
     mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
   fi
@@ -229,8 +234,8 @@ Install_Operators () {
     export current_channel=$my_ibm_apic_operator_channel
     export catalog_source_name=ibm-apiconnect-catalog
 
-    check_create_oc_yaml "subscription" ibm-apiconnect "${subscriptionsdir}subscription.yaml" $ns
-    check_resource_availability clusterserviceversion ibm-apiconnect $ns
+    check_create_oc_yaml "subscription" "${operator_name}" "${subscriptionsdir}subscription.yaml" $ns
+    check_resource_availability clusterserviceversion "${operator_name}" $ns
     wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase' $ns
     mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
   fi
@@ -242,8 +247,8 @@ Install_Operators () {
     export current_channel=$my_ibm_mq_operator_channel
     export catalog_source_name=ibmmq-operator-catalogsource
 
-    check_create_oc_yaml "subscription" ibm-mq "${subscriptionsdir}subscription.yaml" $ns
-    check_resource_availability clusterserviceversion ibm-mq $ns
+    check_create_oc_yaml "subscription" "${operator_name}" "${subscriptionsdir}subscription.yaml" $ns
+    check_resource_availability clusterserviceversion "${operator_name}" $ns
     wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase' $ns
     mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
   fi
@@ -255,8 +260,8 @@ Install_Operators () {
     export current_channel=$my_ibm_es_channel
     export catalog_source_name=ibm-eventstreams
 
-    check_create_oc_yaml "subscription" ibm-eventstreams "${subscriptionsdir}subscription.yaml" $ns
-    check_resource_availability clusterserviceversion ibm-eventstreams $ns
+    check_create_oc_yaml "subscription" "${operator_name}" "${subscriptionsdir}subscription.yaml" $ns
+    check_resource_availability clusterserviceversion "${operator_name}" $ns
     wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase' $ns
     mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
   fi
@@ -271,7 +276,7 @@ Install_Operators () {
     dp=${operator_name}-${current_channel}-${catalog_source_name}-openshift-marketplace
 
     check_create_oc_yaml "subscription" $dp "${subscriptionsdir}subscription.yaml" $ns
-    check_resource_availability clusterserviceversion datapower-operator $ns
+    check_resource_availability clusterserviceversion "${operator_name}" $ns
     wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase' $ns
     mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
   fi
@@ -283,8 +288,8 @@ Install_Operators () {
     export current_channel=$my_ibm_hsts_operator_channel
     export catalog_source_name=aspera-operators
   
-    check_create_oc_yaml "subscription" aspera-hsts-operator "${subscriptionsdir}subscription.yaml" $ns
-    check_resource_availability clusterserviceversion aspera-hsts-operator $ns
+    check_create_oc_yaml "subscription" "${operator_name}" "${subscriptionsdir}subscription.yaml" $ns
+    check_resource_availability clusterserviceversion "${operator_name}" $ns
     wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase' $ns
     mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
   fi
@@ -312,6 +317,20 @@ Install_Operators () {
     wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase' $ns
     mylog info "Creation of Instana agent operator took $SECONDS seconds to execute." 1>&2
   fi
+
+  # Creating Event Endpoint Management operator subscription
+  if $my_ibm_eventendpointmanagement;then
+    SECONDS=0
+    export operator_name=ibm-eventendpointmanagement
+    export current_channel=$my_ibm_eventendpointmanagement_operator_channel
+    export catalog_source_name=ibm-eventendpointmanagement-catalog
+  
+    check_create_oc_yaml "subscription" "${operator_name}" "${subscriptionsdir}subscription.yaml" $ns
+    check_resource_availability clusterserviceversion "${operator_name}" $ns
+    wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase' $ns
+    mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
+  fi
+
 }
 
 ################################################
@@ -366,9 +385,9 @@ Create_Capabilities () {
 
   # Creating APIC instance
   if $my_ibm_apiconnect;then
-    check_create_oc_yaml APIConnectCluster $apic_instance_name "${capabilitiesdir}APIC-Capability.yaml" $ns
+    check_create_oc_yaml APIConnectCluster $my_cp_apic_instance_name "${capabilitiesdir}APIC-Capability.yaml" $ns
     SECONDS=0
-    wait_for_oc_state APIConnectCluster "$apic_instance_name" Ready '.status.phase' $ns
+    wait_for_oc_state APIConnectCluster "$my_cp_apic_instance_name" Ready '.status.phase' $ns
     mylog info "Creation of APIC instance took $SECONDS seconds to execute." 1>&2    
   fi
 
@@ -481,7 +500,7 @@ Login2IBMCloud_and_OpenshiftCluster ()  {
   # Wait for ingress address availability
   SECONDS=0
   Wait4IngressAddressAvailability
-  mylog info "To have ingres available took $SECONDS seconds to execute." 1>&2
+  mylog info "To have ingress available took $SECONDS seconds to execute." 1>&2
 
   # Login to openshift cluster
   Login2OpenshiftCluster
@@ -499,23 +518,23 @@ my_properties_file=$1
 my_oc_project=$2
 my_cluster_name=$3
 
-check_exec_prereqs
-
 # end with / on purpose (if var not defined, uses CWD - Current Working Directory)
 mainscriptdir=$(dirname "$0")/
 
 if (($# < 3)); then
-  echo "the number of arguments should be be 3"
+  echo "the number of arguments should be 3"
 elif (($# > 3)); then
-  echo "the number of arguments should be be 3"
+  echo "the number of arguments should be 3"
 else echo "The provided arguments are: $@"
 fi
+
+# load helper functions
+. "${mainscriptdir}"lib.sh
 
 # Read all the properties
 read_config_file "$my_properties_file"
 
-# load helper functions
-. "${mainscriptdir}"lib.sh
+check_exec_prereqs
 
 # Log
 Login2IBMCloud_and_OpenshiftCluster

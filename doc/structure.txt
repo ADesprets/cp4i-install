@@ -1,5 +1,11 @@
 A mettre dans plus tard https://github.ibm.com/icp4i
 
+Create_Capabilities(ns)
+	check_create_oc_yaml(octype, name, yaml, ns)
+	wait_for_oc_state(octype, ocname, ocstate, ocpath)
+		wait_for_state(what, value, command)
+check_resource_availability (octype, name)
+
 Manque DP capabilities
 
 D:.

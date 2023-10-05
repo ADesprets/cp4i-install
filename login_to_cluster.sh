@@ -68,6 +68,18 @@ Login2OpenshiftCluster () {
 ################################################################################################
 # Start of the script main entry
 ################################################################################################
+# This is the default value for the cluster if no argument is passed, change it to your favorite cluster
+my_cluster_name=cp4iad22023
+
+if (($# == 1)); then
+  my_cluster_name=$1
+elif (($# > 1)); then
+  echo "the number of arguments should be 0 or 1"
+  exit 1
+fi
+
+echo "Attempt to log to $my_cluster_name cluster."
+
 mainscriptdir=$(dirname "$0")/
 privatedir="${mainscriptdir}private/"
 
@@ -78,11 +90,15 @@ mylog info "Login in to IBM Cloud took $SECONDS seconds to execute." 1>&2
 ibmcloud target -r eu-de
 ibmcloud target -g default
 
+# Check billing directory exist
+if [[ ! -d ~/billing ]]; then
+  mkdir ~/billing
+fi
+
 cost=$(ibmcloud billing account-usage --output json | jq .Summary.resources.billable_cost)
 mylog info "Updating ~/billing/ibmcloud-cost.txt, current cost is $cost." 1>&2
 echo "`date` : $cost" >> ~/billing/ibmcloud-cost.txt
 
-my_cluster_name=cp4iad22023
 if ! ibmcloud ks cluster get --cluster $my_cluster_name --output json > /dev/null 2>&1; then
   mylog info "Cluster $my_cluster_name does not exist, do not attempt to login"
 else

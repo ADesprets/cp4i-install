@@ -16,7 +16,8 @@ echo "mainscriptdir: $mainscriptdir"
 echo "configdir: $configdir"
 echo "eem-demo_project: ${eem-demo_project}"
 
-# Deploiement de l'application de backend
+# Deploiement de l'application de backend 
+# Work in progress
 SECONDS=0
 	mylog check "Checking ${octype} ${name} in ${ns}"
 	if oc get deployement ${name} -n ${ns} > /dev/null 2>&1; then mylog ok;else
