@@ -8,3 +8,7 @@ eyJ1c2VycyI6IFt7InVzZXJuYW1lIjogImVlbXVzZXIxIiwicGFzc3dvcmQiOiAiMTIzNDU2In0seyJ1
 apic-integration-ibm-eem-user-roles
 {"mappings":[{"id":"eemuser1","roles":["author"]},{"id":"eemuser2","roles":["viewer"]}]}
 eyJtYXBwaW5ncyI6W3siaWQiOiJlZW11c2VyMSIsInJvbGVzIjpbImF1dGhvciJdfSx7ImlkIjoiZWVtdXNlcjIiLCJyb2xlcyI6WyJ2aWV3ZXIiXX1dfQ==
+
+Ajouter la gateway
+Ajouter la cluster
+Ajouter une subscription

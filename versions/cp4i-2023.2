@@ -12,16 +12,18 @@
 # For Event endpoint Management: https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.2?topic=operators-installing-by-using-cli
 
 # Cases versions
-my_ibm_integration_platform_navigator_case=7.1.0
-my_ibm_integration_asset_repository_case=1.5.9
-my_ibm_appconnect_case=8.2.1
+my_ibm_integration_platform_navigator_case=7.1.2
+my_ibm_integration_asset_repository_case=1.5.13
+my_ibm_appconnect_case=10.0.1
 my_ibm_apiconnect_case=5.0.0
-my_ibm_mq_case=2.4.0
-my_ibm_eventstreams_case=3.2.1
-my_ibm_datapower_operator_case=1.7.0
-my_ibm_aspera_hsts_operator_case=1.5.8
-my_ibm_cp_common_services_case=1.19.4
-my_ibm_eventendpointmanagement_case=11.0.5
+my_ibm_mq_case=2.4.3
+my_ibm_eventstreams_case=3.2.4
+my_ibm_datapower_operator_case=1.8.0
+my_ibm_aspera_hsts_operator_case=1.5.11
+my_ibm_cp_common_services_case=1.19.8
+my_ibm_eventendpointmanagement_case=11.0.6
+my_ibm_eventautomation_flink_case=11.0.5
+my_ibm_eventprocessing_case=11.0.5
 
 # Capabilities operators channels
 my_ibm_navigator_operator_channel=v7.1
@@ -33,6 +35,10 @@ my_ibm_hsts_operator_channel=v1.5
 my_ibm_mq_operator_channel=v2.4
 my_ibm_dpgw_operator_channel=v1.7
 my_ibm_eventendpointmanagement_operator_channel=v11.0
+my_ibm_eventautomation_flink_operator_channel=11.0.5
+my_ibm_eventprocessing_operator_channel=11.0.5
+my_sonatype_nexus_operator_channel=stable
+my_ibm_instana_agent_operator_channel=stable
 
 # Operand versions
 my_ibm_cp_navigator_version=2023.2.1
@@ -40,10 +46,12 @@ my_ibm_cp_ace_version=12.0.8.0-r2
 my_ibm_cp_apic_version=10.0.5.3 # LTS
 my_ibm_cp_ar_version=2022.2.1-9
 my_ibm_cp_apic_profile=n1xc7.m48
-my_ibm_cp_es_version=11.2.0
+#my_ibm_cp_es_version=11.2.0
+my_ibm_cp_es_version=latest  #SB]20231016 following the error : Invalid value '11.2.0' set for spec.version . Your instance will be reconciled as 'latest', the only valid value for spec.version. Ensure you set spec.version to 'latest'.
 my_ibm_cp_hsts_version=4.4.1
 my_ibm_cp_mq_version=9.3.3.0-r1 
 # my_ibm_cp_intassembly_version=2023.2.1
+my_ibm_ev_eem_version=11.0.4
 
 # Licenses information
 # For APIC: https://www.ibm.com/docs/en/api-connect/10.0.x?topic=connect-api-licenses
@@ -59,3 +67,4 @@ my_ibm_cp_ar_license=L-RJON-CD3JKX
 my_ibm_cp_mq_license=$my_ibm_cp4i_license
 my_ibm_cp_navigator_license=$my_ibm_cp4i_license
 my_ibm_cp_intassembly_license=L-RJON-CJR2TC
+my_ibm_ev_eem_license=L-HRZF-DWHH7A

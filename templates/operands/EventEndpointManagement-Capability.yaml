@@ -1,0 +1,18 @@
+apiVersion: events.ibm.com/v1beta1
+kind: EventEndpointManagement
+metadata:
+  name: $my_ev_eem_instance_name
+  namespace: $my_oc_project
+spec:
+  license:
+    accept: true
+    license: $my_ibm_ev_eem_license
+    metric: VIRTUAL_PROCESSOR_CORE
+    use: EventAutomationNonProduction
+  manager:
+    authConfig:
+      authType: LOCAL
+    storage: 
+      storageClassName: ibmc-file-gold-gid 
+      type: persistent-claim
+  version: $my_ibm_ev_eem_version

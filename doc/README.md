@@ -67,6 +67,8 @@ It contains:
 
 1. **Customize** the cp4i.properties file with your own parameters
 
+> Hint: The script is using ibm-pak, so it is important to validate that you have the latest version. For more information click [ibm-pak overview](https://github.com/IBM/ibm-pak#overview). To check the version, enter `oc ibm-pak --version`.
+
 Good practice:
 * Update the capabilities you want to be deployed
 

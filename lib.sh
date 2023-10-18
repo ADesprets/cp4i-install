@@ -331,6 +331,8 @@ check_resource_availability () {
     var=`oc get $octype -n $ns --ignore-not-found=true | grep $name | awk '{print $1}'`;
     #sleep 5
   done
+  #SB]20231013 simulate a return value by echoing it
+  echo $var
 }
 
 ################################################
@@ -344,6 +346,7 @@ check_add_cs_ibm_pak() {
   SECONDS=0
   oc ibm-pak get ${CASE_NAME} --version ${CASE_VERSION}
   oc ibm-pak generate mirror-manifests ${CASE_NAME} icr.io --version ${CASE_VERSION}
+  # TODO check files exist, if both are missing error, exit, some are specific to architecture some are not
   oc apply -f ~/.ibm-pak/data/mirror/${CASE_NAME}/${CASE_VERSION}/catalog-sources.yaml
   oc apply -f ~/.ibm-pak/data/mirror/${CASE_NAME}/${CASE_VERSION}/catalog-sources-linux-${ARCH}.yaml
   oc get catalogsource -n openshift-marketplace

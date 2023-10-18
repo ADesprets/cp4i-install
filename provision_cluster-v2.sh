@@ -175,6 +175,11 @@ Add_Catalog_Sources_ibm_pak () {
 
   ## event-endpoint-management
   check_add_cs_ibm_pak ibm-eventendpointmanagement $my_ibm_eventendpointmanagement_case amd64
+  
+  ##SB]20231012 https://ibm.github.io/event-automation/eem/installing/installing/, chapter : Install the operator by using the CLI (oc ibm-pak)
+  oc ibm-pak launch ibm-eventendpointmanagement --version $my_ibm_eventendpointmanagement_case --inventory eemOperatorSetup --action installCatalog -n openshift-marketplace
+
+
 }
 
 ################################################
@@ -183,8 +188,10 @@ Add_Catalog_Sources_ibm_pak () {
 ## current_channel = "Operator channel", : https://www.ibm.com/docs/en/cloud-paks/cp-integration/2022.4?topic=reference-operator-channel-versions-this-release
 ## catalog_source_name = catalog source created for this operator : https://www.ibm.com/docs/en/cloud-paks/cp-integration/2022.4?topic=images-adding-catalog-sources-cluster
 # @param ns: namespace to install the operators
+# resource is the result of the check_resource_availability command
 Install_Operators () {
   local ns=$1
+  local resource
 
   # export are important because they are used to replace the variable in the subscription.yaml (envsubst command)
   
@@ -195,9 +202,11 @@ Install_Operators () {
     export current_channel=$my_ibm_navigator_operator_channel
     export catalog_source_name=ibm-integration-platform-navigator-catalog
 
-    check_create_oc_yaml "subscription" "${operator_name}" "${subscriptionsdir}subscription.yaml" $ns
-    check_resource_availability "clusterserviceversion" "${operator_name}" $ns
-    wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase' $ns
+    check_create_oc_yaml "subscription" "${operator_name}" "${operatorsdir}subscription.yaml" $ns
+
+    #SB]20231013 the function check_resource_availability will "return" the resource 
+    resource=$(check_resource_availability "clusterserviceversion" "${operator_name}" $ns)
+    wait_for_oc_state clusterserviceversion $resource Succeeded '.status.phase' $ns
     mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
   fi
 
@@ -208,9 +217,11 @@ Install_Operators () {
     export current_channel=$my_ibm_ar_operator_channel
     export catalog_source_name=ibm-integration-asset-repository-catalog
 
-    check_create_oc_yaml "subscription" "${operator_name}" "${subscriptionsdir}subscription.yaml" $ns
-    check_resource_availability clusterserviceversion "${operator_name}" $ns
-    wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase' $ns
+    check_create_oc_yaml "subscription" "${operator_name}" "${operatorsdir}subscription.yaml" $ns
+
+    #SB]20231013 the function check_resource_availability will "return" the resource 
+    resource=$(check_resource_availability "clusterserviceversion" "${operator_name}" $ns)
+    wait_for_oc_state clusterserviceversion $resource Succeeded '.status.phase' $ns
     mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
   fi
 
@@ -221,9 +232,11 @@ Install_Operators () {
     export current_channel=$my_ibm_ace_operator_channel
     export catalog_source_name=appconnect-operator-catalogsource
 
-    check_create_oc_yaml "subscription" "${operator_name}" "${subscriptionsdir}subscription.yaml" $ns
-    check_resource_availability clusterserviceversion "${operator_name}" $ns
-    wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase' $ns
+    check_create_oc_yaml "subscription" "${operator_name}" "${operatorsdir}subscription.yaml" $ns
+
+    #SB]20231013 the function check_resource_availability will "return" the resource 
+    resource=$(check_resource_availability "clusterserviceversion" "${operator_name}" $ns)
+    wait_for_oc_state clusterserviceversion $resource Succeeded '.status.phase' $ns
     mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
   fi
 
@@ -234,9 +247,11 @@ Install_Operators () {
     export current_channel=$my_ibm_apic_operator_channel
     export catalog_source_name=ibm-apiconnect-catalog
 
-    check_create_oc_yaml "subscription" "${operator_name}" "${subscriptionsdir}subscription.yaml" $ns
-    check_resource_availability clusterserviceversion "${operator_name}" $ns
-    wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase' $ns
+    check_create_oc_yaml "subscription" "${operator_name}" "${operatorsdir}subscription.yaml" $ns
+
+    #SB]20231013 the function check_resource_availability will "return" the resource 
+    resource=$(check_resource_availability "clusterserviceversion" "${operator_name}" $ns)
+    wait_for_oc_state clusterserviceversion $resource Succeeded '.status.phase' $ns
     mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
   fi
 
@@ -247,9 +262,11 @@ Install_Operators () {
     export current_channel=$my_ibm_mq_operator_channel
     export catalog_source_name=ibmmq-operator-catalogsource
 
-    check_create_oc_yaml "subscription" "${operator_name}" "${subscriptionsdir}subscription.yaml" $ns
-    check_resource_availability clusterserviceversion "${operator_name}" $ns
-    wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase' $ns
+    check_create_oc_yaml "subscription" "${operator_name}" "${operatorsdir}subscription.yaml" $ns
+
+    #SB]20231013 the function check_resource_availability will "return" the resource 
+    resource=$(check_resource_availability "clusterserviceversion" "${operator_name}" $ns)
+    wait_for_oc_state clusterserviceversion $resource Succeeded '.status.phase' $ns
     mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
   fi
 
@@ -260,9 +277,11 @@ Install_Operators () {
     export current_channel=$my_ibm_es_channel
     export catalog_source_name=ibm-eventstreams
 
-    check_create_oc_yaml "subscription" "${operator_name}" "${subscriptionsdir}subscription.yaml" $ns
-    check_resource_availability clusterserviceversion "${operator_name}" $ns
-    wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase' $ns
+    check_create_oc_yaml "subscription" "${operator_name}" "${operatorsdir}subscription.yaml" $ns
+
+    #SB]20231013 the function check_resource_availability will "return" the resource 
+    resource=$(check_resource_availability "clusterserviceversion" "${operator_name}" $ns)
+    wait_for_oc_state clusterserviceversion $resource Succeeded '.status.phase' $ns
     mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
   fi
 
@@ -275,9 +294,11 @@ Install_Operators () {
     export catalog_source_name=ibm-datapower-operator-catalog
     dp=${operator_name}-${current_channel}-${catalog_source_name}-openshift-marketplace
 
-    check_create_oc_yaml "subscription" $dp "${subscriptionsdir}subscription.yaml" $ns
-    check_resource_availability clusterserviceversion "${operator_name}" $ns
-    wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase' $ns
+    check_create_oc_yaml "subscription" $dp "${operatorsdir}subscription.yaml" $ns
+
+    #SB]20231013 the function check_resource_availability will "return" the resource 
+    resource=$(check_resource_availability "clusterserviceversion" "${operator_name}" $ns)
+    wait_for_oc_state clusterserviceversion $resource Succeeded '.status.phase' $ns
     mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
   fi
 
@@ -288,9 +309,11 @@ Install_Operators () {
     export current_channel=$my_ibm_hsts_operator_channel
     export catalog_source_name=aspera-operators
   
-    check_create_oc_yaml "subscription" "${operator_name}" "${subscriptionsdir}subscription.yaml" $ns
-    check_resource_availability clusterserviceversion "${operator_name}" $ns
-    wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase' $ns
+    check_create_oc_yaml "subscription" "${operator_name}" "${operatorsdir}subscription.yaml" $ns
+
+    #SB]20231013 the function check_resource_availability will "return" the resource 
+    resource=$(check_resource_availability "clusterserviceversion" "${operator_name}" $ns)
+    wait_for_oc_state clusterserviceversion $resource Succeeded '.status.phase' $ns
     mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
   fi
 
@@ -298,9 +321,15 @@ Install_Operators () {
   # Creating Nexus operator subscription
   if $my_install_nexus;then
     SECONDS=0
-    check_create_oc_yaml "subscription" nxrm-operator-certified "${subscriptionsdir}Nexus-Sub.yaml" $ns
-    check_resource_availability clusterserviceversion nxrm-operator-certified $ns
-    wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase' $ns
+    export operator_name=nxrm-operator-certified
+    export current_channel=$my_sonatype_nexus_operator_channel
+    export catalog_source=certified-operators
+    
+    check_create_oc_yaml "subscription" "${operator_name}" "${operatorsdir}subscription.yaml" $ns
+
+    #SB]20231013 the function check_resource_availability will "return" the resource 
+    resource=$(check_resource_availability "clusterserviceversion" "${operator_name}" $ns)
+    wait_for_oc_state clusterserviceversion $resource Succeeded '.status.phase' $ns
     mylog info "Creation of Nexus operator took $SECONDS seconds to execute." 1>&2
   fi
 
@@ -308,13 +337,19 @@ Install_Operators () {
   # Creating Instana operator subscription
   if $my_instana_agent_operator;then
     SECONDS=0
+    export operator_name=instana-agent-operator
+    export current_channel=$my_ibm_instana_agent_operator_channel
+    export catalog_source_name=certified-operators
+
     # Create namespace for Instana agent. The instana agent must be istalled in instana-agent namespace.
     CreateNameSpace $my_instana_agent_project
     oc adm policy add-scc-to-user privileged -z instana-agent -n $my_instana_agent_project
 
-    check_create_oc_yaml "subscription" instana-agent-operator "${subscriptionsdir}Instana-Sub.yaml" $ns
-    check_resource_availability clusterserviceversion instana-agent-operator $ns
-    wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase' $ns
+    check_create_oc_yaml "subscription" "${operator_name}" "${operatorsdir}subscription.yaml" $ns
+
+    #SB]20231013 the function check_resource_availability will "return" the resource 
+    resource=$(check_resource_availability "clusterserviceversion" "${operator_name}" $ns)
+    wait_for_oc_state clusterserviceversion $resource Succeeded '.status.phase' $ns
     mylog info "Creation of Instana agent operator took $SECONDS seconds to execute." 1>&2
   fi
 
@@ -325,9 +360,11 @@ Install_Operators () {
     export current_channel=$my_ibm_eventendpointmanagement_operator_channel
     export catalog_source_name=ibm-eventendpointmanagement-catalog
   
-    check_create_oc_yaml "subscription" "${operator_name}" "${subscriptionsdir}subscription.yaml" $ns
-    check_resource_availability clusterserviceversion "${operator_name}" $ns
-    wait_for_oc_state clusterserviceversion $var Succeeded '.status.phase' $ns
+    check_create_oc_yaml "subscription" "${operator_name}" "${operatorsdir}subscription.yaml" $ns
+
+    #SB]20231013 the function check_resource_availability will "return" the resource 
+    resource=$(check_resource_availability "clusterserviceversion" "${operator_name}" $ns)
+    wait_for_oc_state clusterserviceversion $resource Succeeded '.status.phase' $ns
     mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
   fi
 
@@ -337,12 +374,12 @@ Install_Operators () {
 # create capabilities
 # @param ns namespace where capabilities are created
 # function
-Create_Capabilities () {
+Install_Operands () {
   local ns=$1
 
   # Creating Navigator instance
   if $my_ibm_navigator;then
-    check_create_oc_yaml PlatformNavigator $my_cp_navigator_instance_name "${capabilitiesdir}Navigator-Capability.yaml" $ns
+    check_create_oc_yaml PlatformNavigator $my_cp_navigator_instance_name "${operandsdir}Navigator-Capability.yaml" $ns
     SECONDS=0
     wait_for_oc_state PlatformNavigator "$my_cp_navigator_instance_name" Ready '.status.conditions[0].type' $ns
     mylog info "Creation of Navigator instance took $SECONDS seconds to execute." 1>&2
@@ -350,7 +387,7 @@ Create_Capabilities () {
 
   # Creating Integration Assembly instance
   if $my_ibm_intassembly;then
-    check_create_oc_yaml IntegrationAssembly $my_cp_intassembly_instance_name "${capabilitiesdir}IntegrationAssembly-Capability.yaml" $ns
+    check_create_oc_yaml IntegrationAssembly $my_cp_intassembly_instance_name "${operandsdir}IntegrationAssembly-Capability.yaml" $ns
     SECONDS=0
     wait_for_oc_state IntegrationAssembly "$my_cp_intassembly_instance_name" Ready '.status.conditions[0].type' $ns
     mylog info "Creation of Integration Assembly instance took $SECONDS seconds to execute." 1>&2
@@ -358,7 +395,7 @@ Create_Capabilities () {
   
   # Creating ACE Dashboard instance
   if $my_ibm_appconnect;then
-    check_create_oc_yaml Dashboard $my_cp_ace_dashboard_instance_name "${capabilitiesdir}ACE-Dashboard-Capability.yaml" $ns
+    check_create_oc_yaml Dashboard $my_cp_ace_dashboard_instance_name "${operandsdir}ACE-Dashboard-Capability.yaml" $ns
     SECONDS=0
     wait_for_oc_state Dashboard "$my_cp_ace_dashboard_instance_name" Ready '.status.conditions[0].type' $ns
     mylog info "Creation of ACE Dashboard instance took $SECONDS seconds to execute." 1>&2    
@@ -366,7 +403,7 @@ Create_Capabilities () {
   
   # Creating ACE Designer instance
   if $my_ibm_appconnect;then
-    check_create_oc_yaml DesignerAuthoring $my_cp_ace_designer_instance_name "${capabilitiesdir}ACE-Designer-Capability.yaml" $ns
+    check_create_oc_yaml DesignerAuthoring $my_cp_ace_designer_instance_name "${operandsdir}ACE-Designer-Capability.yaml" $ns
     SECONDS=0
     wait_for_oc_state DesignerAuthoring "$my_cp_ace_designer_instance_name" Ready '.status.conditions[0].type' $ns
     mylog info "Creation of ACE Designer instance took $SECONDS seconds to execute." 1>&2    
@@ -374,10 +411,10 @@ Create_Capabilities () {
 
   # Creating Aspera HSTS instance
   if $my_ibm_aspera_hsts;then
-    oc apply -f "${capabilitiesdir}AsperaCM-cp4i-hsts-prometheus-lock.yaml"
-    oc apply -f "${capabilitiesdir}AsperaCM-cp4i-hsts-engine-lock.yaml"
+    oc apply -f "${operandsdir}AsperaCM-cp4i-hsts-prometheus-lock.yaml"
+    oc apply -f "${operandsdir}AsperaCM-cp4i-hsts-engine-lock.yaml"
 
-    check_create_oc_yaml IbmAsperaHsts $my_cp_hsts_instance_name "${capabilitiesdir}AsperaHSTS-Capability.yaml" $ns
+    check_create_oc_yaml IbmAsperaHsts $my_cp_hsts_instance_name "${operandsdir}AsperaHSTS-Capability.yaml" $ns
     SECONDS=0
     wait_for_oc_state IbmAsperaHsts "$my_cp_hsts_instance_name" Ready '.status.conditions[0].type' $ns
     mylog info "Creation of Aspera HSTS instance took $SECONDS seconds to execute." 1>&2    
@@ -385,7 +422,7 @@ Create_Capabilities () {
 
   # Creating APIC instance
   if $my_ibm_apiconnect;then
-    check_create_oc_yaml APIConnectCluster $my_cp_apic_instance_name "${capabilitiesdir}APIC-Capability.yaml" $ns
+    check_create_oc_yaml APIConnectCluster $my_cp_apic_instance_name "${operandsdir}APIC-Capability.yaml" $ns
     SECONDS=0
     wait_for_oc_state APIConnectCluster "$my_cp_apic_instance_name" Ready '.status.phase' $ns
     mylog info "Creation of APIC instance took $SECONDS seconds to execute." 1>&2    
@@ -393,33 +430,41 @@ Create_Capabilities () {
 
   # Creating Asset Repository instance
   if $my_ibm_asset_repository;then
-    check_create_oc_yaml AssetRepository $my_cp_ar_instance_name ${capabilitiesdir}AR-Capability.yaml $ns
+    check_create_oc_yaml AssetRepository $my_cp_ar_instance_name ${operandsdir}AR-Capability.yaml $ns
     SECONDS=0
     wait_for_oc_state AssetRepository "$my_cp_ar_instance_name" Ready '.status.phase' $ns
     mylog info "Creation of Asset Repository instance took $SECONDS seconds to execute." 1>&2    
   fi
 
   # Creating Event Streams instance
-  if $my_ibm_eventstreams;then
-    check_create_oc_yaml EventStreams $my_cp_es_instance_name ${capabilitiesdir}ES-Capability.yaml $ns
+  if $my_ibm_eventstreams;then       
+    check_create_oc_yaml EventStreams $my_cp_es_instance_name ${operandsdir}ES-Capability.yaml $ns
     SECONDS=0
     wait_for_oc_state EventStreams "$my_cp_es_instance_name" Ready '.status.phase' $ns
     mylog info "Creation of Event Streams instance took $SECONDS seconds to execute." 1>&2    
   fi
 
+  # Creating EventEndpointManager instance (Event Processing))
+  if $my_ibm_eventendpointmanagement;then
+    check_create_oc_yaml EventEndpointManagement $my_ev_eem_instance_name "${operandsdir}EventEndpointManagement-Capability.yaml" $ns
+    SECONDS=0
+    wait_for_oc_state EventEndpointManagement "$my_ev_eem_instance_name" Ready '.status.conditions[0].type' $ns
+    mylog info "Creation of EventEndpointManagement instance took $SECONDS seconds to execute." 1>&2
+  fi
+
   # Creating Nexus Repository instance (An open source repository for build artifacts)
     if $my_install_nexus;then
-    check_create_oc_yaml NexusRepo $my_nexus_instance_name ${capabilitiesdir}Nexus-Capability.yaml $ns
+    check_create_oc_yaml NexusRepo $my_nexus_instance_name ${operandsdir}Nexus-Capability.yaml $ns
     SECONDS=0
     wait_for_oc_state NexusRepo "$my_nexus_instance_name" Deployed '[.status.conditions[].type][1]' $ns
     # add route to access Nexus from outside cluster
-    check_create_oc_yaml Route $my_nexus_route_name ${capabilitiesdir}Nexus-Route.yaml $ns
+    check_create_oc_yaml Route $my_nexus_route_name ${operandsdir}Nexus-Route.yaml $ns
     mylog info "Creation of Nexus instance took $SECONDS seconds to execute." 1>&2    
   fi
 
   # Creating Instana agent
   if $my_instana_agent_operator;then
-    check_create_oc_yaml InstanaAgent $my_instana_agent_instance_name ${capabilitiesdir}Instana-Agent-Capability-CloudIBM.yaml $my_instana_agent_project
+    check_create_oc_yaml InstanaAgent $my_instana_agent_instance_name ${operandsdir}Instana-Agent-Capability-CloudIBM.yaml $my_instana_agent_project
     SECONDS=0
     wait_for_oc_state DaemonSet $my_instana_agent_instance_name $my_cluster_workers '.status.numberReady' $my_instana_agent_project
     mylog info "Creation of Instana agent instance took $SECONDS seconds to execute." 1>&2    
@@ -556,8 +601,8 @@ fi
 # Install operators
 Install_Operators $my_op_group_ns
 
-# Instantiate capabilities
-Create_Capabilities $my_oc_project
+# Instantiate operands
+Install_Operands $my_oc_project
 
 # Add OpenLdap app to openshift
 oc project $my_oc_project
