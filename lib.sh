@@ -136,12 +136,14 @@ send-email() {
 # Log in IBM Cloud
 # function
 Login2IBMCloud () {
+  SECONDS=0
   var_fail my_ic_apikey "Create and save API key JSON file from: https://cloud.ibm.com/iam/apikeys"
   mylog check "Login to IBM Cloud"
   if ! ibmcloud login -q --no-region --apikey $my_ic_apikey > /dev/null;then
     mylog error "Fail to login to IBM Cloud, check API key: $my_ic_apikey" 1>&2
     exit 1
   else mylog ok
+  mylog info "Connecting to IBM Cloud took: $SECONDS seconds." 1>&2
   fi
 }
 
@@ -151,12 +153,14 @@ Login2IBMCloud () {
 # requires var my_cluster_url
 # function
 Login2OpenshiftCluster () {
+  SECONDS=0
   mylog check "Login to cluster"
   while ! oc login -u apikey -p $my_ic_apikey --server=$my_cluster_url > /dev/null;do
 	mylog error "$(date) Fail to login to Cluster, retry in a while (login using web to unblock)" 1>&2
 	sleep 30
   done
   mylog ok
+  mylog info "Logging to Cluster took: $SECONDS seconds." 1>&2
 }
 
 ################################################
@@ -164,13 +168,17 @@ Login2OpenshiftCluster () {
 # set variable my_cluster_url
 # function
 wait_for_cluster_availability () {
+  SECONDS=0	
   wait_for_state 'Cluster state' 'normal-All Workers Normal' "ibmcloud oc cluster get --cluster $my_cluster_name --output json|jq -r '.state+\"-\"+.status'"
+  mylog info "Checking Cluster state took: $SECONDS seconds." 1>&2
 
+  SECONDS=0
   mylog check "Checking Cluster URL"
   my_cluster_url=$(ibmcloud ks cluster get --cluster $my_cluster_name --output json | jq -r "$gbl_cluster_url_filter")
   case "$my_cluster_url" in
 	https://*)
 	mylog ok " -> $my_cluster_url"
+    mylog info "Checking Cluster availability took: $SECONDS seconds." 1>&2
 	;;
 	*)
 	mylog error "Error getting cluster URL for $my_cluster_name" 1>&2
@@ -346,7 +354,6 @@ check_add_cs_ibm_pak() {
   SECONDS=0
   oc ibm-pak get ${CASE_NAME} --version ${CASE_VERSION}
   oc ibm-pak generate mirror-manifests ${CASE_NAME} icr.io --version ${CASE_VERSION}
-  # TODO check files exist, if both are missing error, exit, some are specific to architecture some are not
   oc apply -f ~/.ibm-pak/data/mirror/${CASE_NAME}/${CASE_VERSION}/catalog-sources.yaml
   oc apply -f ~/.ibm-pak/data/mirror/${CASE_NAME}/${CASE_VERSION}/catalog-sources-linux-${ARCH}.yaml
   oc get catalogsource -n openshift-marketplace
@@ -364,4 +371,40 @@ get_navigator_access() {
 	echo "CP4I Platform UI URL: " $cp4i_url
 	echo "CP4I admin user: " $cp4i_uid
 	echo "CP4I admin password: " $cp4i_pwd
+}
+
+
+#########################################################################################################
+##SB]20231109 Generate properties and yaml files
+## input parameter the operand custom dir (and generated dir both with config and scripts subdirectories)
+# function
+generate_files () {
+  local customdir=$1
+  local gendir=$2
+
+  # generate the differents properties files
+  # SB]20231109 some generated files (yaml) are based on other generated files (properties), so :
+  # - in template custom dirs, separate the files to two categories : scripts (*.properties) and config (*.yaml)
+  # - generate first the *.properties files to be sourced then generate the *.yaml files
+
+  config_customdir="${customdir}config/"
+  scripts_customdir="${customdir}scripts/"
+  config_gendir="${gendir}config/"
+  scripts_gendir="${gendir}scripts/"
+
+  set -a
+  # Start with *.properties files 
+  for file in ${scripts_customdir}*; do
+    filename=$(basename -- "$file")
+    cat  $file | envsubst >  "${scripts_gendir}${filename}"
+    . "${scripts_gendir}${filename}"
+  done
+
+  # Continue *.yaml files 
+  for file in ${config_customdir}*; do
+    filename=$(basename -- "$file")
+    cat  $file | envsubst >  "${config_gendir}${filename}"
+  done
+
+  set +a
 }

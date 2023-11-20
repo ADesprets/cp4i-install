@@ -30,6 +30,6 @@ spec:
   version: $my_ibm_cp_ace_version
   storage:
     size: 5Gi
-    class: ibmc-file-gold-gid
+    class: $my_file_storage_class
     type: persistent-claim
   replicas: 2

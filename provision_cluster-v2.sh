@@ -11,9 +11,14 @@
 ################################################
 # Create openshift cluster using classic infrastructure
 CreateOpenshiftClusterClassic () {
+
+  SECONDS=0
   var_fail my_cluster_name "Choose a unique name for the cluster"
   mylog check "Checking OpenShift: $my_cluster_name"
-  if ibmcloud ks cluster get --cluster $my_cluster_name > /dev/null 2>&1; then mylog ok ", cluster exists"; else
+  if ibmcloud ks cluster get --cluster $my_cluster_name > /dev/null 2>&1; then 
+    mylog ok ", cluster exists"
+    mylog info "Checking Openshift cluster took: $SECONDS seconds." 1>&2
+  else
     mylog warn ", cluster does not exist"
     var_fail my_oc_version 'mylog warn "Choose one of:" 1>&2;ibmcloud ks versions -q --show-version OpenShift'
     var_fail my_cluster_zone 'mylog warn "Choose one of:" 1>&2;ibmcloud ks zone ls -q --provider classic'
@@ -45,7 +50,7 @@ CreateOpenshiftClusterClassic () {
       mylog error "Failed to create cluster" 1>&2
       exit 1
     fi
-    mylog info "Creation of the cluster took $SECONDS seconds." 1>&2
+    mylog info "Creation of the cluster took: $SECONDS seconds." 1>&2
   fi
 }
 
@@ -97,16 +102,19 @@ CreateOpenshiftCluster () {
 # wait for ingress address availability
 # function
 Wait4IngressAddressAvailability () {
+  SECONDS=0
+  
   mylog check "Checking Ingress address"
   firsttime=true
   case $my_cluster_infra in
 
   esac
-  SECONDS=0
+
   while true;do
     ingress_address=$(ibmcloud ks cluster get --cluster $my_cluster_name --output json|jq -r "$gbl_ingress_hostname_filter")
 	  if test -n "$ingress_address";then
 		  mylog ok ", $ingress_address"
+      mylog info "Checking Ingress address took: $SECONDS seconds." 1>&2
 		  break
 	  fi
 	  if $firsttime;then
@@ -127,7 +135,9 @@ Wait4IngressAddressAvailability () {
 AddIBMEntitlement () {
   local ns=$1
   mylog check "Checking ibm-entitlement-key in $ns"
-  if oc get secret ibm-entitlement-key --namespace=$ns > /dev/null 2>&1; then mylog ok; else
+  if oc get secret ibm-entitlement-key --namespace=$ns > /dev/null 2>&1
+  then mylog ok
+  else
     var_fail my_entitlement_key "Missing entitlement key"
     mylog info "Checking ibm-entitlement-key validity"
     docker -h > /dev/null 2>&1
@@ -145,6 +155,7 @@ AddIBMEntitlement () {
 ################################################
 # add catalog sources using ibm_pak plugin
 Add_Catalog_Sources_ibm_pak () {
+  local ns=$1
 
   ## ibm-integration-platform-navigator
   check_add_cs_ibm_pak ibm-integration-platform-navigator $my_ibm_integration_platform_navigator_case amd64
@@ -173,13 +184,21 @@ Add_Catalog_Sources_ibm_pak () {
   ## ibm-cp-common-services
   check_add_cs_ibm_pak ibm-cp-common-services $my_ibm_cp_common_services_case amd64
 
-  ## event-endpoint-management
+  ## event endpoint management
+  ## to get the name of the pak to use : oc ibm-pak list
+  ## https://ibm.github.io/event-automation/eem/installing/installing/, chapter : Install the operator by using the CLI (oc ibm-pak)
   check_add_cs_ibm_pak ibm-eventendpointmanagement $my_ibm_eventendpointmanagement_case amd64
-  
-  ##SB]20231012 https://ibm.github.io/event-automation/eem/installing/installing/, chapter : Install the operator by using the CLI (oc ibm-pak)
-  oc ibm-pak launch ibm-eventendpointmanagement --version $my_ibm_eventendpointmanagement_case --inventory eemOperatorSetup --action installCatalog -n openshift-marketplace
+  oc ibm-pak launch ibm-eventendpointmanagement --version $my_ibm_eventendpointmanagement_case --inventory eemOperatorSetup --action installCatalog -n $ns
 
+  ## SB]20231020 For Flink and Event processing first you have to apply the catalog source to your cluster :
+  ## https://ibm.github.io/event-automation/ep/installing/installing/, Chapter Applying catalog sources to your cluster
+  ## event flink
+  check_add_cs_ibm_pak ibm-eventautomation-flink $my_ibm_eventautomation_flink_case amd64
+  oc ibm-pak launch ibm-eventautomation-flink --version $my_ibm_eventautomation_flink_case --inventory flinkKubernetesOperatorSetup --action installCatalog -n $ns
 
+  ## event processing
+  check_add_cs_ibm_pak ibm-eventprocessing $my_ibm_eventprocessing_case amd64
+  oc ibm-pak launch ibm-eventprocessing --version $my_ibm_eventprocessing_case --inventory epOperatorSetup --action installCatalog -n  $ns
 }
 
 ################################################
@@ -317,6 +336,32 @@ Install_Operators () {
     mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
   fi
 
+  ## SB]20231020 For Flink and Event processing install the operator with the following command :
+  ## https://ibm.github.io/event-automation/ep/installing/installing/, Chapter : Install the operator by using the CLI (oc ibm-pak)
+  ## event flink
+  ## Creating Eventautomation Flink operator subscription
+  if $my_ibm_eventautomation_flink;then
+    SECONDS=0
+    operator_name=ibm-eventautomation-flink
+
+    oc ibm-pak launch ibm-eventautomation-flink --version $my_ibm_eventautomation_flink_case --inventory flinkKubernetesOperatorSetup --action installOperator -n $ns 
+    resource=$(check_resource_availability "clusterserviceversion" "${operator_name}" $ns)
+    wait_for_oc_state clusterserviceversion $resource Succeeded '.status.phase' $ns
+    mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
+  fi
+
+  ## event processing
+  ## Creating Event processing operator subscription
+  if $my_ibm_eventprocessing;then
+    SECONDS=0
+    operator_name=ibm-eventprocessing
+
+    oc ibm-pak launch ibm-eventprocessing --version $my_ibm_eventprocessing_case --inventory epOperatorSetup --action installOperator -n $ns
+    resource=$(check_resource_availability "clusterserviceversion" "${operator_name}" $ns)
+    wait_for_oc_state clusterserviceversion $resource Succeeded '.status.phase' $ns
+    mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
+  fi 
+
   #SB]20230130 Ajout du repository Nexus
   # Creating Nexus operator subscription
   if $my_install_nexus;then
@@ -444,7 +489,7 @@ Install_Operands () {
     mylog info "Creation of Event Streams instance took $SECONDS seconds to execute." 1>&2    
   fi
 
-  # Creating EventEndpointManager instance (Event Processing))
+  # Creating EventEndpointManager instance (Event Processing)
   if $my_ibm_eventendpointmanagement;then
     check_create_oc_yaml EventEndpointManagement $my_ev_eem_instance_name "${operandsdir}EventEndpointManagement-Capability.yaml" $ns
     SECONDS=0
@@ -452,7 +497,56 @@ Install_Operands () {
     mylog info "Creation of EventEndpointManagement instance took $SECONDS seconds to execute." 1>&2
   fi
 
-  # Creating Nexus Repository instance (An open source repository for build artifacts)
+  export my_eem_manager_gateway_route=`oc get eem $my_ev_eem_instance_name -o json | jq -r '.status.endpoints[1].uri'`
+  # Creating EventGateway instance (Event Gateway)
+  if $my_ibm_eventgateway;then
+    check_create_oc_yaml EventGateway $my_ev_gw_instance_name "${operandsdir}EventGateway-Capability.yaml" $ns
+    SECONDS=0
+    wait_for_oc_state EventGateway "$my_ev_gw_instance_name" Ready '.status.conditions[0].type' $ns
+    mylog info "Creation of EventGateway instance took $SECONDS seconds to execute." 1>&2
+  fi
+
+
+  ## SB]20231023 Creation of Event automation Flink PVC and instance
+  if $my_ibm_eventautomation_flink;then
+    ## create PVC
+    check_create_oc_yaml PersistentVolumeClaim ibm-flink-pvc "${operandsdir}Flink-PVC.yaml" $ns
+    SECONDS=0
+    wait_for_oc_state PersistentVolumeClaim ibm-flink-pvc Bound '.status.phase' $ns
+    mylog info "Creation of PersistentVolumeClaim instance took $SECONDS seconds to execute." 1>&2
+  fi
+
+  ## SB]20231023 to check the status of Flink instance : https://ibm.github.io/event-automation/ep/installing/post-installation/
+  ## The status field displays the current state of the FlinkDeployment custom resource. 
+  ## When the Flink instance is ready, the custom resource displays status.lifecycleState: STABLE and status.jobManagerDeploymentStatus: READY.
+  ## STANLE and READY (uppercase!!!)
+  ## oc get flinkdeployment <instance-name> -n <namespace> -o jsonpath='{.status.lifecycleState}'
+  ## oc get flinkdeployment <instance-name> -n <namespace> -o jsonpath='{.status.jobManagerDeploymentStatus}'
+
+  if $my_ibm_eventautomation_flink;then
+    ## create Flink instance
+    check_create_oc_yaml FlinkDeployment $my_ev_flink_instance_name "${operandsdir}Flink-Capability.yaml" $ns
+    SECONDS=0
+    wait_for_oc_state FlinkDeployment "$my_ev_flink_instance_name" STABLE '.status.lifecycleState' $ns
+    wait_for_oc_state FlinkDeployment "$my_ev_flink_instance_name" READY '.status.jobManagerDeploymentStatus' $ns
+    mylog info "Creation of FlinkDeployment instance took $SECONDS seconds to execute." 1>&2
+  fi
+
+  ## SB]20231023 to check the status of Event processing : https://ibm.github.io/event-automation/ep/installing/post-installation/
+  ## The Status column displays the current state of the EventProcessing custom resource. 
+  ## When the Event Processing instance is ready, the phase displays Phase: Running.
+  ## Creating EventProcessing instance (Event Processing)
+  ## oc get eventprocessing <instance-name> -n <namespace> -o jsonpath='{.status.phase}'
+
+  if $my_ibm_eventprocessing;then
+    check_create_oc_yaml EventProcessing $my_ev_ep_instance_name "${operandsdir}EventProcessing-Capability.yaml" $ns
+    SECONDS=0
+    wait_for_oc_state EventProcessing "$my_ev_ep_instance_name" Running '.status.phase' $ns
+    mylog info "Creation of EventProcessing instance took $SECONDS seconds to execute." 1>&2
+  fi
+
+
+  ## Creating Nexus Repository instance (An open source repository for build artifacts)
     if $my_install_nexus;then
     check_create_oc_yaml NexusRepo $my_nexus_instance_name ${operandsdir}Nexus-Capability.yaml $ns
     SECONDS=0
@@ -468,6 +562,70 @@ Install_Operands () {
     SECONDS=0
     wait_for_oc_state DaemonSet $my_instana_agent_instance_name $my_cluster_workers '.status.numberReady' $my_instana_agent_project
     mylog info "Creation of Instana agent instance took $SECONDS seconds to execute." 1>&2    
+  fi
+}
+
+################################################
+# start customization
+# @param ns namespace where operands were instantiated
+# function
+Start_Customization () {
+  local ns=$1
+  local varb64
+  
+  # Creating Eventstream topic,
+  # SB]20231019 
+  # 2 options : 
+  #   Option1 : using the es plugin : cloudctl es topic-create.
+  #   You have to install the ES plugin for ibmcloud command : cloudct. 
+  #   https://ibm.github.io/event-automation/es/installing/post-installation/#installing-the-event-streams-command-line-interface, part : IBM Cloud Pak CLI plugin (cloudctl es)
+  #  
+  #   Option2 : using a yaml configuration file
+  # SB]20231019 
+  #if $my_customisation_eventstreams;then
+  #fi
+
+  # SB]20231026 Creating : 
+  # - operands properties file, 
+  # - topics, ...
+  if $my_customisation_eventstreams;then
+    # generate the differents properties files
+    # SB]20231109 some generated files (yaml) are based on other generated files (properties), so :
+    # - in template custom dirs, separate the files to two categories : scripts (*.properties) and config (*.yaml)
+    # - generate first the *.properties files to be sourced then generate the *.yaml files
+    generate_files $es_tmpl_customdir $es_gen_customdir
+  fi
+
+
+  ## Creating EEM users and roles
+  if $my_customisation_eventendpointmanagement;then
+    # generate properties files
+    cat  $eem_tmpl_user_credentials_customfile | envsubst >  $eem_gen_user_credentials_customfile
+    cat  $eem_tmpl_user_roles_customfile | envsubst >  $eem_gen_user_roles_customfile
+
+    # base64 generates an error ": illegal base64 data at input byte 76". Solution found here : https://bugzilla.redhat.com/show_bug.cgi?id=1809431. use base64 -w0
+    # user credentials
+    varb64=$(cat "$eem_gen_user_credentials_customfile" | base64 -w0)
+    oc patch secret "${my_ev_eem_instance_name}-ibm-eem-user-credentials" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-credentials.json\" ,\"value\" : \"$varb64\"}]" -n $ns
+
+    # user roles
+    varb64=$(cat "$eem_gen_user_roles_customfile" | base64 -w0)
+    oc patch secret "${my_ev_eem_instance_name}-ibm-eem-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$varb64\"}]" -n $ns
+  fi
+
+  ## Creating Event Processing users and roles
+  if $my_customisation_eventprocessing;then
+    # generate properties files
+    cat  $ep_tmpl_user_credentials_customfile | envsubst >  $ep_gen_user_credentials_customfile
+    cat  $ep_tmpl_user_roles_customfile | envsubst >  $ep_gen_user_roles_customfile
+
+    # user credentials
+    varb64=$(cat "$ep_gen_user_credentials_customfile" | base64 -w0)
+    oc patch secret "${my_ev_ep_instance_name}-ibm-ep-user-credentials" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-credentials.json\" ,\"value\" : \"$varb64\"}]" -n $ns
+
+    # user roles
+    varb64=$(cat "$ep_gen_user_roles_customfile" | base64 -w0)
+    oc patch secret "${my_ev_ep_instance_name}-ibm-ep-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$varb64\"}]" -n $ns
   fi
 }
 
@@ -523,32 +681,48 @@ Configure_ACE_IS () {
   wait_for_oc_state IntegrationServer "$ace_is" Ready '.status.phase' $ns
 }
 
-################################################
-# Login to both of IBM Cloud and OCS
-# It also create the cluster if it does not exist
-# Since the creation steps used here are all idempotent, we have decided to do everything here.
+######################################################################
+# Create openshift cluster if it does not exist
+# and wait for both availability of the cluster and the ingress address
 # function 
-Login2IBMCloud_and_OpenshiftCluster ()  {
-  # Log in IBM Cloud
-  Login2IBMCloud
-
+CreateOpenshiftCluster_Wait4Availability ()  {
   # Create openshift cluster
-  SECONDS=0
   CreateOpenshiftCluster
-  mylog info "Creation of the cluster took $SECONDS seconds to execute." 1>&2
 
   # Wait for Cluster availability
-  SECONDS=0
   wait_for_cluster_availability
-  mylog info "Availability of the took $SECONDS seconds to execute." 1>&2
 
   # Wait for ingress address availability
-  SECONDS=0
   Wait4IngressAddressAvailability
-  mylog info "To have ingress available took $SECONDS seconds to execute." 1>&2
+}
 
-  # Login to openshift cluster
-  Login2OpenshiftCluster
+################################################
+# Add OpenLdap app to openshift
+# function 
+AddOpenLdap () {
+  oc project $my_oc_project
+  if $my_install_openldap;then
+      check_create_oc_openldap "deployment" "openldap" "ldap"
+  fi
+}
+
+################################################
+# Display information to access CP4I
+# function 
+DisplayAccessInfo () {
+  if $my_ibm_navigator;then
+    get_navigator_access
+  fi
+}
+
+################################################
+# Add Catalog sources using IBM Pak plugin
+# SB]202300201 https://www.ibm.com/docs/en/cloud-paks/cp-integration/2022.4?topic=images-adding-catalog-sources-cluster
+# function 
+AddIbmPakCS () {
+  if $my_ibm_pak; then
+    Add_Catalog_Sources_ibm_pak $operators_project
+  fi
 }
 
 ################################################################################################
@@ -560,7 +734,7 @@ Login2IBMCloud_and_OpenshiftCluster ()  {
 # example of invocation: ./provision_cluster-v2.sh private/my-cp4i.properties sbtest cp4i-sb-cluster
 # other example: ./provision_cluster-v2.sh ./cp4i.properties cp4i cp4iad22023
 my_properties_file=$1
-my_oc_project=$2
+export my_oc_project=$2
 my_cluster_name=$3
 
 # end with / on purpose (if var not defined, uses CWD - Current Working Directory)
@@ -579,40 +753,58 @@ fi
 # Read all the properties
 read_config_file "$my_properties_file"
 
+# check the differents pre requisites
 check_exec_prereqs
 
-# Log
-Login2IBMCloud_and_OpenshiftCluster
+# Log to IBM Cloud
+Login2IBMCloud
+
+# Create Openshift cluster
+CreateOpenshiftCluster_Wait4Availability
+
+# Log to openshift cluster
+Login2OpenshiftCluster
 
 # Create project namespace.
 CreateNameSpace $my_oc_project
 
 # Add ibm entitlement key to namespace
-# SB]20230209 Aspera hsts service cannot be reated because a problem with the entitlement, it muste be added in the openshift-operators namespace.
-AddIBMEntitlement $my_op_group_ns
+# SB]20230209 Aspera hsts service cannot be created because a problem with the entitlement, it muste be added in the openshift-operators namespace.
+AddIBMEntitlement $operators_project
 AddIBMEntitlement $my_oc_project
+
+
+#SB]20231021 when installing event processing and flink operator, we get the error :
+#Error from server (NotFound): catalogsources.operators.coreos.com "ea-flink-operator-catalog" not found
+#[ERROR] expected catalog source 'ea-flink-operator-catalog' expected to be installed namespace 'openshift-marketplace'
+oc apply -f ./ibm_catalogsource.yaml
 
 #SB]202300201 https://www.ibm.com/docs/en/cloud-paks/cp-integration/2022.4?topic=images-adding-catalog-sources-cluster
 # Instantiate catalog sources
-if $my_ibm_pak; then
-  Add_Catalog_Sources_ibm_pak
-fi
+mylog info "==== Adding catalog sources using ibm pak plugin." 1>&2
+AddIbmPakCS
 
 # Install operators
-Install_Operators $my_op_group_ns
+mylog info "==== Installation of operators." 1>&2
+Install_Operators $operators_project
 
 # Instantiate operands
+mylog info "==== Installation of operands." 1>&2
 Install_Operands $my_oc_project
 
 # Add OpenLdap app to openshift
-oc project $my_oc_project
 if $my_install_openldap;then
-    check_create_oc_openldap "deployment" "openldap" "ldap"
+  mylog info "==== Adding OpenLdap." 1>&2
+  AddOpenLdap
 fi
 
 ## Display information to access CP4I
-if $my_ibm_navigator;then
-  get_navigator_access
+mylog info "==== Displaying Access Info to CP4I." 1>&2
+DisplayAccessInfo
+
+# Start customization
+mylog info "==== Customization." 1>&2
+Start_Customization $my_oc_project
 fi
 
 #work in progress

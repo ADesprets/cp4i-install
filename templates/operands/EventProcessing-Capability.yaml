@@ -1,0 +1,18 @@
+apiVersion: events.ibm.com/v1beta1
+kind: EventProcessing
+metadata:
+  name: ${my_ev_ep_instance_name}
+  namespace: ${my_oc_project}
+spec:
+  license:
+    accept: true
+    license: $my_ibm_evt_ep_license
+    use: EventAutomationNonProduction
+  flink:
+    endpoint: ${my_ev_ep_instance_name}-rest.${my_oc_project}.svc.cluster.local:8081
+  authoring:
+    authConfig:
+      authType: LOCAL
+    storage:
+      type: persistent-claim
+      storageClassName: $my_file_storage_class

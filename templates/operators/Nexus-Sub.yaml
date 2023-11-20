@@ -1,0 +1,12 @@
+﻿apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: $operator_name
+  namespace: $$operators_project
+spec:
+  channel: stable
+  installPlanApproval: Manual
+  name: nxrm-operator-certified
+  source: $catalog_source_name
+  #sourceNamespace: openshift-marketplace
+  #startingCSV: nxrm-operator-certified.v3.43.0

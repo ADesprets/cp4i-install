@@ -3,7 +3,7 @@ kind: KafkaUser
 metadata:
   name: es-all-access
   labels:
-    eventstreams.ibm.com/cluster: cp4i-es
+    eventstreams.ibm.com/cluster: ${es_instance}
 spec:
   authentication:
     type: scram-sha-512

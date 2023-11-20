@@ -2,7 +2,7 @@ apiVersion: mq.ibm.com/v1beta1
 kind: QueueManager
 metadata:
   name: ${mq_instance_name}-qm1
-  namespace: cp4i
+  namespace: $mq_project
   finalizers:
     - finalizer.queuemanagers.mq.ibm.com
 spec:
@@ -42,7 +42,7 @@ spec:
       updateStrategy: RollingUpdate
     name: QM1
     storage:
-      defaultClass: ibmc-block-gold
+      defaultClass: $my_block_storage_class
       persistedData:
         enabled: false
       queueManager:

@@ -15,14 +15,14 @@ $my_aspera_license_text
   version: $my_ibm_cp_hsts_version
   storages:
     - claimName: hsts-transfer-pvc
-      class: ibmc-file-gold-gid
+      class: $my_file_storage_class
       deleteClaim: true
       mountPath: /data/
       size: 50Gi
   redis:
     persistence:
       enabled: false
-      storageClass: ibmc-file-gold-gid
+      storageClass: $my_file_storage_class
   services:
     httpProxy:
       type: ClusterIP

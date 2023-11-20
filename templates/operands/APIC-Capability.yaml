@@ -20,5 +20,5 @@ spec:
     metric: VIRTUAL_PROCESSOR_CORE
     use: nonproduction
   profile: $my_ibm_cp_apic_profile
-  storageClassName: ibmc-block-gold
+  storageClassName: $my_block_storage_class
   version: $my_ibm_cp_apic_version

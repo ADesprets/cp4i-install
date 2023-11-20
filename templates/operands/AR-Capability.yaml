@@ -10,7 +10,7 @@ spec:
   replicas: 1
   storage:
     assetDataVolume:
-      class: ibmc-file-gold-gid
+      class: $my_file_storage_class
     couchVolume:
-      class: ibmc-block-gold
+      class: $my_block_storage_class
   version: $my_ibm_cp_ar_version

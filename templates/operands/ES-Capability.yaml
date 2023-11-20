@@ -52,7 +52,7 @@ spec:
             name: $my_cp_es_kafka_metricsConfig_name
       storage:
         type: persistent-claim
-        class: ibmc-block-gold
+        class: $my_block_storage_class
         size: 10Gi
     zookeeper:
       replicas: 3
@@ -64,7 +64,7 @@ spec:
             name: $my_cp_es_kafka_metricsConfig_name
       storage:
         type: persistent-claim
-        class: ibmc-block-gold
+        class: $my_block_storage_class
         size: 4Gi
   adminApi: {}
   adminUI: {}
