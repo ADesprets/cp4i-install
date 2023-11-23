@@ -48,7 +48,7 @@ Load test API (Ping API) as a draft
 --- TODO 12 --- Check if reuse from https://github.ibm.com/kskhong/terraform-cp4i
 --- TODO 13 --- Variabiliser le stockage pour les capabilities
 --- TODO 14 --- Security TODOs
-	Certificates
+	Certificates: Check if we need to createte the secret before maybe using the cert manager and provide it to the CR
 	Login car on passe par CP4I pour accéder à APIC à enlever ????
 		En principe, le provisionning a du laisser dans le repertoire d’install un fichier kubeconfig. Ce fichier contient tout ce qu’il faut.
 		Si tu le trouves, tu peux
@@ -56,6 +56,8 @@ Load test API (Ping API) as a draft
 			- soit créer une variable d’environnement KUBECONFIG qui pointe dessus
 			- soit le copier dans $HOME/.kube/config de ton compte
 		Tu peux alors lancer n’importe quelle commande sans avoir utiliser de oc login préalable
+		on le créée avec une commande ibmcloud oc cluster create classic du coup il faut peut être aller le chercher là bas!!!
+		https://cloud.ibm.com/docs/containers?topic=containers-kubernetes-service-cli#cs_cluster_config
 
 		Attention, si tu tentes un oc login, la commande, il tentera de le modifier et ca ne fonctionnera plus par la suite
 

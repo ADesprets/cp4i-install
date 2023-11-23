@@ -91,7 +91,7 @@ ibmcloud target -r eu-de
 ibmcloud target -g default
 
 # Check billing directory exist
-if [[ ! -d ~/billing ]]; then
+if [ ! -d ~/billing ]; then
   mkdir ~/billing
 fi
 

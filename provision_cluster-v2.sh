@@ -741,10 +741,11 @@ my_cluster_name=$3
 mainscriptdir=$(dirname "$0")/
 
 if (($# < 3)); then
-  echo "the number of arguments should be 3"
+  mylog error "The number of arguments should be 3" 1>&2
 elif (($# > 3)); then
-  echo "the number of arguments should be 3"
-else echo "The provided arguments are: $@"
+  mylog error "The number of arguments should be 3" 1>&2
+else 
+  mylog info "The provided arguments are: $@" 1>&2
 fi
 
 # load helper functions
@@ -793,10 +794,8 @@ mylog info "==== Installation of operands." 1>&2
 Install_Operands $my_oc_project
 
 # Add OpenLdap app to openshift
-if $my_install_openldap;then
-  mylog info "==== Adding OpenLdap." 1>&2
-  AddOpenLdap
-fi
+mylog info "==== Adding OpenLdap." 1>&2
+AddOpenLdap
 
 ## Display information to access CP4I
 mylog info "==== Displaying Access Info to CP4I." 1>&2
@@ -805,7 +804,6 @@ DisplayAccessInfo
 # Start customization
 mylog info "==== Customization." 1>&2
 Start_Customization $my_oc_project
-fi
 
 #work in progress
 # exit

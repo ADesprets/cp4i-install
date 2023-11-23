@@ -7,7 +7,7 @@ spec:
   analytics:
     storage:
       enabled: true
-      type: unique
+      type: shared
   endpointTypes:
     - APIs
     - Events

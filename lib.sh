@@ -155,6 +155,7 @@ Login2IBMCloud () {
 Login2OpenshiftCluster () {
   SECONDS=0
   mylog check "Login to cluster"
+  ibmcloud ks cluster config --cluster ${my_cluster_name} --admin
   while ! oc login -u apikey -p $my_ic_apikey --server=$my_cluster_url > /dev/null;do
 	mylog error "$(date) Fail to login to Cluster, retry in a while (login using web to unblock)" 1>&2
 	sleep 30
@@ -259,6 +260,7 @@ check_create_oc_yaml() {
 # See https://github.com/osixia/docker-openldap for more details especialy all the configurations possible
 # function
 check_create_oc_openldap() {
+	read_config_file "${yamldir}ldap/ldap.properties"
 	local octype="$1"
 	local name="$2"
 	local ns="$3"
@@ -275,8 +277,10 @@ check_create_oc_openldap() {
 		# handle persitence for Openldap
 		# only check one, assume that if one is created the other one is also created (short cut to optimize time)
 		if oc get "PersistentVolumeClaim" "pvc-ldap-main" -n ${ns} > /dev/null 2>&1; then mylog ok;else
-			oc create -f ${yamldir}kube_resources/ldap-pvc.main.yaml -n ${ns}
-			oc create -f ${yamldir}kube_resources/ldap-pvc.config.yaml -n ${ns}
+			envsubst < "${yamldir}ldap/ldap-pvc.main.yaml" > "${workingdir}ldap-pvc.main.yaml"
+			envsubst < "${yamldir}ldap/ldap-pvc.config.yaml" > "${workingdir}ldap-pvc.config.yaml"
+			oc create -f ${workingdir}ldap-pvc.main.yaml -n ${ns}
+			oc create -f ${workingdir}ldap-pvc.config.yaml -n ${ns}
 			wait_for_state "pvc pvc-ldap-config status.phase is Bound" "Bound" "oc get pvc pvc-ldap-config -n ${ns} --output json|jq -r '.status.phase'"
 			wait_for_state "pvc pvc-ldap-main status.phase is Bound" "Bound" "oc get pvc pvc-ldap-main -n ${ns} --output json|jq -r '.status.phase'"
 		fi
@@ -286,23 +290,27 @@ check_create_oc_openldap() {
 		if oc get "deployment" "openldap" -n ${ns} > /dev/null 2>&1; then mylog ok;else
 			oc -n ${ns} new-app osixia/${name}
 			oc -n ${ns} get deployment.apps/openldap -o json | jq '. | del(."status")' > ${workingdir}openldap.json
-			jq -s '.[0] * .[1] ' ${workingdir}openldap.json ${yamldir}kube_resources/ldap-config.json > ${workingdir}openldap.new.json
-			oc apply -n ldap -f ${workingdir}openldap.new.json
+			envsubst < "${yamldir}ldap/ldap-config.json" > "${workingdir}ldap-config.json"
+			oc -n ${ns} patch deployment.apps/openldap --patch-file ${workingdir}ldap-config.json
 
 			# expose service externaly and get host and port
-			oc -n ${ns} expose service/${name} --target-port=389 --name=openldap-external
-			oc -n ${ns} get service ${name} -o json  | jq '.spec.ports[0] += {"Nodeport":30389}' | jq '.spec.ports[1] += {"Nodeport":30686}' | jq '.spec.type |= "NodePort"' | oc apply -f -
+			oc -n ${ns} patch service openldap -p='{"spec": {"type": "NodePort"}}'
+			oc -n ${ns} get service openldap -o json  | jq '.spec.ports |= map(if .name == "389-tcp" then . + { "nodePort": 30389 } else . end)' | jq '.spec.ports |= map(if .name == "636-tcp" then . + { "nodePort": 30686 } else . end)' > ${workingdir}openldap-service.json
+			oc -n ${ns} patch service/openldap --patch-file ${workingdir}openldap-service.json
+			oc -n ${ns} expose service openldap --name=openldap-external --target-port=389
+
 			port=`oc -n ${ns} get service ${name} -o json  | jq -r '.spec.ports[0].nodePort'`
-			# oc -n ${ns} create route simple ldap-route --service=${openldap-external} --port=389
 			hostname=`oc -n ${ns} get route openldap-external -o json | jq -r '.spec.host'`
 
 			# load users and groups into LDAP
-			envsubst < "${yamldir}config/Import.tmpl" > "${yamldir}config/Import.ldiff"
-			ldapadd -H ldap://$hostname:$port -D "$ldap_admin_dn" -w "$ldap_admin_password" -f ${yamldir}kube_resources/ldap-users.ldif
+			envsubst < "${yamldir}ldap/ldap-users.ldif" > "${workingdir}ldap-users.ldif"
+			mylog info "Adding LDAP entries with following command: "
+			mylog info "ldapadd -H ldap://${hostname}:${port} -x -D \"$ldap_admin_dn\" -w \"$ldap_admin_password\" -f ${workingdir}ldap-users.ldif"
+			ldapadd -H ldap://${hostname}:${port} -D "${ldap_admin_dn}" -w "${ldap_admin_password}" -f ${workingdir}ldap-users.ldif
 
 			mylog info "You can search entries with the following command: "
 			# ldapmodify -H ldap://$hostname:$port -D "$ldap_admin_dn" -w admin -f ${ldapdir}Import.ldiff
-			# ldapsearch -H ldap://${host}:${port} -x -D "$ldap_admin_dn" -w "$ldap_admin_password" -b "$ldap_base_dn" -s sub -a always -z 1000 "(objectClass=*)"
+			mylog info "ldapsearch -H ldap://${hostname}:${port} -x -D \"$ldap_admin_dn\" -w \"$ldap_admin_password\" -b \"$ldap_base_dn\" -s sub -a always -z 1000 \"(objectClass=*)\""
 		fi
 	fi
 }
@@ -356,7 +364,7 @@ check_add_cs_ibm_pak() {
   oc ibm-pak generate mirror-manifests ${CASE_NAME} icr.io --version ${CASE_VERSION}
   oc apply -f ~/.ibm-pak/data/mirror/${CASE_NAME}/${CASE_VERSION}/catalog-sources.yaml
   oc apply -f ~/.ibm-pak/data/mirror/${CASE_NAME}/${CASE_VERSION}/catalog-sources-linux-${ARCH}.yaml
-  oc get catalogsource -n openshift-marketplace
+  # oc get catalogsource -n openshift-marketplace
   mylog info "Adding case $CASE_NAME took $SECONDS seconds to execute." 1>&2
 }
 
