@@ -1,3 +1,15 @@
+######################################################
+# function
+# checks if the file exist, if no print a msg and exit
+#
+check_file_exist () {
+	local file=$1
+	if test ! -e "$file";then
+		mylog error "No such file: $file" 1>&2
+		exit 1
+	fi
+}
+
 ################################################
 # function
 read_config_file() {
@@ -12,10 +24,7 @@ read_config_file() {
 		exit 1
 	fi
 
-	if test ! -e "${config_file}";then
-		mylog error "No such file: $config_file" 1>&2
-		exit 1
-	fi
+	check_file_exist $config_file
 
 	# load user specific variables, "set -a" so that variables are part of environment for envsubst
 	set -a
@@ -65,46 +74,27 @@ mylog() {
 ################################################
 # Check that all required executables are installed
 # function
+check_command_exist() {
+  local command=$1
+
+  if ! command -v $command >/dev/null 2>&1; then
+		echo "Executable $command does not exist or is not executable, exiting."
+		exit 1
+  fi
+}
+
+################################################
+# Check that all required executables are installed
+# function
 check_exec_prereqs() {
-	if ! command -v oc >/dev/null 2>&1; then
-		echo "Executable 'oc' does not exist or is not executable, exiting."
-		exit 1
-	fi
-
-	if ! command -v docker >/dev/null 2>&1; then
-		echo "Executable 'docker' does not exist or is not executable, exiting."
-		exit 1
-	fi
-
-	if ! command -v jq >/dev/null 2>&1; then
-		echo "Executable 'jq' does not exist or is not executable, exiting."
-		exit 1
-	fi
-
-	if ! command -v curl >/dev/null 2>&1; then
-		echo "Executable 'curl' does not exist or is not executable, exiting."
-		exit 1
-	fi
-
-	if ! command -v ibmcloud >/dev/null 2>&1; then
-		echo "Executable 'ibmcloud' does not exist or is not executable, exiting."
-		exit 1
-	fi
-
-	if ! command -v keytool >/dev/null 2>&1; then
-		echo "Executable 'keytool' does not exist or is not executable, exiting."
-		exit 1
-	fi
-
-	if ! command -v openssl >/dev/null 2>&1; then
-		echo "Executable 'openssl' does not exist or is not executable, exiting."
-		exit 1
-	fi
-
-	if ! command -v awk >/dev/null 2>&1; then
-		echo "Executable 'awk' does not exist or is not executable, exiting."
-		exit 1
-	fi
+  check_command_exist awk
+  check_command_exist curl
+  check_command_exist docker
+  check_command_exist ibmcloud
+  check_command_exist jq
+  check_command_exist keytool
+  check_command_exist oc
+  check_command_exist openssl
 }
 
 ################################################
@@ -157,8 +147,8 @@ Login2OpenshiftCluster () {
   mylog check "Login to cluster"
   ibmcloud ks cluster config --cluster ${my_cluster_name} --admin
   while ! oc login -u apikey -p $my_ic_apikey --server=$my_cluster_url > /dev/null;do
-	mylog error "$(date) Fail to login to Cluster, retry in a while (login using web to unblock)" 1>&2
-	sleep 30
+    mylog error "$(date) Fail to login to Cluster, retry in a while (login using web to unblock)" 1>&2
+    sleep 30
   done
   mylog ok
   mylog info "Logging to Cluster took: $SECONDS seconds." 1>&2
@@ -218,21 +208,32 @@ wait_for_state() {
 	done
 }
 
-################################################
-# Wait for openshift entity to reach specified state
-# @param octype: kubernetes resource class, example: "clusterserviceversion"
-# @param ocname: name of the resource, example: ""
-# @param ocstate: Value in the json of the status of a resource, example: "Succeeded"
-# @param ocpath: path in the json to get the state of the resource, example: ".status.phase"
-# @param ns: namespace/project
-# function
-wait_for_oc_state() {
+wait_for_state2() {
 	local octype=$1
 	local ocname=$2
 	local ocstate=$3
 	local ocpath=$4
 	local ns=$5
-	wait_for_state "$octype $ocname $ocpath is $ocstate" "$ocstate" "oc get ${octype} ${ocname} -n ${ns} --output json|jq -r '${ocpath}'"
+
+	local command="oc get ${octype} ${ocname} -n ${ns} --output json|jq -r '${ocpath}'"
+	mylog check "Checking $octype $ocname $ocpath is $ocstate"
+	last_state=
+	while true;do
+		current_state=$(eval $command)
+		if test "$current_state" = "$ocstate";then
+			mylog ok ", $current_state"
+			break
+		fi
+		# first time
+		if test -z "$last_state";then
+			mylog no
+		fi
+		if test "$last_state" != "$current_state";then
+			mylog wait "$current_state"
+			last_state=$current_state
+		fi
+		sleep 5
+	done
 }
 
 ################################################
@@ -295,7 +296,7 @@ check_create_oc_openldap() {
 
 			# expose service externaly and get host and port
 			oc -n ${ns} patch service openldap -p='{"spec": {"type": "NodePort"}}'
-			oc -n ${ns} get service openldap -o json  | jq '.spec.ports |= map(if .name == "389-tcp" then . + { "nodePort": 30389 } else . end)' | jq '.spec.ports |= map(if .name == "636-tcp" then . + { "nodePort": 30686 } else . end)' > ${workingdir}openldap-service.json
+			oc -n ${ns} get service openldap -o json | jq '.spec.ports |= map(if .name == "389-tcp" then . + { "nodePort": 30389 } else . end)' | jq '.spec.ports |= map(if .name == "636-tcp" then . + { "nodePort": 30686 } else . end)' > ${workingdir}openldap-service.json
 			oc -n ${ns} patch service/openldap --patch-file ${workingdir}openldap-service.json
 			oc -n ${ns} expose service openldap --name=openldap-external --target-port=389
 

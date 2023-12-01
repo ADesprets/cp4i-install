@@ -29,7 +29,7 @@ do
 
     check_create_oc_yaml "KafkaTopic" "${es_topic_name}" "${configdir}generic-topic.yaml" $es_project
     # check_resource_availability "KafkaTopic" "${es_topic_name}" $es_project
-    # wait_for_oc_state KafkaTopic "${es_topic_name}" "Ready" '.status.phase' $es_project
+    # wait_for_state KafkaTopic "${es_topic_name}" "Ready" '.status.phase' $es_project
 done
 
 # Create Kafka user

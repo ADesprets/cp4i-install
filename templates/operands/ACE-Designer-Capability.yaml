@@ -7,7 +7,7 @@ spec:
   license:
     accept: true
     license: $my_ibm_cp_ace_license
-    use: CloudPakForIntegrationNonProduction
+    use: $my_ibm_ace_license_usage
   couchdb:
     storage:
       size: 10Gi
@@ -20,5 +20,5 @@ spec:
     enabled: true
   designerFlowsOperationMode: local
   replicas: 1
-  useCommonServices: true
+  useCommonServices: false
   version: $my_ibm_cp_ace_version

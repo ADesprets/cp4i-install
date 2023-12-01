@@ -19,7 +19,7 @@ read_config_file "${configdir}mq.properties"
 SECONDS=0
 check_create_oc_yaml "QueueManager" "QM1" "${configdir}QM1.yaml" $mq_project
 check_resource_availability "QueueManager" "${mq_instance_name}-qm1" $mq_project
-wait_for_oc_state QueueManager "${mq_instance_name}-qm1" "Running" '.status.phase' $mq_project
+wait_for_state QueueManager "${mq_instance_name}-qm1" "Running" '.status.phase' $mq_project
 duration=$SECONDS
 mylog info "Creation of the Queue Manager took $duration seconds to execute." 1>&2
 

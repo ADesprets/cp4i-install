@@ -10,10 +10,10 @@ spec:
   license: 
     license: $my_ibm_cp_es_license
     accept: true
-    use: CloudPakForIntegrationNonProduction
+    use: $my_ibm_es_license_usage
   requestIbmServices:
-    iam: true
-    monitoring: true
+    iam: false
+    monitoring: false
   strimziOverrides:
     entityOperator:
       topicOperator: {}
