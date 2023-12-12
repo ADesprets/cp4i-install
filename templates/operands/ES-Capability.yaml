@@ -3,17 +3,17 @@ kind: EventStreams
 metadata:
   annotations:
     eventstreams.ibm.com/apicurio-registry-version: '>=2.4'
-  name: $my_cp_es_instance_name
+  name: $my_ibm_es_instance_name
   namespace: $my_oc_project
 spec:
-  version: $my_ibm_cp_es_version
+  version: $my_ibm_es_version
   license: 
-    license: $my_ibm_cp_es_license
+    license: $my_ibm_es_lic
     accept: true
-    use: $my_ibm_es_license_usage
+    use: $my_ibm_es_lic_usage
   requestIbmServices:
-    iam: false
-    monitoring: false
+    iam: true
+    monitoring: true
   strimziOverrides:
     entityOperator:
       topicOperator: {}
@@ -31,6 +31,7 @@ spec:
         offsets.topic.replication.factor: 3
         default.replication.factor: 3
         min.insync.replicas: 2
+        ssl.secure.random.implementation: SHA1PRNG  
       listeners:
         - name: external
           port: 9094

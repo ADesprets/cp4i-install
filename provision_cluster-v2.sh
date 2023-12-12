@@ -114,7 +114,6 @@ Wait4IngressAddressAvailability () {
     ingress_address=$(ibmcloud ks cluster get --cluster $my_cluster_name --output json|jq -r "$gbl_ingress_hostname_filter")
 	  if test -n "$ingress_address";then
 		  mylog ok ", $ingress_address"
-      mylog info "Checking Ingress address took: $SECONDS seconds." 1>&2
 		  break
 	  fi
 	  if $firsttime;then
@@ -125,7 +124,7 @@ Wait4IngressAddressAvailability () {
     # It takes about 15 minutes (21 Aug 2023)
 	  sleep 90
   done
-  mylog info "To have ingress available took $SECONDS seconds to execute." 1>&2
+  mylog info "Checking ngress availability took $SECONDS seconds to execute." 1>&2
 }
 
 ################################################
@@ -158,357 +157,181 @@ Add_Catalog_Sources_ibm_pak () {
   local ns=$1
 
   ## ibm-integration-platform-navigator
-  check_add_cs_ibm_pak ibm-integration-platform-navigator $my_ibm_integration_platform_navigator_case amd64
+  if $my_ibm_navigator;then
+    check_add_cs_ibm_pak ibm-integration-platform-navigator $my_ibm_navigator_case amd64
+  fi
 
   # ibm-integration-asset-repository
-  check_add_cs_ibm_pak ibm-integration-asset-repository $my_ibm_integration_asset_repository_case amd64
+  if $my_ibm_ar;then
+    check_add_cs_ibm_pak ibm-integration-asset-repository $my_ibm_ar_case amd64
+  fi
+
+   # SB]20231204 https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.2?topic=cluster-mirroring-images-bastion-host
+   # For Datapower operator, take care about this note (from above link) :
+   # (1) The IBM API Connect CASE also mirrors the IBM DataPower Gateway CASE using the Cloud Pak for Integration image group.
+   # (2) The IBM DataPower Gateway CASE contains multiple image groups. To mirror images for Cloud Pak for Integration, use the ibmdpCp4i image group.
+   # the following link https://www.ibm.com/docs/en/datapower-operator/1.8?topic=install-case
+   # provides a sample when installing datapower operator :
+   # https://www.ibm.com/docs/en/datapower-operator/1.8?topic=install-case
+   # Note: When deploying within IBM Cloud Pak for Integration, use image group ibmdpCp4i.
+   # oc ibm-pak generate mirror-manifests $CASE_NAME --version $CASE_VERSION $TARGET_REGISTRY --filter ibmdpCp4i
+   # The question : suppose we have installed the datapower operator case first, does the apic operator case installation ovverides it ? 
+   # ibm-adatapower
+  if $my_ibm_dpgw;then
+    check_add_cs_ibm_pak ibm-datapower-operator $my_ibm_dpgw_case amd64
+  fi
 
   # ibm-apiconnect
-  check_add_cs_ibm_pak ibm-apiconnect $my_ibm_apiconnect_case amd64
+  if $my_ibm_apic;then
+    check_add_cs_ibm_pak ibm-apiconnect $my_ibm_apic_case amd64
+  fi
 
   # ibm-appconnect
-  check_add_cs_ibm_pak ibm-appconnect $my_ibm_appconnect_case amd64
+  if $my_ibm_ace;then
+    check_add_cs_ibm_pak ibm-appconnect $my_ibm_ace_case amd64
+  fi
 
   # ibm-mq
-  check_add_cs_ibm_pak ibm-mq $my_ibm_mq_case amd64
+  if $my_ibm_mq;then
+    check_add_cs_ibm_pak ibm-mq $my_ibm_mq_case amd64
+  fi 
 
   # ibm-eventstreams
-  check_add_cs_ibm_pak ibm-eventstreams $my_ibm_eventstreams_case amd64
-
-  # ibm-datapower-operator
-  check_add_cs_ibm_pak ibm-datapower-operator $my_ibm_datapower_operator_case amd64
+  if $my_ibm_es;then
+    check_add_cs_ibm_pak ibm-eventstreams $my_ibm_es_case amd64
+  fi 
 
   # ibm-aspera-hsts-operator
-  check_add_cs_ibm_pak ibm-aspera-hsts-operator $my_ibm_aspera_hsts_operator_case amd64
+  if $my_ibm_hsts;then
+    check_add_cs_ibm_pak ibm-aspera-hsts-operator $my_ibm_hsts_case amd64
+  fi
 
   ## ibm-cp-common-services
-  check_add_cs_ibm_pak ibm-cp-common-services $my_ibm_cp_common_services_case amd64
+  if $my_ibm_cs;then
+    check_add_cs_ibm_pak ibm-cp-common-services $my_ibm_cs_case amd64
+  fi 
 
   ## event endpoint management
   ## to get the name of the pak to use : oc ibm-pak list
   ## https://ibm.github.io/event-automation/eem/installing/installing/, chapter : Install the operator by using the CLI (oc ibm-pak)
-  check_add_cs_ibm_pak ibm-eventendpointmanagement $my_ibm_eventendpointmanagement_case amd64
-  oc ibm-pak launch ibm-eventendpointmanagement --version $my_ibm_eventendpointmanagement_case --inventory eemOperatorSetup --action installCatalog -n $ns
+  if $my_ibm_eem;then
+    check_add_cs_ibm_pak ibm-eventendpointmanagement $my_ibm_eem_case amd64
+    oc ibm-pak launch ibm-eventendpointmanagement --version $my_ibm_eem_case --inventory eemOperatorSetup --action installCatalog -n $ns
+  fi 
 
-  ## SB]20231020 For Flink and Event processing first you have to apply the catalog source to your cluster :
-  ## https://ibm.github.io/event-automation/ep/installing/installing/, Chapter Applying catalog sources to your cluster
-  # event flink
-  check_add_cs_ibm_pak ibm-eventautomation-flink $my_ibm_eventautomation_flink_case amd64
-  oc ibm-pak launch ibm-eventautomation-flink --version $my_ibm_eventautomation_flink_case --inventory flinkKubernetesOperatorSetup --action installCatalog -n $ns
+  if $my_ibm_flink;then
+    ## SB]20231020 For Flink and Event processing first you have to apply the catalog source to your cluster :
+    ## https://ibm.github.io/event-automation/ep/installing/installing/, Chapter Applying catalog sources to your cluster
+    # event flink
+    check_add_cs_ibm_pak ibm-eventautomation-flink $my_ibm_flink_case amd64
+    oc ibm-pak launch ibm-eventautomation-flink --version $my_ibm_flink_case --inventory flinkKubernetesOperatorSetup --action installCatalog -n $ns
+  fi 
 
-  # event processing
-  check_add_cs_ibm_pak ibm-eventprocessing $my_ibm_eventprocessing_case amd64
-  oc ibm-pak launch ibm-eventprocessing --version $my_ibm_eventprocessing_case --inventory epOperatorSetup --action installCatalog -n  $ns
+  if $my_ibm_ep;then
+    # event processing
+    check_add_cs_ibm_pak ibm-eventprocessing $my_ibm_ep_case amd64
+    oc ibm-pak launch ibm-eventprocessing --version $my_ibm_ep_case --inventory epOperatorSetup --action installCatalog -n  $ns
+  fi
 }
 
 ################################################
 # Install Operators
-## operator_name = "Literal name", https://www.ibm.com/docs/en/cloud-paks/cp-integration/2022.4?topic=operators-installing-using-cli#operators-available
+## name = "Literal name", https://www.ibm.com/docs/en/cloud-paks/cp-integration/2022.4?topic=operators-installing-using-cli#operators-available
 ## current_channel = "Operator channel", : https://www.ibm.com/docs/en/cloud-paks/cp-integration/2022.4?topic=reference-operator-channel-versions-this-release
 ## catalog_source_name = catalog source created for this operator : https://www.ibm.com/docs/en/cloud-paks/cp-integration/2022.4?topic=images-adding-catalog-sources-cluster
 # @param ns: namespace to install the operators
 # resource is the result of the check_resource_availability command
 # SB]20231129 Adding the IBM Cloud Pak Foundational Services operator
 Install_Operators () {
-  local resource
-  local type
-  local path
-  local state
 
-  # export are important because they are used to replace the variable in the subscription.yaml (envsubst command)
-  
-  # Creating fundational services operator subscription
-  if $my_ibm_cp_foundational_service;then
-    SECONDS=0
-    export operator_name=ibm-common-service-operator
-    export current_channel=$my_ibm_common_service_operator_channel
-    export catalog_source_name=ibm-operator-catalog
-    export operator_ns=$my_oc_project
-    export strategy="Manual"
-
-    check_create_oc_yaml "subscription" "${operator_name}" "${operatorsdir}subscription.yaml" $operator_ns
-
-    #SB]20231013 the function check_resource_availability will "return" the resource 
-    resource=$(check_resource_availability "clusterserviceversion" "${operator_name}" $operator_ns)
-    type="clusterserviceversion"
-    path=".status.phase"
-    state="Succeeded"
-    wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $operator_ns --output json|jq -r '$path'"
-    mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
+  # Creating foundational services operator subscription
+  if $my_ibm_cs;then
+    create_operator_subscription "ibm-common-service-operator" $my_ibm_cs_chl "ibm-operator-catalog" $operators_project "Automatic"
   fi
-
+  
   # Creating IBM license operator subscription
   # SB]20231130 https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.2?topic=administering-deploying-license-service#deploy-cli
-  if $my_ibm_license_server;then
-    SECONDS=0
-    export operator_name=ibm-licensing-operator
-    export current_channel=$my_ibm_license_server_channel
-    export catalog_source_name=opencloud-operators
-    export operator_ns=${my_oc_project}-fs
-    export strategy="Manual"
-
-    check_create_oc_yaml "subscription" "${operator_name}" "${operatorsdir}subscription.yaml" $operator_ns
-
-    #SB]20231013 the function check_resource_availability will "return" the resource 
-    resource=$(check_resource_availability "clusterserviceversion" "${operator_name}" $operator_ns)
-    type="clusterserviceversion"
-    path=".status.phase"
-    state="Succeeded"
-    wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $operator_ns --output json|jq -r '$path'"
-    mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
-  fi
-
-  # Creating Navigator operator subscription
-  if $my_ibm_navigator;then
-    SECONDS=0
-    export operator_name=ibm-integration-platform-navigator
-    export current_channel=$my_ibm_navigator_operator_channel
-    export catalog_source_name=ibm-integration-platform-navigator-catalog
-    export operator_ns=$operators_project
-
-    check_create_oc_yaml "subscription" "${operator_name}" "${operatorsdir}subscription.yaml" $operator_ns
-
-    #SB]20231013 the function check_resource_availability will "return" the resource 
-    resource=$(check_resource_availability "clusterserviceversion" "${operator_name}" $operator_ns)
-    type="clusterserviceversion"
-    path=".status.phase"
-    state="Succeeded"
-    wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $operator_ns --output json|jq -r '$path'"
-    mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
-  fi
-
-  # Creating Asset Repository operator subscription
-  if $my_ibm_asset_repository;then
-    SECONDS=0
-    export operator_name=ibm-integration-asset-repository
-    export current_channel=$my_ibm_ar_operator_channel
-    export catalog_source_name=ibm-integration-asset-repository-catalog
-    export operator_ns=$operators_project
-
-    check_create_oc_yaml "subscription" "${operator_name}" "${operatorsdir}subscription.yaml" $operator_ns
-
-    #SB]20231013 the function check_resource_availability will "return" the resource 
-    resource=$(check_resource_availability "clusterserviceversion" "${operator_name}" $operator_ns)
-    type="clusterserviceversion"
-    path=".status.phase"
-    state="Succeeded"
-    wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $operator_ns --output json|jq -r '$path'"
-    mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
-  fi
-
-  # Creating ACE operator subscription
-  if $my_ibm_appconnect;then
-    SECONDS=0
-    export operator_name=ibm-appconnect
-    export current_channel=$my_ibm_ace_operator_channel
-    export catalog_source_name=appconnect-operator-catalogsource
-    export operator_ns=$operators_project
-
-    check_create_oc_yaml "subscription" "${operator_name}" "${operatorsdir}subscription.yaml" $operator_ns
-
-    #SB]20231013 the function check_resource_availability will "return" the resource 
-    resource=$(check_resource_availability "clusterserviceversion" "${operator_name}" $operator_ns)
-    type="clusterserviceversion"
-    path=".status.phase"
-    state="Succeeded"
-    wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $operator_ns --output json|jq -r '$path'"
-   mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
-  fi
-
-  # Creating APIC operator subscription
-  if $my_ibm_apiconnect;then
-    SECONDS=0
-    export operator_name=ibm-apiconnect
-    export current_channel=$my_ibm_apic_operator_channel
-    export catalog_source_name=ibm-apiconnect-catalog
-    export operator_ns=$operators_project
-
-    check_create_oc_yaml "subscription" "${operator_name}" "${operatorsdir}subscription.yaml" $operator_ns
-
-    #SB]20231013 the function check_resource_availability will "return" the resource 
-    resource=$(check_resource_availability "clusterserviceversion" "${operator_name}" $operator_ns)
-    type="clusterserviceversion"
-    path=".status.phase"
-    state="Succeeded"
-    wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $operator_ns --output json|jq -r '$path'"
-    mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
-  fi
-
-  # Creating MQ operator subscription
-  if $my_ibm_mq;then
-    SECONDS=0
-    export operator_name=ibm-mq
-    export current_channel=$my_ibm_mq_operator_channel
-    export catalog_source_name=ibmmq-operator-catalogsource
-    export operator_ns=$operators_project
-
-    check_create_oc_yaml "subscription" "${operator_name}" "${operatorsdir}subscription.yaml" $operator_ns
-
-    #SB]20231013 the function check_resource_availability will "return" the resource 
-    resource=$(check_resource_availability "clusterserviceversion" "${operator_name}" $operator_ns)
-    type="clusterserviceversion"
-    path=".status.phase"
-    state="Succeeded"
-    wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $operator_ns --output json|jq -r '$path'"
-    mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
-  fi
-
-  # Creating EventStreams operator subscription
-  if $my_ibm_eventstreams;then
-    SECONDS=0
-    export operator_name=ibm-eventstreams
-    export current_channel=$my_ibm_es_channel
-    export catalog_source_name=ibm-eventstreams
-    export operator_ns=$operators_project
-
-    check_create_oc_yaml "subscription" "${operator_name}" "${operatorsdir}subscription.yaml" $operator_ns
-
-    #SB]20231013 the function check_resource_availability will "return" the resource 
-    resource=$(check_resource_availability "clusterserviceversion" "${operator_name}" $operator_ns)
-    type="clusterserviceversion"
-    path=".status.phase"
-    state="Succeeded"
-    wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $operator_ns --output json|jq -r '$path'"
-    mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
+  if $my_ibm_lic_srv;then
+    create_operator_subscription "ibm-licensing-operator" $my_ibm_lic_srv_chl "opencloud-operators" $my_oc_cs_project "Automatic"
   fi
 
   # Creating DP Gateway operator subscription
-  ## SB]202302001 attention au dp la souscription porte un nom particulier voir la variable dp ci-dessous.
-  if $my_ibm_datapower;then
-    SECONDS=0
-    export operator_name=datapower-operator
-    export current_channel=$my_ibm_dpgw_operator_channel
-    export catalog_source_name=ibm-datapower-operator-catalog
-    export operator_ns=$operators_project
-    dp=${operator_name}-${current_channel}-${catalog_source_name}-openshift-marketplace
-
-    check_create_oc_yaml "subscription" $dp "${operatorsdir}subscription.yaml" $operator_ns
-
-    #SB]20231013 the function check_resource_availability will "return" the resource 
-    resource=$(check_resource_availability "clusterserviceversion" "${operator_name}" $operator_ns)
-    type="clusterserviceversion"
-    path=".status.phase"
-    state="Succeeded"
-    wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $operator_ns --output json|jq -r '$path'"
-    mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
+  ## SB]202302001 attention au dp la souscription porte un nom particulier voir la variable dp ci-dessous
+  ## SB]20231204 je me débarrasse du dp=${operator_name}-${current_channel}-${catalog_source_name}-openshift-marketplace
+  if $my_ibm_dpgw;then
+    create_operator_subscription "datapower-operator" $my_ibm_dpgw_chl "ibm-datapower-operator-catalog" $operators_project "Automatic"
+  fi
+  
+  # Creating Navigator operator subscription
+  if $my_ibm_navigator;then
+    create_operator_subscription "ibm-integration-platform-navigator" $my_ibm_navigator_chl "ibm-integration-platform-navigator-catalog" $operators_project "Automatic"
   fi
 
-  # Creating Aspera HSTS operator subscription
-  if $my_ibm_aspera_hsts;then
-    SECONDS=0
-    export operator_name=aspera-hsts-operator
-    export current_channel=$my_ibm_hsts_operator_channel
-    export catalog_source_name=aspera-operators
-    export operator_ns=$operators_project
-  
-    check_create_oc_yaml "subscription" "${operator_name}" "${operatorsdir}subscription.yaml" $operator_ns
+  # Creating ACE operator subscription
+  if $my_ibm_ace;then
+    create_operator_subscription "ibm-appconnect" $my_ibm_ace_chl "appconnect-operator-catalogsource" $operators_project "Automatic"
+  fi
 
-    #SB]20231013 the function check_resource_availability will "return" the resource 
-    resource=$(check_resource_availability "clusterserviceversion" "${operator_name}" $operator_ns)
-    type="clusterserviceversion"
-    path=".status.phase"
-    state="Succeeded"
-    wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $operator_ns --output json|jq -r '$path'"
-    mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
+  # Creating APIC operator subscription
+  if $my_ibm_apic;then
+    create_operator_subscription "ibm-apiconnect" $my_ibm_apic_chl "ibm-apiconnect-catalog" $operators_project "Automatic"
+  fi
+
+  # Creating Asset Repository operator subscription
+  if $my_ibm_ar;then
+    create_operator_subscription "ibm-integration-asset-repository" $my_ibm_ar_chl "ibm-integration-asset-repository-catalog" $operators_project "Automatic"
+  fi
+
+  # Creating Event Endpoint Management operator subscription
+  if $my_ibm_eem;then
+    create_operator_subscription "ibm-eventendpointmanagement" $my_ibm_eem_chl "ibm-eventendpointmanagement-catalog" $operators_project "Automatic"
   fi
 
   ## SB]20231020 For Flink and Event processing install the operator with the following command :
   ## https://ibm.github.io/event-automation/ep/installing/installing/, Chapter : Install the operator by using the CLI (oc ibm-pak)
   ## event flink
   ## Creating Eventautomation Flink operator subscription
-  if $my_ibm_eventautomation_flink;then
-    SECONDS=0
-    operator_name=ibm-eventautomation-flink
-    export operator_ns=$operators_project
 
-    oc ibm-pak launch ibm-eventautomation-flink --version $my_ibm_eventautomation_flink_case --inventory flinkKubernetesOperatorSetup --action installOperator -n $operator_ns
-    resource=$(check_resource_availability "clusterserviceversion" "${operator_name}" $operator_ns)
-    type="clusterserviceversion"
-    path=".status.phase"
-    state="Succeeded"
-    wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $operator_ns --output json|jq -r '$path'"
-    mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
+  if $my_ibm_flink;then
+    create_ea_operators flinkKubernetesOperatorSetup ibm-eventautomation-flink $operators_project "{.status.phase}" "Succeeded" "clusterserviceversion" $my_ibm_flink_case
   fi
 
   ## event processing
   ## Creating Event processing operator subscription
-  if $my_ibm_eventprocessing;then
-    SECONDS=0
-    operator_name=ibm-eventprocessing
-    export operator_ns=$operators_project
-
-    oc ibm-pak launch ibm-eventprocessing --version $my_ibm_eventprocessing_case --inventory epOperatorSetup --action installOperator -n $operator_ns
-    resource=$(check_resource_availability "clusterserviceversion" "${operator_name}" $operator_ns)
-    type="clusterserviceversion"
-    path=".status.phase"
-    state="Succeeded"
-    wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $operator_ns --output json|jq -r '$path'"
-    mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
+  if $my_ibm_ep;then
+    create_ea_operators epOperatorSetup ibm-eventprocessing $operators_project "{.status.phase}" "Succeeded" "clusterserviceversion" $my_ibm_ep_case
   fi 
+
+  # Creating EventStreams operator subscription
+  if $my_ibm_es;then
+    create_operator_subscription "ibm-eventstreams" $my_ibm_es_chl "ibm-eventstreams" $operators_project "Automatic"
+  fi
+
+  # Creating MQ operator subscription
+  if $my_ibm_mq;then
+    create_operator_subscription "ibm-mq" $my_ibm_mq_chl "ibmmq-operator-catalogsource" $operators_project "Automatic"
+  fi
+
+  # Creating Aspera HSTS operator subscription
+  if $my_ibm_hsts;then
+    create_operator_subscription "aspera-hsts-operator" $my_ibm_hsts_chl "aspera-operators" $operators_project "Automatic"
+  fi
+
 
   #SB]20230130 Ajout du repository Nexus
   # Creating Nexus operator subscription
   if $my_install_nexus;then
-    SECONDS=0
-    export operator_name=nxrm-operator-certified
-    export current_channel=$my_sonatype_nexus_operator_channel
-    export catalog_source=certified-operators
-    export operator_ns=$operators_project
-    
-    check_create_oc_yaml "subscription" "${operator_name}" "${operatorsdir}subscription.yaml" $operator_ns
-
-    #SB]20231013 the function check_resource_availability will "return" the resource 
-    resource=$(check_resource_availability "clusterserviceversion" "${operator_name}" $operator_ns)
-    type="clusterserviceversion"
-    path=".status.phase"
-    state="Succeeded"
-    wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $operator_ns --output json|jq -r '$path'"
-    mylog info "Creation of Nexus operator took $SECONDS seconds to execute." 1>&2
+    create_operator_subscription  "nxrm-operator-certified" $my_sonatype_nexus_chl "certified-operators" $operators_project "Automatic"
   fi
 
   #SB]20230201 Ajout d'Instana
   # Creating Instana operator subscription
-  if $my_instana_agent_operator;then
-    SECONDS=0
-    export operator_name=instana-agent-operator
-    export current_channel=$my_ibm_instana_agent_operator_channel
-    export catalog_source_name=certified-operators
-    export operator_ns=$operators_project
-
+  if $my_ibm_instana_agent;then
     # Create namespace for Instana agent. The instana agent must be istalled in instana-agent namespace.
     CreateNameSpace $my_instana_agent_project
     oc adm policy add-scc-to-user privileged -z instana-agent -n $my_instana_agent_project
-
-    check_create_oc_yaml "subscription" "${operator_name}" "${operatorsdir}subscription.yaml" $operator_ns
-
-    #SB]20231013 the function check_resource_availability will "return" the resource 
-    resource=$(check_resource_availability "clusterserviceversion" "${operator_name}" $operator_ns)
-    type="clusterserviceversion"
-    path=".status.phase"
-    state="Succeeded"
-    wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $operator_ns --output json|jq -r '$path'"
-    mylog info "Creation of Instana agent operator took $SECONDS seconds to execute." 1>&2
+    create_operator_subscription "instana-agent-operator" $my_ibm_instana_agent_chl "certified-operators" $operators_project "Automatic"
   fi
-
-  # Creating Event Endpoint Management operator subscription
-  if $my_ibm_eventendpointmanagement;then
-    SECONDS=0
-    export operator_name=ibm-eventendpointmanagement
-    export current_channel=$my_ibm_eventendpointmanagement_operator_channel
-    export catalog_source_name=ibm-eventendpointmanagement-catalog
-    export operator_ns=$operators_project
-  
-    check_create_oc_yaml "subscription" "${operator_name}" "${operatorsdir}subscription.yaml" $operator_ns
-
-    #SB]20231013 the function check_resource_availability will "return" the resource 
-    resource=$(check_resource_availability "clusterserviceversion" "${operator_name}" $operator_ns)
-    type="clusterserviceversion"
-    path=".status.phase"
-    state="Succeeded"
-    wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $operator_ns --output json|jq -r '$path'"
-    mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
-  fi
-
 }
 
 ################################################
@@ -516,179 +339,84 @@ Install_Operators () {
 # @param ns namespace where capabilities are created
 # function
 Install_Operands () {
-  local ns=$1
-  local file
-  local path
-  local resource
-  local state
-  local type
+
+  # SB]20231201 Creating OperandRequest for foundational services
+  # SB]20231211 Creating IBM License Server Reporter Instance
+  #             https://www.ibm.com/docs/en/cloud-paks/foundational-services/3.23?topic=reporter-deploying-license-service#lrcmd
+  if $my_ibm_cs;then
+    create_operand_instance "${operandsdir}OperandRequest.yaml" ${my_oc_cs_project} "{.status.conditions[0].type}" $my_ibm_cs_instance_name "Ready" "OperandRequest"
+    # create_operand_instance "${operandsdir}LIC-Reporter-Capability.yaml" ${my_oc_cs_project} "{.status.LicensingReporterPods[0].phase}" $my_ibm_cs_lic_reporter_instance_name "Running" "IBMLicenseServiceReporter"
+    #oc patch OperandConfig common-service --namespace ${my_oc_cs_project} --type merge -p '{"spec": {"services[?(@.name==\"ibm-licensing-operator\")]": {"spec": {"IBMLicenseServiceReporter": {}}}}}'
+    #oc patch OperandConfig common-service --namespace ${my_oc_cs_project} --type merge -p '{"spec": {"services": [{"name": "ibm-licensing-operator", "spec": {"IBMLicenseServiceReporter": {}}}]}}'
+    #oc patch commonservice common-service --namespace ${my_oc_cs_project} --type merge -p '{"spec": {"license": {"accept": true}}}'
+
+    #oc patch OperandConfig common-service --namespace ${my_oc_cs_project} --type merge -p '{"spec": {"services[?(@.name==\"ibm-licensing-operator\")]": {"spec": {"IBMLicenseServiceReporter": {}}}}}'
+
+  fi
 
   # Creating Navigator instance
   if $my_ibm_navigator;then
-    SECONDS=0
-    file="${operandsdir}Navigator-Capability.yaml"
-    path=".status.conditions[0].type"
-    resource="$my_cp_navigator_instance_name"
-    type="PlatformNavigator"
-    state="Ready"
-    check_create_oc_yaml $type $resource $file $ns
-    wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $ns --output json|jq -r '$path'"
-    mylog info "Creation of $type instance took $SECONDS seconds to execute." 1>&2
+    create_operand_instance "${operandsdir}Navigator-Capability.yaml" ${my_oc_project} "{.status.conditions[0].type}" $my_ibm_navigator_instance_name "Ready" "PlatformNavigator"
   fi
 
   # Creating Integration Assembly instance
   if $my_ibm_intassembly;then
-    SECONDS=0
-    file="${operandsdir}IntegrationAssembly-Capability.yaml"
-    resource="$my_cp_intassembly_instance_name"
-    path=".status.conditions[0].type"
-    state="Ready"
-    type="IntegrationAssembly"
-    check_create_oc_yaml $type $resource $file $ns
-    wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $ns --output json|jq -r '$path'"
-    mylog info "Creation of $type instance took $SECONDS seconds to execute." 1>&2
+    create_operand_instance "${operandsdir}IntegrationAssembly-Capability.yaml" ${my_oc_project} "{.status.conditions[0].type}" $my_ibm_intassembly_instance_name "Ready" "IntegrationAssembly"
   fi
   
   # Creating ACE Dashboard instance
-  if $my_ibm_appconnect;then
-    SECONDS=0
-    file="${operandsdir}ACE-Dashboard-Capability.yaml"
-    resource="$my_cp_ace_dashboard_instance_name"
-    path=".status.conditions[0].type"
-    state="Ready"
-    type="Dashboard"
-    check_create_oc_yaml $type $resource $file $ns
-    wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $ns --output json|jq -r '$path'"
-    mylog info "Creation of $type instance took $SECONDS seconds to execute." 1>&2
+  if $my_ibm_ace;then
+    create_operand_instance "${operandsdir}ACE-Dashboard-Capability.yaml" ${my_oc_project} "{.status.conditions[0].type}" $my_ibm_ace_dashboard_instance_name "Ready" "Dashboard"
   fi
   
   # Creating ACE Designer instance
-  if $my_ibm_appconnect;then
-    SECONDS=0
-    file="${operandsdir}ACE-Designer-Capability.yaml"
-    resource="$my_cp_ace_designer_instance_name"
-    path=".status.conditions[0].type"
-    state="Ready"
-    type="DesignerAuthoring"
-    check_create_oc_yaml $type $resource $file $ns
-    wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $ns --output json|jq -r '$path'"
-    mylog info "Creation of $type instance took $SECONDS seconds to execute." 1>&2
+  if $my_ibm_ace;then
+    create_operand_instance "${operandsdir}ACE-Designer-Capability.yaml" ${my_oc_project} "{.status.conditions[0].type}" $my_ibm_ace_designer_instance_name "Ready" "DesignerAuthoring"
   fi
 
   # Creating Aspera HSTS instance
-  if $my_ibm_aspera_hsts;then
+  if $my_ibm_hsts;then
     oc apply -f "${operandsdir}AsperaCM-cp4i-hsts-prometheus-lock.yaml"
     oc apply -f "${operandsdir}AsperaCM-cp4i-hsts-engine-lock.yaml"
-
-    SECONDS=0
-    file="${operandsdir}AsperaHSTS-Capability.yaml"
-    resource="$my_cp_hsts_instance_name"
-    path=".status.conditions[0].type"
-    state="Ready"
-    type="IbmAsperaHsts"
-    check_create_oc_yaml $type $resource $file $ns
-    wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $ns --output json|jq -r '$path'"
-    mylog info "Creation of $type instance took $SECONDS seconds to execute." 1>&2
+    create_operand_instance "${operandsdir}AsperaHSTS-Capability.yaml" ${my_oc_project} "{.status.conditions[0].type}" $my_ibm_hsts_instance_name "Ready" "IbmAsperaHsts"
   fi
 
   # Creating APIC instance
-  if $my_ibm_apiconnect;then
-    SECONDS=0
-    file="${operandsdir}APIC-Capability.yaml"
-    resource="$my_cp_apic_instance_name"
-    path=".status.phase"
-    state="Ready"
-    type="APIConnectCluster"
-    check_create_oc_yaml $type $resource $file $ns
-    wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $ns --output json|jq -r '$path'"
-    mylog info "Creation of $type instance took $SECONDS seconds to execute." 1>&2
+  if $my_ibm_apic;then
+    create_operand_instance "${operandsdir}APIC-Capability.yaml" ${my_oc_project} "{.status.phase}" $my_ibm_apic_instance_name "Ready" "APIConnectCluster"
   fi
 
   # Creating Asset Repository instance
-  if $my_ibm_asset_repository;then
-    SECONDS=0
-    file="${operandsdir}AR-Capability.yaml"
-    resource="$my_cp_ar_instance_name"
-    path=".status.phase"
-    state="Ready"
-    type="AssetRepository"
-    check_create_oc_yaml $type $resource $file $ns
-    wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $ns --output json|jq -r '$path'"
-    mylog info "Creation of $type instance took $SECONDS seconds to execute." 1>&2
+  if $my_ibm_ar;then
+    create_operand_instance "${operandsdir}AR-Capability.yaml" ${my_oc_project} "{.status.phase}" $my_ibm_ar_instance_name "Ready" "AssetRepository"
   fi
 
   # Creating Event Streams instance
-  if $my_ibm_eventstreams;then       
-    SECONDS=0
-    file="${operandsdir}ES-Capability.yaml"
-    resource="$my_cp_es_instance_name"
-    path=".status.phase"
-    state="Ready"
-    type="EventStreams"
-    check_create_oc_yaml $type $resource $file $ns
-    wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $ns --output json|jq -r '$path'"
-    mylog info "Creation of $type instance took $SECONDS seconds to execute." 1>&2
+  if $my_ibm_es;then       
+    create_operand_instance "${operandsdir}ES-Capability.yaml" ${my_oc_project} "{.status.phase}" $my_ibm_es_instance_name "Ready" "EventStreams"
   fi
 
-  # Creating EventEndpointManager instance (Event Processing)
-  if $my_ibm_eventendpointmanagement;then
-    SECONDS=0
-    file="${operandsdir}EventEndpointManagement-Capability.yaml"
-    resource="$my_ev_eem_instance_name"
-    path=".status.conditions[0].type"
-    state="Ready"
-    type="EventEndpointManagement"
-    check_create_oc_yaml $type $resource $file $ns
-    wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $ns --output json|jq -r '$path'"
-    mylog info "Creation of $type instance took $SECONDS seconds to execute." 1>&2
+  # Creating EventEndpointManager instance (Event Endpoint Manager)
+  if $my_ibm_eem;then
+    create_operand_instance "${operandsdir}EEM-Capability.yaml" ${my_oc_project} "{.status.conditions[0].type}" $my_ibm_eem_instance_name "Ready" "EventEndpointManagement"
+    export my_eem_manager_gateway_route=$(oc get eem $my_ibm_eem_instance_name -n $my_oc_project -o jsonpath='{.status.endpoints[1].uri}')
   fi
-
-  export my_eem_manager_gateway_route=`oc get eem $my_ev_eem_instance_name -o json | jq -r '.status.endpoints[1].uri'`
+  
   # Creating EventGateway instance (Event Gateway)
-  if $my_ibm_eventgateway;then
-    SECONDS=0
-    file="${operandsdir}EventGateway-Capability.yaml"
-    resource="$my_ev_gw_instance_name"
-    path=".status.conditions[0].type"
-    state="Ready"
-    type="EventGateway"
-    check_create_oc_yaml $type $resource $file $ns
-    wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $ns --output json|jq -r '$path'"
-    mylog info "Creation of $type instance took $SECONDS seconds to execute." 1>&2
+  if $my_ibm_egw;then
+    create_operand_instance "${operandsdir}EG-Capability.yaml" ${my_oc_project} "{.status.conditions[0].type}" $my_ibm_eg_instance_name "Ready" "EventGateway"
   fi
-
 
   ## SB]20231023 Creation of Event automation Flink PVC and instance
-  if $my_ibm_eventautomation_flink;then
-    SECONDS=0
-    file="${operandsdir}Flink-PVC.yaml"
-    resource="ibm-flink-pvc"
-    path=".status.phase"
-    state="Bound"
-    type="PersistentVolumeClaim"
-    check_create_oc_yaml $type $resource $file $ns
-    wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $ns --output json|jq -r '$path'"
-    mylog info "Creation of $type instance took $SECONDS seconds to execute." 1>&2
-  fi
+  if $my_ibm_flink;then
+    # Even if it's a pvc we use the same generic function
+    create_operand_instance "${operandsdir}EA-Flink-PVC.yaml" ${my_oc_project} "{.status.phase}" "ibm-flink-pvc" "Bound" "PersistentVolumeClaim"
 
-  ## SB]20231023 to check the status of Flink instance : https://ibm.github.io/event-automation/ep/installing/post-installation/
-  ## The status field displays the current state of the FlinkDeployment custom resource. 
-  ## When the Flink instance is ready, the custom resource displays status.lifecycleState: STABLE and status.jobManagerDeploymentStatus: READY.
-  ## STANLE and READY (uppercase!!!)
-  ## oc get flinkdeployment <instance-name> -n <namespace> -o jsonpath='{.status.lifecycleState}'
-  ## oc get flinkdeployment <instance-name> -n <namespace> -o jsonpath='{.status.jobManagerDeploymentStatus}'
-
-  if $my_ibm_eventautomation_flink;then
-    ## create Flink instance
-    SECONDS=0
-    file="${operandsdir}Flink-Capability.yaml"
-    resource="$my_ev_flink_instance_name"
-    path='.status.lifecycleState+\"-\"+.status.jobManagerDeploymentStatus'
-    state="STABLE-READY"
-    type="FlinkDeployment"
-    check_create_oc_yaml $type $resource $file $ns
-    wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $ns --output json|jq -r '$path'"
-    mylog info "Creation of $type instance took $SECONDS seconds to execute." 1>&2
+    ## SB]20231023 to check the status of created Flink instance : https://ibm.github.io/event-automation/ep/installing/post-installation/
+    ## The status field displays the current state of the FlinkDeployment custom resource. 
+    ## When the Flink instance is ready, the custom resource displays status.lifecycleState: STABLE and status.jobManagerDeploymentStatus: READY.
+    ## STANLE and READY (uppercase!!!)
+    create_operand_instance "${operandsdir}EA-Flink-Capability.yaml" ${my_oc_project} "{.status.lifecycleState}-{.status.jobManagerDeploymentStatus}" $my_ibm_flink_instance_name "STABLE-READY" "FlinkDeployment"
   fi
 
   ## SB]20231023 to check the status of Event processing : https://ibm.github.io/event-automation/ep/installing/post-installation/
@@ -697,49 +425,22 @@ Install_Operands () {
   ## Creating EventProcessing instance (Event Processing)
   ## oc get eventprocessing <instance-name> -n <namespace> -o jsonpath='{.status.phase}'
 
-  if $my_ibm_eventprocessing;then
-    SECONDS=0
-    file="${operandsdir}EventProcessing-Capability.yaml"
-    resource="$my_ev_ep_instance_name"
-    path=".status.phase"
-    state="Running"
-    type="EventProcessing"
-    check_create_oc_yaml $type $resource $file $ns
-    wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $ns --output json|jq -r '$path'"
-    mylog info "Creation of $type instance took $SECONDS seconds to execute." 1>&2
+  if $my_ibm_ep;then
+    create_operand_instance "${operandsdir}EP-Capability.yaml" ${my_oc_project} "{.status.phase}" $my_ibm_ep_instance_name "Running" "EventProcessing"
   fi
-
 
   ## Creating Nexus Repository instance (An open source repository for build artifacts)
     if $my_install_nexus;then
-    SECONDS=0
-    file="${operandsdir}Nexus-Capability.yaml"
-    resource="$my_nexus_instance_name"
-    path="[.status.conditions[].type][1]"
-    state="Deployed"
-    type="NexusRepo"
-
-    check_create_oc_yaml $type $resource $file $ns
-    wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $ns --output json|jq -r '$path'"
+    create_operand_instance "${operandsdir}Nexus-Capability.yaml" ${my_oc_project} "[.status.conditions[].type][1]" $my_nexus_instance_name "Deployed" "NexusRepo"
 
     # add route to access Nexus from outside cluster
-    check_create_oc_yaml Route $my_nexus_route_name ${operandsdir}Nexus-Route.yaml $ns
-    mylog info "Creation of $type instance took $SECONDS seconds to execute." 1>&2
+    check_create_oc_yaml Route $my_nexus_route_name ${operandsdir}Nexus-Route.yaml $my_oc_project
+    mylog info "Creation of Route (Nexus) took $SECONDS seconds to execute." 1>&2
   fi
 
   # Creating Instana agent
-  if $my_instana_agent_operator;then
-    SECONDS=0
-    file="${operandsdir}Instana-Agent-Capability-CloudIBM.yaml"
-    resource="$my_instana_agent_instance_name"
-    path=".status.numberReady"
-    state="$my_cluster_workers"
-    type="InstanaAgent"
-    ns=$my_instana_agent_project
-
-    check_create_oc_yaml $type $resource $file $ns
-    wait_for_state "DeamonSet $resource $path is $state" "$state" "oc get $type $resource -n $ns --output json|jq -r '$path'"
-    mylog info "Creation of $type instance took $SECONDS seconds to execute." 1>&2    
+  if $my_ibm_instana_agent;then
+    create_operand_instance "${operandsdir}Instana-Agent-CloudIBM-Capability.yaml" ${my_instana_agent_project} "{.status.numberReady}" $my_ibm_instana_agent_instance_name "$my_cluster_workers" "InstanaAgent"
   fi
 }
 
@@ -751,6 +452,22 @@ Start_Customization () {
   local ns=$1
   local varb64
   
+  if $my_ibm_ace_custom;then
+    # generate the differents properties files
+    # SB]20231109 some generated files (yaml) are based on other generated files (properties), so :
+    # - in template custom dirs, separate the files to two categories : scripts (*.properties) and config (*.yaml)
+    # - generate first the *.properties files to be sourced then generate the *.yaml files
+    generate_files $ace_tmpl_customdir $ace_gen_customdir
+  fi
+
+  if $my_ibm_apic_custom;then
+    # generate the differents properties files
+    # SB]20231109 some generated files (yaml) are based on other generated files (properties), so :
+    # - in template custom dirs, separate the files to two categories : scripts (*.properties) and config (*.yaml)
+    # - generate first the *.properties files to be sourced then generate the *.yaml files
+    generate_files $apic_tmpl_customdir $apic_gen_customdir
+  fi
+
   # Creating Eventstream topic,
   # SB]20231019 
   # 2 options : 
@@ -759,14 +476,11 @@ Start_Customization () {
   #   https://ibm.github.io/event-automation/es/installing/post-installation/#installing-the-event-streams-command-line-interface, part : IBM Cloud Pak CLI plugin (cloudctl es)
   #  
   #   Option2 : using a yaml configuration file
-  # SB]20231019 
-  #if $my_customisation_eventstreams;then
-  #fi
 
   # SB]20231026 Creating : 
   # - operands properties file, 
   # - topics, ...
-  if $my_customisation_eventstreams;then
+  if $my_ibm_es_custom;then
     # generate the differents properties files
     # SB]20231109 some generated files (yaml) are based on other generated files (properties), so :
     # - in template custom dirs, separate the files to two categories : scripts (*.properties) and config (*.yaml)
@@ -774,9 +488,8 @@ Start_Customization () {
     generate_files $es_tmpl_customdir $es_gen_customdir
   fi
 
-
   ## Creating EEM users and roles
-  if $my_customisation_eventendpointmanagement;then
+  if $my_ibm_eem_custom;then
     # generate properties files
     cat  $eem_tmpl_user_credentials_customfile | envsubst >  $eem_gen_user_credentials_customfile
     cat  $eem_tmpl_user_roles_customfile | envsubst >  $eem_gen_user_roles_customfile
@@ -784,26 +497,26 @@ Start_Customization () {
     # base64 generates an error ": illegal base64 data at input byte 76". Solution found here : https://bugzilla.redhat.com/show_bug.cgi?id=1809431. use base64 -w0
     # user credentials
     varb64=$(cat "$eem_gen_user_credentials_customfile" | base64 -w0)
-    oc patch secret "${my_ev_eem_instance_name}-ibm-eem-user-credentials" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-credentials.json\" ,\"value\" : \"$varb64\"}]" -n $ns
+    oc patch secret "${my_ibm_eem_instance_name}-ibm-eem-user-credentials" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-credentials.json\" ,\"value\" : \"$varb64\"}]" -n $ns
 
     # user roles
     varb64=$(cat "$eem_gen_user_roles_customfile" | base64 -w0)
-    oc patch secret "${my_ev_eem_instance_name}-ibm-eem-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$varb64\"}]" -n $ns
+    oc patch secret "${my_ibm_eem_instance_name}-ibm-eem-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$varb64\"}]" -n $ns
   fi
 
   ## Creating Event Processing users and roles
-  if $my_customisation_eventprocessing;then
+  if $my_ibm_ep_custom;then
     # generate properties files
     cat  $ep_tmpl_user_credentials_customfile | envsubst >  $ep_gen_user_credentials_customfile
     cat  $ep_tmpl_user_roles_customfile | envsubst >  $ep_gen_user_roles_customfile
 
     # user credentials
     varb64=$(cat "$ep_gen_user_credentials_customfile" | base64 -w0)
-    oc patch secret "${my_ev_ep_instance_name}-ibm-ep-user-credentials" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-credentials.json\" ,\"value\" : \"$varb64\"}]" -n $ns
+    oc patch secret "${my_ibm_ep_instance_name}-ibm-ep-user-credentials" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-credentials.json\" ,\"value\" : \"$varb64\"}]" -n $ns
 
     # user roles
     varb64=$(cat "$ep_gen_user_roles_customfile" | base64 -w0)
-    oc patch secret "${my_ev_ep_instance_name}-ibm-ep-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$varb64\"}]" -n $ns
+    oc patch secret "${my_ibm_ep_instance_name}-ibm-ep-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$varb64\"}]" -n $ns
   fi
 }
 
@@ -856,7 +569,7 @@ Configure_ACE_IS () {
 
  # Create an IS
   check_create_oc_yaml IntegrationServer $ace_is ${aceconfigdir}ACE-IS-${my_global_index}.yaml $ns
-  wait_for_state IntegrationServer "$ace_is" Ready '.status.phase' $ns
+  wait_for_state IntegrationServer "$ace_is" Ready '{.status.phase}' $ns
 }
 
 ######################################################################
@@ -878,8 +591,8 @@ CreateOpenshiftCluster_Wait4Availability ()  {
 # Add OpenLdap app to openshift
 # function 
 AddOpenLdap () {
-  oc project $my_oc_project
-  if $my_install_openldap;then
+  #oc project $my_oc_project
+  if $my_install_ldap;then
       check_create_oc_openldap "deployment" "openldap" "ldap"
   fi
 }
@@ -888,9 +601,82 @@ AddOpenLdap () {
 # Display information to access CP4I
 # function 
 DisplayAccessInfo () {
+  # Always display the platform console endpoint
+  cp_console_url=$(oc -n ${my_oc_fs_project} get Route -o=jsonpath='{.items[?(@.metadata.name=="cp-console")].spec.host}')
+  mylog info "Cloup Pak Console endpoint: ${cp_console_url}"
+  cp_console_admin_pwd=$(oc -n ${my_oc_fs_project} get secret platform-auth-idp-credentials -o jsonpath='{.data.admin_password}' | base64 -d)
+  mylog info "Cloup Pak Console admin password: ${cp_console_admin_pwd}"
+
   if $my_ibm_navigator;then
     get_navigator_access
   fi
+
+  if $my_ibm_ace;then
+    ace_ui_db_url=$(oc get Dashboard -n $my_oc_project -o=jsonpath='{.items[?(@.kind=="Dashboard")].status.endpoints[?(@.name=="ui")].uri}')
+	  mylog info "ACE Dahsboard UI endpoint: " $ace_ui_db_url
+    ace_ui_dg_url=$(oc get DesignerAuthoring -n $my_oc_project -o=jsonpath='{.items[?(@.kind=="DesignerAuthoring")].status.endpoints[?(@.name=="ui")].uri}')
+	  mylog info "ACE Designer UI endpoint: " $ace_ui_dg_url
+  fi	
+
+  if $my_ibm_apic;then
+    gtw_url=$(oc get GatewayCluster -n $my_oc_project -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].status.endpoints[?(@.name=="gateway")].uri}')
+	  mylog info "APIC Gateway endpoint: ${gtw_url}"
+    apic_gtw_admin_pwd_secret_name=$(oc get GatewayCluster -n $my_oc_project -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].spec.adminUser.secretName}')
+    cm_admin_pwd=$(oc get secret ${apic_gtw_admin_pwd_secret_name} -n $my_oc_project -o jsonpath={.data.password} | base64 -d)
+	  mylog info "APIC Gateway admin password: ${cm_admin_pwd}"
+    cm_url=$(oc get APIConnectCluster -n $my_oc_project -o=jsonpath='{.items[?(@.kind=="APIConnectCluster")].status.endpoints[?(@.name=="admin")].uri}')
+	  mylog info "APIC Cloud Manager endpoint: ${cm_url}"
+    cm_admin_pwd_secret_name=$(oc get ManagementCluster -n $my_oc_project -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].spec.adminUser.secretName}')
+    cm_admin_pwd=$(oc get secret ${cm_admin_pwd_secret_name} -n $my_oc_project -o jsonpath='{.data.password}' | base64 -d)
+    mylog info "APIC Cloud Manager admin password: ${cm_admin_pwd}"
+    mgr_url=$(oc get APIConnectCluster -n $my_oc_project -o=jsonpath='{.items[?(@.kind=="APIConnectCluster")].status.endpoints[?(@.name=="ui")].uri}')
+	  mylog info "APIC API Manager endpoint: ${mgr_url}" 
+    ptl_url=$(oc get PortalCluster -n $my_oc_project -o=jsonpath='{.items[?(@.kind=="PortalCluster")].status.endpoints[?(@.name=="portalWeb")].uri}')
+    mylog info "APIC Web Portal root endpoint: ${ptl_url}"
+  fi
+
+  if $my_ibm_eem;then
+    eem_ui_url=$(oc get EventEndpointManagement -n $my_oc_project -o=jsonpath='{.items[?(@.kind=="EventEndpointManagement")].status.endpoints[?(@.name=="ui")].uri}')
+	  mylog info "Event Endpoint Management UI endpoint: ${eem_ui_url}"
+    eem_gtw_url=$(oc get EventEndpointManagement -n $my_oc_project -o=jsonpath='{.items[?(@.kind=="EventEndpointManagement")].status.endpoints[?(@.name=="gateway")].uri}')
+	  mylog info "Event Endpoint Management Gateway endpoint: ${eem_gtw_url}"
+    mylog info "The credentials are defined in the file ./customisation/EP/config/user-credentials.yaml"
+  fi
+
+  if $my_ibm_es;then
+    es_ui_url=$(oc get EventStreams -n $my_oc_project -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="ui")].uri}')
+	  mylog info "Event Streams Management UI endpoint: ${es_ui_url}"
+    es_admin_url=$(oc get EventStreams -n $my_oc_project -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="admin")].uri}')
+	  mylog info "Event Streams Management admin endpoint: ${es_admin_url}"
+    es_apicurioregistry_url=$(oc get EventStreams -n $my_oc_project -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="apicurioregistry")].uri}')
+	  mylog info "Event Streams Management apicurio registry endpoint: ${es_apicurioregistry_url}" 
+    es_restproducer_url=$(oc get EventStreams -n $my_oc_project -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="restproducer")].uri}')
+	  mylog info "Event Streams Management REST Producer endpoint: ${es_restproducer_url}"
+    es_bootstrap_urls=$(oc get EventStreams -n $my_oc_project -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.kafkaListeners[*].bootstrapServers}')
+	  mylog info "Event Streams Bootstraps servers endpoints: ${es_bootstrap_urls}" 
+  fi
+
+  if $my_install_ldap;then
+   mylog info "LDAP info"
+  fi
+  
+  if $my_ibm_ar;then
+   mylog info "LDAP info"
+  fi
+
+  if $my_ibm_dpgw;then
+   mylog info "LDAP info"
+  fi
+
+  if $my_ibm_mq;then
+   mylog info "LDAP info"
+  fi
+
+  if $my_ibm_lic_srv;then
+    licensing_service_url=$(oc -n ${my_oc_fs_project} get Route -o=jsonpath='{.items[?(@.metadata.name=="ibm-licensing-service-instance")].spec.host}')
+    mylog info "Licensing service endpoint: ${licensing_service_url}"
+  fi
+  
 }
 
 ################################################
@@ -902,7 +688,6 @@ AddIbmPakCS () {
     Add_Catalog_Sources_ibm_pak $operators_project
   fi
 }
-
 
 ################################################
 # SB]20231021 when installing event processing and flink operator, we get the error :
@@ -926,7 +711,7 @@ CreateCatalogsource () {
   else  
     check_file_exist $file
     oc apply -f $file
-    wait_for_state "$type $name $path is $state" "$state" "oc get ${type} ${name} -n ${ns} --output json|jq -r $path"
+    wait_for_state "$type $name $path is $state" "$state" "oc get ${type} ${name} -n ${ns} -o jsonpath='$path'"
   fi
 }
 
@@ -937,13 +722,20 @@ CreateCatalogsource () {
 # License: Accept the license to use foundational services by adding spec.license.accept: true in the spec section.
 PatchFS () {
   local accept
-  accept=$(oc get commonservice common-service -n ${my_oc_project}-fs -o json | jq -r '.spec.license.accept')
+  accept=$(oc get commonservice common-service -n ${my_oc_cs_project} -o jsonpath='{.spec.license.accept}')
 
   if [ $accept ]; then
     mylog info "license already accepted." 1>&2
   else
-    oc patch commonservice common-service --namespace ${my_oc_project}-fs --type merge -p '{"spec": {"license": {"accept": true}}}'
+    oc patch commonservice common-service --namespace ${my_oc_cs_project} --type merge -p '{"spec": {"license": {"accept": true}}}'
   fi
+}
+
+################################################
+# SB]20231201 configurer les foundational services
+# https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.2?topic=services-using-commonservice-custom-resource
+ConfigureFS () {
+  check_create_oc_yaml CommonService $my_ibm_cs_instance_name ${resourcesdir}foundational-services-cr.yaml ${my_oc_cs_project}
 }
 
 ################################################################################################
@@ -953,6 +745,7 @@ PatchFS () {
 # @param my_oc_project: namespace where to create the operators and capabilities
 # @param my_cluster_name: name of the cluster
 # example of invocation: ./provision_cluster-v2.sh private/my-cp4i.properties sbtest cp4i-sb-cluster
+# other example: ./provision_cluster-v2.sh ./cp4i.properties ./versions/cp4i-2023.2.properties cp4i sb20231129
 # other example: ./provision_cluster-v2.sh ./cp4i.properties ./versions/cp4i-2023.2.properties cp4i cp4iad22023
 my_properties_file=$1
 my_versions_file=$2
@@ -977,7 +770,7 @@ read_config_file "$my_properties_file"
 # Read versions properties
 read_config_file "$my_versions_file"
 
-: <<'END_COMMENT'
+# : <<'END_COMMENT'
 # check the differents pre requisites
 check_exec_prereqs
 
@@ -995,12 +788,11 @@ CreateNameSpace $my_oc_project
 
 # Add ibm entitlement key to namespace
 # SB]20230209 Aspera hsts service cannot be created because a problem with the entitlement, it muste be added in the openshift-operators namespace.
-AddIBMEntitlement $operators_project
 AddIBMEntitlement $my_oc_project
-
+AddIBMEntitlement $operators_project
 
 # Create catalog source ibm-operator-catalog
-CreateCatalogsource "openshift-marketplace" "${resourcesdir}ibm_catalogsource-fs.yaml" "catalogsource" "ibm-operator-catalog" "{.status.connectionState.lastObservedState}" "Ready"
+CreateCatalogsource "openshift-marketplace" "${resourcesdir}ibm_catalogsource.yaml" "catalogsource" "ibm-operator-catalog" "{.status.connectionState.lastObservedState}" "READY"
 
 # SB]20231129 create config map for foundational services
 check_create_oc_yaml "configmap" "common-service-maps" "${resourcesdir}common-service-cm.yaml" kube-public
@@ -1014,24 +806,25 @@ check_create_oc_yaml "OperatorGroup" "operatorgroup" "${resourcesdir}operator-gr
 mylog info "==== Adding catalog sources using ibm pak plugin." 1>&2
 AddIbmPakCS
 
-END_COMMENT
-
 # Install operators
 mylog info "==== Installation of operators." 1>&2
 Install_Operators
 
-
 # SB]20231130 patcher les foundational services en acceptant la license
 PatchFS
-exit
 
-# Instantiate operands
-mylog info "==== Installation of operands." 1>&2
-Install_Operands $my_oc_project
+# SB]20231201 Configuring foundational services by using the CommonService custom resource.
+ConfigureFS
 
 # Add OpenLdap app to openshift
 mylog info "==== Adding OpenLdap." 1>&2
 AddOpenLdap
+
+# Instantiate operands
+mylog info "==== Installation of operands." 1>&2
+Install_Operands
+
+# END_COMMENT
 
 ## Display information to access CP4I
 mylog info "==== Displaying Access Info to CP4I." 1>&2

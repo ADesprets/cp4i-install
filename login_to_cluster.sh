@@ -39,16 +39,25 @@ var_fail() {
 	fi
 }
 
+################################################
 # Log in IBM Cloud
 # function
 Login2IBMCloud () {
-  var_fail my_ic_apikey "Create and save API key JSON file from: https://cloud.ibm.com/iam/apikeys"
-  mylog check "Login to IBM Cloud"
-  if ! ibmcloud login -q --no-region --apikey $my_ic_apikey > /dev/null;then
-    mylog error "Fail to login to IBM Cloud, check API key: $my_ic_apikey" 1>&2
-    exit 1
-  else mylog ok
-  fi
+  SECONDS=0
+  
+  if ibmcloud resource groups -q > /dev/null 2>&1;then
+    mylog info "user already logged to IBM Cloud." 
+  else
+    mylog info "user not logged to IBM Cloud." 1>&2
+    var_fail my_ic_apikey "Create and save API key JSON file from: https://cloud.ibm.com/iam/apikeys"
+    mylog check "Login to IBM Cloud"
+    if ! ibmcloud login -q --no-region --apikey $my_ic_apikey > /dev/null;then
+      mylog error "Fail to login to IBM Cloud, check API key: $my_ic_apikey" 1>&2
+      exit 1
+    else mylog ok
+    mylog info "Connecting to IBM Cloud took: $SECONDS seconds." 1>&2
+    fi
+  fi 
 }
 
 ################################################
@@ -57,12 +66,22 @@ Login2IBMCloud () {
 # requires var my_cluster_url
 # function
 Login2OpenshiftCluster () {
-  mylog check "Login to cluster"
-  while ! oc login -u apikey -p $my_ic_apikey --server=$my_cluster_url > /dev/null;do
-	mylog error "$(date) Fail to login to Cluster, retry in a while (login using web to unblock)" 1>&2
-	sleep 30
-  done
-  mylog ok
+  SECONDS=0
+
+  if oc whoami > /dev/null 2>&1;then
+    mylog info "user already logged to openshift cluster." 
+  else
+    mylog check "Login to cluster"
+    # SB]20231208 The following command sets your command line context for the cluster and download the TLS certificates and permission files for the administrator.
+    # more details here : https://cloud.ibm.com/docs/openshift?topic=openshift-access_cluster#access_public_se
+    ibmcloud ks cluster config --cluster ${my_cluster_name} --admin
+    while ! oc login -u apikey -p $my_ic_apikey --server=$my_cluster_url > /dev/null;do
+      mylog error "$(date) Fail to login to Cluster, retry in a while (login using web to unblock)" 1>&2
+      sleep 30
+    done
+    mylog ok
+    mylog info "Logging to Cluster took: $SECONDS seconds." 1>&2
+  fi
 }
 
 ################################################################################################
@@ -78,7 +97,7 @@ elif (($# > 1)); then
   exit 1
 fi
 
-echo "Attempt to log to $my_cluster_name cluster."
+mylog info "Attempt to log to $my_cluster_name cluster."
 
 mainscriptdir=$(dirname "$0")/
 privatedir="${mainscriptdir}private/"

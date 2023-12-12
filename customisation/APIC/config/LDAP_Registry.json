@@ -1,34 +1,81 @@
 {
-    "type": "user_registry",
-    "name": "openldap",
-    "title": "openldap",
-    "summary": "openldap",
-    "registry_type": "ldap",
-    "external_group_mapping_enabled": false,
-    "case_sensitive": false,
-    "email_required": false,
-    "email_unique_if_exist": true,
-    "identity_providers": [
+    "total_results": 2,
+    "results": [
         {
+            "case_sensitive": false,
+            "configuration": {
+                "admin_dn": "cn=admin,dc=ibm,dc=com",
+                "admin_password": "********",
+                "attribute_mapping": {
+                },
+                "authenticated_bind": "true",
+                "authentication_method": "compose_dn",
+                "bind_prefix": "uid=",
+                "bind_suffix": ",ou=users,dc=ibm,dc=com",
+                "protocol_version": "3",
+                "search_dn_base": "dc=ibm,dc=com"
+            },
+            "email_required": false,
+            "email_unique_if_exist": true,
+            "endpoint": {
+                "endpoint": "ldap://openldap-external-ldap.cp4iad2023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud:30389"
+            },
+            "external_group_mapping_enabled": false,
+            "identity_providers": [
+                {
+                    "name": "openldap",
+                    "title": "openldap"
+                }
+            ],
+            "integration_url": "https://cp4i-apic-mgmt-platform-api-cp4i.cp4iad2023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/api/cloud/integrations/user-registry/c0dd8399-ba1c-4723-97f0-8ac639052173",
             "name": "openldap",
-            "title": "openldap"
+            "org_url": "https://cp4i-apic-mgmt-platform-api-cp4i.cp4iad2023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/api/orgs/b94e15c8-3401-42e0-a1d8-488b69b9572c",
+            "owned": true,
+            "registry_type": "ldap",
+            "summary": "openldap automatically installed",
+            "title": "openldap",
+            "type": "user_registry",
+            "url": "https://cp4i-apic-mgmt-platform-api-cp4i.cp4iad2023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/api/user-registries/b94e15c8-3401-42e0-a1d8-488b69b9572c/7729cef6-9e2b-4b60-81ec-83b16e328293",
+            "user_managed": false,
+            "user_registry_managed": false
+        },
+        {
+            "case_sensitive": false,
+            "configuration": {
+                "admin_dn": "cn=admin,dc=ibm,dc=com",
+                "admin_password": "********",
+                "attribute_mapping": {
+                },
+                "authenticated_bind": "true",
+                "authentication_method": "compose_dn",
+                "bind_prefix": "uid=",
+                "bind_suffix": ",ou=users,dc=ibm,dc=com",
+                "protocol_version": "3",
+                "search_dn_base": "dc=ibm,dc=com"
+            },
+            "email_required": false,
+            "email_unique_if_exist": true,
+            "endpoint": {
+                "endpoint": "ldap://openldap-external-ldap.cp4iad2023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud:30389"
+            },
+            "external_group_mapping_enabled": false,
+            "identity_providers": [
+                {
+                    "name": "openldap",
+                    "title": "openldap"
+                }
+            ],
+            "integration_url": "https://cp4i-apic-mgmt-platform-api-cp4i.cp4iad2023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/api/cloud/integrations/user-registry/c0dd8399-ba1c-4723-97f0-8ac639052173",
+            "name": "openldap",
+            "org_url": "https://cp4i-apic-mgmt-platform-api-cp4i.cp4iad2023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/api/orgs/b94e15c8-3401-42e0-a1d8-488b69b9572c",
+            "owned": true,
+            "registry_type": "ldap",
+            "summary": "openldap automatically installed",
+            "title": "openldap",
+            "type": "user_registry",
+            "url": "https://cp4i-apic-mgmt-platform-api-cp4i.cp4iad2023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/api/user-registries/b94e15c8-3401-42e0-a1d8-488b69b9572c/7729cef6-9e2b-4b60-81ec-83b16e328293",
+            "user_managed": false,
+            "user_registry_managed": false
         }
-    ],
-    "visibility": {
-        "type": "public"
-    },
-    "configuration": {
-        "admin_dn": "$ldap_admin_dn",
-        "admin_password": "********",
-        "search_dn_base": "dc=ibm,dc=com",
-        "protocol_version": "3",
-        "attribute_mapping": {},
-        "authenticated_bind": "true",
-        "authentication_method": "search_dn",
-        "search_dn_filter_prefix": "(&(uid=",
-        "search_dn_filter_suffix": ")(objectclass=inetOrgPerson))"
-    },
-    "endpoint": {
-        "endpoint": "ldap://openldap-external-ldap.cp4iad22023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud:31881"
-    }
+    ]
 }

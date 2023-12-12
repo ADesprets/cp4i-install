@@ -1,12 +1,12 @@
 apiVersion: events.ibm.com/v1beta1
 kind: EventEndpointManagement
 metadata:
-  name: $my_ev_eem_instance_name
+  name: $my_ibm_eem_instance_name
   namespace: $my_oc_project
 spec:
   license:
     accept: true
-    license: $my_ibm_evt_eem_license
+    license: $my_ibm_eem_lic
     metric: VIRTUAL_PROCESSOR_CORE
     use: EventAutomationNonProduction
   manager:
@@ -15,4 +15,4 @@ spec:
     storage: 
       storageClassName: $my_file_storage_class 
       type: persistent-claim
-  version: $my_ibm_evt_eem_version
+  version: $my_ibm_eem_version

@@ -34,9 +34,9 @@ SECONDS=0
 			# expose service externaly and get host and port
 			oc -n ${ns} expose service/${name} --target-port=389 --name=openldap-external
 			oc -n ${ns} get service ${name} -o json  | jq '.spec.ports[0] += {"Nodeport":30389}' | jq '.spec.ports[1] += {"Nodeport":30686}' | jq '.spec.type |= "NodePort"' | oc apply -f -
-			port=`oc -n ${ns} get service ${name} -o json  | jq -r '.spec.ports[0].nodePort'`
+			port=`oc -n ${ns} get service ${name} -o jsonpath='{.spec.ports[0].nodePort}'`
 			# oc -n ${ns} create route simple ldap-route --service=${openldap-external} --port=389
-			hostname=`oc -n ${ns} get route openldap-external -o json | jq -r '.spec.host'`
+			hostname=`oc -n ${ns} get route openldap-external -o jsonpath='{.spec.host}'`
 
 			# load users and groups into LDAP
 			envsubst < "${yamldir}config/Import.tmpl" > "${yamldir}config/Import.ldiff"

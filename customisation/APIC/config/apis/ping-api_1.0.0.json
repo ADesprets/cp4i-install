@@ -1,74 +1,74 @@
 {
-	"swagger": "2.0",
-	"info": {
-		"title": "Ping API",
-		"x-ibm-name": "ping-api",
-		"version": "1.0.0"
-	},
-	"x-ibm-configuration": {
-		"cors": {
-			"enabled": true
-		},
-		"gateway": "datapower-api-gateway",
-		"type": "rest",
-		"phase": "realized",
-		"enforced": true,
-		"testable": true,
-		"assembly": {
-			"execute": [
-				{
-					"gatewayscript": {
-						"version": "2.0.0",
-						"title": "gatewayscript",
-						"source": "context.message.body.write({\"msg\" :\"hello\"});"
-					}
-				}
-			],
-			"finally": []
-		},
-		"properties": {
-			"target-url": {
-				"value": "http://example.com/operation-name",
-				"description": "The URL of the target service",
-				"encoded": false
-			}
-		},
-		"activity-log": {
-			"enabled": true,
-			"success-content": "activity",
-			"error-content": "payload"
-		}
-	},
-	"basePath": "/ping-api/v1",
-	"paths": {
-		"/hello": {
-			"get": {
-				"responses": {
-					"200": {
-						"description": "success",
-						"schema": {
-							"type": "string"
-						}
-					}
-				},
-				"consumes": [],
-				"produces": []
-			}
-		}
-	},
-	"securityDefinitions": {
-		"clientID": {
-			"type": "apiKey",
-			"in": "header",
-			"name": "X-IBM-Client-Id"
-		}
-	},
-	"security": [
-		{
-			"clientID": []
-		}
-	],
-	"schemes": [
-		"https"
-	]
+    "basePath": "/ping-api/v1",
+    "info": {
+        "title": "Ping API",
+        "version": "1.0.0",
+        "x-ibm-name": "ping-api"
+    },
+    "paths": {
+        "/hello": {
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "success",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "schemes": [
+        "https"
+    ],
+    "security": [
+        {
+            "clientID": [
+            ]
+        }
+    ],
+    "securityDefinitions": {
+        "clientID": {
+            "in": "header",
+            "name": "X-IBM-Client-Id",
+            "type": "apiKey"
+        }
+    },
+    "swagger": "2.0",
+    "x-ibm-configuration": {
+        "activity-log": {
+            "enabled": true,
+            "error-content": "payload",
+            "success-content": "activity"
+        },
+        "assembly": {
+            "execute": [
+                {
+                    "gatewayscript": {
+                        "source": "context.message.body.write({\"msg\":\"hello\"});",
+                        "title": "gatewayscript",
+                        "version": "2.0.0"
+                    }
+                }
+            ],
+            "finally": [
+            ]
+        },
+        "cors": {
+            "enabled": true
+        },
+        "enforced": true,
+        "gateway": "datapower-api-gateway",
+        "phase": "realized",
+        "properties": {
+            "target-url": {
+                "description": "The URL of the target service",
+                "encoded": false,
+                "value": "http://example.com/operation-name"
+            }
+        },
+        "testable": true,
+        "type": "rest"
+    }
 }

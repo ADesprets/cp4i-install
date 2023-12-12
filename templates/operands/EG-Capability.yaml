@@ -1,19 +1,19 @@
 apiVersion: events.ibm.com/v1beta1
 kind: EventGateway
 metadata:
-  name: $my_ev_gw_instance_name
+  name: $my_ibm_eg_instance_name
   namespace: $my_oc_project
 spec:
   license:
     accept: true
-    license: $my_ibm_evt_gw_license
+    license: $my_ibm_egw_lic
     metric: VIRTUAL_PROCESSOR_CORE
     use: EventAutomationNonProduction
   managerEndpoint: $my_eem_manager_gateway_route
-  gatewayGroupName: $my_ev_gw_instance_grp_name
-  gatewayID: $my_ev_gw_instance_name
+  gatewayGroupName: $my_ibm_eg_instance_grp_name
+  gatewayID: $my_ibm_eg_instance_name
   tls:
-    caSecretName: ${my_ev_eem_instance_name}-ibm-eem-manager-ca
+    caSecretName: ${my_ibm_eem_instance_name}-ibm-eem-manager-ca
   template:
     pod:
       spec:

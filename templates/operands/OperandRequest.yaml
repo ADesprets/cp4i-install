@@ -1,0 +1,27 @@
+apiVersion: operator.ibm.com/v1alpha1
+kind: OperandRequest
+metadata:
+ name: $my_ibm_cs_instance_name
+ namespace: ${my_oc_cs_project}
+spec:
+ requests:
+   - operands:
+       - name: ibm-cert-manager-operator
+       - name: ibm-mongodb-operator
+       - name: ibm-iam-operator
+       - name: ibm-monitoring-grafana-operator
+       - name: ibm-healthcheck-operator
+       #- name: ibm-management-ingress-operator
+       - name: ibm-licensing-operator
+       - name: ibm-commonui-operator
+       #- name: ibm-events-operator
+       - name: ibm-ingress-nginx-operator
+       #- name: ibm-auditlogging-operator
+       #- name: ibm-platform-api-operator
+       #- name: ibm-zen-operator
+       #- name: ibm-db2u-operator
+       #- name: cloud-native-postgresql
+       #- name: ibm-user-data-services-operator
+       #- name: ibm-zen-cpp-operator
+       #- name: ibm-bts-operator
+     registry: common-service

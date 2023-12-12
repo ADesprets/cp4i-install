@@ -2,7 +2,7 @@ apiVersion: hsts.aspera.ibm.com/v1
 kind: IbmAsperaHsts
 metadata:
   namespace: $my_oc_project
-  name: $my_cp_hsts_instance_name
+  name: $my_ibm_hsts_instance_name
 spec:
   license:
     accept: true
@@ -12,7 +12,7 @@ $my_aspera_license_text
   deployments:
     default:
       replicas: 1
-  version: $my_ibm_cp_hsts_version
+  version: $my_ibm_hsts_version
   storages:
     - claimName: hsts-transfer-pvc
       class: $my_file_storage_class

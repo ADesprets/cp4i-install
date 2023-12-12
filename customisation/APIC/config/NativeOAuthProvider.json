@@ -1,7 +1,6 @@
 {
     "type": "oauth_provider",
     "api_version": "2.0.0",
-    "id": "e5f45a6d-c124-47ca-bb8f-697c3faa4e6c",
     "name": "nativeprovider",
     "title": "NativeProvider",
     "debug": false,

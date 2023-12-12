@@ -8,5 +8,5 @@ data:
    namespaceMapping:
    - requested-from-namespace:
      - $my_oc_project
-     map-to-common-service-namespace: ${my_oc_project}-fs
+     map-to-common-service-namespace: $my_oc_cs_project
    defaultCsNs: ibm-common-services

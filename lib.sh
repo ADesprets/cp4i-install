@@ -1,3 +1,15 @@
+################################################
+# Check that all required executables are installed
+# function
+check_command_exist() {
+  local command=$1
+
+  if ! command -v $command >/dev/null 2>&1; then
+		mylog error "Executable $command does not exist or is not executable, exiting."
+		exit 1
+  fi
+}
+
 ######################################################
 # function
 # checks if the file exist, if no print a msg and exit
@@ -8,6 +20,33 @@ check_file_exist () {
 		mylog error "No such file: $file" 1>&2
 		exit 1
 	fi
+}
+
+######################################################
+# function
+# checks if the directory exist, if no print a msg and exit
+#
+check_directory_exist () {
+  local directory=$1
+  if [ ! -d $directory ]; then
+    mylog error "No such directory: $directory" 1>&2
+	exit 1
+  fi
+}
+
+######################################################
+# function
+# checks if the directory contains files, if no print a msg and exit
+#
+check_directory_contains_files () {
+  local directory=$1
+  shopt -s nullglob dotglob     # To include hidden files
+  files=($directory/*)
+  echo ${#files[@]}
+  #if [ ${#files[@]} -eq 0 ]; then
+  #  mylog error "No files in directory: $directory" 1>&2
+	#  exit 1
+  #fi
 }
 
 ################################################
@@ -58,29 +97,17 @@ mylog() {
 	w=
 	s=
 	case $1 in
-	info) c=2;;#green
-	error) c=1;p='ERROR: ';;#red
-	warn) c=3;;#yellow
-	wait) c=4;p="$(date) ";;#blue
-	check) c=6;w=-n;s=...;;#cyan
-	ok) c=2;p=OK;;#green
-	no) c=3;p=NO;;#yellow
-	*) c=9;;#default
+	  info) c=2;; #green
+	  error) c=1;p='ERROR: ';; #red
+	  warn) c=3;;#yellow
+	  wait) c=4;p="$(date) ";; #blue
+	  check) c=6;w=-n;s=...;; #cyan
+	  ok) c=2;p=OK;; #green
+	  no) c=3;p=NO;; #yellow
+	  *) c=9;; #default
 	esac
 	shift
-	echo $w "$(tput setaf $c)$p$@$s$(tput setaf 9)";
-}
-
-################################################
-# Check that all required executables are installed
-# function
-check_command_exist() {
-  local command=$1
-
-  if ! command -v $command >/dev/null 2>&1; then
-		echo "Executable $command does not exist or is not executable, exiting."
-		exit 1
-  fi
+	echo $w "$(tput setaf $c)$p$@$s$(tput setaf 9)"
 }
 
 ################################################
@@ -127,14 +154,20 @@ send-email() {
 # function
 Login2IBMCloud () {
   SECONDS=0
-  var_fail my_ic_apikey "Create and save API key JSON file from: https://cloud.ibm.com/iam/apikeys"
-  mylog check "Login to IBM Cloud"
-  if ! ibmcloud login -q --no-region --apikey $my_ic_apikey > /dev/null;then
-    mylog error "Fail to login to IBM Cloud, check API key: $my_ic_apikey" 1>&2
-    exit 1
-  else mylog ok
-  mylog info "Connecting to IBM Cloud took: $SECONDS seconds." 1>&2
-  fi
+  
+  if ibmcloud resource groups -q > /dev/null 2>&1;then
+    mylog info "user already logged to IBM Cloud." 
+  else
+    mylog info "user not logged to IBM Cloud." 1>&2
+    var_fail my_ic_apikey "Create and save API key JSON file from: https://cloud.ibm.com/iam/apikeys"
+    mylog check "Login to IBM Cloud"
+    if ! ibmcloud login -q --no-region --apikey $my_ic_apikey > /dev/null;then
+      mylog error "Fail to login to IBM Cloud, check API key: $my_ic_apikey" 1>&2
+      exit 1
+    else mylog ok
+    mylog info "Connecting to IBM Cloud took: $SECONDS seconds." 1>&2
+    fi
+  fi 
 }
 
 ################################################
@@ -144,14 +177,21 @@ Login2IBMCloud () {
 # function
 Login2OpenshiftCluster () {
   SECONDS=0
-  mylog check "Login to cluster"
-  ibmcloud ks cluster config --cluster ${my_cluster_name} --admin
-  while ! oc login -u apikey -p $my_ic_apikey --server=$my_cluster_url > /dev/null;do
-    mylog error "$(date) Fail to login to Cluster, retry in a while (login using web to unblock)" 1>&2
-    sleep 30
-  done
-  mylog ok
-  mylog info "Logging to Cluster took: $SECONDS seconds." 1>&2
+
+  if oc whoami > /dev/null 2>&1;then
+    mylog info "user already logged to openshift cluster." 
+  else
+    mylog check "Login to cluster"
+    # SB 20231208 The following command sets your command line context for the cluster and download the TLS certificates and permission files for the administrator.
+    # more details here : https://cloud.ibm.com/docs/openshift?topic=openshift-access_cluster#access_public_se
+    ibmcloud ks cluster config --cluster ${my_cluster_name} --admin
+    while ! oc login -u apikey -p $my_ic_apikey --server=$my_cluster_url > /dev/null;do
+      mylog error "$(date) Fail to login to Cluster, retry in a while (login using web to unblock)" 1>&2
+      sleep 30
+    done
+    mylog ok
+    mylog info "Logging to Cluster took: $SECONDS seconds." 1>&2
+  fi
 }
 
 ################################################
@@ -208,34 +248,6 @@ wait_for_state() {
 	done
 }
 
-wait_for_state2() {
-	local octype=$1
-	local ocname=$2
-	local ocstate=$3
-	local ocpath=$4
-	local ns=$5
-
-	local command="oc get ${octype} ${ocname} -n ${ns} --output json|jq -r '${ocpath}'"
-	mylog check "Checking $octype $ocname $ocpath is $ocstate"
-	last_state=
-	while true;do
-		current_state=$(eval $command)
-		if test "$current_state" = "$ocstate";then
-			mylog ok ", $current_state"
-			break
-		fi
-		# first time
-		if test -z "$last_state";then
-			mylog no
-		fi
-		if test "$last_state" != "$current_state";then
-			mylog wait "$current_state"
-			last_state=$current_state
-		fi
-		sleep 5
-	done
-}
-
 ################################################
 # Check if the resource of type octype with name name exists in the namespace ns.
 # If it does not exist use the yaml file, with the appropriate variable.
@@ -249,6 +261,8 @@ check_create_oc_yaml() {
 	local name="$2"
 	local yaml="$3"
 	local ns="$4"
+
+	check_file_exist $yaml
 	mylog check "Checking ${octype} ${name} in ${ns} project"
 	if oc get ${octype} ${name} -n ${ns} > /dev/null 2>&1; then mylog ok;else
 		envsubst < "${yaml}" | oc -n ${ns} apply -f - || exit 1
@@ -269,6 +283,14 @@ check_create_oc_openldap() {
 	# create namespace if needed
 	CreateNameSpace ${ns}
 
+	#SB]20231207 checks if used directories and files exists
+	check_directory_exist ${yamldir}
+	check_directory_exist ${workingdir}
+	check_file_exist ${yamldir}ldap/ldap-pvc.main.yaml
+	check_file_exist ${yamldir}ldap/ldap-pvc.config.yaml
+	check_file_exist ${yamldir}ldap/ldap-config.json
+	check_file_exist ${yamldir}ldap/ldap-users.ldif
+
 	# check if deploment already performed
 	mylog check "Checking ${octype} ${name} in ${ns}"
 	if oc get ${octype} ${name} -n ${ns} > /dev/null 2>&1; then mylog ok;else
@@ -282,8 +304,8 @@ check_create_oc_openldap() {
 			envsubst < "${yamldir}ldap/ldap-pvc.config.yaml" > "${workingdir}ldap-pvc.config.yaml"
 			oc create -f ${workingdir}ldap-pvc.main.yaml -n ${ns}
 			oc create -f ${workingdir}ldap-pvc.config.yaml -n ${ns}
-			wait_for_state "pvc pvc-ldap-config status.phase is Bound" "Bound" "oc get pvc pvc-ldap-config -n ${ns} --output json|jq -r '.status.phase'"
-			wait_for_state "pvc pvc-ldap-main status.phase is Bound" "Bound" "oc get pvc pvc-ldap-main -n ${ns} --output json|jq -r '.status.phase'"
+			wait_for_state "pvc pvc-ldap-config status.phase is Bound" "Bound" "oc get pvc pvc-ldap-config -n ${ns} -o jsonpath='{.status.phase}'"
+			wait_for_state "pvc pvc-ldap-main status.phase is Bound" "Bound" "oc get pvc pvc-ldap-main -n ${ns} -o jsonpath='{.status.phase}'"
 		fi
 
 		# deploy openldap and take in account the PVCs just created
@@ -300,8 +322,8 @@ check_create_oc_openldap() {
 			oc -n ${ns} patch service/openldap --patch-file ${workingdir}openldap-service.json
 			oc -n ${ns} expose service openldap --name=openldap-external --target-port=389
 
-			port=`oc -n ${ns} get service ${name} -o json  | jq -r '.spec.ports[0].nodePort'`
-			hostname=`oc -n ${ns} get route openldap-external -o json | jq -r '.spec.host'`
+			port=`oc -n ${ns} get service ${name} -o jsonpath='{.spec.ports[0].nodePort}'`
+			hostname=`oc -n ${ns} get route openldap-external -o jsonpath='{.spec.host}'`
 
 			# load users and groups into LDAP
 			envsubst < "${yamldir}ldap/ldap-users.ldif" > "${workingdir}ldap-users.ldif"
@@ -363,10 +385,79 @@ check_add_cs_ibm_pak() {
   SECONDS=0
   oc ibm-pak get ${CASE_NAME} --version ${CASE_VERSION}
   oc ibm-pak generate mirror-manifests ${CASE_NAME} icr.io --version ${CASE_VERSION}
-  oc apply -f ~/.ibm-pak/data/mirror/${CASE_NAME}/${CASE_VERSION}/catalog-sources.yaml
-  oc apply -f ~/.ibm-pak/data/mirror/${CASE_NAME}/${CASE_VERSION}/catalog-sources-linux-${ARCH}.yaml
+  if test -f  "~/.ibm-pak/data/mirror/${CASE_NAME}/${CASE_VERSION}/catalog-sources.yaml";then
+    oc apply -f ~/.ibm-pak/data/mirror/${CASE_NAME}/${CASE_VERSION}/catalog-sources.yaml
+  fi
+  if test -f  "~/.ibm-pak/data/mirror/${CASE_NAME}/${CASE_VERSION}/catalog-sources-linux-${ARCH}.yaml";then
+    oc apply -f ~/.ibm-pak/data/mirror/${CASE_NAME}/${CASE_VERSION}/catalog-sources-linux-${ARCH}.yaml
+  fi
   # oc get catalogsource -n openshift-marketplace
   mylog info "Adding case $CASE_NAME took $SECONDS seconds to execute." 1>&2
+}
+
+################################################
+##SB]20231201 create operator subscription
+# function
+create_operator_subscription() {
+
+  # export are important because they are used to replace the variable in the subscription.yaml (envsubst command)
+  export operator_name=$1
+  export current_channel=$2
+  export catalog_source_name=$3
+  export operator_ns=$4
+  export strategy=$5
+
+  check_directory_exist ${operatorsdir}
+
+  SECONDS=0
+  check_create_oc_yaml "subscription" "${operator_name}" "${operatorsdir}subscription.yaml" $operator_ns
+  #SB]20231013 the function check_resource_availability will "return" the resource 
+  resource=$(check_resource_availability "clusterserviceversion" "${operator_name}" $operator_ns)
+  type="clusterserviceversion"
+  path="{.status.phase}"
+  state="Succeeded"
+  wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $operator_ns -o jsonpath='$path'"
+  mylog info "Creation of $operator_name operator took $SECONDS seconds to execute." 1>&2
+}
+
+#########################################################
+##SB]20231205 create flink and event processing operators 
+# function
+create_ea_operators(){
+  local inventory=$1
+  local name=$2
+  local ns=$3
+  local path=$4
+  local state=$5
+  local type=$6
+  local version=$7
+  local case_name="${name}.v${version}"
+  SECONDS=0
+
+  mylog check "Checking ${type} ${case_name} in ${ns} project"
+  if oc get ${type} ${case_name} -n ${ns} > /dev/null 2>&1; then mylog ok;else
+    oc ibm-pak launch $name --version $version --inventory $inventory --action installOperator -n $ns
+    resource=$(check_resource_availability "clusterserviceversion" "${case_name}" $ns)
+    wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $ns -o jsonpath='$path'"
+    mylog info "Creation of $case_name operator took $SECONDS seconds to execute." 1>&2
+  fi
+}
+
+################################################
+##SB]20231204 create operand instance
+# function
+create_operand_instance() {
+  local file=$1
+  local ns=$2
+  local path=$3
+  local resource=$4
+  local state=$5
+  local type=$6
+
+  SECONDS=0
+  check_create_oc_yaml $type $resource $file $ns
+  wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $ns -o jsonpath='$path'"
+  mylog info "Creation of $type instance took $SECONDS seconds to execute." 1>&2
 }
 
 ################################################
@@ -377,11 +468,10 @@ get_navigator_access() {
 	cp4i_url=$(oc get platformnavigator cp4i-navigator -n $my_oc_project -o jsonpath='{range .status.endpoints[?(@.name=="navigator")]}{.uri}{end}')
 	cp4i_uid=$(oc get secret ibm-iam-bindinfo-platform-auth-idp-credentials -n $my_oc_project -o jsonpath={.data.admin_username} | base64 -d)
 	cp4i_pwd=$(oc get secret ibm-iam-bindinfo-platform-auth-idp-credentials -n $my_oc_project -o jsonpath={.data.admin_password} | base64 -d)
-	echo "CP4I Platform UI URL: " $cp4i_url
-	echo "CP4I admin user: " $cp4i_uid
-	echo "CP4I admin password: " $cp4i_pwd
+	mylog info "CP4I Platform UI URL: " $cp4i_url
+	mylog info "CP4I admin user: " $cp4i_uid
+	mylog info "CP4I admin password: " $cp4i_pwd
 }
-
 
 #########################################################################################################
 ##SB]20231109 Generate properties and yaml files
@@ -390,6 +480,7 @@ get_navigator_access() {
 generate_files () {
   local customdir=$1
   local gendir=$2
+  local nfiles
 
   # generate the differents properties files
   # SB]20231109 some generated files (yaml) are based on other generated files (properties), so :
@@ -401,19 +492,24 @@ generate_files () {
   config_gendir="${gendir}config/"
   scripts_gendir="${gendir}scripts/"
 
-  set -a
+  #set -a
   # Start with *.properties files 
-  for file in ${scripts_customdir}*; do
-    filename=$(basename -- "$file")
-    cat  $file | envsubst >  "${scripts_gendir}${filename}"
-    . "${scripts_gendir}${filename}"
-  done
+  nfiles=$(check_directory_contains_files $scripts_customdir)
+  if [ $nfiles -gt 0 ]; then 
+    for file in ${scripts_customdir}*; do
+      filename=$(basename -- "$file")
+      cat  $file | envsubst >  "${scripts_gendir}${filename}"
+    #  . "${scripts_gendir}${filename}"
+    done
+  fi
 
   # Continue *.yaml files 
-  for file in ${config_customdir}*; do
-    filename=$(basename -- "$file")
-    cat  $file | envsubst >  "${config_gendir}${filename}"
-  done
-
-  set +a
+  nfiles=$(check_directory_contains_files $config_customdir)
+  if [ $nfiles -gt 0 ]; then 
+    for file in ${config_customdir}*; do
+      filename=$(basename -- "$file")
+      cat  $file | envsubst >  "${config_gendir}${filename}"
+    done
+  fi
+  #set +a
 }

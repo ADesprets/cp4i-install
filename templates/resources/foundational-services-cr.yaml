@@ -1,8 +1,8 @@
 apiVersion: operator.ibm.com/v3
 kind: CommonService
 metadata:
-  name: common-service
-  namespace: ${my_oc_project}-fs
+  name: $my_ibm_cs_instance_name
+  namespace: ${my_oc_cs_project}
 spec:
   installPlanApproval: Automatic
   size: starterset
