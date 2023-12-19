@@ -9,3 +9,5 @@ spec:
   name: $operator_name
   source: $catalog_source_name
   sourceNamespace: $my_oc_cs_ns
+  startingCSV: $my_starting_csv
+

@@ -2,7 +2,4 @@ apiVersion: operators.coreos.com/v1alpha2
 kind: OperatorGroup
 metadata:
   name: operatorgroup
-  namespace: $my_oc_project
-spec:
-  targetNamespaces:
-  - $my_oc_project
+  namespace: $ns

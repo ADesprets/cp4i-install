@@ -8,6 +8,13 @@
     "paths": {
         "/hello": {
             "get": {
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "name",
+                        "type": "string"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "success",
@@ -43,11 +50,39 @@
             "success-content": "activity"
         },
         "assembly": {
+            "catch": [
+            ],
             "execute": [
                 {
+                    "log": {
+                        "log-level": "default",
+                        "mode": "gather-only",
+                        "title": "log_gather",
+                        "version": "2.1.0"
+                    }
+                },
+                {
+                    "set-variable": {
+                        "actions": [
+                            {
+                                "set": "log.custom_data.newAPIEventDataField",
+                                "type": "string",
+                                "value": "newData"
+                            },
+                            {
+                                "set": "log.product_title",
+                                "type": "string",
+                                "value": "newProductTitle"
+                            }
+                        ],
+                        "title": "param_to_record",
+                        "version": "2.0.0"
+                    }
+                },
+                {
                     "gatewayscript": {
-                        "source": "context.message.body.write({\"msg\":\"hello\"});",
-                        "title": "gatewayscript",
+                        "source": "var name = context.request.parameters.name.values[0];\nvar mt=\"Hello \" + name;\ncontext.message.body.write({\"msg\" : decodeURI(mt)});          ",
+                        "title": "gen_resp",
                         "version": "2.0.0"
                     }
                 }

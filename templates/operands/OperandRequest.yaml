@@ -11,17 +11,17 @@ spec:
        - name: ibm-iam-operator
        - name: ibm-monitoring-grafana-operator
        - name: ibm-healthcheck-operator
-       #- name: ibm-management-ingress-operator
+       - name: ibm-management-ingress-operator
        - name: ibm-licensing-operator
        - name: ibm-commonui-operator
-       #- name: ibm-events-operator
+       - name: ibm-events-operator
        - name: ibm-ingress-nginx-operator
-       #- name: ibm-auditlogging-operator
-       #- name: ibm-platform-api-operator
-       #- name: ibm-zen-operator
-       #- name: ibm-db2u-operator
-       #- name: cloud-native-postgresql
-       #- name: ibm-user-data-services-operator
-       #- name: ibm-zen-cpp-operator
-       #- name: ibm-bts-operator
+       - name: ibm-auditlogging-operator
+       - name: ibm-platform-api-operator
+       - name: ibm-zen-operator
+       - name: ibm-db2u-operator
+       - name: cloud-native-postgresql
+       - name: ibm-user-data-services-operator
+       - name: ibm-zen-cpp-operator
+       - name: ibm-bts-operator
      registry: common-service

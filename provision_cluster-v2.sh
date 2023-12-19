@@ -10,7 +10,7 @@
 
 ################################################
 # Create openshift cluster using classic infrastructure
-CreateOpenshiftClusterClassic () {
+function create_openshift_cluster_classic () {
 
   SECONDS=0
   var_fail my_cluster_name "Choose a unique name for the cluster"
@@ -58,7 +58,7 @@ CreateOpenshiftClusterClassic () {
 # Create openshift cluster using VPC infra
 # use terraform because creation is more complex than classic
 # function
-CreateOpenshiftClusterVPC () {
+function create_openshift_cluster_vpc () {
   # check vars from config file
   var_fail my_oc_version 'mylog warn "Choose one of:" 1>&2;ibmcloud ks versions -q --show-version OpenShift'
   var_fail my_cluster_zone 'mylog warn "Choose one of:" 1>&2;ibmcloud ks zone ls -q --provider vpc-gen2'
@@ -79,16 +79,16 @@ CreateOpenshiftClusterVPC () {
 }
 
 # function
-CreateOpenshiftCluster () {
+function create_openshift_cluster () {
   var_fail my_cluster_infra 'mylog warn "Choose one of: classic or vpc" 1>&2'
   case "${my_cluster_infra}" in
   classic)
-    CreateOpenshiftClusterClassic
+    create_openshift_cluster_classic
     gbl_ingress_hostname_filter=.ingressHostname
     gbl_cluster_url_filter=.serverURL
     ;;
   vpc)
-    CreateOpenshiftClusterVPC
+    create_openshift_cluster_vpc
     gbl_ingress_hostname_filter=.ingress.hostname
     gbl_cluster_url_filter=.masterURL
     ;;
@@ -101,7 +101,7 @@ CreateOpenshiftCluster () {
 ################################################
 # wait for ingress address availability
 # function
-Wait4IngressAddressAvailability () {
+function wait_4_ingress_address_availability () {
   SECONDS=0
   
   mylog check "Checking Ingress address"
@@ -124,14 +124,14 @@ Wait4IngressAddressAvailability () {
     # It takes about 15 minutes (21 Aug 2023)
 	  sleep 90
   done
-  mylog info "Checking ngress availability took $SECONDS seconds to execute." 1>&2
+  mylog info "Checking Ingress availability took $SECONDS seconds to execute." 1>&2
 }
 
 ################################################
 # add ibm entitlement key to namespace
 # @param ns namespace where secret is created
 # function
-AddIBMEntitlement () {
+function add_ibm_entitlement () {
   local ns=$1
   mylog check "Checking ibm-entitlement-key in $ns"
   if oc get secret ibm-entitlement-key --namespace=$ns > /dev/null 2>&1
@@ -153,9 +153,9 @@ AddIBMEntitlement () {
 
 ################################################
 # add catalog sources using ibm_pak plugin
-Add_Catalog_Sources_ibm_pak () {
+function add_catalog_sources_ibm_pak () {
   local ns=$1
-
+  
   ## ibm-integration-platform-navigator
   if $my_ibm_navigator;then
     check_add_cs_ibm_pak ibm-integration-platform-navigator $my_ibm_navigator_case amd64
@@ -196,7 +196,21 @@ Add_Catalog_Sources_ibm_pak () {
     check_add_cs_ibm_pak ibm-mq $my_ibm_mq_case amd64
   fi 
 
-  # ibm-eventstreams
+  # ibm-license-server
+  if $my_ibm_lic_srv;then
+    check_add_cs_ibm_pak ibm-licensing $my_ibm_lic_srv_case amd64
+  fi 
+
+  # Voir les impacts de cette remarque : 
+  # (1) Mirror the IBM Cert Manager catalog source only if you need a certificate manager and you are installing on s390x (IBM Z®) or ppc64le (IBM® POWER®) hardware.
+  # If you need a certificate manager and you are installing on amd64 (x86) hardware, use the cert-manager Operator for Red Hat OpenShift instead. 
+  # For more information, see Installing the cert-manager Operator for Red Hat OpenShift.
+  # ibm-cert-manager-server
+  #if $my_ibm_cert_manager;then
+  #  check_add_cs_ibm_pak ibm-licensing $my_ibm_cert_manager_case amd64
+  #fi 
+
+  # ibm-eventstreams 
   if $my_ibm_es;then
     check_add_cs_ibm_pak ibm-eventstreams $my_ibm_es_case amd64
   fi 
@@ -233,7 +247,7 @@ Add_Catalog_Sources_ibm_pak () {
     oc ibm-pak launch ibm-eventprocessing --version $my_ibm_ep_case --inventory epOperatorSetup --action installCatalog -n  $ns
   fi
 }
-
+  
 ################################################
 # Install Operators
 ## name = "Literal name", https://www.ibm.com/docs/en/cloud-paks/cp-integration/2022.4?topic=operators-installing-using-cli#operators-available
@@ -242,7 +256,7 @@ Add_Catalog_Sources_ibm_pak () {
 # @param ns: namespace to install the operators
 # resource is the result of the check_resource_availability command
 # SB]20231129 Adding the IBM Cloud Pak Foundational Services operator
-Install_Operators () {
+function install_operators () {
 
   # Creating foundational services operator subscription
   if $my_ibm_cs;then
@@ -252,7 +266,10 @@ Install_Operators () {
   # Creating IBM license operator subscription
   # SB]20231130 https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.2?topic=administering-deploying-license-service#deploy-cli
   if $my_ibm_lic_srv;then
-    create_operator_subscription "ibm-licensing-operator" $my_ibm_lic_srv_chl "opencloud-operators" $my_oc_cs_project "Automatic"
+    #create_operator_subscription "ibm-licensing-operator" $my_ibm_lic_srv_chl "ibm-operator-catalog" $operators_project "Automatic"
+    #create_operator_subscription "ibm-licensing-operator" $my_ibm_lic_srv_chl "ibm-licensing-catalog" $my_oc_project "Automatic"
+    create_operator_subscription "ibm-licensing-operator-app" $my_ibm_lic_srv_chl "ibm-licensing-catalog" $my_ibm_lic_srv_project "Automatic"
+    #oc apply -f ${operatorsdir}licensing.yaml
   fi
 
   # Creating DP Gateway operator subscription
@@ -328,7 +345,7 @@ Install_Operators () {
   # Creating Instana operator subscription
   if $my_ibm_instana_agent;then
     # Create namespace for Instana agent. The instana agent must be istalled in instana-agent namespace.
-    CreateNameSpace $my_instana_agent_project
+    create_namespace $my_instana_agent_project
     oc adm policy add-scc-to-user privileged -z instana-agent -n $my_instana_agent_project
     create_operator_subscription "instana-agent-operator" $my_ibm_instana_agent_chl "certified-operators" $operators_project "Automatic"
   fi
@@ -338,21 +355,25 @@ Install_Operators () {
 # create capabilities
 # @param ns namespace where capabilities are created
 # function
-Install_Operands () {
+function install_operands () {
 
   # SB]20231201 Creating OperandRequest for foundational services
   # SB]20231211 Creating IBM License Server Reporter Instance
   #             https://www.ibm.com/docs/en/cloud-paks/foundational-services/3.23?topic=reporter-deploying-license-service#lrcmd
   if $my_ibm_cs;then
     create_operand_instance "${operandsdir}OperandRequest.yaml" ${my_oc_cs_project} "{.status.conditions[0].type}" $my_ibm_cs_instance_name "Ready" "OperandRequest"
-    # create_operand_instance "${operandsdir}LIC-Reporter-Capability.yaml" ${my_oc_cs_project} "{.status.LicensingReporterPods[0].phase}" $my_ibm_cs_lic_reporter_instance_name "Running" "IBMLicenseServiceReporter"
+    #create_operand_instance "${operandsdir}LIC-Reporter-Capability.yaml" ${my_oc_cs_project} "{.status.LicensingReporterPods[0].phase}" $my_ibm_cs_lic_reporter_instance_name "Running" "IBMLicenseServiceReporter"
     #oc patch OperandConfig common-service --namespace ${my_oc_cs_project} --type merge -p '{"spec": {"services[?(@.name==\"ibm-licensing-operator\")]": {"spec": {"IBMLicenseServiceReporter": {}}}}}'
     #oc patch OperandConfig common-service --namespace ${my_oc_cs_project} --type merge -p '{"spec": {"services": [{"name": "ibm-licensing-operator", "spec": {"IBMLicenseServiceReporter": {}}}]}}'
-    #oc patch commonservice common-service --namespace ${my_oc_cs_project} --type merge -p '{"spec": {"license": {"accept": true}}}'
-
-    #oc patch OperandConfig common-service --namespace ${my_oc_cs_project} --type merge -p '{"spec": {"services[?(@.name==\"ibm-licensing-operator\")]": {"spec": {"IBMLicenseServiceReporter": {}}}}}'
 
   fi
+
+  #SB]20231213 https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.4?topic=whats-new-in-cloud-pak-integration-202341
+  # The License Service must now be installed independently. 
+  if $my_ibm_lic_srv;then
+    create_operand_instance "${operandsdir}Navigator-Capability.yaml" ${my_oc_project} "{.status.conditions[0].type}" $my_ibm_lic_srv_instance_name "Ready" "IBMLicensing"
+  fi
+
 
   # Creating Navigator instance
   if $my_ibm_navigator;then
@@ -382,7 +403,7 @@ Install_Operands () {
   fi
 
   # Creating APIC instance
-  if $my_ibm_apic;then
+  if $my_ibm_apiconnect;then
     create_operand_instance "${operandsdir}APIC-Capability.yaml" ${my_oc_project} "{.status.phase}" $my_ibm_apic_instance_name "Ready" "APIConnectCluster"
   fi
 
@@ -396,12 +417,12 @@ Install_Operands () {
     create_operand_instance "${operandsdir}ES-Capability.yaml" ${my_oc_project} "{.status.phase}" $my_ibm_es_instance_name "Ready" "EventStreams"
   fi
 
-  # Creating EventEndpointManager instance (Event Endpoint Manager)
+  # Creating EventEndpointManager instance (Event Processing)
   if $my_ibm_eem;then
     create_operand_instance "${operandsdir}EEM-Capability.yaml" ${my_oc_project} "{.status.conditions[0].type}" $my_ibm_eem_instance_name "Ready" "EventEndpointManagement"
-    export my_eem_manager_gateway_route=$(oc get eem $my_ibm_eem_instance_name -n $my_oc_project -o jsonpath='{.status.endpoints[1].uri}')
   fi
-  
+
+  export my_eem_manager_gateway_route=$(oc get eem $my_ibm_eem_instance_name -n $my_oc_project -o jsonpath='{.status.endpoints[1].uri}')
   # Creating EventGateway instance (Event Gateway)
   if $my_ibm_egw;then
     create_operand_instance "${operandsdir}EG-Capability.yaml" ${my_oc_project} "{.status.conditions[0].type}" $my_ibm_eg_instance_name "Ready" "EventGateway"
@@ -448,7 +469,7 @@ Install_Operands () {
 # start customization
 # @param ns namespace where operands were instantiated
 # function
-Start_Customization () {
+function start_customization () {
   local ns=$1
   local varb64
   
@@ -458,6 +479,7 @@ Start_Customization () {
     # - in template custom dirs, separate the files to two categories : scripts (*.properties) and config (*.yaml)
     # - generate first the *.properties files to be sourced then generate the *.yaml files
     generate_files $ace_tmpl_customdir $ace_gen_customdir
+    # start API Scripts tyty
   fi
 
   if $my_ibm_apic_custom;then
@@ -486,6 +508,10 @@ Start_Customization () {
     # - in template custom dirs, separate the files to two categories : scripts (*.properties) and config (*.yaml)
     # - generate first the *.properties files to be sourced then generate the *.yaml files
     generate_files $es_tmpl_customdir $es_gen_customdir
+
+    # SB]20231211 https://ibm.github.io/event-automation/es/installing/installing/
+    # Question : Do we have to create this configmap before installing ES or even after ? Used for monitoring
+    check_create_oc_yaml "configmap" "cluster-monitoring-config" "${resourcesdir}openshift-monitoring-cm.yaml" openshift-monitoring
   fi
 
   ## Creating EEM users and roles
@@ -523,7 +549,7 @@ Start_Customization () {
 ##SB]20230215 load bar files in nexus repository
 ################################################
 # Load bar files into nexus repository
-Load_ACE_Bars () {
+function load_ace_bars () {
   # the input parameters :
   # - the directory containing the bar files to be loaded
 
@@ -550,7 +576,7 @@ Load_ACE_Bars () {
 
 ################################################
 # Configure ACE IS
-Configure_ACE_IS () {
+function configure_ace_is () {
   local ns=$1
   ace_bar_secret=${my_ace_barauth_secret}-${my_global_index}
   ace_bar_auth=${my_ace_barauth}-${my_global_index}
@@ -576,21 +602,21 @@ Configure_ACE_IS () {
 # Create openshift cluster if it does not exist
 # and wait for both availability of the cluster and the ingress address
 # function 
-CreateOpenshiftCluster_Wait4Availability ()  {
+function create_openshift_cluster_wait_4_availability () {
   # Create openshift cluster
-  CreateOpenshiftCluster
+  create_openshift_cluster
 
   # Wait for Cluster availability
   wait_for_cluster_availability
 
   # Wait for ingress address availability
-  Wait4IngressAddressAvailability
+  wait_4_ingress_address_availability
 }
 
 ################################################
 # Add OpenLdap app to openshift
 # function 
-AddOpenLdap () {
+function add_openldap () {
   #oc project $my_oc_project
   if $my_install_ldap;then
       check_create_oc_openldap "deployment" "openldap" "ldap"
@@ -600,7 +626,7 @@ AddOpenLdap () {
 ################################################
 # Display information to access CP4I
 # function 
-DisplayAccessInfo () {
+function display_access_info () {
   # Always display the platform console endpoint
   cp_console_url=$(oc -n ${my_oc_fs_project} get Route -o=jsonpath='{.items[?(@.metadata.name=="cp-console")].spec.host}')
   mylog info "Cloup Pak Console endpoint: ${cp_console_url}"
@@ -661,15 +687,15 @@ DisplayAccessInfo () {
   fi
   
   if $my_ibm_ar;then
-   mylog info "LDAP info"
+   mylog info "AR info"
   fi
 
   if $my_ibm_dpgw;then
-   mylog info "LDAP info"
+   mylog info "DataPower info"
   fi
 
   if $my_ibm_mq;then
-   mylog info "LDAP info"
+   mylog info "MQ info"
   fi
 
   if $my_ibm_lic_srv;then
@@ -680,47 +706,12 @@ DisplayAccessInfo () {
 }
 
 ################################################
-# Add Catalog sources using IBM Pak plugin
-# SB]202300201 https://www.ibm.com/docs/en/cloud-paks/cp-integration/2022.4?topic=images-adding-catalog-sources-cluster
-# function 
-AddIbmPakCS () {
-  if $my_ibm_pak; then
-    Add_Catalog_Sources_ibm_pak $operators_project
-  fi
-}
-
-################################################
-# SB]20231021 when installing event processing and flink operator, we get the error :
-# Error from server (NotFound): catalogsources.operators.coreos.com "ea-flink-operator-catalog" not found
-# [ERROR] expected catalog source 'ea-flink-operator-catalog' expected to be installed namespace 'openshift-marketplace'
-# SB]20231122 to check if this catalog source (ibm-operator-catalog) exists in the ns (openshift-marketplace)
-# use the following solution (https://www.unix.com/shell-programming-and-scripting/193809-awk-output-multiple-variables.html)
-# SB]20231129 also for installing the IBM COmmon Services Operator 
-#  https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.2?topic=SSGT7J_23.2/installer/3.x.x/install_cs_cli.htm
-CreateCatalogsource () {
-  local ns=$1
-  local file=$2
-  local type=$3
-  local name=$4
-  local path=$5
-  local state=$6
-  
-  set -- $(oc get $type -A| grep $name| awk -v ORS=" " '{print $1,$2}')
-  if [ "$1" = "$ns" ] && [ "$2" = "$name" ]; then
-    mylog "info" "$name already exists in ns $ns"
-  else  
-    check_file_exist $file
-    oc apply -f $file
-    wait_for_state "$type $name $path is $state" "$state" "oc get ${type} ${name} -n ${ns} -o jsonpath='$path'"
-  fi
-}
-
-################################################
+# SB]20231215 
 # SB]20231130 patcher les foundational services en acceptant la license
 # https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.2?topic=SSGT7J_23.2/installer/3.x.x/install_cs_cli.htm
 # 3.Setting the hardware profile and accepting the license
 # License: Accept the license to use foundational services by adding spec.license.accept: true in the spec section.
-PatchFS () {
+function accept_license_fs () {
   local accept
   accept=$(oc get commonservice common-service -n ${my_oc_cs_project} -o jsonpath='{.spec.license.accept}')
 
@@ -731,11 +722,105 @@ PatchFS () {
   fi
 }
 
-################################################
-# SB]20231201 configurer les foundational services
-# https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.2?topic=services-using-commonservice-custom-resource
-ConfigureFS () {
-  check_create_oc_yaml CommonService $my_ibm_cs_instance_name ${resourcesdir}foundational-services-cr.yaml ${my_oc_cs_project}
+############################################################################################################################################
+#SB]20231214 Installing Foundational services v4.3
+# https://www.ibm.com/docs/en/cloud-paks/foundational-services/4.3?topic=online-installing-foundational-services-by-using-cli
+# Referring to https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.4?topic=whats-new-in-cloud-pak-integration-202341
+# "The IBM Cloud Pak foundational services operator is no longer installed automatically. 
+#  Install this operator manually if you need to create an instance that uses identity and access management. 
+#  Also, make sure you have a certificate manager; otherwise, the IBM Cloud Pak foundational services operator installation will not complete."
+# This function implements the following steps described here : 
+# https://www.ibm.com/docs/en/cloud-paks/foundational-services/4.3?topic=online-installing-foundational-services-by-using-console
+#
+#    Prerequisites (An OpenShift Container Platform cluster withsupported versions + A Certificate manager : any cert manager.Some options : 
+#      Cloud Native Computing Foundation (CNCF) cert-manager
+#      cert-manager Operator for Red Hat OpenShift
+#      Foundational services cert-manager
+#    Creating the catalog sources
+#    Installing the operators
+#    Setting the hardware profile and accepting the license
+#    Configuring namespace permissions
+#    Configuring the services
+#    Installing foundational services in your cluster
+#      Creating the OperandRequest instance
+#      Verifying the installation
+#      Checking operator status
+#      Checking pod status
+#    Accessing the foundational services console
+#        Getting the console URL
+#        Getting the console username
+#        Getting the password
+#        Accessing Business Teams Service console
+# REMARQUE IMPORTANTE : dans la documentation au niveau de l'étape "Configuring namespace permissions", il y avait cette remarque:
+# Note: If you do not want to manually do your topology configurations, you can use the installation script. 
+#       The script installs the ibm-namespace-scope-operator and deploys the NamespaceScope resource in the foundational-services namespace 
+#       during foundational services installation. For more information, see Installing foundational services by using a script.
+# DONC : mise en place d'une fonction install_foundational_services_by_script qui mettra en place les étapes pour la mise en oeuvre de ce script.
+############################################################################################################################################
+#SB]20231215 Installing Foundational services v4.3
+# https://www.ibm.com/docs/en/cloud-paks/foundational-services/4.3?topic=online-installing-foundational-services-by-using-script
+# The script also installs the IBM NamespaceScope Operator. 
+# Hence, use the script only if your cluster has topology types as described in Topologies that need the IBM NamespaceScope operator.
+# les topologies sont décrites ici: https://www.ibm.com/docs/en/cloud-paks/foundational-services/4.3?topic=co-authorizing-foundational-services-perform-operations-workloads-in-namespace#topology
+# Malgré la remarque suivante : You do not need the IBM NamespaceScope operator if each IBM Cloud Pak that is installed in your cluster has its own foundational services instance.
+# J'ai tenu compte de la topologie 2 : Topology 2: You want to install all operators in one namespace and deploy all operands in another namespace.
+function install_foundational_services_by_script () {
+  # SB]20231129 create config map for foundational services
+  check_create_oc_yaml "configmap" "common-service-maps" "${resourcesdir}common-service-cm.yaml" kube-public
+
+  #mylog info "==== Redhat Cert Manager catalog." 1>&2
+  create_catalogsource $my_oc_cs_ns "redhat-operators" "Red Hat Operators" "registry.redhat.io/redhat/redhat-operator-index:v4.12" "Red Hat" "10m"
+
+  #mylog info "==== Adding Foundational services catalog source." 1>&2
+  create_catalogsource $my_oc_cs_ns "opencloud-operators"  "IBMCS Operators" "icr.io/cpopen/ibm-common-service-catalog:4.3" "IBM" "45m"
+ 
+  # https://www.ibm.com/docs/en/cloud-paks/foundational-services/4.3?topic=manager-installing-cert-by-using-cli
+  #mylog info "==== Adding Certificate Manager catalog." 1>&2
+  #create_catalogsource $my_oc_cs_ns "ibm-cert-manager-catalog" "ibm-cert-manager" "icr.io/cpopen/ibm-cert-manager-operator-catalog" "IBM" "45m"
+  
+  #mylog info "==== Adding Certificate Manager catalog in ns: $my_ibm_cert_manager_project." 1>&2
+  #create_catalogsource $my_ibm_cert_manager_project "ibm-cert-manager-catalog" "ibm-cert-manager" "icr.io/cpopen/ibm-cert-manager-operator-catalog" "IBM" "45m"
+  
+  #mylog info "==== Adding Licensing service catalog source in ns : openshift-marketplace." 1>&2
+  create_catalogsource $my_oc_cs_ns "ibm-licensing-catalog" "ibm-licensing" "icr.io/cpopen/ibm-licensing-catalog" "IBM" "45m"
+
+  #mylog info "==== Adding PostgreSQL catalog." 1>&2
+  create_catalogsource $my_oc_cs_ns "cloud-native-postgresql-catalog" "Cloud Native PostgreSQL Catalog" "icr.io/cpopen/ibm-cpd-cloud-native-postgresql-operator-catalog@sha256:b5debd3c4b129a67f30ffdd774a385c96b8d33fd9ced8baad4835dd8913eb177" "IBM" "45m"
+
+  # SB]20231215 Pour obtenir le template de l'operateur cert-manager de Redhat, je l'ai installé avec la console, j'ai récupéré le Yaml puis désinstallé.
+  #export my_starting_csv=$my_cert_manager_startingcsv
+  create_operator_subscription "openshift-cert-manager-operator" $my_ibm_cert_manager_chl "redhat-operators" $my_ibm_cert_manager_project "Automatic"
+
+  # ATTENTION : pour le licensing server ajouetr dans la partie spec.startingCSV: ibm-licensing-operator.v4.2.1 (sinon erreur).
+  export my_starting_csv=$my_ibm_licensing_operator_startingcsv
+  create_operator_subscription "ibm-licensing-operator-app" $my_ibm_lic_srv_chl "ibm-licensing-catalog" $my_ibm_lic_srv_project "Automatic"
+
+
+  #SB]20231215 https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.4?topic=images-adding-catalog-sources-cluster
+  # If you need a certificate manager and you are installing on amd64 (x86) hardware, use the cert-manager Operator for Red Hat OpenShift instead. 
+  # For more information, see Installing the cert-manager Operator for Red Hat OpenShift.
+  # la documentation de l'installation par WebUI renvoit sur le lien suivant : https://cert-manager.io/docs/installation/
+  # téléchager le ficher cert-manager.yaml
+  #if [ ! -e ${resourcesdir}cert-manager.yaml ];then
+  #  mylog info "Downloading cert-manager.yaml file"
+	#	wget -O ${resourcesdir}cert-manager.yaml -o /dev/null https://github.com/cert-manager/cert-manager/releases/download/${my_ibm_cert_manager_case}/cert-manager.yaml
+	#fi
+  #oc apply -f ${resourcesdir}cert-manager.yaml
+
+
+  # https://www.ibm.com/docs/en/cloud-paks/foundational-services/4.3?topic=manager-installing-cert-licensing-by-script
+  export CASE_VERSION=$my_ibm_cs_case
+  if [ ! -e ./ibm-cp-common-services-${CASE_VERSION}.tgz ];then
+    wget https://github.com/IBM/cloud-pak/raw/master/repo/case/ibm-cp-common-services/${CASE_VERSION}/ibm-cp-common-services-${CASE_VERSION}.tgz
+  fi
+
+  if [ ! -d ./ibm-cp-common-services ]; then
+    tar -xvzf ibm-cp-common-services-$CASE_VERSION.tgz 1>&2 > /dev/null
+  fi
+  
+  pushd ./ibm-cp-common-services/inventory/ibmCommonServiceOperatorSetup/installer_scripts/cp3pt0-deployment/ 1>&2 > /dev/null 
+  ./setup_singleton.sh --license-accept --ls --cert-manager-source redhat-operators  -cmNs $my_ibm_cert_manager_project --channel v4.3
+  popd
 }
 
 ################################################################################################
@@ -770,73 +855,92 @@ read_config_file "$my_properties_file"
 # Read versions properties
 read_config_file "$my_versions_file"
 
-# : <<'END_COMMENT'
+#: <<'END_COMMENT'
+
 # check the differents pre requisites
 check_exec_prereqs
 
 # Log to IBM Cloud
-Login2IBMCloud
+login_2_ibm_cloud
 
 # Create Openshift cluster
-CreateOpenshiftCluster_Wait4Availability
+create_openshift_cluster_wait_4_availability
 
 # Log to openshift cluster
-Login2OpenshiftCluster
+login_2_openshift_cluster
+#END_COMMENT
+
+# Instantiate catalog sources
+mylog info "==== Adding catalog sources using ibm pak plugin." 1>&2
+add_catalog_sources_ibm_pak
 
 # Create project namespace.
-CreateNameSpace $my_oc_project
+# SB]20231213 erreur obtenue juste après la création du cluster openshift : Error from server (Forbidden): You may not request a new project via this API.
+# solution trouvée ici : https://stackoverflow.com/questions/51657711/openshift-allow-serviceaccount-to-create-project
+# à tester :  oc adm policy add-cluster-role-to-user self-provisioner -z [service-account-username] -n [namespace]
+# celle qui a fonctionné est celle-ci : https://stackoverflow.com/questions/44349987/error-from-server-forbidden-error-when-creating-clusterroles-rbac-author
+# Voir aussi celle-ci : https://bugzilla.redhat.com/show_bug.cgi?id=1639197
+# extrait du lien ci-dessus:
+# You'll need to add the "self-provisioner" role to your service account as well. Although you've made it project admin, that only means its admin rights are scoped to that one project, which is not enough to allow it to request new projects.
+# oc adm policy add-cluster-role-to-user self-provisioner system:serviceaccount:<project>:<cx-jenkins
+# oc create clusterrolebinding myname-cluster-admin-binding --clusterrole=cluster-admin --user=IAM#saad.benachi@fr.ibm.com
+
+if oc get clusterrolebinding myname-cluster-admin-binding > /dev/null 2>&1; then mylog ok;else
+  oc create clusterrolebinding myname-cluster-admin-binding --clusterrole=cluster-admin --user=$my_oc_user
+  #oc adm policy add-cluster-role-to-user self-provisioner system:serviceaccount:$my_oc_project:default -n $my_oc_project
+  oc adm policy add-cluster-role-to-user self-provisioner $my_oc_user -n $my_oc_project
+fi
+
+create_namespace $my_oc_project
+check_create_oc_yaml "OperatorGroup" "operatorgroup" "${resourcesdir}operator-group-single.yaml" $my_oc_project
+
+create_namespace $my_oc_cs_project
+check_create_oc_yaml "OperatorGroup" "operatorgroup" "${resourcesdir}operator-group-all.yaml" $my_oc_cs_project
+
+create_namespace $my_ibm_cert_manager_project
+check_create_oc_yaml "OperatorGroup" "operatorgroup" "${resourcesdir}operator-group-single.yaml" $my_ibm_cert_manager_project
+
+create_namespace $my_ibm_lic_srv_project
+check_create_oc_yaml "OperatorGroup" "operatorgroup" "${resourcesdir}operator-group-single.yaml" $my_ibm_lic_srv_project
 
 # Add ibm entitlement key to namespace
 # SB]20230209 Aspera hsts service cannot be created because a problem with the entitlement, it muste be added in the openshift-operators namespace.
-AddIBMEntitlement $my_oc_project
-AddIBMEntitlement $operators_project
+add_ibm_entitlement $my_oc_project
+add_ibm_entitlement $operators_project
 
-# Create catalog source ibm-operator-catalog
-CreateCatalogsource "openshift-marketplace" "${resourcesdir}ibm_catalogsource.yaml" "catalogsource" "ibm-operator-catalog" "{.status.connectionState.lastObservedState}" "READY"
-
-# SB]20231129 create config map for foundational services
-check_create_oc_yaml "configmap" "common-service-maps" "${resourcesdir}common-service-cm.yaml" kube-public
-
-# SB]20231130 create resources needed by the IBM Cloud Pak foundational services
-# https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.2?topic=SSGT7J_23.2/installer/3.x.x/install_cs_cli.htm (part : a. Create a YAML file named def.yaml with the resources definitions that you need.)
-check_create_oc_yaml "OperatorGroup" "operatorgroup" "${resourcesdir}operator-group.yaml" $my_oc_project
-
-#SB]202300201 https://www.ibm.com/docs/en/cloud-paks/cp-integration/2022.4?topic=images-adding-catalog-sources-cluster
-# Instantiate catalog sources
-mylog info "==== Adding catalog sources using ibm pak plugin." 1>&2
-AddIbmPakCS
+#SB]20231214 Installing Foundation services
+mylog info "==== Installation of foundational services." 1>&2
+install_foundational_services_by_script
+exit
 
 # Install operators
 mylog info "==== Installation of operators." 1>&2
-Install_Operators
+install_operators
 
-# SB]20231130 patcher les foundational services en acceptant la license
-PatchFS
-
-# SB]20231201 Configuring foundational services by using the CommonService custom resource.
-ConfigureFS
+#SB]20231213 pour la version 2023.4 https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.4?topic=SSGT7J_23.4/upgrade/upgrade_dummy_binding.htm
+# Installing keycloak
+mylog info "==== Installation of keycloak." 1>&2
+check_create_oc_yaml "Cp4iServicesBinding" "manual-binding-for-iam" "${resourcesdir}keycloak.yaml" $my_oc_project
 
 # Add OpenLdap app to openshift
 mylog info "==== Adding OpenLdap." 1>&2
-AddOpenLdap
+add_openldap
 
 # Instantiate operands
 mylog info "==== Installation of operands." 1>&2
-Install_Operands
-
-# END_COMMENT
+install_operands
 
 ## Display information to access CP4I
 mylog info "==== Displaying Access Info to CP4I." 1>&2
-DisplayAccessInfo
+display_access_info
 
 # Start customization
 mylog info "==== Customization." 1>&2
-Start_Customization $my_oc_project
+start_customization $my_oc_project
 
 #work in progress
 # exit
 #SB]20230214 Ajout Configuration ACE
 # export my_global_index="04"
-# Configure_ACE_IS $my_oc_project
-#Configure_ACE_IS cp4i cp4i-ace-is-02 ./tmpl/configuration/ACE/ACE-IS-02.yaml cp4i-ace-barauth-02 ./tmpl/configuration/ACE/ACE-barauth-02.yaml
+# configure_ace_is $my_oc_project
+#configure_ace_is cp4i cp4i-ace-is-02 ./tmpl/configuration/ACE/ACE-IS-02.yaml cp4i-ace-barauth-02 ./tmpl/configuration/ACE/ACE-barauth-02.yaml

@@ -14,6 +14,11 @@ spec:
   imagePullSecrets:
     - ibm-entitlement-key
   imageRegistry: cp.icr.io/cp/apic
+  management:
+    testAndMonitor:
+      enabled: true
+      aiEnabled: false
+      autoTestEnabled: true
   license:
     accept: true
     license: $my_ibm_apic_lic

@@ -1,7 +1,54 @@
 ################################################
+# Check that the CASE is already downloaded
+# example pour filtrer avec conditions : 
+# avec jsonpath=$.[?(@.name=='ibm-licensing' && @.version=='4.2.1')]
+# function
+function is_case_downloaded() {
+  local case=$1
+  local version=$2
+
+  local result
+  result=$(oc ibm-pak list --downloaded -o json| jq -c '.[] | select( .name == "$case" and .version == "$version")')
+  
+	if [ -z "$result" ]; then
+		echo 0
+  else echo 1
+  fi
+}
+
+############################################################
+# Check that the CR is newer than the CR file
+# Inputs :
+#  - Type of the custom resource
+#  - Custom resource
+#  - the file defining the custom resource
+#  - the namespace
+#  Returns 1 (if the cr is newer than the file) otherwise 0 
+# function
+function is_cr_newer() {
+  local type=$1
+  local cr=$2
+  local file=$3
+  local ns=$4
+
+  local path="{.metadata.creationTimestamp}"
+  local cr_ts
+  local file_ts
+
+  cr_ts=$(oc get $type $cr -n $ns -o jsonpath='$path'| date -d - +%s)
+  file_ts=$(stat -c %Y $file)
+
+  if [ $cr_ts -gt $file_ts ]; then
+    echo 1
+  else
+    echo 0
+  fi
+}
+
+################################################
 # Check that all required executables are installed
 # function
-check_command_exist() {
+function check_command_exist() {
   local command=$1
 
   if ! command -v $command >/dev/null 2>&1; then
@@ -14,9 +61,9 @@ check_command_exist() {
 # function
 # checks if the file exist, if no print a msg and exit
 #
-check_file_exist () {
+function check_file_exist () {
 	local file=$1
-	if test ! -e "$file";then
+	if [ ! -e "$file" ];then
 		mylog error "No such file: $file" 1>&2
 		exit 1
 	fi
@@ -26,7 +73,7 @@ check_file_exist () {
 # function
 # checks if the directory exist, if no print a msg and exit
 #
-check_directory_exist () {
+function check_directory_exist () {
   local directory=$1
   if [ ! -d $directory ]; then
     mylog error "No such directory: $directory" 1>&2
@@ -38,7 +85,7 @@ check_directory_exist () {
 # function
 # checks if the directory contains files, if no print a msg and exit
 #
-check_directory_contains_files () {
+function check_directory_contains_files () {
   local directory=$1
   shopt -s nullglob dotglob     # To include hidden files
   files=($directory/*)
@@ -51,7 +98,7 @@ check_directory_contains_files () {
 
 ################################################
 # function
-read_config_file() {
+function read_config_file() {
 	if test -n "$PC_CONFIG";then
 	  config_file="$PC_CONFIG"
 	else
@@ -76,7 +123,7 @@ read_config_file() {
 # @param 1 name of variable
 # @param 2 error message, or name of method to call if begins with "fix"
 # function
-var_fail() {
+function var_fail() {
 	if eval test -z '$'$1;then
 		mylog error "missing config variable: $1" 1>&2
 		case "$2" in
@@ -92,7 +139,7 @@ var_fail() {
 # simple logging with colors
 # @param 1 level (info/error/warn/wait/check/ok/no)
 # function
-mylog() {
+function mylog() {
 	p=
 	w=
 	s=
@@ -113,7 +160,7 @@ mylog() {
 ################################################
 # Check that all required executables are installed
 # function
-check_exec_prereqs() {
+function check_exec_prereqs() {
   check_command_exist awk
   check_command_exist curl
   check_command_exist docker
@@ -142,7 +189,7 @@ function waitn() {
 # Send email
 # @param mail_def, exemple 159.8.70.38:2525
 # function
-send-email() {
+function send_email() {
   curl --url "smtp://$mail_def" \
     --mail-from cp4i-admin@ibm.com \
     --mail-rcpt cp4i-user@ibm.com \
@@ -152,7 +199,7 @@ send-email() {
 ################################################
 # Log in IBM Cloud
 # function
-Login2IBMCloud () {
+function login_2_ibm_cloud () {
   SECONDS=0
   
   if ibmcloud resource groups -q > /dev/null 2>&1;then
@@ -175,7 +222,7 @@ Login2IBMCloud () {
 # note that this login requires that you login to the cluster once (using sso or web): not sure why
 # requires var my_cluster_url
 # function
-Login2OpenshiftCluster () {
+function login_2_openshift_cluster () {
   SECONDS=0
 
   if oc whoami > /dev/null 2>&1;then
@@ -198,7 +245,7 @@ Login2OpenshiftCluster () {
 # wait for Cluster availability
 # set variable my_cluster_url
 # function
-wait_for_cluster_availability () {
+function wait_for_cluster_availability () {
   SECONDS=0	
   wait_for_state 'Cluster state' 'normal-All Workers Normal' "ibmcloud oc cluster get --cluster $my_cluster_name --output json|jq -r '.state+\"-\"+.status'"
   mylog info "Checking Cluster state took: $SECONDS seconds." 1>&2
@@ -224,11 +271,12 @@ wait_for_cluster_availability () {
 # @param value expected state value from check command
 # @param command executed command that returns some state
 # function
-wait_for_state() {
+function wait_for_state() {
 	local what=$1
 	local value=$2
 	local command=$3
 	mylog check "Checking $what"
+	#mylog check "Checking $what status until reaches value $value with command $command"
 	last_state=
 	while true;do
 		current_state=$(eval $command)
@@ -256,16 +304,27 @@ wait_for_state() {
 # @param yaml: the file with the definition of the resource, example: "${subscriptionsdir}Navigator-Sub.yaml"
 # @param ns: name space where the reousrce is created, example: $operators_project
 # function
-check_create_oc_yaml() {
+function check_create_oc_yaml() {
 	local octype="$1"
 	local name="$2"
 	local yaml="$3"
-	local ns="$4"
+	export ns="$4"
 
+  local newer
+  
 	check_file_exist $yaml
 	mylog check "Checking ${octype} ${name} in ${ns} project"
-	if oc get ${octype} ${name} -n ${ns} > /dev/null 2>&1; then mylog ok;else
-		envsubst < "${yaml}" | oc -n ${ns} apply -f - || exit 1
+
+	if oc get ${octype} ${name} -n ${ns} > /dev/null 2>&1; then
+    newer=$(is_cr_newer $octype $name $yaml $ns)
+    if [ $newer ]; then 
+      mylog ok
+      mylog info "Custom Resource $name is newer than file $yaml"
+    else
+      envsubst < "${yaml}" | oc -n ${ns} apply -f - || exit 1
+    fi
+  else
+    envsubst < "${yaml}" | oc -n ${ns} apply -f - || exit 1
 	fi
 }
 
@@ -274,14 +333,14 @@ check_create_oc_yaml() {
 # @param ocname: name of the resource, example: "openldap"
 # See https://github.com/osixia/docker-openldap for more details especialy all the configurations possible
 # function
-check_create_oc_openldap() {
+function check_create_oc_openldap() {
 	read_config_file "${yamldir}ldap/ldap.properties"
 	local octype="$1"
 	local name="$2"
 	local ns="$3"
 
 	# create namespace if needed
-	CreateNameSpace ${ns}
+	create_namespace ${ns}
 
 	#SB]20231207 checks if used directories and files exists
 	check_directory_exist ${yamldir}
@@ -342,7 +401,7 @@ check_create_oc_openldap() {
 # Create namespace
 # @param ns namespace to be created
 # function
-CreateNameSpace () {
+function create_namespace () {
   local ns=$1
   var_fail my_oc_project "Please define project name in config"
   mylog check "Checking project $ns"
@@ -361,10 +420,11 @@ CreateNameSpace () {
 # @param ns: namespace/project to perform the search
 # TODO The var variable is initialised for another function, this is not good
 # function
-check_resource_availability () {
+function check_resource_availability () {
   local octype="$1"
   local name="$2"
   local ns="$3"
+
   var=`oc get $octype -n $ns --ignore-not-found=true | grep $name | awk '{print $1}'`
   while [ -z "$var" ]; do
     var=`oc get $octype -n $ns --ignore-not-found=true | grep $name | awk '{print $1}'`;
@@ -376,21 +436,36 @@ check_resource_availability () {
 
 ################################################
 ##SB]20230201 use ibm-pak oc plugin
+# https://ibm.github.io/cloud-pak/
 # function
-check_add_cs_ibm_pak() {
+function check_add_cs_ibm_pak () {
   local CASE_NAME="$1"
   local CASE_VERSION="$2"
   local ARCH="$3"
 
+  local file
+  local downloaded
+
   SECONDS=0
-  oc ibm-pak get ${CASE_NAME} --version ${CASE_VERSION}
-  oc ibm-pak generate mirror-manifests ${CASE_NAME} icr.io --version ${CASE_VERSION}
-  if test -f  "~/.ibm-pak/data/mirror/${CASE_NAME}/${CASE_VERSION}/catalog-sources.yaml";then
-    oc apply -f ~/.ibm-pak/data/mirror/${CASE_NAME}/${CASE_VERSION}/catalog-sources.yaml
-  fi
-  if test -f  "~/.ibm-pak/data/mirror/${CASE_NAME}/${CASE_VERSION}/catalog-sources-linux-${ARCH}.yaml";then
-    oc apply -f ~/.ibm-pak/data/mirror/${CASE_NAME}/${CASE_VERSION}/catalog-sources-linux-${ARCH}.yaml
-  fi
+
+  downloaded=$(is_case_downloaded ${CASE_NAME} ${CASE_VERSION}) 1>&2 > /dev/null
+
+  if [ $downloaded ]; then
+    mylog info "case ${CASE_NAME} ${CASE_VERSION} already downloaded"
+  else
+    oc ibm-pak get ${CASE_NAME} --version ${CASE_VERSION}
+    oc ibm-pak generate mirror-manifests ${CASE_NAME} icr.io --version ${CASE_VERSION}
+  
+    file=~/.ibm-pak/data/mirror/${CASE_NAME}/${CASE_VERSION}/catalog-sources.yaml
+ 	  if [  -e "$file" ];then
+      oc apply -f $file
+    fi
+    
+    file=~/.ibm-pak/data/mirror/${CASE_NAME}/${CASE_VERSION}/catalog-sources-linux-${ARCH}.yaml
+ 	  if [  -e "$file" ];then
+      oc apply -f $file
+    fi
+  fi  
   # oc get catalogsource -n openshift-marketplace
   mylog info "Adding case $CASE_NAME took $SECONDS seconds to execute." 1>&2
 }
@@ -398,7 +473,7 @@ check_add_cs_ibm_pak() {
 ################################################
 ##SB]20231201 create operator subscription
 # function
-create_operator_subscription() {
+function create_operator_subscription() {
 
   # export are important because they are used to replace the variable in the subscription.yaml (envsubst command)
   export operator_name=$1
@@ -407,12 +482,15 @@ create_operator_subscription() {
   export operator_ns=$4
   export strategy=$5
 
+  local installedcsv
   check_directory_exist ${operatorsdir}
 
   SECONDS=0
   check_create_oc_yaml "subscription" "${operator_name}" "${operatorsdir}subscription.yaml" $operator_ns
+  installedcsv=$(oc get subscription "${operator_name}" -n $operator_ns -o jsonpath='{.status.installedCSV}')
+  echo "InstalledCSV=$installedcsv"
   #SB]20231013 the function check_resource_availability will "return" the resource 
-  resource=$(check_resource_availability "clusterserviceversion" "${operator_name}" $operator_ns)
+  resource=$(check_resource_availability "clusterserviceversion" $installedcsv $operator_ns)
   type="clusterserviceversion"
   path="{.status.phase}"
   state="Succeeded"
@@ -423,7 +501,7 @@ create_operator_subscription() {
 #########################################################
 ##SB]20231205 create flink and event processing operators 
 # function
-create_ea_operators(){
+function create_ea_operators() {
   local inventory=$1
   local name=$2
   local ns=$3
@@ -446,7 +524,7 @@ create_ea_operators(){
 ################################################
 ##SB]20231204 create operand instance
 # function
-create_operand_instance() {
+function create_operand_instance() {
   local file=$1
   local ns=$2
   local path=$3
@@ -464,7 +542,7 @@ create_operand_instance() {
 # Get useful information to start using the stack
 # Need to check that the resource exist.
 # function
-get_navigator_access() {
+function get_navigator_access() {
 	cp4i_url=$(oc get platformnavigator cp4i-navigator -n $my_oc_project -o jsonpath='{range .status.endpoints[?(@.name=="navigator")]}{.uri}{end}')
 	cp4i_uid=$(oc get secret ibm-iam-bindinfo-platform-auth-idp-credentials -n $my_oc_project -o jsonpath={.data.admin_username} | base64 -d)
 	cp4i_pwd=$(oc get secret ibm-iam-bindinfo-platform-auth-idp-credentials -n $my_oc_project -o jsonpath={.data.admin_password} | base64 -d)
@@ -477,7 +555,7 @@ get_navigator_access() {
 ##SB]20231109 Generate properties and yaml files
 ## input parameter the operand custom dir (and generated dir both with config and scripts subdirectories)
 # function
-generate_files () {
+function generate_files () {
   local customdir=$1
   local gendir=$2
   local nfiles
@@ -513,3 +591,43 @@ generate_files () {
   fi
   #set +a
 }
+
+#############################################################################################################################
+# SB]20231021 when installing event processing and flink operator, we get the error :
+# Error from server (NotFound): catalogsources.operators.coreos.com "ea-flink-operator-catalog" not found
+# [ERROR] expected catalog source 'ea-flink-operator-catalog' expected to be installed namespace 'openshift-marketplace'
+# SB]20231122 to check if this catalog source (ibm-operator-catalog) exists in the ns (openshift-marketplace)
+# use the following solution (https://www.unix.com/shell-programming-and-scripting/193809-awk-output-multiple-variables.html)
+# SB]20231129 also for installing the IBM COmmon Services Operator 
+#  https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.2?topic=SSGT7J_23.2/installer/3.x.x/install_cs_cli.htm
+function create_catalogsource () {
+  export cs_ns=$1
+  export cs_name=$2
+  export cs_dspname=$3
+  export cs_image=$4
+  export cs_publisher=$5
+  export cs_interval=$6
+
+  local newer
+  local type="CatalogSource"
+  local file="${resourcesdir}catalog_source.yaml"
+  local path="{.status.connectionState.lastObservedState}" 
+  local state="READY"
+
+
+  result=$(oc get $type -A -o json| jq -r  '.items[] | select (.metadata.name == "$cs_name" and .metadata.namespace == "$cs_ns")')
+ 	if [ -z "$result" ]; then
+		mylog info "no catalogsource $cs_name found in namespace $cs_ns"
+    envsubst < "${file}" | oc -n ${cs_ns} apply -f - || exit 1
+    wait_for_state "$type $cs_name $path is $state" "$state" "oc get ${type} ${cs_name} -n ${cs_ns} -o jsonpath='$path'"
+  else 
+    newer=$(is_cr_newer $type $cs_name $file $cs_ns)
+    if [ $newer ]; then 
+      mylog info "Custom Resource $cs_name exists in ns $cs_ns and is newer than file $file"
+    else
+      envsubst < "${file}" | oc -n ${cs_ns} apply -f - || exit 1
+      wait_for_state "$type $cs_name $path is $state" "$state" "oc get ${type} ${cs_name} -n ${cs_ns} -o jsonpath='$path'"
+    fi
+  fi
+}
+

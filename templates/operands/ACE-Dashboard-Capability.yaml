@@ -26,6 +26,7 @@ spec:
           requests:
             cpu: 50m
             memory: 125Mi
+  useCommonServices: false            
   authentication:
     integrationKeycloak:
       enabled: false
