@@ -8,5 +8,5 @@ spec:
   resources:
     requests:
       storage: 1Gi
-  storageClassName: $my_file_ldap_storage_class
+  storageClassName: $MY_FILE_LDAP_STORAGE_CLASS
   volumeMode: Filesystem

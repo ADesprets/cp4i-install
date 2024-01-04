@@ -1,14 +1,11 @@
 apiVersion: integration.ibm.com/v1beta1
 kind: PlatformNavigator
 metadata:
-  name: $my_ibm_navigator_instance_name
-  namespace: $my_oc_project
+  name: $MY_NAVIGATOR_INSTANCE_NAME
+  namespace: $MY_OC_PROJECT
 spec:
   license:
     accept: true
-    license: $my_ibm_navigator_lic
-  mqDashboard: true
+    license: $MY_NAVIGATOR_LIC
   replicas: 1
-  storage:
-    class: $my_file_storage_class
-  version: $my_ibm_navigator_version
+  version: $MY_NAVIGATOR_VERSION

@@ -1,19 +1,19 @@
 apiVersion: mq.ibm.com/v1beta1
 kind: QueueManager
 metadata:
-  name: $my_ibm_mq_instance_name
-  namespace: $my_oc_project
+  name: $MY_MQ_INSTANCE_NAME
+  namespace: $MY_OC_PROJECT
 spec:
   license:
     accept: true
-    license: $my_ibm_mq_lic
+    license: $MY_MQ_LIC
     use: NonProduction
   tracing:
     enabled: false
-    namespace: $my_oc_project
+    namespace: $MY_OC_PROJECT
   web:
     enabled: true
-  version: $my_ibm_mq_version
+  version: $MY_MQ_VERSION
   template:
     pod:
       containers:
@@ -38,7 +38,7 @@ spec:
       type: NativeHA
       updateStrategy: RollingUpdate
     storage:
-      defaultClass: my_block_storage_class
+      defaultClass: MY_BLOCK_STORAGE_CLASS
       persistedData:
         enabled: false
       queueManager:

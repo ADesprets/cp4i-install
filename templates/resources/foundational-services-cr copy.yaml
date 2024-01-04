@@ -15,6 +15,23 @@ spec:
     bedrockshim:
       enabled: true
   services:
+  - name: ibm-iam-operator
+    spec:
+      authentication:
+        config:
+          defaultAdminUser: cp4iuser
+          bootStrapUserId: clusteradmin
+          roksEnabled: true
+          roksURL: 'https://c100-e.eu-de.containers.cloud.ibm.com:32301'
+          roksUserPrefix: 'IAM#'
+          oidcIssuerURL: 'https://c100-e.eu-de.containers.cloud.ibm.com:443/oidc/endpoint/OP'
+          preferredLogin: DEFAULT,LDAP,SAML,ROKS
+      oidcclientwatcher: {}
+      pap: {}
+      policycontroller: {}
+      policydecision: {}
+      secretwatcher: {}
+      securityonboarding: {}
   - name: ibm-commonui-operator
     spec:
       globalUIConfig:

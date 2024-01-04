@@ -1,13 +1,13 @@
  apiVersion: operators.coreos.com/v1alpha1
  kind: CatalogSource
  metadata:
-   name: $cs_name
-   namespace: $cs_ns
+   name: $CATALOG_SOURCE_NAME
+   namespace: $CATALOG_SOURCE_NAMESPACE
  spec:
-   displayName: $cs_dspname
-   image: $cs_image
-   publisher: $cs_publisher
+   displayName: $CATALOG_SOURCE_DISPLAY_NAME
+   image: $CATALOG_SOURCE_IMAGE
+   publisher: $CATALOG_SOURCE_PUBLISHER
    sourceType: grpc
    updateStrategy:
      registryPoll:
-       interval: $cs_interval
+       interval: $CATALOG_SOURCE_INTERVAL

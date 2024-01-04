@@ -124,48 +124,7 @@ Here is the post install directory structure:
 ```text
 D:.
 │   .gitignore
-│   cp4i.properties
-│   delete-all.sh
-│   lib.sh
-│   LICENSE
-│   provision_cluster-v2.sh
-│   README.md
-│   show_creds.sh
-│   TODO.txt
-├───ldap
-│       Import.ldiff
-│       Import.tmpl
-├───private
-├───resources
-│       design.drawio
-│       structure.txt
-├───templates
-│   ├───capabilities
-│   │       ACE-Dashboard-Capability.yaml
-│   │       ACE-Designer-Capability.yaml
-│   │       APIC-Capability.yaml
-│   │       AR-Capability.yaml
-│   │       AsperaHSTS-Capability.yaml
-│   │       ES-Capability.yaml
-│   │       MQ-Capability.yaml
-│   │       Navigator-Capability.yaml
-│   └───subscriptions
-│           subscription.yaml
-├───terraform
-│       cluster-openshift.tf
-│       cos.tf
-│       log-analysis.tf
-│       monitoring-sysdig.tf
-│       network.tf
-│       provider.tf
-│       resource-group.tf
-│       terraform.tfstate
-│       variables.tf
-│       var_override.tfvars
-└───versions
-        cp4i-2021.4
-        cp4i-2022.2
-        cp4i-2023.2
+
 ```
 
 ## Getting the initial admin password
@@ -244,3 +203,9 @@ The main script does the following:
 
 To be moved
 In the subscription folder we have the definition of the operators. Since they are all equivalent we do not have one for each component, and use variables that are set at deployment.
+
+## Customisation
+
+1) The source of documents are in the templates/operands-custom/<capability>/scripts (or config) folders
+2) The generated files are in customisation/<capability>/scripts (or config) folders
+3) We execute the customisation from customisation/<capability>/scripts

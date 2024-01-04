@@ -3,8 +3,7 @@
 ################################################
 # simple logging with colors
 # @param 1 level (info/error/warn/wait/check/ok/no)
-# function
-mylog() {
+function mylog() {
 	p=
 	w=
 	s=
@@ -26,8 +25,7 @@ mylog() {
 # assert that variable is defined
 # @param 1 name of variable
 # @param 2 error message, or name of method to call if begins with "fix"
-# function
-var_fail() {
+function var_fail() {
 	if eval test -z '$'$1;then
 		mylog error "missing config variable: $1" 1>&2
 		case "$2" in
@@ -41,8 +39,7 @@ var_fail() {
 
 ################################################
 # Log in IBM Cloud
-# function
-Login2IBMCloud () {
+function Login2IBMCloud () {
   SECONDS=0
   
   if ibmcloud resource groups -q > /dev/null 2>&1;then
@@ -64,8 +61,7 @@ Login2IBMCloud () {
 # Login to openshift cluster
 # note that this login requires that you login to the cluster once (using sso or web): not sure why
 # requires var my_cluster_url
-# function
-Login2OpenshiftCluster () {
+function Login2OpenshiftCluster () {
   SECONDS=0
 
   if oc whoami > /dev/null 2>&1;then

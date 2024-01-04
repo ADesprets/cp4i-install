@@ -1,12 +1,12 @@
 apiVersion: flink.apache.org/v1beta1
 kind: FlinkDeployment
 metadata:
-  namespace: $my_oc_project
-  name: $my_ibm_flink_instance_name
+  namespace: $MY_OC_PROJECT
+  name: $MY_FLINK_INSTANCE_NAME
 spec:
   flinkConfiguration:
     license.use: EventAutomationNonProduction
-    license.license: $my_ibm_flink_lic
+    license.license: $MY_FLINK_LIC
     license.accept: 'true'
     execution.checkpointing.interval: '5000'
     state.backend.type: rocksdb

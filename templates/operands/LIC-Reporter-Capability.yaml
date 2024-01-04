@@ -6,4 +6,4 @@ metadata:
      app.kubernetes.io/managed-by: ibm-licensing-operator
      app.kubernetes.io/name: ibm-licensing
    name: ${my_ibm_cs_lic_reporter_instance_name}
-   namespace: ${my_oc_cs_project}
+   namespace: ${MY_COMMON_SERVICES_NAMESPACE}

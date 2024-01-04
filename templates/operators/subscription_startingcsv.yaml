@@ -9,4 +9,5 @@ spec:
   name: $MY_OPERATOR_NAME
   source: $MY_CATALOG_SOURCE_NAME
   sourceNamespace: $MY_CATALOGSOURCES_NAMESPACE
+  startingCSV: $MY_STARTING_CSV
 

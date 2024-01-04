@@ -2,7 +2,7 @@ apiVersion: datapower.ibm.com/v1beta3
 kind: DataPowerService
 metadata:
   name: $my_cp_datapower_instance_name
-  namespace: $my_oc_project
+  namespace: $MY_OC_PROJECT
 spec:
   version: $my_ibm_cp_datapower_version
   license:

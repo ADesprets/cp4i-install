@@ -3,17 +3,17 @@ kind: EventStreams
 metadata:
   annotations:
     eventstreams.ibm.com/apicurio-registry-version: '>=2.4'
-  name: $my_ibm_es_instance_name
-  namespace: $my_oc_project
+  name: $MY_ES_INSTANCE_NAME
+  namespace: $MY_OC_PROJECT
 spec:
-  version: $my_ibm_es_version
+  version: $MY_ES_VERSION
   license: 
-    license: $my_ibm_es_lic
+    license: $MY_ES_LIC
     accept: true
-    use: $my_ibm_es_lic_usage
+    use: $MY_ES_LIC_usage
   requestIbmServices:
-    iam: true
-    monitoring: true
+    iam: false
+    monitoring: false
   strimziOverrides:
     entityOperator:
       topicOperator: {}
@@ -50,10 +50,10 @@ spec:
         valueFrom:
           configMapKeyRef:
             key: kafka-metrics-config.yaml
-            name: $my_cp_es_kafka_metricsConfig_name
+            name: $MY_ES_METRICS_CM
       storage:
         type: persistent-claim
-        class: $my_block_storage_class
+        class: $MY_BLOCK_STORAGE_CLASS
         size: 10Gi
     zookeeper:
       replicas: 3
@@ -62,10 +62,10 @@ spec:
         valueFrom:
           configMapKeyRef:
             key: zookeeper-metrics-config.yaml
-            name: $my_cp_es_kafka_metricsConfig_name
+            name: $MY_ES_METRICS_CM
       storage:
         type: persistent-claim
-        class: $my_block_storage_class
+        class: $MY_BLOCK_STORAGE_CLASS
         size: 4Gi
   adminApi: {}
   adminUI: {}

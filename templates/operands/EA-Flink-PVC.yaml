@@ -1,7 +1,7 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  namespace: $my_oc_project
+  namespace: $MY_OC_PROJECT
   name: ibm-flink-pvc
 spec:
   accessModes:
@@ -9,4 +9,4 @@ spec:
   resources:
     requests:
       storage: 20Gi
-  storageClassName: $my_file_storage_class
+  storageClassName: $MY_FILE_STORAGE_CLASS

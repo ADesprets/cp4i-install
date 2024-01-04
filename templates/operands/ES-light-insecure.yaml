@@ -30,7 +30,7 @@ spec:
         type: jmxPrometheusExporter
       storage:
         type: persistent-claim
-        class: my_block_storage_class
+        class: MY_BLOCK_STORAGE_CLASS
       listeners:
         - name: plain
           port: 9092
@@ -46,7 +46,7 @@ spec:
         type: jmxPrometheusExporter
       storage:
         type: persistent-claim
-        class: my_block_storage_class
+        class: MY_BLOCK_STORAGE_CLASS
       replicas: 1
   adminUI: {}
   restProducer: {}
