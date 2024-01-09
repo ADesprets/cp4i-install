@@ -5,19 +5,16 @@ metadata:
     eventstreams.ibm.com/apicurio-registry-version: '>=2.4'
   name: $MY_ES_INSTANCE_NAME
   namespace: $MY_OC_PROJECT
+  labels:
+    backup.eventstreams.ibm.com/component: eventstreams
 spec:
   version: $MY_ES_VERSION
   license: 
     license: $MY_ES_LIC
     accept: true
     use: $MY_ES_LIC_usage
-  requestIbmServices:
-    iam: false
-    monitoring: false
+
   strimziOverrides:
-    entityOperator:
-      topicOperator: {}
-      userOperator: {}
     kafka:
       replicas: 3
       authorization:
@@ -31,7 +28,6 @@ spec:
         offsets.topic.replication.factor: 3
         default.replication.factor: 3
         min.insync.replicas: 2
-        ssl.secure.random.implementation: SHA1PRNG  
       listeners:
         - name: external
           port: 9094
@@ -68,7 +64,9 @@ spec:
         class: $MY_BLOCK_STORAGE_CLASS
         size: 4Gi
   adminApi: {}
-  adminUI: {}
+  adminUI:
+    authentication:
+      - type: integrationKeycloak
   apicurioRegistry: {}
   collector: {}
   restProducer: {}

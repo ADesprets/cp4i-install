@@ -25,13 +25,14 @@ function create_openshift_cluster_classic () {
     var_fail MY_CLUSTER_FLAVOR_CLASSIC 'mylog warn "Choose one of:" 1>&2;ibmcloud ks flavors -q --zone $MY_CLUSTER_ZONE'
     var_fail MY_CLUSTER_WORKERS 'Speficy number of worker nodes in cluster'
     mylog info "Getting current version for OC: $MY_OC_VERSION"
-    oc_version_full=$(ibmcloud ks versions -q --show-version OpenShift|grep $MY_OC_VERSION| awk '{print $1}')
-    if test -z "${oc_version_full}";then
+    res=$(check_openshift_version $MY_OC_VERSION)
+    if [ -z "$res" ]; then
       mylog error "Failed to find full version for ${MY_OC_VERSION}" 1>&2
-      fix_oc_version
+      #fix_oc_version
       exit 1
     fi
-    mylog info "Found: ${oc_version_full}"
+    res=$(echo "[$res]" | jq -r '.[] | (.major|tostring) + "." + (.minor|tostring) + "." + (.patch|tostring)')
+    mylog info "Found: ${res}"
     # create
     mylog info "Creating OpenShift cluster: $my_cluster_name"
 
@@ -157,91 +158,85 @@ function add_catalog_sources_ibm_pak () {
   ## ibm-integration-platform-navigator
   # SB,AD]20240103 Suite au pb installation keycloak (besoin de l'operateur IBM Cloud Pak for Integration)
   if $MY_NAVIGATOR;then
-    check_add_cs_ibm_pak ibm-integration-platform-navigator $MY_NAVIGATOR_CASE amd64
+    check_add_cs_ibm_pak ibm-integration-platform-navigator MY_NAVIGATOR_CASE amd64
   fi
 
   # ibm-integration-asset-repository
   if $MY_ASSETREPO;then
-    check_add_cs_ibm_pak ibm-integration-asset-repository $MY_ASSETREPO_CASE amd64
+    check_add_cs_ibm_pak ibm-integration-asset-repository MY_ASSETREPO_CASE amd64
   fi
 
-   # SB]20231204 https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.2?topic=cluster-mirroring-images-bastion-host
-   # For Datapower operator, take care about this note (from above link) :
-   # (1) The IBM API Connect CASE also mirrors the IBM DataPower Gateway CASE using the Cloud Pak for Integration image group.
-   # (2) The IBM DataPower Gateway CASE contains multiple image groups. To mirror images for Cloud Pak for Integration, use the ibmdpCp4i image group.
-   # the following link https://www.ibm.com/docs/en/datapower-operator/1.8?topic=install-case
-   # provides a sample when installing datapower operator :
-   # https://www.ibm.com/docs/en/datapower-operator/1.8?topic=install-case
-   # Note: When deploying within IBM Cloud Pak for Integration, use image group ibmdpCp4i.
-   # oc ibm-pak generate mirror-manifests $CASE_NAME --version $CASE_VERSION $TARGET_REGISTRY --filter ibmdpCp4i
-   # The question : suppose we have installed the datapower operator case first, does the apic operator case installation ovverides it ? 
-   # ibm-adatapower
+  # SB]20231204 https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.2?topic=cluster-mirroring-images-bastion-host
+  # For Datapower operator, take care about this note (from above link) :
+  # (1) The IBM API Connect CASE also mirrors the IBM DataPower Gateway CASE using the Cloud Pak for Integration image group.
+  # (2) The IBM DataPower Gateway CASE contains multiple image groups. To mirror images for Cloud Pak for Integration, use the ibmdpCp4i image group.
+  # the following link https://www.ibm.com/docs/en/datapower-operator/1.8?topic=install-case
+  # provides a sample when installing datapower operator :
+  # https://www.ibm.com/docs/en/datapower-operator/1.8?topic=install-case
+  # Note: When deploying within IBM Cloud Pak for Integration, use image group ibmdpCp4i.
+  # oc ibm-pak generate mirror-manifests $CASE_NAME --version $CASE_VERSION $TARGET_REGISTRY --filter ibmdpCp4i
+  # The question : suppose we have installed the datapower operator case first, does the apic operator case installation overrides it ? 
+  # ibm-adatapower
   if $MY_DPGW;then
-    check_add_cs_ibm_pak ibm-datapower-operator $MY_DPGW_CASE amd64
-  fi
-
-  # ibm-apiconnect
-  if $MY_APIC;then
-    check_add_cs_ibm_pak ibm-apiconnect $MY_APIC_CASE amd64
+    check_add_cs_ibm_pak ibm-datapower-operator MY_DPGW_CASE amd64
   fi
 
   # ibm-appconnect
   if $MY_ACE;then
-    check_add_cs_ibm_pak ibm-appconnect $MY_ACE_CASE amd64
+    check_add_cs_ibm_pak ibm-appconnect MY_ACE_CASE amd64
   fi
 
-  # ibm-mq
-  if $MY_MQ;then
-    check_add_cs_ibm_pak ibm-mq $MY_MQ_CASE amd64
-  fi 
-
-  # ibm-license-server
-  if $MY_LIC_SRV;then
-    check_add_cs_ibm_pak ibm-licensing $MY_LIC_SRV_CASE amd64
-  fi 
-
-  # Voir les impacts de cette remarque : 
-  # (1) Mirror the IBM Cert Manager catalog source only if you need a certificate manager and you are installing on s390x (IBM Z®) or ppc64le (IBM® POWER®) hardware.
-  # If you need a certificate manager and you are installing on amd64 (x86) hardware, use the cert-manager Operator for Red Hat OpenShift instead. 
-  # For more information, see Installing the cert-manager Operator for Red Hat OpenShift.
-  # ibm-cert-manager-server
-
-  # ibm-eventstreams 
-  if $MY_ES;then
-    check_add_cs_ibm_pak ibm-eventstreams $MY_ES_CASE amd64
-  fi 
-
-  # ibm-aspera-hsts-operator
-  if $MY_HSTS;then
-    check_add_cs_ibm_pak ibm-aspera-hsts-operator $MY_HSTS_CASE amd64
+  # ibm-apiconnect
+  if $MY_APIC;then
+    check_add_cs_ibm_pak ibm-apiconnect MY_APIC_CASE amd64
   fi
 
-  ## ibm-cp-common-services
+  # ibm-cp-common-services
   if $MY_COMMONSERVICES;then
-    check_add_cs_ibm_pak ibm-cp-common-services $MY_COMMONSERVICES_CASE amd64
+    check_add_cs_ibm_pak ibm-cp-common-services MY_COMMONSERVICES_CASE amd64
   fi 
 
   ## event endpoint management
   ## to get the name of the pak to use : oc ibm-pak list
   ## https://ibm.github.io/event-automation/eem/installing/installing/, chapter : Install the operator by using the CLI (oc ibm-pak)
   if $MY_EEM;then
-    check_add_cs_ibm_pak ibm-eventendpointmanagement $MY_EEM_CASE amd64
-    oc ibm-pak launch ibm-eventendpointmanagement --version $MY_EEM_CASE --inventory eemOperatorSetup --action installCatalog -n $lf_in_ns
+    check_add_cs_ibm_pak ibm-eventendpointmanagement MY_EEM_CASE amd64
+    #oc ibm-pak launch ibm-eventendpointmanagement --version $MY_EEM_CASE --inventory eemOperatorSetup --action installCatalog -n $lf_in_ns
+  fi 
+
+  if $MY_EP;then
+    # event processing
+    check_add_cs_ibm_pak ibm-eventprocessing MY_EP_CASE amd64
+    oc ibm-pak launch ibm-eventprocessing --version $MY_EP_CASE --inventory epOperatorSetup --action installCatalog -n  $lf_in_ns
+  fi
+
+  # ibm-eventstreams 
+  if $MY_ES;then
+    check_add_cs_ibm_pak ibm-eventstreams MY_ES_CASE amd64
   fi 
 
   if $MY_FLINK;then
     ## SB]20231020 For Flink and Event processing first you have to apply the catalog source to your cluster :
     ## https://ibm.github.io/event-automation/ep/installing/installing/, Chapter Applying catalog sources to your cluster
     # event flink
-    check_add_cs_ibm_pak ibm-eventautomation-flink $MY_FLINK_CASE amd64
+    check_add_cs_ibm_pak ibm-eventautomation-flink MY_FLINK_CASE amd64
     oc ibm-pak launch ibm-eventautomation-flink --version $MY_FLINK_CASE --inventory flinkKubernetesOperatorSetup --action installCatalog -n $lf_in_ns
   fi 
 
-  if $MY_EP;then
-    # event processing
-    check_add_cs_ibm_pak ibm-eventprocessing $MY_EP_CASE amd64
-    oc ibm-pak launch ibm-eventprocessing --version $MY_EP_CASE --inventory epOperatorSetup --action installCatalog -n  $lf_in_ns
+  # ibm-aspera-hsts-operator
+  if $MY_HSTS;then
+    check_add_cs_ibm_pak ibm-aspera-hsts-operator MY_HSTS_CASE amd64
   fi
+
+  # ibm-license-server
+  if $MY_LIC_SRV;then
+    check_add_cs_ibm_pak ibm-licensing MY_LIC_SRV_CASE amd64
+  fi 
+
+  # ibm-mq
+  if $MY_MQ;then
+    check_add_cs_ibm_pak ibm-mq MY_MQ_CASE amd64
+  fi 
 }
   
 ############################################################################################################################################
@@ -252,22 +247,14 @@ function add_catalog_sources_ibm_pak () {
 #  Also, make sure you have a certificate manager; otherwise, the IBM Cloud Pak foundational services operator installation will not complete."
 # This function implements the following steps described here : 
 ############################################################################################################################################
-function install_foundational_services () {
-  #export MY_OPERATOR_NAME=$1
-  #export MY_CURRENT_CHL=$2
-  #export MY_CATALOG_SOURCE_NAME=$3
-  #export MY_OPERATOR_NAMESPACE=$4
-  #export MY_STRATEGY=$5
-
-  local lf_operator_name lf_current_chl lf_catalogsource_name lf_operator_namespace lf_strategy lf_type
-
-  # SB]20231129 create config map for foundational services
-  lf_type="configmap"
-  lf_cr_name="common-service-maps"
-  lf_yaml_file="${RESOURCSEDIR}common-service-cm.yaml"
-  lf_namespace="kube-public"
-  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
-
+function install_fs_catalogsources () {
+  ## SB]20231129 create config map for foundational services
+  #lf_type="configmap"
+  #lf_cr_name="common-service-maps"
+  #lf_yaml_file="${RESOURCSEDIR}common-service-cm.yaml"
+  #lf_namespace="kube-public"
+  #check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
+  
   #mylog info "==== Redhat Cert Manager catalog." 1>&2
   lf_catalogsource_namespace=$MY_CATALOGSOURCES_NAMESPACE
   lf_catalogsource_name="redhat-operators"
@@ -276,9 +263,6 @@ function install_foundational_services () {
   lf_catalogsource_publisher="Red Hat"
   lf_catalogsource_interval="10m"
   create_catalogsource "${lf_catalogsource_namespace}" "${lf_catalogsource_name}" "${lf_catalogsource_dspname}" "${lf_catalogsource_image}" "${lf_catalogsource_publisher}" "${lf_catalogsource_interval}"
-
-  #mylog info "==== Adding Certificate Manager catalog." 1>&2
-  #create_catalogsource $MY_CATALOGSOURCES_NAMESPACE "ibm-cert-manager-catalog" "ibm-cert-manager" "icr.io/cpopen/ibm-cert-manager-operator-catalog" "IBM" "45m"  
 
   #mylog info "==== Foundational services catalog source." 1>&2
   lf_catalogsource_namespace=$MY_CATALOGSOURCES_NAMESPACE
@@ -297,55 +281,51 @@ function install_foundational_services () {
   lf_catalogsource_publisher="IBM"
   lf_catalogsource_interval="45m"
   create_catalogsource "${lf_catalogsource_namespace}" "${lf_catalogsource_name}" "${lf_catalogsource_dspname}" "${lf_catalogsource_image}" "${lf_catalogsource_publisher}" "${lf_catalogsource_interval}"
+}
 
-  #mylog info "==== Adding PostgreSQL catalog." 1>&2
-  lf_catalogsource_namespace=$MY_CATALOGSOURCES_NAMESPACE
-  lf_catalogsource_name="cloud-native-postgresql-catalog"
-  lf_catalogsource_dspname="Cloud Native PostgreSQL Catalog"
-  lf_catalogsource_image="icr.io/cpopen/ibm-cpd-cloud-native-postgresql-operator-catalog@sha256:b5debd3c4b129a67f30ffdd774a385c96b8d33fd9ced8baad4835dd8913eb177"
-  lf_catalogsource_publisher="IBM"
-  lf_catalogsource_interval="45m"
-  create_catalogsource "${lf_catalogsource_namespace}" "${lf_catalogsource_name}" "${lf_catalogsource_dspname}" "${lf_catalogsource_image}" "${lf_catalogsource_publisher}" "${lf_catalogsource_interval}"
-  
+function install_fs_operators () {
+
+  local lf_operator_name lf_current_chl lf_catalogsource_name lf_operator_namespace lf_strategy lf_type
+
   # SB]20231215 Pour obtenir le template de l'operateur cert-manager de Redhat, je l'ai installé avec la console, j'ai récupéré le Yaml puis désinstallé.
   lf_operator_name="openshift-cert-manager-operator"
   lf_current_chl=$MY_CERT_MANAGER_CHL
   lf_catalog_source_name="redhat-operators"
-  lf_operator_namespace=$MY_CERT_MANAGER_NAMESPACE
+  lf_namespace=$MY_CERT_MANAGER_NAMESPACE
   lf_strategy="Automatic"
   lf_startingcsv=$MY_CERT_MANAGER_STARTINGCSV
-  echo "create_operator_subscription:${lf_operator_name}:${lf_current_chl}:${lf_catalog_source_name}:${lf_operator_namespace}:${lf_strategy}:${lf_startingcsv}"
-  create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_startingcsv}"
+  create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_namespace}" "${lf_strategy}" "${lf_startingcsv}"
 
   # ATTENTION : pour le licensing server ajouter dans la partie spec.startingCSV: ibm-licensing-operator.v4.2.1 (sinon erreur).
   lf_operator_name="ibm-licensing-operator-app"
   lf_current_chl=$MY_LIC_SRV_CHL
   lf_catalog_source_name="ibm-licensing-catalog"
-  lf_operator_namespace=$MY_LICENSE_SERVER_NAMESPACE
+  lf_namespace=$MY_LICENSE_SERVER_NAMESPACE
   lf_strategy="Automatic"
   lf_startingcsv=$MY_LICENSING_OPERATOR_STARTINGCSV
-  create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_startingcsv}"
+  create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_namespace}" "${lf_strategy}" "${lf_startingcsv}"
+
+
+  # Pour les operations suivantes : utiliser un seul namespace
+  #lf_namespace=$MY_COMMON_SERVICES_NAMESPACE
+  lf_namespace=$MY_OPERATORS_NAMESPACE
 
   #create_operator_subscription "ibm-common-service-operator" $MY_COMMONSERVICES_CHL "opencloud-operators" $MY_COMMON_SERVICES_NAMESPACE "Automatic" $MY_STARTING_CSV
   lf_operator_name="ibm-common-service-operator"
   lf_current_chl=$MY_COMMONSERVICES_CHL
   lf_catalog_source_name="opencloud-operators"
-  lf_operator_namespace=$MY_OPERATORS_NAMESPACE
   lf_strategy="Automatic"
   lf_startingcsv=$MY_COMMONSERVICES_OPERATOR_STARTINGCSV
-  create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_startingcsv}"
-  
-  # Setting hardware  Accept the license to use foundational services by adding spec.license.accept: true in the spec section.
-  accept_license_fs
-
-  # Configuring namespace permissions
-  # ConfigureNS_Permissions
+  create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_namespace}" "${lf_strategy}" "${lf_startingcsv}"
+ 
+  ## Setting hardware  Accept the license to use foundational services by adding spec.license.accept: true in the spec section.
+  #accept_license_fs $MY_OPERATORS_NAMESPACE
+  accept_license_fs $lf_namespace
 
   # Configuring foundational services by using the CommonService custom resource.
   lf_type="CommonService"
   lf_cr_name=$MY_COMMONSERVICES_INSTANCE_NAME
   lf_yaml_file="${RESOURCSEDIR}foundational-services-cr.yaml"
-  lf_namespace=$MY_COMMON_SERVICES_NAMESPACE
   check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
 }
 
@@ -369,16 +349,6 @@ function install_operators () {
     lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     lf_strategy="Automatic"
     lf_startingcsv=$MY_DPGW_OPERATOR_STARTINGCSV
-    create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_startingcsv}"
-  fi
-
-  if $MY_KEYCLOAK;then
-    lf_operator_name="rhbk-operator"
-    lf_current_chl=$MY_KEYCLOAK_CHL
-    lf_catalog_source_name="redhat-operators"
-    lf_operator_namespace=$MY_OC_PROJECT
-    lf_strategy="Automatic"
-    lf_startingcsv=$MY_KEYCLOAK_OPERATOR_STARTINGCSV
     create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_startingcsv}"
   fi
 
@@ -537,15 +507,15 @@ function install_operands () {
   # SB]20231201 Creating OperandRequest for foundational services
   # SB]20231211 Creating IBM License Server Reporter Instance
   #             https://www.ibm.com/docs/en/cloud-paks/foundational-services/3.23?topic=reporter-deploying-license-service#lrcmd
-  if $MY_COMMONSERVICES;then
-    lf_file="${OPERANDSDIR}OperandRequest.yaml"
-    lf_ns="${MY_COMMON_SERVICES_NAMESPACE}"
-    lf_path="{.status.phase}"
-    lf_resource="$MY_COMMONSERVICES_INSTANCE_NAME"
-    lf_state="Succeeded"
-    lf_type="commonservice"
-    create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}"
-  fi
+  #if $MY_COMMONSERVICES;then
+  #  lf_file="${OPERANDSDIR}OperandRequest.yaml"
+  #  lf_ns="${MY_COMMON_SERVICES_NAMESPACE}"
+  #  lf_path="{.status.phase}"
+  #  lf_resource="$MY_COMMONSERVICES_INSTANCE_NAME"
+  #  lf_state="Succeeded"
+  #  lf_type="commonservice"
+  #  create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}"
+  #fi
 
   # Creating Navigator instance
   if $MY_NAVIGATOR_INSTANCE;then
@@ -996,14 +966,16 @@ function display_access_info () {
 # 3.Setting the hardware profile and accepting the license
 # License: Accept the license to use foundational services by adding spec.license.accept: true in the spec section.
 function accept_license_fs () {
+  lf_in_namespace=$1
+
   local accept
-  echo "oc get commonservice common-service -n ${MY_COMMON_SERVICES_NAMESPACE} -o jsonpath='{.spec.license.accept}'"
-  accept=$(oc get commonservice common-service -n ${MY_COMMON_SERVICES_NAMESPACE} -o jsonpath='{.spec.license.accept}')
+  echo "oc get commonservice ${MY_COMMONSERVICES_INSTANCE_NAME} -n ${lf_in_namespace} -o jsonpath='{.spec.license.accept}'"
+  accept=$(oc get commonservice ${MY_COMMONSERVICES_INSTANCE_NAME} -n ${lf_in_namespace} -o jsonpath='{.spec.license.accept}')
   echo "accept=$accept"
   if [ "$accept" == "true" ]; then
     mylog info "license already accepted." 1>&2
   else
-    oc patch commonservice common-service --namespace ${MY_COMMON_SERVICES_NAMESPACE} --type merge -p '{"spec": {"license": {"accept": true}}}'
+    oc patch commonservice ${MY_COMMONSERVICES_INSTANCE_NAME} --namespace ${lf_in_namespace} --type merge -p '{"spec": {"license": {"accept": true}}}'
   fi
 }
 
@@ -1080,7 +1052,7 @@ fi
 read_config_file "$my_properties_file"
 
 #SB]20230104 test monospace
-export MY_OPERATORS_NAMESPACE=$MY_OC_PROJECT
+#export MY_OPERATORS_NAMESPACE=$MY_OC_PROJECT
 
 # Read versions properties
 read_config_file "$my_versions_file"
@@ -1107,7 +1079,7 @@ login_2_openshift_cluster
 # Instantiate catalog sources
 
 mylog info "==== Adding catalog sources using ibm pak plugin." 1>&2
-add_catalog_sources_ibm_pak $MY_OPERATORS_NAMESPACE
+add_catalog_sources_ibm_pak $MY_CATALOGSOURCES_NAMESPACE
 
 # Create project namespace.
 # SB]20231213 erreur obtenue juste après la création du cluster openshift : Error from server (Forbidden): You may not request a new project via this API.
@@ -1121,30 +1093,23 @@ add_catalog_sources_ibm_pak $MY_OPERATORS_NAMESPACE
 oc create clusterrolebinding myname-cluster-admin-binding --clusterrole=cluster-admin --user=$MY_USER
 oc adm policy add-cluster-role-to-user self-provisioner $MY_USER -n $MY_OC_PROJECT
 
+# https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.4?topic=operators-installing-by-using-cli
+# (Only if your preferred installation mode is a specific namespace on the cluster) Create an OperatorGroup
+# We decided to install in openshift-operators so no need to OperatorGroup !
+# TODO # nommer correctement les operatorgroup
 create_namespace $MY_OC_PROJECT
-ls_type="OperatorGroup"
-ls_cr_name="operatorgroup"
-ls_yaml_file="${RESOURCSEDIR}operator-group-single.yaml"
-ls_namespace=$MY_OC_PROJECT
-check_create_oc_yaml "${ls_type}" "${ls_cr_name}" "${ls_yaml_file}" "${ls_namespace}"
-
 create_namespace $MY_COMMON_SERVICES_NAMESPACE
-ls_type="OperatorGroup"
-ls_cr_name="operatorgroup"
-ls_yaml_file="${RESOURCSEDIR}operator-group-all.yaml"
-ls_namespace=$MY_COMMON_SERVICES_NAMESPACE
-check_create_oc_yaml "${ls_type}" "${ls_cr_name}" "${ls_yaml_file}" "${ls_namespace}"
 
 create_namespace $MY_CERT_MANAGER_NAMESPACE
 ls_type="OperatorGroup"
-ls_cr_name="operatorgroup"
+ls_cr_name="${MY_CERT_MANAGER_OPERATORGROUP}"
 ls_yaml_file="${RESOURCSEDIR}operator-group-single.yaml"
 ls_namespace=$MY_CERT_MANAGER_NAMESPACE
 check_create_oc_yaml "${ls_type}" "${ls_cr_name}" "${ls_yaml_file}" "${ls_namespace}"
 
 create_namespace $MY_LICENSE_SERVER_NAMESPACE
 ls_type="OperatorGroup"
-ls_cr_name="operatorgroup"
+ls_cr_name="${MY_LICENSE_SERVER_OPERATORGROUP}"
 ls_yaml_file="${RESOURCSEDIR}operator-group-single.yaml"
 ls_namespace=$MY_LICENSE_SERVER_NAMESPACE
 check_create_oc_yaml "${ls_type}" "${ls_cr_name}" "${ls_yaml_file}" "${ls_namespace}"
@@ -1156,7 +1121,8 @@ add_ibm_entitlement $MY_OPERATORS_NAMESPACE
 
 #SB]20231214 Installing Foundation services
 mylog info "==== Installation of foundational services." 1>&2
-install_foundational_services
+install_fs_catalogsources
+install_fs_operators
 
 # Install operators
 mylog info "==== Installation of capability operators." 1>&2

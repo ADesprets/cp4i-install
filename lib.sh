@@ -1,35 +1,54 @@
+#########################################################################
+# check if openshift version available 
+# check_openshift_version v1 returns 0 if v1 does not exist 1 if v1 exist
+function check_openshift_version() {
+  local lf_in_version=$1
+
+  IFS='.' read -ra v_components <<< "$lf_in_version"
+  vmaj=${v_components[0]}
+  vmin=${v_components[1]}
+  #echo "vmaj=$vmaj|vmin=$vmin"
+  res=$(ibmcloud ks versions -q --show-version Openshift --output json| jq --argjson vmaj "$vmaj" --argjson vmin "$vmin" '.openshift[] | select (.major == $vmaj and .minor == $vmin)')
+  echo $res
+  #if [ -z "$res" ]; then
+  #  return 0
+  #else return 1
+  #fi
+}
+
+
 ################################################
 # Compare versions 
-# https://stackoverflow.com/questions/4023830/how-to-compare-two-strings-in-dot-separated-version-format-in-bash
-# 
-function vercomp () {
-    if [[ $1 == $2 ]]
-    then
-        return 0
-    fi
-    local IFS=.
-    local i ver1=($1) ver2=($2)
-    # fill empty fields in ver1 with zeros
-    for ((i=${#ver1[@]}; i<${#ver2[@]}; i++))
-    do
-        ver1[i]=0
-    done
-    for ((i=0; i<${#ver1[@]}; i++))
-    do
-        if [[ -z ${ver2[i]} ]]
-        then
-            # fill empty fields in ver2 with zeros
-            ver2[i]=0
-        fi
-        if ((10#${ver1[i]} > 10#${ver2[i]}))
-        then
+# from chatgpt
+# This script defines a function compare_versions that takes two version strings as arguments and compares them component-wise.
+# It uses the IFS (Internal Field Separator) to split the versions into components based on the dot ('.') separator. 
+# The function then compares each component, determining whether the first version is older, newer, or equal to the second version.
+# The script will output whether the first version is older, newer, or equal to the second version.
+# cmp_versions v1 v2 returns 0 if v1=v2, 1 if v1 is newer than v2, 2 if v1 is older than v2
+function cmp_versions() {
+    version1=$1
+    version2=$2
+
+    IFS='.' read -ra v1_components <<< "$version1"
+    IFS='.' read -ra v2_components <<< "$version2"
+	
+    len=${#v1_components[@]}
+
+
+    for ((i=0; i<$len; i++)); do
+        v1=${v1_components[i]:-0}
+        v2=${v2_components[i]:-0}
+
+        if [ "$v1" -lt "$v2" ]; then
+            #echo "$version1 is older than $version2"
+            return 2
+        elif [ "$v1" -gt "$v2" ]; then
+            #echo "$version1 is newer than $version2"
             return 1
         fi
-        if ((10#${ver1[i]} < 10#${ver2[i]}))
-        then
-            return 2
-        fi
     done
+
+    #echo "$version1 is equal to $version2"
     return 0
 }
 
@@ -40,21 +59,46 @@ function vercomp () {
 # Pour tester une variable null : https://stackoverflow.com/questions/48261038/shell-script-how-to-check-if-variable-is-null-or-no
 function is_case_downloaded() {
   local case=$1
-  local version=$2
+  local version_varid=$2
 
-  local result
-  result=$(oc ibm-pak list --downloaded -o json)
-	if test -z "$result";then
-		echo "0"
+  local directory res result latestversion cmp
+
+  local version=${!version_varid}
+  
+  directory="${IBMPAKDIR}${case}/${version}"
+
+  if [ ! -d "${directory}" ]; then
+    return 0
   else
-    #echo "oc ibm-pak list --downloaded -o json| jq -c '.[] | select( .name == "$case" and .version == "$version")'"
-    result=$(oc ibm-pak list --downloaded -o json| jq -c '.[] | select( .name == "$case" and .version == "$version")')  1>&2 > /dev/null
-    #echo "1|result=$result"
-   	if test -z "$result";then
-		  echo 0
-    else echo 1
-    fi
-  fi  
+    result=$(oc ibm-pak list --downloaded -o json)
+  
+    # One of the simplest ways to check if a string is empty or null is to use the -z and -n operators. 
+    # The -z operator returns true if the string is null or empty, and false otherwise. 
+    # The -n operator returns true if the string is not null or empty, and false otherwise.
+	  if [ -z "$result" ]; then
+	  	return 0
+    else
+      # Pb avec le passage de variables à jsonpath ; décision retour vers jq
+      # result=$(echo $result | jsonpath '$.[?(@.name == "${case}" && @.latestVersion == "${version}")]')
+      #res=$(echo $result | jq -r --arg case "$case" --arg version "$version" '.[] | select (.name == $case and .latestVersion == $version)')
+      result=$(echo $result | jq -r --arg case "$case"  '[.[] | select (.name == $case )]')
+     	if [ -z "$result" ]; then
+	  	  return 0
+      else 
+        latestversion=$(echo $result | jq -r max_by'(.latesVersion)|.latestVersion')
+        #echo "latestversion=$latestversion|version=$version"
+        
+        # cmpversions v1 v2 returns 0 if v1=v2, 1 if v1 is newer than v2, 2 if v1 is older than v2
+        cmp_versions $latestversion $version
+        cmp=$?
+        case $cmp in
+          0) return 1 ;;
+          1) sed -i "/$version_varid/c$version_varid=$latestversion" "$my_versions_file" 
+             return 1 ;;
+        esac
+      fi
+    fi  
+  fi
 }
 
 ############################################################
@@ -114,7 +158,7 @@ function check_directory_exist () {
   local directory=$1
   if [ ! -d $directory ]; then
     mylog error "No such directory: $directory" 1>&2
-	exit 1
+	  exit 1
   fi
 }
 
@@ -417,38 +461,37 @@ function check_resource_availability () {
 ##SB]20230201 use ibm-pak oc plugin
 # https://ibm.github.io/cloud-pak/
 function check_add_cs_ibm_pak () {
-  local CASE_NAME="$1"
-  local CASE_VERSION="$2"
-  local ARCH="$3"
+  local lf_in_case_name="$1"
+  local lf_in_case_version_varid="$2"
+  local lf_in_arch="$3"
 
+  local lf_case_version=${!lf_in_case_version_varid}
   local file
   local downloaded
 
   SECONDS=0
 
-  downloaded=$(is_case_downloaded ${CASE_NAME} ${CASE_VERSION}) 1>&2 > /dev/null
-  #echo "downloaded=$downloaded"
-  #exit
-
+  is_case_downloaded ${lf_in_case_name} ${lf_in_case_version_varid} #1>&2 > /dev/null
+  downloaded=$?
+  #echo "$lf_in_case_name|$lf_case_version|downloaded=$downloaded"
+  
   if [ $downloaded -eq 1 ]; then
-    mylog info "case ${CASE_NAME} ${CASE_VERSION} already downloaded"
+    mylog info "case ${lf_in_case_name} ${lf_case_version} already downloaded"
   else
-    oc ibm-pak get ${CASE_NAME} --version ${CASE_VERSION}
-    oc ibm-pak generate mirror-manifests ${CASE_NAME} icr.io --version ${CASE_VERSION}
+    oc ibm-pak get ${lf_in_case_name} --version ${lf_case_version}
+    oc ibm-pak generate mirror-manifests ${lf_in_case_name} icr.io --version ${lf_case_version}
   fi  
-
-  file=~/.ibm-pak/data/mirror/${CASE_NAME}/${CASE_VERSION}/catalog-sources.yaml
-  if [  -e "$file" ];then
+  file=~/.ibm-pak/data/mirror/${lf_in_case_name}/${lf_case_version}/catalog-sources.yaml
+  if [  -e "$file" ]; then
     oc apply -f $file
   fi
     
-  file=~/.ibm-pak/data/mirror/${CASE_NAME}/${CASE_VERSION}/catalog-sources-linux-${ARCH}.yaml
+  file=~/.ibm-pak/data/mirror/${lf_in_case_name}/${lf_case_version}/catalog-sources-linux-${lf_in_arch}.yaml
   if [  -e "$file" ];then
     oc apply -f $file
   fi
 
-  # oc get catalogsource -n openshift-marketplace
-  mylog info "Adding case $CASE_NAME took $SECONDS seconds to execute." 1>&2
+  mylog info "Adding case $lf_in_case_name took $SECONDS seconds to execute." 1>&2
 }
 
 ################################################
@@ -602,13 +645,6 @@ function generate_files () {
 }
 
 #############################################################################################################################
-# SB]20231021 when installing event processing and flink operator, we get the error :
-# Error from server (NotFound): catalogsources.operators.coreos.com "ea-flink-operator-catalog" not found
-# [ERROR] expected catalog source 'ea-flink-operator-catalog' expected to be installed namespace 'openshift-marketplace'
-# SB]20231122 to check if this catalog source (ibm-operator-catalog) exists in the ns (openshift-marketplace)
-# use the following solution (https://www.unix.com/shell-programming-and-scripting/193809-awk-output-multiple-variables.html)
-# SB]20231129 also for installing the IBM COmmon Services Operator 
-#  https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.2?topic=SSGT7J_23.2/installer/3.x.x/install_cs_cli.htm
 function create_catalogsource () {
   export CATALOG_SOURCE_NAMESPACE=$1
   export CATALOG_SOURCE_NAME=$2
@@ -623,8 +659,7 @@ function create_catalogsource () {
   local path="{.status.connectionState.lastObservedState}" 
   local state="READY"
 
-
-  result=$(oc get $type -A -o json| jq -r  '.items[] | select (.metadata.name == "$CATALOG_SOURCE_NAME" and .metadata.namespace == "$CATALOG_SOURCE_NAMESPACE")')
+  result=$(oc get $type -A -o json| jq -r  --arg name $CATALOG_SOURCE_NAME --arg namespace $CATALOG_SOURCE_NAMESPACE '.items[] | select (.metadata.name == $name and .metadata.namespace == $namespace)')
  	if [ -z "$result" ]; then
 		mylog info "no catalogsource $CATALOG_SOURCE_NAME found in namespace $CATALOG_SOURCE_NAMESPACE"
     envsubst < "${file}" | oc -n ${CATALOG_SOURCE_NAMESPACE} apply -f - || exit 1
