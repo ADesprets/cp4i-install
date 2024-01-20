@@ -7,7 +7,7 @@
 echo "Upgrade APIC -- Start: `date`"
 SECONDS=0
 
-check_file () {
+function check_file () {
 	if [ -f "$1" ]; then
     		echo "$1 exist --> OK"
 	else
@@ -16,7 +16,7 @@ check_file () {
 	fi
 }
 
-. $PWD/apic.properties
+. ../config/apic.properties
 
 echo " -- Existing instance --"
 echo " "
@@ -32,7 +32,7 @@ case $doit in
 esac
 
 
-chmod +x scripts/*.sh
+chmod +x ./*.sh
 
 echo "-- check file existing"
 check_file ${APICONNECT_RELEASE_FILES}/ibm-apiconnect-crds.yaml
@@ -44,21 +44,21 @@ check_file ${APICONNECT_RELEASE_FILES}/helper_files/portal_cr.yaml
 check_file ${APICONNECT_RELEASE_FILES}/helper_files/apigateway_cr.yaml
 
 echo "-- Generate all yaml files"
-scripts/generate-apic-files.sh
+./generate-apic-files.sh
 
 echo "-- Deploy ibm-apiconnect-crds.yaml"
-kubectl apply -f updated/ibm-apiconnect-crds.yaml -n $NAMESPACE
+kubectl apply -f ../generated/ibm-apiconnect-crds.yaml -n $NAMESPACE
 echo "-- Deploy ibm-apiconnect.yaml"
-kubectl apply -f updated/ibm-apiconnect.yaml -n $NAMESPACE
+kubectl apply -f ../generated/ibm-apiconnect.yaml -n $NAMESPACE
 echo "-- Deploy ibm-datapower.yaml"
-kubectl apply -f updated/ibm-datapower.yaml -n $NAMESPACE
+kubectl apply -f ../generated/ibm-datapower.yaml -n $NAMESPACE
 #echo "-- Deploy ingress-issuer-v1-alpha1.yaml"
-#kubectl create -f yaml/ingress-issuer-v1-alpha1.yaml -n $NAMESPACE
+#kubectl create -f ../templates/ingress-issuer-v1-alpha1.yaml -n $NAMESPACE
 
 for step in {1..4}
 do
 kubectl get po -n $NAMESPACE
-bash scripts/sleep.sh 10
+bash ./sleep.util.sh 10
 done
 kubectl get po -n $NAMESPACE
 echo "----------------------"
@@ -75,14 +75,14 @@ echo "----------------------"
 echo "-- Deploy Subsystem --"
 echo "----------------------"
 echo "-- Deploy Subsystem management_cr.yaml"
-kubectl apply -f updated/management_cr.yaml -n $NAMESPACE
+kubectl apply -f ../generated/management_cr.yaml -n $NAMESPACE
 echo "-- Deploy Subsystem analytics_cr.yaml"
-kubectl apply -f updated/analytics_cr.yaml -n $NAMESPACE
+kubectl apply -f ../generated/analytics_cr.yaml -n $NAMESPACE
 echo "-- Deploy Subsystem portal_cr.yaml"
-kubectl apply -f updated/portal_cr.yaml -n $NAMESPACE
+kubectl apply -f ../generated/portal_cr.yaml -n $NAMESPACE
 echo "-- Deploy Subsystem apigateway_cr.yaml"
-#kubectl create -f updated/$ADMIN_USER_SECRET.yaml -n $NAMESPACE
-kubectl apply -f updated/apigateway_cr.yaml -n $NAMESPACE
+#kubectl create -f ../generated/$ADMIN_USER_SECRET.yaml -n $NAMESPACE
+kubectl apply -f ../generated/apigateway_cr.yaml -n $NAMESPACE
 
 #timeout 15m kubectl get po -n $NAMESPACE -w
 kubectl get po -n $NAMESPACE -w

@@ -7,7 +7,7 @@
 echo "Install APIC -- Start: `date`"
 SECONDS=0
 
-check_file () {
+function check_file () {
 	if [ -f "$1" ]; then
     		echo "$1 exist --> OK"
 	else

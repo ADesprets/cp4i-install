@@ -851,8 +851,6 @@
         "https://cpd-cp4i.cp4iad22023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/integration/apis/cp4i/cp4i-apic/api/user-registries/e80b4f5d-c5ea-45d7-8dd4-52242c088f97/de85fcb8-9680-402f-9fa6-c6d0142a150b"
     ],
     "tls_client_profile_urls": [],
-    "created_at": "2023-09-04T06:14:03.000Z",
-    "updated_at": "2023-09-04T06:17:09.000Z",
     "org_url": "https://cpd-cp4i.cp4iad22023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/integration/apis/cp4i/cp4i-apic/api/orgs/e80b4f5d-c5ea-45d7-8dd4-52242c088f97",
     "url": "https://cpd-cp4i.cp4iad22023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/integration/apis/cp4i/cp4i-apic/api/orgs/e80b4f5d-c5ea-45d7-8dd4-52242c088f97/oauth-providers/e5f45a6d-c124-47ca-bb8f-697c3faa4e6c"
 }

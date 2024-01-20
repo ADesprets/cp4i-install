@@ -25,20 +25,22 @@ function create_openshift_cluster_classic () {
     var_fail MY_CLUSTER_FLAVOR_CLASSIC 'mylog warn "Choose one of:" 1>&2;ibmcloud ks flavors -q --zone $MY_CLUSTER_ZONE'
     var_fail MY_CLUSTER_WORKERS 'Speficy number of worker nodes in cluster'
     mylog info "Getting current version for OC: $MY_OC_VERSION"
-    res=$(check_openshift_version $MY_OC_VERSION)
-    if [ -z "$res" ]; then
+    oc_version_full=$(check_openshift_version $MY_OC_VERSION)
+    decho "oc_version_full=$oc_version_full"
+
+    if [ -z "$oc_version_full" ]; then
       mylog error "Failed to find full version for ${MY_OC_VERSION}" 1>&2
       #fix_oc_version
       exit 1
     fi
-    res=$(echo "[$res]" | jq -r '.[] | (.major|tostring) + "." + (.minor|tostring) + "." + (.patch|tostring)')
-    mylog info "Found: ${res}"
+    oc_version_full=$(echo "[$oc_version_full]" | jq -r '.[] | (.major|tostring) + "." + (.minor|tostring) + "." + (.patch|tostring) + "_openshift"')
+    mylog info "Found: ${oc_version_full}"
     # create
     mylog info "Creating OpenShift cluster: $my_cluster_name"
 
     SECONDS=0
     vlans=$(ibmcloud ks vlan ls --zone $MY_CLUSTER_ZONE --output json|jq -j '.[]|" --" + .type + "-vlan " + .id')
-    if ! ibmcloud oc cluster create classic \
+    if ! ibmcloud ks cluster create classic \
       --name    $my_cluster_name \
       --version $oc_version_full \
       --zone    $MY_CLUSTER_ZONE \
@@ -166,21 +168,6 @@ function add_catalog_sources_ibm_pak () {
     check_add_cs_ibm_pak ibm-integration-asset-repository MY_ASSETREPO_CASE amd64
   fi
 
-  # SB]20231204 https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.2?topic=cluster-mirroring-images-bastion-host
-  # For Datapower operator, take care about this note (from above link) :
-  # (1) The IBM API Connect CASE also mirrors the IBM DataPower Gateway CASE using the Cloud Pak for Integration image group.
-  # (2) The IBM DataPower Gateway CASE contains multiple image groups. To mirror images for Cloud Pak for Integration, use the ibmdpCp4i image group.
-  # the following link https://www.ibm.com/docs/en/datapower-operator/1.8?topic=install-case
-  # provides a sample when installing datapower operator :
-  # https://www.ibm.com/docs/en/datapower-operator/1.8?topic=install-case
-  # Note: When deploying within IBM Cloud Pak for Integration, use image group ibmdpCp4i.
-  # oc ibm-pak generate mirror-manifests $CASE_NAME --version $CASE_VERSION $TARGET_REGISTRY --filter ibmdpCp4i
-  # The question : suppose we have installed the datapower operator case first, does the apic operator case installation overrides it ? 
-  # ibm-adatapower
-  if $MY_DPGW;then
-    check_add_cs_ibm_pak ibm-datapower-operator MY_DPGW_CASE amd64
-  fi
-
   # ibm-appconnect
   if $MY_ACE;then
     check_add_cs_ibm_pak ibm-appconnect MY_ACE_CASE amd64
@@ -201,7 +188,7 @@ function add_catalog_sources_ibm_pak () {
   ## https://ibm.github.io/event-automation/eem/installing/installing/, chapter : Install the operator by using the CLI (oc ibm-pak)
   if $MY_EEM;then
     check_add_cs_ibm_pak ibm-eventendpointmanagement MY_EEM_CASE amd64
-    #oc ibm-pak launch ibm-eventendpointmanagement --version $MY_EEM_CASE --inventory eemOperatorSetup --action installCatalog -n $lf_in_ns
+    oc ibm-pak launch ibm-eventendpointmanagement --version $MY_EEM_CASE --inventory eemOperatorSetup --action installCatalog -n $lf_in_ns
   fi 
 
   if $MY_EP;then
@@ -471,7 +458,6 @@ function install_operators () {
     create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_startingcsv}"
   fi
 
-
   #SB]20230130 Ajout du repository Nexus
   # Creating Nexus operator subscription
   if $MY_NEXUS;then
@@ -704,16 +690,23 @@ function install_operands () {
 
 ################################################
 # start customization
+# Takes all the templates associated with the capabilities and generate the files from the context variables
+# The files are generated into ./customisation/working/<capability>/config
 # @param ns namespace where operands were instantiated
 function start_customization () {
   local ns=$1
   local varb64
+
+  mylog info "Copy template files to the working directory"
   
   if $MY_ACE_CUSTOM;then
     # generate the differents properties files
     # SB]20231109 some generated files (yaml) are based on other generated files (properties), so :
     # - in template custom dirs, separate the files to two categories : scripts (*.properties) and config (*.yaml)
     # - generate first the *.properties files to be sourced then generate the *.yaml files
+    if [ ! -d $ACE_GEN_CUSTOMDIR ]; then
+      mkdir $ACE_GEN_CUSTOMDIR -p
+    fi
     generate_files $ACE_TMPL_CUSTOMDIR $ACE_GEN_CUSTOMDIR
   fi
 
@@ -722,6 +715,9 @@ function start_customization () {
     # SB]20231109 some generated files (yaml) are based on other generated files (properties), so :
     # - in template custom dirs, separate the files to two categories : scripts (*.properties) and config (*.yaml)
     # - generate first the *.properties files to be sourced then generate the *.yaml files
+    if [ ! -d $APIC_GEN_CUSTOMDIR ]; then
+      mkdir $APIC_GEN_CUSTOMDIR -p
+    fi
     generate_files $APIC_TMPL_CUSTOMDIR $APIC_GEN_CUSTOMDIR
   fi
 
@@ -742,6 +738,9 @@ function start_customization () {
     # SB]20231109 some generated files (yaml) are based on other generated files (properties), so :
     # - in template custom dirs, separate the files to two categories : scripts (*.properties) and config (*.yaml)
     # - generate first the *.properties files to be sourced then generate the *.yaml files
+    if [ ! -d $ES_GEN_CUSTOMDIR ]; then
+      mkdir $ES_GEN_CUSTOMDIR -p
+    fi
     generate_files $ES_TMPL_CUSTOMDIR $ES_GEN_CUSTOMDIR
 
     # SB]20231211 https://ibm.github.io/event-automation/es/installing/installing/
@@ -787,13 +786,37 @@ function start_customization () {
 
 ################################################
 # launch customization
+# Takes all the templates associated with the capabilities and generate the files from the context variables
+# The files are generated into ./customisation/working/<capability>/config
 # @param ns namespace where operands were instantiated
 function launch_customization () {
-    if $MY_APIC_CUSTOM;then
-    $APIC_GEN_CUSTOMDIR/scripts/configure.sh
+  local ns=$1
+  local varb64
+
+  mylog info "Customisation of the capabilities"
+
+  if $MY_ACE_CUSTOM;then
+     mylog info "Customise ACE"
+  fi
+
+  if $MY_APIC_CUSTOM;then
+    . ${APIC_SCRIPTDIR}scripts/configure.sh
+  fi
+
+  if $MY_ES_CUSTOM;then
+     mylog info "Customise ES"
+  fi
+
+  ## Creating EEM users and roles
+  if $MY_EEM_CUSTOM;then
+     mylog info "Customise EEM"
+  fi
+
+  ## Creating Event Processing users and roles
+  if $MY_EP_CUSTOM;then
+     mylog info "Customise Event Processing"
   fi
 }
-
 
 ##SB]20230215 load bar files in nexus repository
 ################################################
@@ -872,22 +895,20 @@ function create_openshift_cluster_wait_4_availability () {
 ################################################
 # Add OpenLdap app to openshift
 function add_openldap () {
-  #oc project $MY_OC_PROJECT
   if $MY_LDAP;then
-      check_create_oc_openldap "deployment" "openldap" "ldap"
+    check_create_oc_openldap "deployment" "openldap" "ldap"
   fi
 }
 
 ################################################
 # Display information to access CP4I
 function display_access_info () {
-  # Always display the platform console endpoint
-  cp_console_url=$(oc -n ${my_oc_fs_project} get Route -o=jsonpath='{.items[?(@.metadata.name=="cp-console")].spec.host}')
-  mylog info "Cloup Pak Console endpoint: ${cp_console_url}"
-  cp_console_admin_pwd=$(oc -n ${my_oc_fs_project} get secret platform-auth-idp-credentials -o jsonpath='{.data.admin_password}' | base64 -d)
-  mylog info "Cloup Pak Console admin password: ${cp_console_admin_pwd}"
 
-  if $MY_NAVIGATOR;then
+  if $MY_NAVIGATOR_INSTANCE;then
+    cp_console_url=$(oc -n ${MY_OC_PROJECT} get Route -o=jsonpath='{.items[?(@.metadata.name=="cp-console")].spec.host}')
+    mylog info "Cloud Pak Console endpoint: ${cp_console_url}"
+    cp_console_admin_pwd=$(oc -n ${MY_OC_PROJECT} get secret platform-auth-idp-credentials -o jsonpath='{.data.admin_password}' | base64 -d)
+    mylog info "Cloud Pak Console admin password: ${cp_console_admin_pwd}"
     get_navigator_access
   fi
 
@@ -896,7 +917,7 @@ function display_access_info () {
 	  mylog info "ACE Dahsboard UI endpoint: " $ace_ui_db_url
     ace_ui_dg_url=$(oc get DesignerAuthoring -n $MY_OC_PROJECT -o=jsonpath='{.items[?(@.kind=="DesignerAuthoring")].status.endpoints[?(@.name=="ui")].uri}')
 	  mylog info "ACE Designer UI endpoint: " $ace_ui_dg_url
-  fi	
+  fi
 
   if $MY_APIC;then
     gtw_url=$(oc get GatewayCluster -n $MY_OC_PROJECT -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].status.endpoints[?(@.name=="gateway")].uri}')
@@ -953,7 +974,7 @@ function display_access_info () {
   fi
 
   if $MY_LIC_SRV;then
-    licensing_service_url=$(oc -n ${my_oc_fs_project} get Route -o=jsonpath='{.items[?(@.metadata.name=="ibm-licensing-service-instance")].spec.host}')
+    licensing_service_url=$(oc -n ${MY_LICENSE_SERVER_NAMESPACE} get Route -o=jsonpath='{.items[?(@.metadata.name=="ibm-licensing-service-instance")].spec.host}')
     mylog info "Licensing service endpoint: ${licensing_service_url}"
   fi
   
@@ -969,9 +990,9 @@ function accept_license_fs () {
   lf_in_namespace=$1
 
   local accept
-  echo "oc get commonservice ${MY_COMMONSERVICES_INSTANCE_NAME} -n ${lf_in_namespace} -o jsonpath='{.spec.license.accept}'"
+  decho "oc get commonservice ${MY_COMMONSERVICES_INSTANCE_NAME} -n ${lf_in_namespace} -o jsonpath='{.spec.license.accept}'"
   accept=$(oc get commonservice ${MY_COMMONSERVICES_INSTANCE_NAME} -n ${lf_in_namespace} -o jsonpath='{.spec.license.accept}')
-  echo "accept=$accept"
+  decho "accept=$accept"
   if [ "$accept" == "true" ]; then
     mylog info "license already accepted." 1>&2
   else
@@ -1037,7 +1058,8 @@ export MY_OC_PROJECT=$3
 my_cluster_name=$4
 
 # end with / on purpose (if var not defined, uses CWD - Current Working Directory)
-MAINSCRIPTDIR=$(dirname "$0")/
+# MAINSCRIPTDIR=$(dirname "$0")/
+MAINSCRIPTDIR=${PWD}/
 
 if [ $# -ne 4 ]; then
   echo "the number of arguments should be 4 : properties_file versions_file namespace cluster "
@@ -1061,13 +1083,13 @@ read_config_file "$my_versions_file"
 my_user_file="${PRIVATEDIR}user.properties"
 read_config_file "$my_user_file"
 
-# : <<'END_COMMENT'
-
 # check the differents pre requisites
 check_exec_prereqs
 
 # Log to IBM Cloud
 login_2_ibm_cloud
+
+: <<'END_COMMENT'
 
 # Create Openshift cluster
 create_openshift_cluster_wait_4_availability
@@ -1090,7 +1112,7 @@ add_catalog_sources_ibm_pak $MY_CATALOGSOURCES_NAMESPACE
 # You'll need to add the "self-provisioner" role to your service account as well. Although you've made it project admin, that only means its admin rights are scoped to that one project, which is not enough to allow it to request new projects.
 # oc adm policy add-cluster-role-to-user self-provisioner system:serviceaccount:<project>:<cx-jenkins
 # oc create clusterrolebinding myname-cluster-admin-binding --clusterrole=cluster-admin --user=IAM#saad.benachi@fr.ibm.com
-oc create clusterrolebinding myname-cluster-admin-binding --clusterrole=cluster-admin --user=$MY_USER
+oc create clusterrolebinding myname-cluster-admin-binding --clusterrole=cluster-admin --user=$MY_USER > /dev/null 2>&1
 oc adm policy add-cluster-role-to-user self-provisioner $MY_USER -n $MY_OC_PROJECT
 
 # https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.4?topic=operators-installing-by-using-cli
@@ -1145,12 +1167,16 @@ install_operands
 mylog info "==== Displaying Access Info to CP4I." 1>&2
 display_access_info
 
+END_COMMENT
+
 # Start customization
 mylog info "==== Customization." 1>&2
 start_customization $MY_OC_PROJECT
 
+launch_customization $MY_OC_PROJECT
+
 #work in progress
 #SB]20230214 Ajout Configuration ACE
-# export my_global_index="04"
-# configure_ace_is $MY_OC_PROJECT
+#export my_global_index="04"
+#configure_ace_is $MY_OC_PROJECT
 #configure_ace_is cp4i cp4i-ace-is-02 ./tmpl/configuration/ACE/ACE-IS-02.yaml cp4i-ace-barauth-02 ./tmpl/configuration/ACE/ACE-barauth-02.yaml

@@ -1,4 +1,12 @@
 #########################################################################
+# function to print message if debug is set to 1
+function decho() {
+  if [ -n "$ADEBUG" ]; then
+    mylog info "$@"
+  fi
+}
+
+#########################################################################
 # check if openshift version available 
 # check_openshift_version v1 returns 0 if v1 does not exist 1 if v1 exist
 function check_openshift_version() {
@@ -7,13 +15,8 @@ function check_openshift_version() {
   IFS='.' read -ra v_components <<< "$lf_in_version"
   vmaj=${v_components[0]}
   vmin=${v_components[1]}
-  #echo "vmaj=$vmaj|vmin=$vmin"
   res=$(ibmcloud ks versions -q --show-version Openshift --output json| jq --argjson vmaj "$vmaj" --argjson vmin "$vmin" '.openshift[] | select (.major == $vmaj and .minor == $vmin)')
   echo $res
-  #if [ -z "$res" ]; then
-  #  return 0
-  #else return 1
-  #fi
 }
 
 
@@ -26,11 +29,11 @@ function check_openshift_version() {
 # The script will output whether the first version is older, newer, or equal to the second version.
 # cmp_versions v1 v2 returns 0 if v1=v2, 1 if v1 is newer than v2, 2 if v1 is older than v2
 function cmp_versions() {
-    version1=$1
-    version2=$2
+    lf_in_version1=$1
+    lf_in_version2=$2
 
-    IFS='.' read -ra v1_components <<< "$version1"
-    IFS='.' read -ra v2_components <<< "$version2"
+    IFS='.' read -ra v1_components <<< "$lf_in_version1"
+    IFS='.' read -ra v2_components <<< "$lf_in_version2"
 	
     len=${#v1_components[@]}
 
@@ -40,15 +43,15 @@ function cmp_versions() {
         v2=${v2_components[i]:-0}
 
         if [ "$v1" -lt "$v2" ]; then
-            #echo "$version1 is older than $version2"
+            #echo "$lf_in_version1 is older than $lf_in_version2"
             return 2
         elif [ "$v1" -gt "$v2" ]; then
-            #echo "$version1 is newer than $version2"
+            #echo "$lf_in_version1 is newer than $lf_in_version2"
             return 1
         fi
     done
 
-    #echo "$version1 is equal to $version2"
+    #echo "$lf_in_version1 is equal to $lf_in_version2"
     return 0
 }
 
@@ -58,42 +61,40 @@ function cmp_versions() {
 # avec jsonpath=$.[?(@.name=='ibm-licensing' && @.version=='4.2.1')]
 # Pour tester une variable null : https://stackoverflow.com/questions/48261038/shell-script-how-to-check-if-variable-is-null-or-no
 function is_case_downloaded() {
-  local case=$1
-  local version_varid=$2
+  local lf_in_case=$1
+  local lf_in_version_varid=$2
 
-  local directory res result latestversion cmp
+  local lf_directory lf_result lf_latestversion lf_cmp
 
-  local version=${!version_varid}
+  local lf_version=${!lf_in_version_varid}
   
-  directory="${IBMPAKDIR}${case}/${version}"
+  lf_directory="${IBMPAKDIR}${lf_in_case}/${lf_version}"
 
-  if [ ! -d "${directory}" ]; then
+  if [ ! -d "${lf_directory}" ]; then
     return 0
   else
-    result=$(oc ibm-pak list --downloaded -o json)
+    lf_result=$(oc ibm-pak list --downloaded -o json)
   
     # One of the simplest ways to check if a string is empty or null is to use the -z and -n operators. 
     # The -z operator returns true if the string is null or empty, and false otherwise. 
     # The -n operator returns true if the string is not null or empty, and false otherwise.
-	  if [ -z "$result" ]; then
+	  if [ -z "$lf_result" ]; then
 	  	return 0
     else
       # Pb avec le passage de variables à jsonpath ; décision retour vers jq
-      # result=$(echo $result | jsonpath '$.[?(@.name == "${case}" && @.latestVersion == "${version}")]')
-      #res=$(echo $result | jq -r --arg case "$case" --arg version "$version" '.[] | select (.name == $case and .latestVersion == $version)')
-      result=$(echo $result | jq -r --arg case "$case"  '[.[] | select (.name == $case )]')
-     	if [ -z "$result" ]; then
+      # lf_result=$(echo $lf_result | jsonpath '$.[?(@.name == "${lf_in_case}" && @.latestVersion == "${lf_version}")]')
+      # lf_result=$(echo $lf_result | jq -r --arg case "$lf_in_case" --arg version "$lf_version" '.[] | select (.name == $case and .latestVersion == $version)')
+      lf_result=$(echo $lf_result | jq -r --arg case "$lf_in_case"  '[.[] | select (.name == $case )]')
+     	if [ -z "$lf_result" ]; then
 	  	  return 0
       else 
-        latestversion=$(echo $result | jq -r max_by'(.latesVersion)|.latestVersion')
-        #echo "latestversion=$latestversion|version=$version"
+        lf_latestversion=$(echo $lf_result | jq -r max_by'(.latesVersion)|.latestVersion')
         
-        # cmpversions v1 v2 returns 0 if v1=v2, 1 if v1 is newer than v2, 2 if v1 is older than v2
-        cmp_versions $latestversion $version
-        cmp=$?
-        case $cmp in
+        cmp_versions $lf_latestversion $lf_version
+        lf_cmp=$?
+        case $lf_cmp in
           0) return 1 ;;
-          1) sed -i "/$version_varid/c$version_varid=$latestversion" "$my_versions_file" 
+          1) sed -i "/$lf_in_version_varid/c$lf_in_version_varid=$lf_latestversion" "$my_versions_file" 
              return 1 ;;
         esac
       fi
@@ -110,19 +111,19 @@ function is_case_downloaded() {
 #  - the namespace
 #  Returns 1 (if the cr is newer than the file) otherwise 0 
 function is_cr_newer() {
-  local type=$1
-  local cr=$2
-  local file=$3
-  local ns=$4
+  local lf_in_type=$1
+  local lf_in_customresource=$2
+  local lf_in_file=$3
+  local lf_in_namespace=$4
 
-  local path="{.metadata.creationTimestamp}"
-  local cr_ts
-  local file_ts
+  local lf_customresource_timestamp
+  local lf_file_timestamp
+  local lf_path="{.metadata.creationTimestamp}"
 
-  cr_ts=$(oc get $type $cr -n $ns -o jsonpath='$path'| date -d - +%s)
-  file_ts=$(stat -c %Y $file)
+  lf_customresource_timestamp=$(oc get $lf_in_type $lf_in_customresource -n $lf_in_namespace -o jsonpath='$lf_path'| date -d - +%s)
+  lf_file_timestamp=$(stat -c %Y $lf_in_file)
 
-  if [ $cr_ts -gt $file_ts ]; then
+  if [ $lf_customresource_timestamp -gt $lf_file_timestamp ]; then
     echo 1
   else
     echo 0
@@ -170,10 +171,6 @@ function check_directory_contains_files () {
   shopt -s nullglob dotglob     # To include hidden files
   files=($directory/*)
   echo ${#files[@]}
-  #if [ ${#files[@]} -eq 0 ]; then
-  #  mylog error "No files in directory: $directory" 1>&2
-	#  exit 1
-  #fi
 }
 
 ################################################
@@ -361,66 +358,69 @@ function check_create_oc_yaml() {
 # See https://github.com/osixia/docker-openldap for more details especialy all the configurations possible
 function check_create_oc_openldap() {
 	read_config_file "${YAMLDIR}ldap/ldap.properties"
-	local octype="$1"
-	local name="$2"
-	local ns="$3"
+	local lf_in_octype="$1"
+	local lf_in_name="$2"
+	local lf_in_namespace="$3"
 
 	# create namespace if needed
-	create_namespace ${ns}
+	create_namespace ${lf_in_namespace}
 
 	#SB]20231207 checks if used directories and files exists
-	check_directory_exist ${YAMLDIR}
-	check_directory_exist ${WORKINGDIR}
 	check_file_exist ${YAMLDIR}ldap/ldap-pvc.main.yaml
 	check_file_exist ${YAMLDIR}ldap/ldap-pvc.config.yaml
 	check_file_exist ${YAMLDIR}ldap/ldap-config.json
 	check_file_exist ${YAMLDIR}ldap/ldap-users.ldif
 
-	# check if deploment already performed
-	mylog check "Checking ${octype} ${name} in ${ns}"
-	if oc get ${octype} ${name} -n ${ns} > /dev/null 2>&1; then mylog ok;else
-		mylog info "Creating LDAP server"
-		oc adm policy add-scc-to-group anyuid system:serviceaccounts:${ns}
-		
-		# handle persitence for Openldap
-		# only check one, assume that if one is created the other one is also created (short cut to optimize time)
-		if oc get "PersistentVolumeClaim" "pvc-ldap-main" -n ${ns} > /dev/null 2>&1; then mylog ok;else
-			envsubst < "${YAMLDIR}ldap/ldap-pvc.main.yaml" > "${WORKINGDIR}ldap-pvc.main.yaml"
-			envsubst < "${YAMLDIR}ldap/ldap-pvc.config.yaml" > "${WORKINGDIR}ldap-pvc.config.yaml"
-			oc create -f ${WORKINGDIR}ldap-pvc.main.yaml -n ${ns}
-			oc create -f ${WORKINGDIR}ldap-pvc.config.yaml -n ${ns}
-			wait_for_state "pvc pvc-ldap-config status.phase is Bound" "Bound" "oc get pvc pvc-ldap-config -n ${ns} -o jsonpath='{.status.phase}'"
-			wait_for_state "pvc pvc-ldap-main status.phase is Bound" "Bound" "oc get pvc pvc-ldap-main -n ${ns} -o jsonpath='{.status.phase}'"
-		fi
-
-		# deploy openldap and take in account the PVCs just created
-		# check that deployment of openldap was not done
-		if oc get "deployment" "openldap" -n ${ns} > /dev/null 2>&1; then mylog ok;else
-			oc -n ${ns} new-app osixia/${name}
-			oc -n ${ns} get deployment.apps/openldap -o json | jq '. | del(."status")' > ${WORKINGDIR}openldap.json
-			envsubst < "${YAMLDIR}ldap/ldap-config.json" > "${WORKINGDIR}ldap-config.json"
-			oc -n ${ns} patch deployment.apps/openldap --patch-file ${WORKINGDIR}ldap-config.json
-
-			# expose service externaly and get host and port
-			oc -n ${ns} patch service openldap -p='{"spec": {"type": "NodePort"}}'
-			oc -n ${ns} get service openldap -o json | jq '.spec.ports |= map(if .name == "389-tcp" then . + { "nodePort": 30389 } else . end)' | jq '.spec.ports |= map(if .name == "636-tcp" then . + { "nodePort": 30686 } else . end)' > ${WORKINGDIR}openldap-service.json
-			oc -n ${ns} patch service/openldap --patch-file ${WORKINGDIR}openldap-service.json
-			oc -n ${ns} expose service openldap --name=openldap-external --target-port=389
-
-			port=`oc -n ${ns} get service ${name} -o jsonpath='{.spec.ports[0].nodePort}'`
-			hostname=`oc -n ${ns} get route openldap-external -o jsonpath='{.spec.host}'`
-
-			# load users and groups into LDAP
-			envsubst < "${YAMLDIR}ldap/ldap-users.ldif" > "${WORKINGDIR}ldap-users.ldif"
-			mylog info "Adding LDAP entries with following command: "
-			mylog info "ldapadd -H ldap://${hostname}:${port} -x -D \"$ldap_admin_dn\" -w \"$ldap_admin_password\" -f ${WORKINGDIR}ldap-users.ldif"
-			ldapadd -H ldap://${hostname}:${port} -D "${ldap_admin_dn}" -w "${ldap_admin_password}" -f ${WORKINGDIR}ldap-users.ldif
-
-			mylog info "You can search entries with the following command: "
-			# ldapmodify -H ldap://$hostname:$port -D "$ldap_admin_dn" -w admin -f ${LDAPDIR}Import.ldiff
-			mylog info "ldapsearch -H ldap://${hostname}:${port} -x -D \"$ldap_admin_dn\" -w \"$ldap_admin_password\" -b \"$ldap_base_dn\" -s sub -a always -z 1000 \"(objectClass=*)\""
-		fi
+	# handle persitence for Openldap
+	# only check one, assume that if one is created the other one is also created (short cut to optimize time)
+	if oc get "PersistentVolumeClaim" "pvc-ldap-main" -n ${lf_in_namespace} > /dev/null 2>&1; then mylog ok;else
+		envsubst < "${YAMLDIR}ldap/ldap-pvc.main.yaml" > "${WORKINGDIR}ldap-pvc.main.yaml"
+		envsubst < "${YAMLDIR}ldap/ldap-pvc.config.yaml" > "${WORKINGDIR}ldap-pvc.config.yaml"
+		oc create -f ${WORKINGDIR}ldap-pvc.main.yaml -n ${lf_in_namespace}
+		oc create -f ${WORKINGDIR}ldap-pvc.config.yaml -n ${lf_in_namespace}
+		wait_for_state "pvc pvc-ldap-config status.phase is Bound" "Bound" "oc get pvc pvc-ldap-config -n ${lf_in_namespace} -o jsonpath='{.status.phase}'"
+		wait_for_state "pvc pvc-ldap-main status.phase is Bound" "Bound" "oc get pvc pvc-ldap-main -n ${lf_in_namespace} -o jsonpath='{.status.phase}'"
 	fi
+
+	# check if deploment already performed
+	mylog check "Checking ${lf_in_octype} ${lf_in_name} in ${lf_in_namespace}"
+  if oc get ${lf_in_octype} ${lf_in_name} -n ${lf_in_namespace} > /dev/null 2>&1; then mylog ok
+  else
+    mylog check "Checking service ${lf_in_name} in ${lf_in_namespace}"
+    if oc -n ${lf_in_namespace} get service ${lf_in_name} > /dev/null 2>&1; then mylog ok
+    else
+  	  mylog info "Creating LDAP server"
+		  oc adm policy add-scc-to-group anyuid system:serviceaccounts:${lf_in_namespace}
+
+	    # deploy openldap and take in account the PVCs just created
+	    # check that deployment of openldap was not done
+	    oc -n ${lf_in_namespace} new-app osixia/${lf_in_name}
+	    oc -n ${lf_in_namespace} get deployment.apps/openldap -o json | jq '. | del(."status")' > ${WORKINGDIR}openldap.json
+	    envsubst < "${YAMLDIR}ldap/ldap-config.json" > "${WORKINGDIR}ldap-config.json"
+	    oc -n ${lf_in_namespace} patch deployment.apps/openldap --patch-file ${WORKINGDIR}ldap-config.json
+	    oc -n ${lf_in_namespace} patch service ${lf_in_name} -p='{"spec": {"type": "NodePort"}}'
+	    oc -n ${lf_in_namespace} patch service/${lf_in_name} --patch-file ${WORKINGDIR}openldap-service.json
+    fi
+	fi
+
+	# expose service externaly and get host and port
+	oc -n ${lf_in_namespace} get service ${lf_in_name} -o json | jq '.spec.ports |= map(if .name == "389-tcp" then . + { "nodePort": 30389 } else . end)' | jq '.spec.ports |= map(if .name == "636-tcp" then . + { "nodePort": 30686 } else . end)' > ${WORKINGDIR}openldap-service.json
+  lf_port0=$(oc -n ${lf_in_namespace} get service ${lf_in_name} -o jsonpath='{.spec.ports[0].nodePort}')
+  lf_port1=$(oc -n ${lf_in_namespace} get service ${lf_in_name}  -o jsonpath='{.spec.ports[1].nodePort}')
+	oc -n ${lf_in_namespace} expose service ${lf_in_name} --name=openldap-external --port=${lf_port0}
+	oc -n ${lf_in_namespace} expose service ${lf_in_name} --name=openldap-external --port=${lf_port1}
+
+	lf_hostname=$(oc -n ${lf_in_namespace} get route openldap-external -o jsonpath='{.spec.host}')
+
+	# load users and groups into LDAP
+	envsubst < "${YAMLDIR}ldap/ldap-users.ldif" > "${WORKINGDIR}ldap-users.ldif"
+	mylog info "Adding LDAP entries with following command: "
+	mylog info "ldapadd -H ldap://${lf_hostname}:${lf_port0} -x -D \"$ldap_admin_dn\" -w \"$ldap_admin_password\" -f ${WORKINGDIR}ldap-users.ldif"
+	ldapadd -H ldap://${lf_hostname}:${lf_port0} -D "${ldap_admin_dn}" -w "${ldap_admin_password}" -f ${WORKINGDIR}ldap-users.ldif
+
+	mylog info "You can search entries with the following command: "
+	# ldapmodify -H ldap://$lf_hostname:$lf_port0 -D "$ldap_admin_dn" -w admin -f ${LDAPDIR}Import.ldiff
+	mylog info "ldapsearch -H ldap://${lf_hostname}:${lf_port0} -x -D \"$ldap_admin_dn\" -w \"$ldap_admin_password\" -b \"$ldap_base_dn\" -s sub -a always -z 1000 \"(objectClass=*)\""
 }
 
 ################################################
@@ -473,14 +473,14 @@ function check_add_cs_ibm_pak () {
 
   is_case_downloaded ${lf_in_case_name} ${lf_in_case_version_varid} #1>&2 > /dev/null
   downloaded=$?
-  #echo "$lf_in_case_name|$lf_case_version|downloaded=$downloaded"
   
   if [ $downloaded -eq 1 ]; then
     mylog info "case ${lf_in_case_name} ${lf_case_version} already downloaded"
   else
     oc ibm-pak get ${lf_in_case_name} --version ${lf_case_version}
     oc ibm-pak generate mirror-manifests ${lf_in_case_name} icr.io --version ${lf_case_version}
-  fi  
+  fi
+  
   file=~/.ibm-pak/data/mirror/${lf_in_case_name}/${lf_case_version}/catalog-sources.yaml
   if [  -e "$file" ]; then
     oc apply -f $file
@@ -515,33 +515,23 @@ function create_operator_subscription() {
   type="subscription"
   check_create_oc_yaml "${type}" "${MY_OPERATOR_NAME}" "${file}" "${MY_OPERATOR_NAMESPACE}"
 
-  #echo "oc get subscription \"${MY_OPERATOR_NAME}\" -n ${MY_OPERATOR_NAMESPACE} -o jsonpath='{.status.installedCSV}'"
   if [ ! -z $MY_STARTING_CSV ]; then
-    echo "startingcsv provided"
     type="subscription"
     path="{.status.installedCSV}"
     state="$MY_STARTING_CSV"
     resource=$(check_resource_availability "subscription" $MY_OPERATOR_NAME $MY_OPERATOR_NAMESPACE)
-    echo "wait_for_state $type $resource $path is $state | $state | oc get $type $resource -n $MY_OPERATOR_NAMESPACE -o jsonpath=$path"
+    decho "wait_for_state $type $resource $path is $state | $state | oc get $type $resource -n $MY_OPERATOR_NAMESPACE -o jsonpath=$path"
     wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $MY_OPERATOR_NAMESPACE -o jsonpath='$path'"
   
-    #echo "resource=$resource"
-    #installed=$(oc get subscription "${MY_OPERATOR_NAME}" -n ${MY_OPERATOR_NAMESPACE} -o jsonpath='{.spec.name}')
-    #echo "installed=$installed"
-    #SB]20231013 the function check_resource_availability will "return" the resource
-    #resource=$(check_resource_availability "clusterserviceversion" $installed $MY_OPERATOR_NAMESPACE)
     type="clusterserviceversion"
     path="{.status.phase}"
     state="Succeeded"
     startingcsv=$MY_STARTING_CSV
-    echo "wait_for_state $type $startingcsv $path is $state | $state | oc get $type $startingcsv -n $MY_OPERATOR_NAMESPACE -o jsonpath=$path"
+    decho "wait_for_state $type $startingcsv $path is $state | $state | oc get $type $startingcsv -n $MY_OPERATOR_NAMESPACE -o jsonpath=$path"
     wait_for_state "$type $startingcsv $path is $state" "$state" "oc get $type $startingcsv -n $MY_OPERATOR_NAMESPACE -o jsonpath='$path'"
   else
-    #SB]20231013 the function check_resource_availability will "return" the resource 
-    echo "startingcsv not provided"
-    echo "check_resource_availability clusterserviceversion $MY_OPERATOR_NAME $MY_OPERATOR_NAMESPACE"
+    decho "check_resource_availability clusterserviceversion $MY_OPERATOR_NAME $MY_OPERATOR_NAMESPACE"
     resource=$(check_resource_availability "subscription" $MY_OPERATOR_NAME $MY_OPERATOR_NAMESPACE)
-    #resource=$(check_resource_availability "clusterserviceversion" "${MY_OPERATOR_NAME}" $MY_OPERATOR_NAMESPACE)
     type="clusterserviceversion"
     path="{.status.phase}"
     state="Succeeded"
@@ -569,7 +559,6 @@ function create_ea_operators() {
   if oc get ${type} ${case_name} -n ${ns} > /dev/null 2>&1; then mylog ok;else
     oc ibm-pak launch $name --version $version --inventory $inventory --action installOperator -n $ns
     resource=$(check_resource_availability "clusterserviceversion" "${case_name}" $ns)
-    #echo "wait_for_state|$type $resource $path is $state|$state|oc get $type $resource -n $ns -o jsonpath=$path"
     wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $ns -o jsonpath='$path'"
     mylog info "Creation of $case_name operator took $SECONDS seconds to execute." 1>&2
   fi
@@ -587,7 +576,7 @@ function create_operand_instance() {
 
   SECONDS=0
   check_create_oc_yaml $lf_in_type $lf_in_resource $lf_in_file $lf_in_ns
-  echo "wait_for_state | $lf_in_type $lf_in_resource $lf_in_path is $lf_in_state | $lf_in_state | oc get $lf_in_type $lf_in_resource -n $lf_in_ns -o jsonpath=$lf_in_path"
+  decho "wait_for_state | $lf_in_type $lf_in_resource $lf_in_path is $lf_in_state | $lf_in_state | oc get $lf_in_type $lf_in_resource -n $lf_in_ns -o jsonpath=$lf_in_path"
   wait_for_state "$lf_in_type $lf_in_resource $lf_in_path is $lf_in_state" "$lf_in_state" "oc get $lf_in_type $lf_in_resource -n $lf_in_ns -o jsonpath='$lf_in_path'"
   mylog info "Creation of $lf_in_type instance took $SECONDS seconds to execute." 1>&2
 }

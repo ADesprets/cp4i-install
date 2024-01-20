@@ -42,7 +42,7 @@ spec:
       updateStrategy: RollingUpdate
     name: QM1
     storage:
-      defaultClass: $my_block_storage_class
+      defaultClass: $MY_BLOCK_STORAGE_CLASS
       persistedData:
         enabled: false
       queueManager:

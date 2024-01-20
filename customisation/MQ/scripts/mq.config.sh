@@ -7,12 +7,12 @@ starting=$(date);
 # end with / on purpose (if var not defined, uses CWD - Current Working Directory)
 scriptdir=$(dirname "$0")/
 configdir="${scriptdir}../config/"
-mainscriptdir="${scriptdir}../../../"
+MAINSCRIPTDIR="${scriptdir}../../../"
 
 # load helper functions
-. "${mainscriptdir}"lib.sh
+. "${MAINSCRIPTDIR}"lib.sh
 
-read_config_file "${mainscriptdir}cp4i.properties"
+read_config_file "${MAINSCRIPTDIR}cp4i.properties"
 read_config_file "${configdir}mq.properties"
 
 # Creation d'un Queue Manager
