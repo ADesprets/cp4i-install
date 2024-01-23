@@ -9,7 +9,7 @@ spec:
     license: $MY_EGW_LIC
     metric: VIRTUAL_PROCESSOR_CORE
     use: EventAutomationNonProduction
-  managerEndpoint: $my_eem_manager_gateway_route
+  managerEndpoint: $MY_EEM_MANAGER_GATEWAY_ROUTE
   gatewayGroupName: $MY_EGW_INSTANCE_GRP_NAME
   gatewayID: $MY_EGW_INSTANCE_NAME
   tls:

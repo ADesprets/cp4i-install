@@ -446,7 +446,7 @@ scriptdir=${PWD}/
 # load helper functions
 . "${scriptdir}"lib.sh
 
-read_config_file "${APIC_GEN_CUSTOMDIR}config/apic.properties"
+read_config_file "${APIC_GEN_CUSTOMDIR}scripts/apic.properties"
 
 # Get_APIC_Infos
 # Retrieve the various routes for APIC components
@@ -509,10 +509,10 @@ mylog info "APIC_NAMESPACE/APIC_INSTANCE: ${apic_project}/${APIC_INSTANCE_NAME}"
 
 PLATFORM_API_URL=$(oc get apiconnectcluster -n "${apic_project}" "${APIC_INSTANCE_NAME}" -o=jsonpath='{.status.endpoints[?(@.name=="platformApi")].uri}')
 
-if test ! -e "toolkit-linux.tgz";then
+if test ! -e "${APIC_GEN_CUSTOMDIR}config/toolkit-linux.tgz";then
 	mylog info "Downloading toolkit" 1>&2
-  oc cp -n "${apic_project}" "$(oc get po -n "${apic_project}" -l app.kubernetes.io/name=client-downloads-server,app.kubernetes.io/part-of="${APIC_INSTANCE}" -o=jsonpath='{.items[0].metadata.name}')":dist/toolkit-linux.tgz toolkit-linux.tgz
-  tar -xf toolkit-linux.tgz  && mv apic-slim apic
+  oc cp -n "${apic_project}" "$(oc get po -n "${apic_project}" -l app.kubernetes.io/name=client-downloads-server,app.kubernetes.io/part-of="${APIC_INSTANCE}" -o=jsonpath='{.items[0].metadata.name}')":dist/toolkit-linux.tgz ${APIC_GEN_CUSTOMDIR}config/toolkit-linux.tgz
+  tar -xf ${APIC_GEN_CUSTOMDIR}config/toolkit-linux.tgz -o ${APIC_GEN_CUSTOMDIR}config && mv ${APIC_GEN_CUSTOMDIR}config/apic-slim ${APIC_GEN_CUSTOMDIR}config/apic
 fi
 
 APIC_CRED=$(oc -n "${apic_project}" get secret ${APIC_INSTANCE_NAME}-mgmt-cli-cred  -o jsonpath='{.data.credential\.json}' | base64 --decode)
@@ -534,7 +534,7 @@ TOOLKIT_CLIENT_SECRET=$(echo ${APIC_CRED} | jq -r .secret)
 #  -H "X-Ibm-Client-Secret: $TOOLKIT_CLIENT_SECRET" \
 #  --data-binary  "{\"api_key\":\"$APIC_APIKEY\",\"client_id\":\"$TOOLKIT_CLIENT_ID\",\"client_secret\":\"$TOOLKIT_CLIENT_SECRET\",\"grant_type\":\"api_key\"}")
 
-echo "{\"username\": \"admin\", \"password\": \"$APIC_CM_ADMIN_PASSWORD\", \"realm\": \"admin/default-idp-1\", \"client_id\": \"$TOOLKIT_CLIENT_ID\", \"client_secret\": \"$TOOLKIT_CLIENT_SECRET\", \"grant_type\": \"password\"}" > "${APIC_GEN_CUSTOMDIR}creds.json"
+echo "{\"username\": \"admin\", \"password\": \"$APIC_CM_ADMIN_PASSWORD\", \"realm\": \"admin/default-idp-1\", \"client_id\": \"$TOOLKIT_CLIENT_ID\", \"client_secret\": \"$TOOLKIT_CLIENT_SECRET\", \"grant_type\": \"password\"}" > "${APIC_GEN_CUSTOMDIR}config/creds.json"
 
 cmToken=$(curl -ks -X POST "${PLATFORM_API_URL}api/token" \
  -H 'Content-Type: application/json' \

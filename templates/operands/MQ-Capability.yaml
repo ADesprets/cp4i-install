@@ -8,43 +8,21 @@ spec:
     accept: true
     license: $MY_MQ_LIC
     use: NonProduction
-  tracing:
-    enabled: false
-    namespace: $MY_OC_PROJECT
   web:
+    console:
+      authentication:
+        provider: integration-keycloak
+      authorization:
+        provider: integration-keycloak
     enabled: true
-  version: $MY_MQ_VERSION
-  template:
-    pod:
-      containers:
-        - env:
-            - name: MQSNOAUT
-              value: 'yes'
-          name: qmgr
   queueManager:
-    resources:
-      limits:
-        cpu: 500m
-      requests:
-        cpu: 500m
-    securityContext:
-      allowPrivilegeEscalation: false
-      capabilities:
-        drop:
-        - ALL
-      privileged: false
-      readOnlyRootFilesystem: false
     availability:
-      type: NativeHA
-      updateStrategy: RollingUpdate
+      type: SingleInstance
     storage:
-      defaultClass: MY_BLOCK_STORAGE_CLASS
-      persistedData:
-        enabled: false
       queueManager:
-        size: 2Gi
         type: persistent-claim
-      recoveryLogs:
-        enabled: false  
-    securityContext:
-     supplementalGroups: [99]
+        class: $MY_BLOCK_STORAGE_CLASS
+        size: 2Gi
+      defaultClass: $MY_BLOCK_STORAGE_CLASS
+    name: $MY_MQ_INSTANCE_NAME
+  version: $MY_MQ_VERSION

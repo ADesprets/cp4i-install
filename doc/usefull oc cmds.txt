@@ -52,3 +52,4 @@ oc patch secret ${EEM_INST_NAME}-ibm-eem-user-credentials -n $EEM_NAMESPACE --pa
 oc patch storageclass ocs-storagecluster-ceph-rbd -p '{"metadata": {"annotations": {"storageclass.kubernetes.io/is-default-class": "true"}}}'
 oc patch storageclass thin -p '{"metadata": {"annotations": {"storageclass.kubernetes.io/is-default-class": "false"}}}'
 podman login -u $(oc whoami) -p $(oc whoami -t) $HOST
+oc get consolelink

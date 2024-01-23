@@ -353,37 +353,31 @@ function check_create_oc_yaml() {
 }
 
 ################################################
+# @param namespace
+function provision_persistence_openldap() {
+  local lf_in_namespace="$1"
+  # handle persitence for Openldap
+  # only check one, assume that if one is created the other one is also created (short cut to optimize time)
+  if oc get "PersistentVolumeClaim" "pvc-ldap-main" -n ${lf_in_namespace} > /dev/null 2>&1; then mylog ok;else
+  	envsubst < "${YAMLDIR}ldap/ldap-pvc.main.yaml" > "${WORKINGDIR}ldap-pvc.main.yaml"
+  	envsubst < "${YAMLDIR}ldap/ldap-pvc.config.yaml" > "${WORKINGDIR}ldap-pvc.config.yaml"
+  	oc create -f ${WORKINGDIR}ldap-pvc.main.yaml -n ${lf_in_namespace}
+  	oc create -f ${WORKINGDIR}ldap-pvc.config.yaml -n ${lf_in_namespace}
+  	wait_for_state "pvc pvc-ldap-config status.phase is Bound" "Bound" "oc get pvc pvc-ldap-config -n ${lf_in_namespace} -o jsonpath='{.status.phase}'"
+  	wait_for_state "pvc pvc-ldap-main status.phase is Bound" "Bound" "oc get pvc pvc-ldap-main -n ${lf_in_namespace} -o jsonpath='{.status.phase}'"
+  fi
+}
+
+################################################
 # @param octype: kubernetes resource class, example: "deployment"
 # @param ocname: name of the resource, example: "openldap"
 # See https://github.com/osixia/docker-openldap for more details especialy all the configurations possible
-function check_create_oc_openldap() {
-	read_config_file "${YAMLDIR}ldap/ldap.properties"
-	local lf_in_octype="$1"
-	local lf_in_name="$2"
-	local lf_in_namespace="$3"
-
-	# create namespace if needed
-	create_namespace ${lf_in_namespace}
-
-	#SB]20231207 checks if used directories and files exists
-	check_file_exist ${YAMLDIR}ldap/ldap-pvc.main.yaml
-	check_file_exist ${YAMLDIR}ldap/ldap-pvc.config.yaml
-	check_file_exist ${YAMLDIR}ldap/ldap-config.json
-	check_file_exist ${YAMLDIR}ldap/ldap-users.ldif
-
-	# handle persitence for Openldap
-	# only check one, assume that if one is created the other one is also created (short cut to optimize time)
-	if oc get "PersistentVolumeClaim" "pvc-ldap-main" -n ${lf_in_namespace} > /dev/null 2>&1; then mylog ok;else
-		envsubst < "${YAMLDIR}ldap/ldap-pvc.main.yaml" > "${WORKINGDIR}ldap-pvc.main.yaml"
-		envsubst < "${YAMLDIR}ldap/ldap-pvc.config.yaml" > "${WORKINGDIR}ldap-pvc.config.yaml"
-		oc create -f ${WORKINGDIR}ldap-pvc.main.yaml -n ${lf_in_namespace}
-		oc create -f ${WORKINGDIR}ldap-pvc.config.yaml -n ${lf_in_namespace}
-		wait_for_state "pvc pvc-ldap-config status.phase is Bound" "Bound" "oc get pvc pvc-ldap-config -n ${lf_in_namespace} -o jsonpath='{.status.phase}'"
-		wait_for_state "pvc pvc-ldap-main status.phase is Bound" "Bound" "oc get pvc pvc-ldap-main -n ${lf_in_namespace} -o jsonpath='{.status.phase}'"
-	fi
-
-	# check if deploment already performed
-	mylog check "Checking ${lf_in_octype} ${lf_in_name} in ${lf_in_namespace}"
+function deploy_openldap(){
+  local lf_in_octype="$1"
+  local lf_in_name="$2"
+  local lf_in_namespace="$3"
+  # check if deploment already performed
+  mylog check "Checking ${lf_in_octype} ${lf_in_name} in ${lf_in_namespace}"
   if oc get ${lf_in_octype} ${lf_in_name} -n ${lf_in_namespace} > /dev/null 2>&1; then mylog ok
   else
     mylog check "Checking service ${lf_in_name} in ${lf_in_namespace}"
@@ -394,33 +388,45 @@ function check_create_oc_openldap() {
 
 	    # deploy openldap and take in account the PVCs just created
 	    # check that deployment of openldap was not done
-	    oc -n ${lf_in_namespace} new-app osixia/${lf_in_name}
+      # https://www.ibm.com/docs/en/sva/10.0.6?topic=support-docker-image-openldap
+      #echo $MY_ENTITLEMENT_KEY | docker login icr.io --username isva --password-stdin
+      #oc -n ${lf_in_namespace} new-app ibmcom/verify-access-openldap:latest
+	    #oc -n ${lf_in_namespace} new-app isva/verify-access-openldap
+      oc -n ${lf_in_namespace} new-app osixia/${lf_in_name}
 	    oc -n ${lf_in_namespace} get deployment.apps/openldap -o json | jq '. | del(."status")' > ${WORKINGDIR}openldap.json
 	    envsubst < "${YAMLDIR}ldap/ldap-config.json" > "${WORKINGDIR}ldap-config.json"
 	    oc -n ${lf_in_namespace} patch deployment.apps/openldap --patch-file ${WORKINGDIR}ldap-config.json
 	    oc -n ${lf_in_namespace} patch service ${lf_in_name} -p='{"spec": {"type": "NodePort"}}'
 	    oc -n ${lf_in_namespace} patch service/${lf_in_name} --patch-file ${WORKINGDIR}openldap-service.json
     fi
-	fi
+  fi
+}
 
-	# expose service externaly and get host and port
-	oc -n ${lf_in_namespace} get service ${lf_in_name} -o json | jq '.spec.ports |= map(if .name == "389-tcp" then . + { "nodePort": 30389 } else . end)' | jq '.spec.ports |= map(if .name == "636-tcp" then . + { "nodePort": 30686 } else . end)' > ${WORKINGDIR}openldap-service.json
+################################################
+# @param name: name of the resource, example: "openldap"
+# @param namespace: the namespace to use
+function expose_service_openldap() {
+  local lf_in_name="$1"
+  local lf_in_namespace="$2"
+
+  # expose service externaly and get host and port
+  oc -n ${lf_in_namespace} get service ${lf_in_name} -o json | jq '.spec.ports |= map(if .name == "389-tcp" then . + { "nodePort": 30389 } else . end)' | jq '.spec.ports |= map(if .name == "636-tcp" then . + { "nodePort": 30686 } else . end)' > ${WORKINGDIR}openldap-service.json
   lf_port0=$(oc -n ${lf_in_namespace} get service ${lf_in_name} -o jsonpath='{.spec.ports[0].nodePort}')
   lf_port1=$(oc -n ${lf_in_namespace} get service ${lf_in_name}  -o jsonpath='{.spec.ports[1].nodePort}')
-	oc -n ${lf_in_namespace} expose service ${lf_in_name} --name=openldap-external --port=${lf_port0}
-	oc -n ${lf_in_namespace} expose service ${lf_in_name} --name=openldap-external --port=${lf_port1}
-
-	lf_hostname=$(oc -n ${lf_in_namespace} get route openldap-external -o jsonpath='{.spec.host}')
-
-	# load users and groups into LDAP
-	envsubst < "${YAMLDIR}ldap/ldap-users.ldif" > "${WORKINGDIR}ldap-users.ldif"
-	mylog info "Adding LDAP entries with following command: "
-	mylog info "ldapadd -H ldap://${lf_hostname}:${lf_port0} -x -D \"$ldap_admin_dn\" -w \"$ldap_admin_password\" -f ${WORKINGDIR}ldap-users.ldif"
-	ldapadd -H ldap://${lf_hostname}:${lf_port0} -D "${ldap_admin_dn}" -w "${ldap_admin_password}" -f ${WORKINGDIR}ldap-users.ldif
-
-	mylog info "You can search entries with the following command: "
-	# ldapmodify -H ldap://$lf_hostname:$lf_port0 -D "$ldap_admin_dn" -w admin -f ${LDAPDIR}Import.ldiff
-	mylog info "ldapsearch -H ldap://${lf_hostname}:${lf_port0} -x -D \"$ldap_admin_dn\" -w \"$ldap_admin_password\" -b \"$ldap_base_dn\" -s sub -a always -z 1000 \"(objectClass=*)\""
+  oc -n ${lf_in_namespace} expose service ${lf_in_name} --name=openldap-external --port=${lf_port0}
+  oc -n ${lf_in_namespace} expose service ${lf_in_name} --name=openldap-external --port=${lf_port1}
+     
+  lf_hostname=$(oc -n ${lf_in_namespace} get route openldap-external -o jsonpath='{.spec.host}')
+     
+  # load users and groups into LDAP
+  envsubst < "${YAMLDIR}ldap/ldap-users.ldif" > "${WORKINGDIR}ldap-users.ldif"
+  mylog info "Adding LDAP entries with following command: "
+  mylog info "ldapadd -H ldap://${lf_hostname}:${lf_port0} -x -D \"$ldap_admin_dn\" -w \"$ldap_admin_password\" -f ${WORKINGDIR}ldap-users.ldif"
+  ldapadd -H ldap://${lf_hostname}:${lf_port0} -D "${ldap_admin_dn}" -w "${ldap_admin_password}" -f ${WORKINGDIR}ldap-users.ldif
+     
+  mylog info "You can search entries with the following command: "
+  # ldapmodify -H ldap://$lf_hostname:$lf_port0 -D "$ldap_admin_dn" -w admin -f ${LDAPDIR}Import.ldiff
+  mylog info "ldapsearch -H ldap://${lf_hostname}:${lf_port0} -x -D \"$ldap_admin_dn\" -w \"$ldap_admin_password\" -b \"$ldap_base_dn\" -s sub -a always -z 1000 \"(objectClass=*)\""
 }
 
 ################################################
@@ -504,7 +510,8 @@ function create_operator_subscription() {
   export MY_CATALOG_SOURCE_NAME=$3
   export MY_OPERATOR_NAMESPACE=$4
   export MY_STRATEGY=$5
-  export MY_STARTING_CSV=$6 # Optional
+  local lf_in_wait=$6
+  export MY_STARTING_CSV=$7 # Optional
 
   local file installedcsv path resource state type
   check_directory_exist ${OPERATORSDIR}
@@ -521,21 +528,27 @@ function create_operator_subscription() {
     state="$MY_STARTING_CSV"
     resource=$(check_resource_availability "subscription" $MY_OPERATOR_NAME $MY_OPERATOR_NAMESPACE)
     decho "wait_for_state $type $resource $path is $state | $state | oc get $type $resource -n $MY_OPERATOR_NAMESPACE -o jsonpath=$path"
-    wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $MY_OPERATOR_NAMESPACE -o jsonpath='$path'"
-  
+    if [ $lf_in_wait ]; then 
+      wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $MY_OPERATOR_NAMESPACE -o jsonpath='$path'"
+    fi
+
     type="clusterserviceversion"
     path="{.status.phase}"
     state="Succeeded"
     startingcsv=$MY_STARTING_CSV
     decho "wait_for_state $type $startingcsv $path is $state | $state | oc get $type $startingcsv -n $MY_OPERATOR_NAMESPACE -o jsonpath=$path"
-    wait_for_state "$type $startingcsv $path is $state" "$state" "oc get $type $startingcsv -n $MY_OPERATOR_NAMESPACE -o jsonpath='$path'"
+    if [ $lf_in_wait ]; then 
+      wait_for_state "$type $startingcsv $path is $state" "$state" "oc get $type $startingcsv -n $MY_OPERATOR_NAMESPACE -o jsonpath='$path'"
+    fi
   else
     decho "check_resource_availability clusterserviceversion $MY_OPERATOR_NAME $MY_OPERATOR_NAMESPACE"
     resource=$(check_resource_availability "subscription" $MY_OPERATOR_NAME $MY_OPERATOR_NAMESPACE)
     type="clusterserviceversion"
     path="{.status.phase}"
     state="Succeeded"
-    wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $MY_OPERATOR_NAMESPACE -o jsonpath='$path'"
+    if [ $lf_in_wait ]; then 
+      wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $MY_OPERATOR_NAMESPACE -o jsonpath='$path'"
+    fi
   fi
   mylog info "Creation of $MY_OPERATOR_NAME operator took $SECONDS seconds to execute." 1>&2
 }
@@ -551,6 +564,7 @@ function create_ea_operators() {
   local state=$5
   local type=$6
   local version=$7
+  local lf_in_wait=$8
 
   local case_name="${name}.v${version}"
   SECONDS=0
@@ -559,7 +573,9 @@ function create_ea_operators() {
   if oc get ${type} ${case_name} -n ${ns} > /dev/null 2>&1; then mylog ok;else
     oc ibm-pak launch $name --version $version --inventory $inventory --action installOperator -n $ns
     resource=$(check_resource_availability "clusterserviceversion" "${case_name}" $ns)
-    wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $ns -o jsonpath='$path'"
+    if [ $lf_in_wait ]; then 
+      wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $ns -o jsonpath='$path'"
+    fi
     mylog info "Creation of $case_name operator took $SECONDS seconds to execute." 1>&2
   fi
 }
@@ -573,11 +589,14 @@ function create_operand_instance() {
   local lf_in_resource=$4
   local lf_in_state=$5
   local lf_in_type=$6
+  local lf_in_wait=$7
 
   SECONDS=0
   check_create_oc_yaml $lf_in_type $lf_in_resource $lf_in_file $lf_in_ns
   decho "wait_for_state | $lf_in_type $lf_in_resource $lf_in_path is $lf_in_state | $lf_in_state | oc get $lf_in_type $lf_in_resource -n $lf_in_ns -o jsonpath=$lf_in_path"
-  wait_for_state "$lf_in_type $lf_in_resource $lf_in_path is $lf_in_state" "$lf_in_state" "oc get $lf_in_type $lf_in_resource -n $lf_in_ns -o jsonpath='$lf_in_path'"
+  if [ $lf_in_wait ]; then 
+    wait_for_state "$lf_in_type $lf_in_resource $lf_in_path is $lf_in_state" "$lf_in_state" "oc get $lf_in_type $lf_in_resource -n $lf_in_ns -o jsonpath='$lf_in_path'"
+  fi
   mylog info "Creation of $lf_in_type instance took $SECONDS seconds to execute." 1>&2
 }
 
