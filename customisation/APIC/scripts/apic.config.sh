@@ -71,7 +71,6 @@ function CreateOrg() {
     --compressed \
     -H "Authorization: Bearer $access_token" \
     -H "Content-type: application/json")
-  # mylog info "userUrl: $userUrl"
   if [ $(echo $userUrl | jq .status ) = "404" ] || [ -z "$userUrl" ] || [ "$userUrl" = "null" ]; then
   # Create owner of the organisation in the LUR of the admin organisation (We use the default-idp-2 identity provider valid for CP4I)
   # if ! curl -sk "${PLATFORM_API_URL}api/user-registries/admin/api-manager-lur/users/$org_owner_id?fields=url" -H "Authorization: Bearer $access_token" -H 'Accept: application/json' > /dev/null 2>&1; then
@@ -84,7 +83,6 @@ function CreateOrg() {
     -H "Connection: keep-alive" \
     --data "{\"type\":\"user\",\"api_version\":\"2.0.0\",\"name\":\"$org_owner_id\",\"title\":\"$org_owner_id\",\"state\":\"enabled\",\"identity_provider\": \"default-idp-2\",\"email\":\"$org_owner_email\",\"first_name\":\"$org_owner_id\",\"last_name\":\"$org_owner_id\",\"username\":\"$org_owner_id\",\"password\":\"$org_owner_pwd\"}" | jq .url  | sed -e s/\"//g)
   else
-    mylog info "userUrl: $userUrl"
     mylog info "User $org_owner_id already exists, use it."
   fi
   
@@ -191,6 +189,8 @@ catalog_title=("Prod" "UAT" "QA")
 catalog_name=("prod" "uat" "qa")
 catalog_summary=("Production" "UAT" "Quality and Acceptance")
 
+
+  mylog info "Interact with API Manager: curl -sk -X GET \"${PLATFORM_API_URL}api/orgs/$org_name/portal-services?fields=url\" -H \"Authorization: Bearer $amToken\" -H 'accept: application/json' -H 'content-type: application/json' -H 'Connection: keep-alive'"
   portalServiceURL=$(curl -sk -X GET "${PLATFORM_API_URL}api/orgs/$org_name/portal-services?fields=url" \
     -H "Authorization: Bearer $amToken" \
     -H 'accept: application/json' \
@@ -239,203 +239,41 @@ for index in ${!catalog_name[@]}
 function LoadAPI () {
   local platform_api_url=$1
   local apic_provider_org=$2
-  local api_name=$3
-  local api_file=$4
-  local token=$5
+  local token=$3
 
-  mylog info "${platform_api_url}api/orgs/$apic_provider_org1_lower/drafts/draft-apis/$api_name?fields=url -H \"Authorization: Bearer <amToken>\" -H 'Accept: application/json'"
-  local api_uri=$(curl -sk "${platform_api_url}api/orgs/$apic_provider_org1_lower/drafts/draft-apis/$api_name?fields=url" -H "Authorization: Bearer $amToken" -H 'Accept: application/json' > /dev/null 2>&1)
-  mylog info "api_uri: $api_uri"
-  if [ -z "$api_uri" ] || [ "$api_uri" = "null" ]; then
-    mylog info "Load ${api_name} as a draft"
-    local api_content=`cat ${APIC_GEN_CUSTOMDIR}config/${api_file}`;
-    draftAPI=$(curl -sk "https://${EP_APIC_MGR}/api/orgs/${apic_provider_org1_lower}/drafts/draft-apis?gateway_type=datapower-api-gateway&api_type=rest" \
-      -H 'accept: application/json' \
-      -H "authorization: Bearer $amToken" \
-      -H 'content-type: application/json' \
-      -H "Connection: keep-alive" \
-      --compressed \
-      --data "{\"draft_api\":$api_content}" );
-    mylog info $draftAPI;
-  else
-    mylog info "$api_name already exists, do not load it."
-  fi
+# Definition of all the API, the order is important betwen the two arrays
+api_names=("ping-api" "ibm-sample-order-api" "stock" "fakeauthenticationurl" "takeoff" "landings" "taxi-locator" "taxi-messaging")
+api_files=("ping-api_1.0.0.json" "ibm-sample-order-api_1.0.0.json" "stock_1.0.0.json" "fakeauthenticationurl_1.0.0.json" "takeoff_1.0.0.json" "landings_2.0.0.json" "taxi-locator_1.0.0.json" "taxi-messaging_1.0.0.json")
 
+mylog info "token: $token"
+
+  for index in ${!api_names[@]}
+    do
+      # mylog info "call: curl -sk \"${platform_api_url}api/orgs/$apic_provider_org1_lower/drafts/draft-apis/${api_names[$index]}?fields=url\" -H \"Authorization: Bearer $token\" -H 'Accept: application/json'"
+      local api_uri_result=$(curl -sk "${platform_api_url}api/orgs/$apic_provider_org1_lower/drafts/draft-apis/${api_names[$index]}?fields=url" -H "Authorization: Bearer $token" -H 'Accept: application/json' | jq -r .total_results)
+      if [ $api_uri_result -eq 0 ]; then
+        mylog info "Load ${api_names[$index]} API as a draft"
+        local api_content=`cat ${APIC_GEN_CUSTOMDIR}config/${api_files[$index]}`;
+        draftAPI=$(curl -sk "https://${EP_APIC_MGR}/api/orgs/${apic_provider_org1_lower}/drafts/draft-apis?gateway_type=datapower-api-gateway&api_type=rest" \
+          -H 'accept: application/json' \
+          -H "authorization: Bearer $token" \
+          -H 'content-type: application/json' \
+          -H "Connection: keep-alive" \
+          --compressed \
+          --data "{\"draft_api\":$api_content}" );
+        mylog info $draftAPI;
+      else
+        mylog info "${api_names[$index]} API already exists, do not load it."
+      fi
+	  done
 }
 
-function Get_APIC_Infos() {
-  # Retrieve the various routes for APIC components
-  # API Manager URL
-  EP_API=$(oc get route "${APIC_INSTANCE_NAME}-mgmt-platform-api" -n ${apic_project} -o jsonpath="{.spec.host}")
-  mylog info "API Manager URL. EP_API: ${EP_API}"
-  
-  # gwv6-gateway-manager
-  EP_GWD=$(oc get route "${APIC_INSTANCE_NAME}-gw-gateway-manager" -n ${apic_project} -o jsonpath="{.spec.host}")
-  mylog info "EP_GWD: ${EP_GWD}"
-  
-  # gwv6-gateway
-  EP_GW=$(oc get route "${APIC_INSTANCE_NAME}-gw-gateway" -n ${apic_project} -o jsonpath="{.spec.host}")
-  mylog info "Gateway v6. EP_GW: ${EP_GW}"
-  
-  # analytics-ai-endpoint
-  EP_AI=$(oc get route "${APIC_INSTANCE_NAME}-a7s-ai-endpoint" -n ${apic_project} -o jsonpath="{.spec.host}")
-  mylog info "Analytics AI Endpoint. EP_AI: ${EP_AI}"
-  
-  # portal-portal-director
-  EP_PADMIN=$(oc get route "${APIC_INSTANCE_NAME}-ptl-portal-director" -n ${apic_project} -o jsonpath="{.spec.host}")
-  mylog info "Portal Director. EP_PADMIN: ${EP_PADMIN}"
-  
-  # portal-portal-web
-  EP_PORTAL=$(oc get route "${APIC_INSTANCE_NAME}-ptl-portal-web" -n ${apic_project} -o jsonpath="{.spec.host}")
-  mylog info "Portal Web. EP_PORTAL: $EP_PORTAL"
-  
-  # Zen
-  if EP_ZEN=$(oc get route cpd -n ${apic_project} -o jsonpath="{.spec.host}" 2> /dev/null ); then
-    mylog info "Zen. EP_ZEN: $EP_ZEN"
-  fi
-  
-  # Cloud pak administration console
-  EP_CPADM=$(oc -n kube-public get cm ibmcloud-cluster-info -o jsonpath='{.data.cluster_address}')
-  mylog info "Cloudpak admin console. EP_CPADM: ${EP_CPADM}"
-  
-  # APIC Gateway admin password
-  if APIC_GTW_PASSWORD_B64=$(oc get secret -n ${apic_project} ${APIC_INSTANCE_NAME}-gw-admin -o=jsonpath='{.data.password}' 2> /dev/null ); then
-    APIC_GTW_PASSWORD=$(echo $APIC_GTW_PASSWORD_B64 | base64 --decode)
-    mylog info "APIC Gateway admin password. APIC_GTW_PASSWORD: $APIC_GTW_PASSWORD"
-  fi
-
-  # APIC Cloud Manager admin email
-  if APIC_CM_ADMIN_EMAIL_B64=$(oc get secret -n ${apic_project} ${APIC_INSTANCE_NAME}-mgmt-admin-pass -o=jsonpath='{.data.email}' 2> /dev/null ); then
-    APIC_CM_ADMIN_EMAIL=$(echo $APIC_CM_ADMIN_EMAIL_B64 | base64 --decode)
-    mylog info "APIC Cloud admin email. APIC_CM_ADMIN_EMAIL: ${APIC_CM_ADMIN_EMAIL}"
-  fi
-  
-  # APIC Cloud Manager admin password
-  if APIC_CM_ADMIN_PASSWORD_B64=$(oc get secret -n ${apic_project} ${APIC_INSTANCE_NAME}-mgmt-admin-pass -o=jsonpath='{.data.password}' 2> /dev/null ); then
-    APIC_CM_ADMIN_PASSWORD=$(echo $APIC_CM_ADMIN_PASSWORD_B64 | base64 --decode)
-    mylog info "APIC Cloud Manager admin password. APIC_CM_ADMIN_PASSWORD: $APIC_CM_ADMIN_PASSWORD"
-  fi
-  
-  # Common service namespace
-  CS_NAMESPACE=$(oc get CommonServices $cs_instance -n $cs_project -o jsonpath='{.metadata.namespace}') 
-  mylog info "Common service namespace. CS_NAMESPACE: $CS_NAMESPACE"
-  
-  # Cloud pak admin uid
-  CP_ADMIN_UID=$(oc get secret -n "${CS_NAMESPACE}" platform-auth-idp-credentials -o=jsonpath='{.data.admin_username}' | base64 --decode)
-  mylog info "Cloud pak admin uid. CP_ADMIN_UID: $CP_ADMIN_UID" 1>&2
-  
-  # Cloud pak admin password
-  CP_ADMIN_PASSWORD=$(oc get secret -n "${CS_NAMESPACE}" platform-auth-idp-credentials -o=jsonpath='{.data.admin_password}' | base64 --decode)
-  mylog info "Cloud pak admin password. CP_ADMIN_PASSWORD: ${CP_ADMIN_PASSWORD}"
-  
-  IAM_TOKEN=$(curl -kfs -X POST -H 'Content-Type: application/x-www-form-urlencoded' -H 'Accept: application/json' -d "grant_type=password&username=${CP_ADMIN_UID}&password=${CP_ADMIN_PASSWORD}&scope=openid" "https://${EP_CPADM}"/v1/auth/identitytoken | jq -r .access_token)
-  mylog info "IAM Token. IAM_TOKEN: $IAM_TOKEN" 1>&2
-  ZEN_TOKEN=$(curl -kfs https://"${EP_ZEN}"/v1/preauth/validateAuth -H "username: ${CP_ADMIN_UID}" -H "iam-token: ${IAM_TOKEN}" | jq -r .accessToken)
-  mylog info "ZEN Token. ZEN_TOKEN: $ZEN_TOKEN" 1>&2
-  CM_APIC_TOKEN=$(curl -kfs https://"${EP_API}"/v1/preauth/validateAuth -H "username: ${CP_ADMIN_UID}" -H "iam-token: ${IAM_TOKEN}" | jq -r .accessToken)
-  mylog info "Cloud Manager apic token. CM_APIC_TOKEN: $CM_APIC_TOKEN" 1>&2
-  
-  # APIC_NAMESPACE=$(oc get apiconnectcluster -A -o jsonpath='{..namespace}')
-  APIC_INSTANCE=$(oc get apiconnectcluster -n "${apic_project}" -o=jsonpath='{.items[0].metadata.name}')
-  mylog info "APIC Project and APIC Instance. APIC_NAMESPACE/APIC_INSTANCE: ${apic_project}/${APIC_INSTANCE_NAME}"
-  
-  PLATFORM_API_URL=$(oc get apiconnectcluster -n "${apic_project}" "${APIC_INSTANCE_NAME}" -o=jsonpath='{.status.endpoints[?(@.name=="platformApi")].uri}')
-  mylog info "APIC Platform URL. PLATFORM_API_URL: ${PLATFORM_API_URL}"
-  
-  if test ! -e "${APIC_GEN_CUSTOMDIR}toolkit-linux.tgz";then
-  	mylog info "Downloading toolkit" 1>&2
-    oc cp -n "${apic_project}" "$(oc get po -n "${apic_project}" -l app.kubernetes.io/name=client-downloads-server,app.kubernetes.io/part-of="${APIC_INSTANCE}" -o=jsonpath='{.items[0].metadata.name}')":dist/toolkit-linux.tgz "${APIC_GEN_CUSTOMDIR}toolkit-linux.tgz"
-    tar -xf ${APIC_GEN_CUSTOMDIR}toolkit-linux.tgz  && sudo mv ${APIC_GEN_CUSTOMDIR}apic-slim /usr/local/bin/apic
-  fi
-  
-  APIC_CRED=$(oc -n "${apic_project}" get secret ${APIC_INSTANCE_NAME}-mgmt-cli-cred  -o jsonpath='{.data.credential\.json}' | base64 --decode)
-  mylog info "APIC Credentials. APIC_CRED: ${APIC_CRED}"
-  
-  APIC_APIKEY=$(curl -ks --fail -X POST "${PLATFORM_API_URL}"cloud/api-keys -H "Authorization: Bearer ${ZEN_TOKEN}" -H "Accept: application/json" -H "Content-Type: application/json" -d '{"client_type":"toolkit","description":"Tookit API key"}' | jq -r .api_key)
-  decho "APIC Key. APIC_APIKEY: ${APIC_APIKEY}"
-  
-  APIM_ENDPOINT=$(oc -n "${apic_project}" get mgmt "${APIC_INSTANCE_NAME}-mgmt" -o jsonpath='{.status.zenRoute}')
-  mylog info "APIC Management Endpoint. APIM_ENDPOINT: ${APIM_ENDPOINT}"
-  
-  # ./apic login --context admin --server https://"${APIM_ENDPOINT}" --sso --apiKey "${APIC_APIKEY}"
-  
-  # The goal is to get the apikey defined in the realm provider/common-services, get the credentials for the toolkit, then use the token endpoint to get an oauth token for Cloud Manager from API Key
-  # TOOLKIT_CLIENT_ID=$(grep "^toolkit_client_id:" ~/.apiconnect/config-apim | cut -d ':' -f2- | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
-  # TOOLKIT_CLIENT_SECRET=$(grep "^toolkit_client_secret:" ~/.apiconnect/config-apim | cut -d ':' -f2- | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
-  TOOLKIT_CLIENT_ID=$(echo ${APIC_CRED} | jq -r .id)
-  TOOLKIT_CLIENT_SECRET=$(echo ${APIC_CRED} | jq -r .secret)
-  
-  # cmToken=$(curl -ks --fail -X POST "${PLATFORM_API_URL}token" \
-  #  -H 'Content-Type: application/json' \
-  #  -H 'Accept: application/json' \
-  #  -H "X-Ibm-Client-Id: $TOOLKIT_CLIENT_ID" \
-  #  -H "X-Ibm-Client-Secret: $TOOLKIT_CLIENT_SECRET" \
-  #  --data-binary  "{\"api_key\":\"$APIC_APIKEY\",\"client_id\":\"$TOOLKIT_CLIENT_ID\",\"client_secret\":\"$TOOLKIT_CLIENT_SECRET\",\"grant_type\":\"api_key\"}")
-  
-  echo "{\"username\": \"admin\", \"password\": \"$APIC_CM_ADMIN_PASSWORD\", \"realm\": \"admin/default-idp-1\", \"client_id\": \"$TOOLKIT_CLIENT_ID\", \"client_secret\": \"$TOOLKIT_CLIENT_SECRET\", \"grant_type\": \"password\"}" > "${WORKINGDIR}creds.json"
-  
-  cmToken=$(curl -ks -X POST "${PLATFORM_API_URL}api/token" \
-   -H 'Content-Type: application/json' \
-   -H 'Accept: application/json' \
-   --data-binary "@${WORKINGDIR}creds.json")
-  
-  # mylog info "cmToken: ${cmToken}"
-  # decho "cmToken: $cmToken"
-
-  if [ $(echo $cmToken | jq .status ) = "401" ] ; then
-    mylog error "Error with login -> $cmToken"
-    mylog warning "Probably don't need to change password"
-  elif [ $(echo $cmToken | jq .access_token) != "null" ]
-    then
-      # echo "Try to Change password"
-      access_token=$(echo $cmToken | jq .access_token | sed -e s/\"//g);
-      apicme=$(curl -ks "${PLATFORM_API_URL}api/me" \
-        -X PUT \
-        -H "Authorization: Bearer $access_token" \
-        -H 'Content-Type: application/json' \
-        -H 'Accept: application/json' \
-        --data-binary "{\"email\":\"$APIC_ADMIN_EMAIL\"}" | jq 'del(.url)')
-      mylog info $apicme
-  
-  #      curl -kv "${PLATFORM_API_URL}api/me/change-password" \
-  #        -H "Authorization: Bearer $access_token" \
-  #        -H 'Content-Type: application/json' \
-  #        -H 'Accept: application/json' \
-  #        --data-binary "{\"current_password\":\"7iron-hide\",\"password\":\"$apic_admin_password\"}" 
-  fi
-  
-  # mylog info "access_token: ${access_token}"
-  
-  TOOLKIT_CREDS_URL="${PLATFORM_API_URL}api/cloud/settings/toolkit-credentials"
-  
-  # always download the credential.json
-  # if test ! -e "~/.apiconnect/config-apim";then
-   	mylog info "Downloading apic config json file" 1>&2
-   	curl -ks "${TOOLKIT_CREDS_URL}" -H "Authorization: Bearer ${access_token}" -H "Accept: application/json" -H "Content-Type: application/json" -o creds.json
-  	yes | apic client-creds:set creds.json
-  # 	[[ -e creds.json ]] && rm creds.json
-  # fi  
-
-  tlsServer=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles" \
-   -H "Authorization: Bearer $access_token" \
-   -H 'Accept: application/json' --compressed | jq .results[0].url  | sed -e s/\"//g);
-  mylog info  "tlsServer: $tlsServer"
-  
-  tlsClientDefault=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-client-profiles" \
-   -H "Authorization: Bearer $access_token" \
-   -H 'Accept: application/json' --compressed | jq '.results[] | select(.name=="tls-client-profile-default")| .url' | sed -e s/\"//g);
-  mylog info  "tlsClientDefault: $tlsClientDefault"
-  
-  integration_url=$(curl -sk "${PLATFORM_API_URL}api/cloud/integrations" \
-   -H "Authorization: Bearer $access_token" \
-   -H 'Accept: application/json' --compressed | jq -r '.results[] | select(.integration_type=="gateway_service") | select(.name=="datapower-api-gateway")| .url');
-  mylog info  "integration_url: $integration_url"
-
-}
 ################################################################################################
 # Start of the script main entry
 # main
 # This script ineeds to be started in the same directory as this script.
+
+mylog info "Start customisation API Connect"
 
 starting=$(date);
 
@@ -451,51 +289,33 @@ read_config_file "${APIC_GEN_CUSTOMDIR}scripts/apic.properties"
 # Get_APIC_Infos
 # Retrieve the various routes for APIC components
 # API Manager URL
-EP_API=$(oc get route "${APIC_INSTANCE_NAME}-mgmt-platform-api" -n ${apic_project} -o jsonpath="{.spec.host}")
-mylog info "EP_API: ${EP_API}"
+EP_API=$(oc -n ${apic_project} get route "${APIC_INSTANCE_NAME}-mgmt-platform-api" -o jsonpath="{.spec.host}")
 # gwv6-gateway-manager
-EP_GWD=$(oc get route "${APIC_INSTANCE_NAME}-gw-gateway-manager" -n ${apic_project} -o jsonpath="{.spec.host}")
+EP_GWD=$(oc -n ${apic_project} get route "${APIC_INSTANCE_NAME}-gw-gateway-manager" -o jsonpath="{.spec.host}")
 # gwv6-gateway
-EP_GW=$(oc get route "${APIC_INSTANCE_NAME}-gw-gateway" -n ${apic_project} -o jsonpath="{.spec.host}")
-mylog info "EP_GW: ${EP_GW}"
+EP_GW=$(oc -n ${apic_project} get route "${APIC_INSTANCE_NAME}-gw-gateway" -o jsonpath="{.spec.host}")
 # analytics-ai-endpoint
-EP_AI=$(oc get route "${APIC_INSTANCE_NAME}-a7s-ai-endpoint" -n ${apic_project} -o jsonpath="{.spec.host}")
+EP_AI=$(oc -n ${apic_project} get route "${APIC_INSTANCE_NAME}-a7s-ai-endpoint" -o jsonpath="{.spec.host}")
 # portal-portal-director
-EP_PADMIN=$(oc get route "${APIC_INSTANCE_NAME}-ptl-portal-director" -n ${apic_project} -o jsonpath="{.spec.host}")
+EP_PADMIN=$(oc -n ${apic_project} get route "${APIC_INSTANCE_NAME}-ptl-portal-director" -o jsonpath="{.spec.host}")
 # portal-portal-web
-EP_PORTAL=$(oc get route "${APIC_INSTANCE_NAME}-ptl-portal-web" -n ${apic_project} -o jsonpath="{.spec.host}")
-mylog info "EP_PORTAL: $EP_PORTAL"
+EP_PORTAL=$(oc -n ${apic_project} get route "${APIC_INSTANCE_NAME}-ptl-portal-web" -o jsonpath="{.spec.host}")
 # Zen
-if EP_ZEN=$(oc get route cpd -n ${apic_project} -o jsonpath="{.spec.host}" 2> /dev/null ); then
+if EP_ZEN=$(oc -n ${apic_project} get route cpd -o jsonpath="{.spec.host}" 2> /dev/null ); then
   mylog info "EP_PORTAL: $EP_ZEN"
 fi
-# Cloud pak administration console
-EP_CPADM=$(oc -n kube-public get cm ibmcloud-cluster-info -o jsonpath='{.data.cluster_address}')
-mylog info "EP_CPADM: ${EP_CPADM}"
 # APIC Gateway admin password
-if APIC_GTW_PASSWORD_B64=$(oc get secret -n ${apic_project} ${APIC_INSTANCE_NAME}-gw-admin -o=jsonpath='{.data.password}' 2> /dev/null ); then
+if APIC_GTW_PASSWORD_B64=$(oc -n ${apic_project} get secret ${APIC_INSTANCE_NAME}-gw-admin -o=jsonpath='{.data.password}' 2> /dev/null ); then
   APIC_GTW_PASSWORD=$(echo $APIC_GTW_PASSWORD_B64 | base64 --decode)
-  mylog info "APIC_GTW_PASSWORD: $APIC_GTW_PASSWORD"
 fi
 
-EP_APIC_CM=$(oc get route "${APIC_INSTANCE_NAME}-mgmt-admin" -n ${apic_project} -o jsonpath="{.spec.host}")
-mylog info "Cloud Manager endpoint: $EP_APIC_CM"
-EP_APIC_MGR=$(oc get route "${APIC_INSTANCE_NAME}-mgmt-api-manager" -n ${apic_project} -o jsonpath="{.spec.host}")
-mylog info "API Manager endpoint: $EP_APIC_MGR"
+EP_APIC_MGR=$(oc -n ${apic_project} get route "${APIC_INSTANCE_NAME}-mgmt-api-manager" -o jsonpath="{.spec.host}")
 
 # APIC Cloud Manager admin password
-if APIC_CM_ADMIN_PASSWORD_B64=$(oc get secret -n ${apic_project} ${APIC_INSTANCE_NAME}-mgmt-admin-pass -o=jsonpath='{.data.password}' 2> /dev/null ); then
+if APIC_CM_ADMIN_PASSWORD_B64=$(oc -n ${apic_project} get secret ${APIC_INSTANCE_NAME}-mgmt-admin-pass -o=jsonpath='{.data.password}' 2> /dev/null ); then
   APIC_CM_ADMIN_PASSWORD=$(echo $APIC_CM_ADMIN_PASSWORD_B64 | base64 --decode)
-  mylog info "APIC_CM_ADMIN_PASSWORD: $APIC_CM_ADMIN_PASSWORD"
 fi
-# Common service namespace
-CS_NAMESPACE=$(oc get commonservice -A -o jsonpath='{..namespace}' | awk '{print $1}')
-# Cloud pak admin password
-CP_ADMIN_PASSWORD=$(oc get secret -n "${CS_NAMESPACE}" platform-auth-idp-credentials -o=jsonpath='{.data.admin_password}' | base64 --decode)
-mylog info "CP_ADMIN_PASSWORD: ${CP_ADMIN_PASSWORD}"
 
-# Cloud pak admin uid (should be admin)
-CP_ADMIN_UID=$(oc get secret -n "${CS_NAMESPACE}" platform-auth-idp-credentials -o=jsonpath='{.data.admin_username}' | base64 --decode)
 IAM_TOKEN=$(curl -kfs -X POST -H 'Content-Type: application/x-www-form-urlencoded' -H 'Accept: application/json' -d "grant_type=password&username=${CP_ADMIN_UID}&password=${CP_ADMIN_PASSWORD}&scope=openid" "https://${EP_CPADM}"/v1/auth/identitytoken | jq -r .access_token)
 # mylog warn "IAM_TOKEN: $IAM_TOKEN" 1>&2
 ZEN_TOKEN=$(curl -kfs https://"${EP_ZEN}"/v1/preauth/validateAuth -H "username: ${CP_ADMIN_UID}" -H "iam-token: ${IAM_TOKEN}" | jq -r .accessToken)
@@ -504,19 +324,17 @@ CM_APIC_TOKEN=$(curl -kfs https://"${EP_API}"/v1/preauth/validateAuth -H "userna
 # mylog warn "CM_APIC_TOKEN: $CM_APIC_TOKEN" 1>&2
 
 # APIC_NAMESPACE=$(oc get apiconnectcluster -A -o jsonpath='{..namespace}')
-APIC_INSTANCE=$(oc get apiconnectcluster -n "${apic_project}" -o=jsonpath='{.items[0].metadata.name}')
-mylog info "APIC_NAMESPACE/APIC_INSTANCE: ${apic_project}/${APIC_INSTANCE_NAME}"
+APIC_INSTANCE=$(oc -n "${apic_project}" get apiconnectcluster -o=jsonpath='{.items[0].metadata.name}')
 
-PLATFORM_API_URL=$(oc get apiconnectcluster -n "${apic_project}" "${APIC_INSTANCE_NAME}" -o=jsonpath='{.status.endpoints[?(@.name=="platformApi")].uri}')
+PLATFORM_API_URL=$(oc -n "${apic_project}" get apiconnectcluster "${APIC_INSTANCE_NAME}" -o=jsonpath='{.status.endpoints[?(@.name=="platformApi")].uri}')
 
 if test ! -e "${APIC_GEN_CUSTOMDIR}config/toolkit-linux.tgz";then
 	mylog info "Downloading toolkit" 1>&2
-  oc cp -n "${apic_project}" "$(oc get po -n "${apic_project}" -l app.kubernetes.io/name=client-downloads-server,app.kubernetes.io/part-of="${APIC_INSTANCE}" -o=jsonpath='{.items[0].metadata.name}')":dist/toolkit-linux.tgz ${APIC_GEN_CUSTOMDIR}config/toolkit-linux.tgz
+  oc cp -n "${apic_project}" "$(oc -n "${apic_project}" get po -l app.kubernetes.io/name=client-downloads-server,app.kubernetes.io/part-of="${APIC_INSTANCE}" -o=jsonpath='{.items[0].metadata.name}')":dist/toolkit-linux.tgz ${APIC_GEN_CUSTOMDIR}config/toolkit-linux.tgz
   tar -xf ${APIC_GEN_CUSTOMDIR}config/toolkit-linux.tgz -o ${APIC_GEN_CUSTOMDIR}config && mv ${APIC_GEN_CUSTOMDIR}config/apic-slim ${APIC_GEN_CUSTOMDIR}config/apic
 fi
 
-APIC_CRED=$(oc -n "${apic_project}" get secret ${APIC_INSTANCE_NAME}-mgmt-cli-cred  -o jsonpath='{.data.credential\.json}' | base64 --decode)
-mylog info "APIC_CRED: ${APIC_CRED}"
+APIC_CRED=$(oc -n "${apic_project}" get secret ${APIC_INSTANCE_NAME}-mgmt-cli-cred -o jsonpath='{.data.credential\.json}' | base64 --decode)
 
 APIC_APIKEY=$(curl -ks --fail -X POST "${PLATFORM_API_URL}"cloud/api-keys -H "Authorization: Bearer ${ZEN_TOKEN}" -H "Accept: application/json" -H "Content-Type: application/json" -d '{"client_type":"toolkit","description":"Tookit API key"}' | jq -r .api_key)
 decho "APIC_APIKEY: ${APIC_APIKEY}"
@@ -539,7 +357,7 @@ echo "{\"username\": \"admin\", \"password\": \"$APIC_CM_ADMIN_PASSWORD\", \"rea
 cmToken=$(curl -ks -X POST "${PLATFORM_API_URL}api/token" \
  -H 'Content-Type: application/json' \
  -H 'Accept: application/json' \
- --data-binary "@${APIC_GEN_CUSTOMDIR}creds.json")
+ --data-binary "@${APIC_GEN_CUSTOMDIR}config/creds.json")
 
 # mylog info "cmToken: ${cmToken}"
 # decho "cmToken: $cmToken"
@@ -573,6 +391,7 @@ TOOLKIT_CREDS_URL="${PLATFORM_API_URL}api/cloud/settings/toolkit-credentials"
 
 # CreateMailServer "${APIC_SMTP_SERVER}" "${APIC_SMTP_SERVER_PORT}"
 
+mylog info "interact with CM: curl -sk \"${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles\"  -H \"Authorization: Bearer $access_token\"  -H 'Accept: application/json'"
 tlsServer=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles" \
  -H "Authorization: Bearer $access_token" \
  -H 'Accept: application/json' --compressed | jq .results[0].url  | sed -e s/\"//g);
@@ -614,28 +433,18 @@ CreateCatalog "${APIC_PROVIDER_ORG1}"
 # Push API into draft
 apic_provider_org1_lower=$(echo "$APIC_PROVIDER_ORG1" | awk '{print tolower($0)}')
 
-api_name=ping-api
-api_file=ping-api_1.0.0.json
-LoadAPI $PLATFORM_API_URL $apic_provider_org1_lower $api_name $api_file $amToken
+LoadAPI $PLATFORM_API_URL $apic_provider_org1_lower $amToken
 
-api_name=orders-api
-api_file=ibm-sample-order-api_1.0.0.json
-LoadAPI $PLATFORM_API_URL $apic_provider_org1_lower $api_name $api_file $amToken
+# create resources
+# cd D:\CurrentProjects\CP4I\Installation\cp4i-install\templates\operands-custom\APIC\config\
+# need to get the integration url
 
-api_name=stock_api
-api_file=stock_1.0.0.json
-LoadAPI $PLATFORM_API_URL $apic_provider_org1_lower $api_name $api_file $amToken
+# Creation of the URL registry in CM
+# curl -sk "https://cp4i-apic-mgmt-platform-api-cp4i.cp4iad22023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/api/orgs/admin/user-registries"  -H "Authorization: Bearer %cmtok%"  -H "content-type: application/json" -H "Accept: application/json" --data-binary "@AuthenticationURL_Registry_res.json"
 
-api_name=fake_authentication-api
-api_file=fakeauthenticationurl_1.0.0.json
-LoadAPI $PLATFORM_API_URL $apic_provider_org1_lower $api_name $api_file $amToken
+# Creation of the OAuth Provider in CM
+# curl -sk "https://cp4i-apic-mgmt-platform-api-cp4i.cp4iad22023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/api/orgs/admin/user-registries"  -H "Authorization: Bearer %cmtok%"  -H "content-type: application/json" -H "Accept: application/json" --data-binary "@AuthenticationURL_Registry_res.json"
 
-# Removed analytics-client-default not used anymore
-
-# echo "--------------- Endpoint ---------------------"
-# echo " Cloud manager : https://$MGMT_ADMIN_EP.$STACK_HOST (admin/$apic_admin_password)"
-# echo " API manager : https://$MGMT_API_EP.$STACK_HOST ($ORG_USERNAME/$ORG_PASSWORD)"
-# echo "----------------------------------------------"
 
 duration=$SECONDS
 ending=$(date);

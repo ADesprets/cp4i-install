@@ -12,9 +12,9 @@
 function create_openshift_cluster_classic () {
 
   SECONDS=0
-  var_fail my_cluster_name "Choose a unique name for the cluster"
-  mylog check "Checking OpenShift: $my_cluster_name"
-  if ibmcloud ks cluster get --cluster $my_cluster_name > /dev/null 2>&1; then 
+  var_fail sc_cluster_name "Choose a unique name for the cluster"
+  mylog check "Checking OpenShift: $sc_cluster_name"
+  if ibmcloud ks cluster get --cluster $sc_cluster_name > /dev/null 2>&1; then 
     mylog ok ", cluster exists"
     mylog info "Checking Openshift cluster took: $SECONDS seconds." 1>&2
   else
@@ -35,12 +35,12 @@ function create_openshift_cluster_classic () {
     oc_version_full=$(echo "[$oc_version_full]" | jq -r '.[] | (.major|tostring) + "." + (.minor|tostring) + "." + (.patch|tostring) + "_openshift"')
     mylog info "Found: ${oc_version_full}"
     # create
-    mylog info "Creating OpenShift cluster: $my_cluster_name"
+    mylog info "Creating OpenShift cluster: $sc_cluster_name"
 
     SECONDS=0
     vlans=$(ibmcloud ks vlan ls --zone $MY_CLUSTER_ZONE --output json|jq -j '.[]|" --" + .type + "-vlan " + .id')
     if ! ibmcloud ks cluster create classic \
-      --name    $my_cluster_name \
+      --name    $sc_cluster_name \
       --version $oc_version_full \
       --zone    $MY_CLUSTER_ZONE \
       --flavor  $MY_CLUSTER_FLAVOR_CLASSIC \
@@ -72,7 +72,7 @@ function create_openshift_cluster_vpc () {
   export TF_VAR_region="$MY_CLUSTER_REGION"
   export TF_VAR_openshift_version=$(ibmcloud ks versions -q --show-version OpenShift|sed -Ene "s/^(${MY_OC_VERSION//./\\.}\.[^ ]*) .*$/\1/p")
   export TF_VAR_resource_group="rg-$MY_OC_PROJECT"
-  export TF_VAR_openshift_cluster_name="$my_cluster_name"
+  export TF_VAR_openshift_cluster_name="$sc_cluster_name"
   pushd terraform
   terraform init
   terraform apply -var-file=var_override.tfvars
@@ -80,120 +80,27 @@ function create_openshift_cluster_vpc () {
 }
 
 ################################################
-# TBC
-function create_openshift_cluster () {
-  var_fail MY_CLUSTER_INFRA 'mylog warn "Choose one of: classic or vpc" 1>&2'
-  case "${MY_CLUSTER_INFRA}" in
-  classic)
-    create_openshift_cluster_classic
-    gbl_ingress_hostname_filter=.ingressHostname
-    gbl_cluster_url_filter=.serverURL
-    ;;
-  vpc)
-    create_openshift_cluster_vpc
-    gbl_ingress_hostname_filter=.ingress.hostname
-    gbl_cluster_url_filter=.masterURL
-    ;;
-  *)
-    mylog error "Only classic and vpc for MY_CLUSTER_INFRA"
-    ;;
-  esac
-}
-
-################################################
-# wait for ingress address availability
-function wait_4_ingress_address_availability () {
-  SECONDS=0
-  
-  mylog check "Checking Ingress address"
-  firsttime=true
-  case $MY_CLUSTER_INFRA in
-
-  esac
-
-  while true;do
-    ingress_address=$(ibmcloud ks cluster get --cluster $my_cluster_name --output json|jq -r "$gbl_ingress_hostname_filter")
-	  if test -n "$ingress_address";then
-		  mylog ok ", $ingress_address"
-		  break
-	  fi
-	  if $firsttime;then
-		  mylog warn "not ready"
-		  firsttime=false
-	  fi
-	  mylog wait "waiting for ingress address"
-    # It takes about 15 minutes (21 Aug 2023)
-	  sleep 90
-  done
-  mylog info "Checking Ingress availability took $SECONDS seconds to execute." 1>&2
-}
-
-################################################
 # add ibm entitlement key to namespace
 # @param ns namespace where secret is created
 function add_ibm_entitlement () {
   local lf_in_ns=$1
+
   mylog check "Checking ibm-entitlement-key in $lf_in_ns"
-  if oc get secret ibm-entitlement-key --namespace=$lf_in_ns > /dev/null 2>&1
+  if oc -n $lf_in_ns get secret ibm-entitlement-key > /dev/null 2>&1
   then mylog ok
   else
     var_fail MY_ENTITLEMENT_KEY "Missing entitlement key"
     mylog info "Checking ibm-entitlement-key validity"
-    docker -h > /dev/null 2>&1
-    if test $? -eq 0 && ! echo $MY_ENTITLEMENT_KEY | docker login cp.icr.io --username cp --password-stdin;then
+    $MY_CONTAINER_ENGINE -h > /dev/null 2>&1
+    if test $? -eq 0 && ! echo $MY_ENTITLEMENT_KEY | $MY_CONTAINER_ENGINE login cp.icr.io --username cp --password-stdin;then
       mylog error "Invalid entitlement key" 1>&2
       exit 1
     fi
     mylog info "Adding ibm-entitlement-key to $lf_in_ns"
-    if ! oc create secret docker-registry ibm-entitlement-key --docker-username=cp --docker-password=$MY_ENTITLEMENT_KEY --docker-server=cp.icr.io --namespace=$lf_in_ns;then
+    if ! oc -n $lf_in_ns create secret docker-registry ibm-entitlement-key --docker-username=cp --docker-password=$MY_ENTITLEMENT_KEY --docker-server=cp.icr.io;then
       exit 1
     fi
   fi
-}
-
-############################################################################################################################################
-#SB]20231214 Installing Foundational services v4.3
-# Referring to https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.4?topic=whats-new-in-cloud-pak-integration-202341
-# "The IBM Cloud Pak foundational services operator is no longer installed automatically. 
-#  Install this operator manually if you need to create an instance that uses identity and access management. 
-#  Also, make sure you have a certificate manager; otherwise, the IBM Cloud Pak foundational services operator installation will not complete."
-# This function implements the following steps described here : 
-############################################################################################################################################
-function install_fs () {
-  #mylog info "==== Foundational services catalog source." 1>&2
-  # ibm-cp-common-services
-  check_add_cs_ibm_pak ibm-cp-common-services MY_COMMONSERVICES_CASE amd64
-
-  lf_catalogsource_namespace=$MY_CATALOGSOURCES_NAMESPACE
-  lf_catalogsource_name="opencloud-operators"
-  lf_catalogsource_dspname="IBMCS Operators"
-  lf_catalogsource_image="icr.io/cpopen/ibm-common-service-catalog:4.3"
-  lf_catalogsource_publisher="IBM"
-  lf_catalogsource_interval="45m"
-  create_catalogsource "${lf_catalogsource_namespace}" "${lf_catalogsource_name}" "${lf_catalogsource_dspname}" "${lf_catalogsource_image}" "${lf_catalogsource_publisher}" "${lf_catalogsource_interval}"
-
-  # Pour les operations suivantes : utiliser un seul namespace
-  #lf_namespace=$MY_COMMON_SERVICES_NAMESPACE
-  lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-
-  #create_operator_subscription "ibm-common-service-operator" $MY_COMMONSERVICES_CHL "opencloud-operators" $MY_COMMON_SERVICES_NAMESPACE "Automatic" $MY_STARTING_CSV
-  lf_operator_name="ibm-common-service-operator"
-  lf_current_chl=$MY_COMMONSERVICES_CHL
-  lf_catalog_source_name="opencloud-operators"
-  lf_strategy="Automatic"
-  lf_wait_for_state=1
-  lf_startingcsv=$MY_COMMONSERVICES_OPERATOR_STARTINGCSV
-  create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_startingcsv}"
- 
-  ## Setting hardware  Accept the license to use foundational services by adding spec.license.accept: true in the spec section.
-  #accept_license_fs $MY_OPERATORS_NAMESPACE
-  accept_license_fs $lf_namespace
-
-  # Configuring foundational services by using the CommonService custom resource.
-  lf_type="CommonService"
-  lf_cr_name=$MY_COMMONSERVICES_INSTANCE_NAME
-  lf_yaml_file="${RESOURCSEDIR}foundational-services-cr.yaml"
-  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_operator_namespace}"
 }
 
 ################################################
@@ -207,98 +114,6 @@ function start_customization () {
 
   mylog info "Copy template files to the working directory"
   
-  if $MY_ACE_CUSTOM;then
-    # generate the differents properties files
-    # SB]20231109 some generated files (yaml) are based on other generated files (properties), so :
-    # - in template custom dirs, separate the files to two categories : scripts (*.properties) and config (*.yaml)
-    # - generate first the *.properties files to be sourced then generate the *.yaml files
-    if [ ! -d ${ACE_GEN_CUSTOMDIR}scripts ]; then
-      mkdir -p ${ACE_GEN_CUSTOMDIR}scripts
-    fi
-    if [ ! -d ${ACE_GEN_CUSTOMDIR}config ]; then
-      mkdir -p ${ACE_GEN_CUSTOMDIR}config
-    fi
-    generate_files $ACE_TMPL_CUSTOMDIR $ACE_GEN_CUSTOMDIR
-  fi
-
-  if $MY_APIC_CUSTOM;then
-    # generate the differents properties files
-    # SB]20231109 some generated files (yaml) are based on other generated files (properties), so :
-    # - in template custom dirs, separate the files to two categories : scripts (*.properties) and config (*.yaml)
-    # - generate first the *.properties files to be sourced then generate the *.yaml files
-    if [ ! -d ${APIC_GEN_CUSTOMDIR}scripts ]; then
-      mkdir -p ${APIC_GEN_CUSTOMDIR}scripts
-    fi
-    if [ ! -d ${APIC_GEN_CUSTOMDIR}config ]; then
-      mkdir -p ${APIC_GEN_CUSTOMDIR}config
-    fi
-    generate_files $APIC_TMPL_CUSTOMDIR $APIC_GEN_CUSTOMDIR
-  fi
-
-  # Creating Eventstream topic,
-  # SB]20231019 
-  # 2 options : 
-  #   Option1 : using the es plugin : cloudctl es topic-create.
-  #   You have to install the ES plugin for ibmcloud command : cloudct. 
-  #   https://ibm.github.io/event-automation/es/installing/post-installation/#installing-the-event-streams-command-line-interface, part : IBM Cloud Pak CLI plugin (cloudctl es)
-  #  
-  #   Option2 : using a yaml configuration file
-
-  # SB]20231026 Creating : 
-  # - operands properties file, 
-  # - topics, ...
-  if $MY_ES_CUSTOM;then
-    # generate the differents properties files
-    # SB]20231109 some generated files (yaml) are based on other generated files (properties), so :
-    # - in template custom dirs, separate the files to two categories : scripts (*.properties) and config (*.yaml)
-    # - generate first the *.properties files to be sourced then generate the *.yaml files
-    if [ ! -d ${ES_GEN_CUSTOMDIR}scripts ]; then
-      mkdir -p ${ES_GEN_CUSTOMDIR}scripts
-    fi
-    if [ ! -d ${ES_GEN_CUSTOMDIR}config ]; then
-      mkdir -p ${ES_GEN_CUSTOMDIR}config
-    fi
-    generate_files $ES_TMPL_CUSTOMDIR $ES_GEN_CUSTOMDIR
-
-    # SB]20231211 https://ibm.github.io/event-automation/es/installing/installing/
-    # Question : Do we have to create this configmap before installing ES or even after ? Used for monitoring
-    lf_type="configmap"
-    lf_cr_name="cluster-monitoring-config"
-    lf_yaml_file="${RESOURCSEDIR}openshift-monitoring-cm.yaml"
-    lf_namespace="openshift-monitoring"
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
-  fi
-
-  ## Creating EEM users and roles
-  if $MY_EEM_CUSTOM;then
-    # generate properties files
-    cat  $EEM_TMPL_USER_CREDENTIALS_CUSTOMFILE | envsubst >  $EEM_GEN_USER_CREDENTIALS_CUSTOMFILE
-    cat  $EEM_TMPL_USER_ROLES_CUSTOMFILE | envsubst >  $EEM_GEN_USER_ROLES_CUSTOMFILE
-
-    # base64 generates an error ": illegal base64 data at input byte 76". Solution found here : https://bugzilla.redhat.com/show_bug.cgi?id=1809431. use base64 -w0
-    # user credentials
-    varb64=$(cat "$EEM_GEN_USER_CREDENTIALS_CUSTOMFILE" | base64 -w0)
-    oc patch secret "${MY_EEM_INSTANCE_NAME}-ibm-eem-user-credentials" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-credentials.json\" ,\"value\" : \"$varb64\"}]" -n $ns
-
-    # user roles
-    varb64=$(cat "$EEM_GEN_USER_ROLES_CUSTOMFILE" | base64 -w0)
-    oc patch secret "${MY_EEM_INSTANCE_NAME}-ibm-eem-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$varb64\"}]" -n $ns
-  fi
-
-  ## Creating Event Processing users and roles
-  if $MY_EP_CUSTOM;then
-    # generate properties files
-    cat  $EP_TMPL_USER_CREDENTIALS_CUSTOMFILE | envsubst >  $EP_GEN_USER_CREDENTIALS_CUSTOMFILE
-    cat  $EP_TMPL_USER_ROLE_CUSTOMFILE | envsubst >  $EP_GEN_USER_ROLES_CUSTOMFILE
-
-    # user credentials
-    varb64=$(cat "$EP_GEN_USER_CREDENTIALS_CUSTOMFILE" | base64 -w0)
-    oc patch secret "${MY_EP_INSTANCE_NAME}-ibm-ep-user-credentials" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-credentials.json\" ,\"value\" : \"$varb64\"}]" -n $ns
-
-    # user roles
-    varb64=$(cat "$EP_GEN_USER_ROLES_CUSTOMFILE" | base64 -w0)
-    oc patch secret "${MY_EP_INSTANCE_NAME}-ibm-ep-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$varb64\"}]" -n $ns
-  fi
 }
 
 ################################################
@@ -308,31 +123,8 @@ function start_customization () {
 # @param ns namespace where operands were instantiated
 function launch_customization () {
   local ns=$1
-  local varb64
 
   mylog info "Customisation of the capabilities"
-
-  if $MY_ACE_CUSTOM;then
-     mylog info "Customise ACE"
-  fi
-
-  if $MY_APIC_CUSTOM;then
-    . ${APIC_SCRIPTDIR}scripts/configure.sh
-  fi
-
-  if $MY_ES_CUSTOM;then
-     mylog info "Customise ES"
-  fi
-
-  ## Creating EEM users and roles
-  if $MY_EEM_CUSTOM;then
-     mylog info "Customise EEM"
-  fi
-
-  ## Creating Event Processing users and roles
-  if $MY_EP_CUSTOM;then
-     mylog info "Customise Event Processing"
-  fi
 }
 
 ##SB]20230215 load bar files in nexus repository
@@ -345,7 +137,7 @@ function load_ace_bars () {
   local ns=$1
   local directory=$2
 
-  export my_nexus_url=`oc get route $MY_NEXUS_ROUTE_NAME -n $ns -o jsonpath='{.spec.host}'`
+  export my_nexus_url=`oc -n $ns get route $MY_NEXUS_ROUTE_NAME -o jsonpath='{.spec.host}'`
 
   i=1
   for barfile in ${directory}*.bar
@@ -375,8 +167,8 @@ function configure_ace_is () {
   # Reference : https://www.ibm.com/docs/en/app-connect/containers_cd?topic=resources-configuration-reference#install__install_cli
 
   #export MY_ACE_BARAUTH_secret_b64=`base64 -w 0 ${ACE_CONFIGDIR}ACE-basic-auth.json`
-  if oc get secret $ace_bar_secret -n=$ns > /dev/null 2>&1; then mylog ok;else
-    oc create secret generic $ace_bar_secret --from-file=configuration="${ACE_CONFIGDIR}ACE-basic-auth.json" -n=$ns
+  if oc -n=$ns get secret $ace_bar_secret > /dev/null 2>&1; then mylog ok;else
+    oc -n=$ns create secret generic $ace_bar_secret --from-file=configuration="${ACE_CONFIGDIR}ACE-basic-auth.json"
   fi
   
   # Create a barauth 
@@ -393,6 +185,85 @@ function configure_ace_is () {
   lf_namespace=$ns
   check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
   wait_for_state IntegrationServer "$ace_is" Ready '{.status.phase}' $ns
+}
+
+################################################
+# TBC
+function create_openshift_cluster () {
+  var_fail MY_CLUSTER_INFRA 'mylog warn "Choose one of: classic or vpc" 1>&2'
+  case "${MY_CLUSTER_INFRA}" in
+  classic)
+    create_openshift_cluster_classic
+    sc_ingress_hostname_filter=.ingressHostname
+    sc_cluster_url_filter=.serverURL
+    ;;
+  vpc)
+    create_openshift_cluster_vpc
+    sc_ingress_hostname_filter=.ingress.hostname
+    sc_cluster_url_filter=.masterURL
+    ;;
+  *)
+    mylog error "Only classic and vpc for MY_CLUSTER_INFRA"
+    ;;
+  esac
+}
+
+################################################
+# wait for Cluster availability
+# set variable my_cluster_url
+function wait_for_cluster_availability () {
+  SECONDS=0	
+  wait_for_state 'Cluster state' 'normal-All Workers Normal' "ibmcloud oc cluster get --cluster $sc_cluster_name --output json|jq -r '.state+\"-\"+.status'"
+  mylog info "Checking Cluster state took: $SECONDS seconds." 1>&2
+
+  SECONDS=0
+  mylog check "Checking Cluster URL"
+  my_cluster_url=$(ibmcloud ks cluster get --cluster $sc_cluster_name --output json | jq -r "$sc_cluster_url_filter")
+  case "$my_cluster_url" in
+	https://*)
+	mylog ok " -> $my_cluster_url"
+    mylog info "Checking Cluster availability took: $SECONDS seconds." 1>&2
+	;;
+	*)
+	mylog error "Error getting cluster URL for $sc_cluster_name" 1>&2
+	exit 1
+	;;
+  esac
+}
+
+################################################
+# wait for ingress address availability
+function wait_4_ingress_address_availability () {
+  SECONDS=0
+  local lf_ingress_address
+
+  mylog check "Checking Ingress address"
+  firsttime=true
+  case $MY_CLUSTER_INFRA in
+  classic) 
+    sc_ingress_hostname_filter=.ingressHostname;;
+  vpc) 
+    sc_ingress_hostname_filter=.ingress.hostname;;
+  *)
+    mylog error "Only classic and vpc for MY_CLUSTER_INFRA"
+    ;;
+  esac
+
+  while true;do
+    lf_ingress_address=$(ibmcloud ks cluster get --cluster $sc_cluster_name --output json|jq -r "$sc_ingress_hostname_filter")
+	  if test -n "$lf_ingress_address";then
+		  mylog ok ", $lf_ingress_address"
+		  break
+	  fi
+	  if $firsttime;then
+		  mylog warn "not ready"
+		  firsttime=false
+	  fi
+	  mylog wait "waiting for ingress address"
+    # It takes about 15 minutes (21 Aug 2023)
+	  sleep 90
+  done
+  mylog info "Checking Ingress availability took $SECONDS seconds to execute." 1>&2
 }
 
 ######################################################################
@@ -440,55 +311,51 @@ function install_openldap () {
 function display_access_info () {
 
   if $MY_NAVIGATOR_INSTANCE;then
-    cp_console_url=$(oc -n ${MY_OC_PROJECT} get Route -o=jsonpath='{.items[?(@.metadata.name=="cp-console")].spec.host}')
-    mylog info "Cloud Pak Console endpoint: ${cp_console_url}"
-    cp_console_admin_pwd=$(oc -n ${MY_OC_PROJECT} get secret platform-auth-idp-credentials -o jsonpath='{.data.admin_password}' | base64 -d)
-    mylog info "Cloud Pak Console admin password: ${cp_console_admin_pwd}"
     get_navigator_access
   fi
 
   if $MY_ACE;then
-    ace_ui_db_url=$(oc get Dashboard -n $MY_OC_PROJECT -o=jsonpath='{.items[?(@.kind=="Dashboard")].status.endpoints[?(@.name=="ui")].uri}')
+    ace_ui_db_url=$(oc -n $MY_OC_PROJECT get Dashboard -o=jsonpath='{.items[?(@.kind=="Dashboard")].status.endpoints[?(@.name=="ui")].uri}')
 	  mylog info "ACE Dahsboard UI endpoint: " $ace_ui_db_url
-    ace_ui_dg_url=$(oc get DesignerAuthoring -n $MY_OC_PROJECT -o=jsonpath='{.items[?(@.kind=="DesignerAuthoring")].status.endpoints[?(@.name=="ui")].uri}')
+    ace_ui_dg_url=$(oc -n $MY_OC_PROJECT get DesignerAuthoring -o=jsonpath='{.items[?(@.kind=="DesignerAuthoring")].status.endpoints[?(@.name=="ui")].uri}')
 	  mylog info "ACE Designer UI endpoint: " $ace_ui_dg_url
   fi
 
   if $MY_APIC;then
-    gtw_url=$(oc get GatewayCluster -n $MY_OC_PROJECT -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].status.endpoints[?(@.name=="gateway")].uri}')
+    gtw_url=$(oc -n $MY_OC_PROJECT get GatewayCluster -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].status.endpoints[?(@.name=="gateway")].uri}')
 	  mylog info "APIC Gateway endpoint: ${gtw_url}"
-    apic_gtw_admin_pwd_secret_name=$(oc get GatewayCluster -n $MY_OC_PROJECT -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].spec.adminUser.secretName}')
-    cm_admin_pwd=$(oc get secret ${apic_gtw_admin_pwd_secret_name} -n $MY_OC_PROJECT -o jsonpath={.data.password} | base64 -d)
+    apic_gtw_admin_pwd_secret_name=$(oc -n $MY_OC_PROJECT get GatewayCluster -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].spec.adminUser.secretName}')
+    cm_admin_pwd=$(oc -n $MY_OC_PROJECT get secret ${apic_gtw_admin_pwd_secret_name} -o jsonpath={.data.password} | base64 -d)
 	  mylog info "APIC Gateway admin password: ${cm_admin_pwd}"
-    cm_url=$(oc get APIConnectCluster -n $MY_OC_PROJECT -o=jsonpath='{.items[?(@.kind=="APIConnectCluster")].status.endpoints[?(@.name=="admin")].uri}')
+    cm_url=$(oc -n $MY_OC_PROJECT get APIConnectCluster -o=jsonpath='{.items[?(@.kind=="APIConnectCluster")].status.endpoints[?(@.name=="admin")].uri}')
 	  mylog info "APIC Cloud Manager endpoint: ${cm_url}"
-    cm_admin_pwd_secret_name=$(oc get ManagementCluster -n $MY_OC_PROJECT -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].spec.adminUser.secretName}')
-    cm_admin_pwd=$(oc get secret ${cm_admin_pwd_secret_name} -n $MY_OC_PROJECT -o jsonpath='{.data.password}' | base64 -d)
+    cm_admin_pwd_secret_name=$(oc -n $MY_OC_PROJECT get ManagementCluster -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].spec.adminUser.secretName}')
+    cm_admin_pwd=$(oc -n $MY_OC_PROJECT get secret ${cm_admin_pwd_secret_name} -o jsonpath='{.data.password}' | base64 -d)
     mylog info "APIC Cloud Manager admin password: ${cm_admin_pwd}"
-    mgr_url=$(oc get APIConnectCluster -n $MY_OC_PROJECT -o=jsonpath='{.items[?(@.kind=="APIConnectCluster")].status.endpoints[?(@.name=="ui")].uri}')
+    mgr_url=$(oc -n $MY_OC_PROJECT get APIConnectCluster -o=jsonpath='{.items[?(@.kind=="APIConnectCluster")].status.endpoints[?(@.name=="ui")].uri}')
 	  mylog info "APIC API Manager endpoint: ${mgr_url}" 
-    ptl_url=$(oc get PortalCluster -n $MY_OC_PROJECT -o=jsonpath='{.items[?(@.kind=="PortalCluster")].status.endpoints[?(@.name=="portalWeb")].uri}')
+    ptl_url=$(oc -n $MY_OC_PROJECT get PortalCluster -o=jsonpath='{.items[?(@.kind=="PortalCluster")].status.endpoints[?(@.name=="portalWeb")].uri}')
     mylog info "APIC Web Portal root endpoint: ${ptl_url}"
   fi
 
   if $MY_EEM;then
-    eem_ui_url=$(oc get EventEndpointManagement -n $MY_OC_PROJECT -o=jsonpath='{.items[?(@.kind=="EventEndpointManagement")].status.endpoints[?(@.name=="ui")].uri}')
+    eem_ui_url=$(oc -n $MY_OC_PROJECT get EventEndpointManagement -o=jsonpath='{.items[?(@.kind=="EventEndpointManagement")].status.endpoints[?(@.name=="ui")].uri}')
 	  mylog info "Event Endpoint Management UI endpoint: ${eem_ui_url}"
-    eem_gtw_url=$(oc get EventEndpointManagement -n $MY_OC_PROJECT -o=jsonpath='{.items[?(@.kind=="EventEndpointManagement")].status.endpoints[?(@.name=="gateway")].uri}')
+    eem_gtw_url=$(oc -n $MY_OC_PROJECT get EventEndpointManagement -o=jsonpath='{.items[?(@.kind=="EventEndpointManagement")].status.endpoints[?(@.name=="gateway")].uri}')
 	  mylog info "Event Endpoint Management Gateway endpoint: ${eem_gtw_url}"
     mylog info "The credentials are defined in the file ./customisation/EP/config/user-credentials.yaml"
   fi
 
   if $MY_ES;then
-    es_ui_url=$(oc get EventStreams -n $MY_OC_PROJECT -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="ui")].uri}')
+    es_ui_url=$(oc -n $MY_OC_PROJECT get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="ui")].uri}')
 	  mylog info "Event Streams Management UI endpoint: ${es_ui_url}"
-    es_admin_url=$(oc get EventStreams -n $MY_OC_PROJECT -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="admin")].uri}')
+    es_admin_url=$(oc -n $MY_OC_PROJECT get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="admin")].uri}')
 	  mylog info "Event Streams Management admin endpoint: ${es_admin_url}"
-    es_apicurioregistry_url=$(oc get EventStreams -n $MY_OC_PROJECT -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="apicurioregistry")].uri}')
+    es_apicurioregistry_url=$(oc -n $MY_OC_PROJECT get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="apicurioregistry")].uri}')
 	  mylog info "Event Streams Management apicurio registry endpoint: ${es_apicurioregistry_url}" 
-    es_restproducer_url=$(oc get EventStreams -n $MY_OC_PROJECT -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="restproducer")].uri}')
+    es_restproducer_url=$(oc -n $MY_OC_PROJECT get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="restproducer")].uri}')
 	  mylog info "Event Streams Management REST Producer endpoint: ${es_restproducer_url}"
-    es_bootstrap_urls=$(oc get EventStreams -n $MY_OC_PROJECT -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.kafkaListeners[*].bootstrapServers}')
+    es_bootstrap_urls=$(oc -n $MY_OC_PROJECT get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.kafkaListeners[*].bootstrapServers}')
 	  mylog info "Event Streams Bootstraps servers endpoints: ${es_bootstrap_urls}" 
   fi
 
@@ -525,13 +392,13 @@ function accept_license_fs () {
   lf_in_namespace=$1
 
   local accept
-  decho "oc get commonservice ${MY_COMMONSERVICES_INSTANCE_NAME} -n ${lf_in_namespace} -o jsonpath='{.spec.license.accept}'"
-  accept=$(oc get commonservice ${MY_COMMONSERVICES_INSTANCE_NAME} -n ${lf_in_namespace} -o jsonpath='{.spec.license.accept}')
+  decho "oc -n ${lf_in_namespace} get commonservice ${MY_COMMONSERVICES_INSTANCE_NAME} -o jsonpath='{.spec.license.accept}'"
+  accept=$(oc -n ${lf_in_namespace} get commonservice ${MY_COMMONSERVICES_INSTANCE_NAME} -o jsonpath='{.spec.license.accept}')
   decho "accept=$accept"
   if [ "$accept" == "true" ]; then
     mylog info "license already accepted." 1>&2
   else
-    oc patch commonservice ${MY_COMMONSERVICES_INSTANCE_NAME} --namespace ${lf_in_namespace} --type merge -p '{"spec": {"license": {"accept": true}}}'
+    oc -n ${lf_in_namespace} patch commonservice ${MY_COMMONSERVICES_INSTANCE_NAME} --type merge -p '{"spec": {"license": {"accept": true}}}'
   fi
 }
 
@@ -568,7 +435,7 @@ function login_2_openshift_cluster () {
     mylog check "Login to cluster"
     # SB 20231208 The following command sets your command line context for the cluster and download the TLS certificates and permission files for the administrator.
     # more details here : https://cloud.ibm.com/docs/openshift?topic=openshift-access_cluster#access_public_se
-    ibmcloud ks cluster config --cluster ${my_cluster_name} --admin
+    ibmcloud ks cluster config --cluster ${sc_cluster_name} --admin
     while ! oc login -u apikey -p $MY_IC_APIKEY --server=$my_cluster_url > /dev/null;do
       mylog error "$(date) Fail to login to Cluster, retry in a while (login using web to unblock)" 1>&2
       sleep 30
@@ -581,13 +448,14 @@ function login_2_openshift_cluster () {
 ################################################
 # Install Cert Manager 
 function install_cert_manager () {
-  #mylog info "==== Redhat Cert Manager catalog." 1>&2
+  mylog info "==== Redhat Cert Manager catalog." 1>&2
   lf_catalogsource_namespace=$MY_CATALOGSOURCES_NAMESPACE
   lf_catalogsource_name="redhat-operators"
   lf_catalogsource_dspname="Red Hat Operators"
   lf_catalogsource_image="registry.redhat.io/redhat/redhat-operator-index:v4.12"
   lf_catalogsource_publisher="Red Hat"
   lf_catalogsource_interval="10m"
+  decho "create_catalogsource \"${lf_catalogsource_namespace}\" \"${lf_catalogsource_name}\" \"${lf_catalogsource_dspname}\" \"${lf_catalogsource_image}\" \"${lf_catalogsource_publisher}\" \"${lf_catalogsource_interval}\""
   create_catalogsource "${lf_catalogsource_namespace}" "${lf_catalogsource_name}" "${lf_catalogsource_dspname}" "${lf_catalogsource_image}" "${lf_catalogsource_publisher}" "${lf_catalogsource_interval}"
 
   # SB]20231215 Pour obtenir le template de l'operateur cert-manager de Redhat, je l'ai installé avec la console, j'ai récupéré le Yaml puis désinstallé.
@@ -598,6 +466,7 @@ function install_cert_manager () {
   lf_strategy="Automatic"
   lf_wait_for_state=1
   lf_startingcsv=$MY_CERT_MANAGER_STARTINGCSV
+  decho "create_operator_subscription \"${lf_operator_name}\" \"${lf_current_chl}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_startingcsv}\""
   create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_startingcsv}"
 }
 
@@ -606,6 +475,7 @@ function install_cert_manager () {
 function install_lic_srv () {
   # ibm-license-server
   if $MY_LIC_SRV;then
+    mylog info "==== IBM License Server." 1>&2
     check_add_cs_ibm_pak ibm-licensing MY_LIC_SRV_CASE amd64
 
     #mylog info "==== Adding Licensing service catalog source in ns : openshift-marketplace." 1>&2
@@ -615,6 +485,7 @@ function install_lic_srv () {
     lf_catalogsource_image="icr.io/cpopen/ibm-licensing-catalog"
     lf_catalogsource_publisher="IBM"
     lf_catalogsource_interval="45m"
+    decho "create_catalogsource \"${lf_catalogsource_namespace}\" \"${lf_catalogsource_name}\" \"${lf_catalogsource_dspname}\" \"${lf_catalogsource_image}\" \"${lf_catalogsource_publisher}\" \"${lf_catalogsource_interval}\""
     create_catalogsource "${lf_catalogsource_namespace}" "${lf_catalogsource_name}" "${lf_catalogsource_dspname}" "${lf_catalogsource_image}" "${lf_catalogsource_publisher}" "${lf_catalogsource_interval}"
 
     # ATTENTION : pour le licensing server ajouter dans la partie spec.startingCSV: ibm-licensing-operator.v4.2.1 (sinon erreur).
@@ -624,9 +495,58 @@ function install_lic_srv () {
     lf_operator_namespace=$MY_LICENSE_SERVER_NAMESPACE
     lf_strategy="Automatic"
     lf_wait_for_state=1
-    lf_startingcsv=$MY_LICENSING_OPERATOR_STARTINGCSV
+    lf_startingcsv=$MY_LIC_SRV_OPERATOR_STARTINGCSV
+    decho "create_operator_subscription \"${lf_operator_name}\" \"${lf_current_chl}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_startingcsv}\""
     create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_startingcsv}"
   fi 
+}
+
+############################################################################################################################################
+#SB]20231214 Installing Foundational services v4.3
+# Referring to https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.4?topic=whats-new-in-cloud-pak-integration-202341
+# "The IBM Cloud Pak foundational services operator is no longer installed automatically. 
+#  Install this operator manually if you need to create an instance that uses identity and access management. 
+#  Also, make sure you have a certificate manager; otherwise, the IBM Cloud Pak foundational services operator installation will not complete."
+# This function implements the following steps described here : 
+############################################################################################################################################
+function install_fs () {
+  mylog info "==== IBM Common Services." 1>&2
+  # ibm-cp-common-services
+  check_add_cs_ibm_pak ibm-cp-common-services MY_COMMONSERVICES_CASE amd64
+
+  lf_catalogsource_namespace=$MY_CATALOGSOURCES_NAMESPACE
+  lf_catalogsource_name="opencloud-operators"
+  lf_catalogsource_dspname="IBMCS Operators"
+  lf_catalogsource_image="icr.io/cpopen/ibm-common-service-catalog:4.3"
+  lf_catalogsource_publisher="IBM"
+  lf_catalogsource_interval="45m"
+  decho "create_catalogsource \"${lf_catalogsource_namespace}\" \"${lf_catalogsource_name}\" \"${lf_catalogsource_dspname}\" \"${lf_catalogsource_image}\" \"${lf_catalogsource_publisher}\" \"${lf_catalogsource_interval}\""
+  create_catalogsource "${lf_catalogsource_namespace}" "${lf_catalogsource_name}" "${lf_catalogsource_dspname}" "${lf_catalogsource_image}" "${lf_catalogsource_publisher}" "${lf_catalogsource_interval}"
+
+  # Pour les operations suivantes : utiliser un seul namespace
+  #lf_namespace=$MY_COMMON_SERVICES_NAMESPACE
+  lf_operator_namespace=$MY_OPERATORS_NAMESPACE
+
+  #create_operator_subscription "ibm-common-service-operator" $MY_COMMONSERVICES_CHL "opencloud-operators" $MY_COMMON_SERVICES_NAMESPACE "Automatic" $MY_STARTING_CSV
+  lf_operator_name="ibm-common-service-operator"
+  lf_current_chl=$MY_COMMONSERVICES_CHL
+  lf_catalog_source_name="opencloud-operators"
+  lf_strategy="Automatic"
+  lf_wait_for_state=1
+  lf_startingcsv=$MY_COMMONSERVICES_OPERATOR_STARTINGCSV
+  decho "create_operator_subscription \"${lf_operator_name}\" \"${lf_current_chl}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_startingcsv}\""
+  create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_startingcsv}"
+ 
+  ## Setting hardware  Accept the license to use foundational services by adding spec.license.accept: true in the spec section.
+  #accept_license_fs $MY_OPERATORS_NAMESPACE
+  accept_license_fs $lf_operator_namespace
+
+  # Configuring foundational services by using the CommonService custom resource.
+  lf_type="CommonService"
+  lf_cr_name=$MY_COMMONSERVICES_INSTANCE_NAME
+  lf_yaml_file="${RESOURCSEDIR}foundational-services-cr.yaml"
+  decho "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_operator_namespace}\""
+  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_operator_namespace}"
 }
 
 ################################################
@@ -648,7 +568,7 @@ function install_navigator () {
     lf_strategy="Automatic"
     lf_wait_for_state=1
     lf_startingcsv=$MY_NAVIGATOR_OPERATOR_STARTINGCSV
-    create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_startingcsv}"
+    # create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_startingcsv}"
   fi
 
   if $MY_NAVIGATOR_INSTANCE;then
@@ -717,7 +637,8 @@ function install_ace () {
   # ibm-appconnect
   if $MY_ACE;then
     mylog info "==== Installing ACE." 1>&2
-     # add catalog sources using ibm_pak plugin
+
+    # add catalog sources using ibm_pak plugin
     check_add_cs_ibm_pak ibm-appconnect MY_ACE_CASE amd64
  
     # Creating ACE operator subscription
@@ -750,6 +671,26 @@ function install_ace () {
     lf_wait_for_state=0
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
   fi
+
+  # start customization
+  # Takes all the templates associated with the capabilities and generate the files from the context variables
+  # The files are generated into ./customisation/working/<capability>/config
+  if $MY_ACE_CUSTOM;then
+    # generate the differents properties files
+    # SB]20231109 some generated files (yaml) are based on other generated files (properties), so :
+    # - in template custom dirs, separate the files to two categories : scripts (*.properties) and config (*.yaml)
+    # - generate first the *.properties files to be sourced then generate the *.yaml files
+    if [ ! -d ${ACE_GEN_CUSTOMDIR}scripts ]; then
+      mkdir -p ${ACE_GEN_CUSTOMDIR}scripts
+    fi
+    if [ ! -d ${ACE_GEN_CUSTOMDIR}config ]; then
+      mkdir -p ${ACE_GEN_CUSTOMDIR}config
+    fi
+    generate_files $ACE_TMPL_CUSTOMDIR $ACE_GEN_CUSTOMDIR true
+
+    # launch custo scripts
+    mylog info "Customise ACE"
+  fi
 }
 
 ################################################
@@ -781,6 +722,30 @@ function install_apic () {
     lf_wait_for_state=0
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
   fi
+
+  # start customization
+  # Takes all the templates associated with the capabilities and generate the files from the context variables
+  # The files are generated into ./customisation/working/<capability>/config
+  if $MY_APIC_CUSTOM;then
+    # generate the differents properties files
+    # SB]20231109 some generated files (yaml) are based on other generated files (properties), so :
+    # - in template custom dirs, separate the files to two categories : scripts (*.properties) and config (*.yaml)
+    # - generate first the *.properties files to be sourced then generate the *.yaml files
+    if [ ! -d ${APIC_GEN_CUSTOMDIR}scripts ]; then
+      mkdir -p ${APIC_GEN_CUSTOMDIR}scripts
+    fi
+    if [ ! -d ${APIC_GEN_CUSTOMDIR}config ]; then
+      mkdir -p ${APIC_GEN_CUSTOMDIR}config
+    fi
+    generate_files $APIC_TMPL_CUSTOMDIR $APIC_GEN_CUSTOMDIR true
+
+    save_certificate ${MY_OC_PROJECT} cp4i-apic-ingress-ca ${WORKINGDIR}
+    save_certificate ${MY_OC_PROJECT} cp4i-apic-gw-gateway ${WORKINGDIR}
+
+   # launch custom script
+   mylog info "Customise APIC"
+#    . ${APIC_SCRIPTDIR}scripts/apic.config.sh
+  fi
 }
 
 ################################################
@@ -805,13 +770,15 @@ function install_dpgw () {
 # Install EEM
 function install_eem () {
   local lf_in_ns=$1
+  local varb64
+
   if $MY_EEM;then
     mylog info "==== Installing Event Endpoint Management." 1>&2
     ## event endpoint management
     ## to get the name of the pak to use : oc ibm-pak list
     ## https://ibm.github.io/event-automation/eem/installing/installing/, chapter : Install the operator by using the CLI (oc ibm-pak)
     check_add_cs_ibm_pak ibm-eventendpointmanagement MY_EEM_CASE amd64
-    oc ibm-pak launch ibm-eventendpointmanagement --version $MY_EEM_CASE --inventory eemOperatorSetup --action installCatalog -n $lf_in_ns
+    #oc -n $lf_in_ns ibm-pak launch ibm-eventendpointmanagement --version $MY_EEM_CASE --inventory eemOperatorSetup --action installCatalog
 
     # Creating Event Endpoint Management operator subscription
     lf_operator_name="ibm-eventendpointmanagement"
@@ -833,6 +800,28 @@ function install_eem () {
     lf_wait_for_state=0
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
   fi
+
+  # start customization
+  # Takes all the templates associated with the capabilities and generate the files from the context variables
+  # The files are generated into ./customisation/working/<capability>/config
+  ## Creating EEM users and roles
+  if $MY_EEM_CUSTOM;then
+    # generate properties files
+    cat  $EEM_TMPL_USER_CREDENTIALS_CUSTOMFILE | envsubst >  $EEM_GEN_USER_CREDENTIALS_CUSTOMFILE
+    cat  $EEM_TMPL_USER_ROLES_CUSTOMFILE | envsubst >  $EEM_GEN_USER_ROLES_CUSTOMFILE
+
+    # base64 generates an error ": illegal base64 data at input byte 76". Solution found here : https://bugzilla.redhat.com/show_bug.cgi?id=1809431. use base64 -w0
+    # user credentials
+    varb64=$(cat "$EEM_GEN_USER_CREDENTIALS_CUSTOMFILE" | base64 -w0)
+    oc -n $MY_OC_PROJECT patch secret "${MY_EEM_INSTANCE_NAME}-ibm-eem-user-credentials" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-credentials.json\" ,\"value\" : \"$varb64\"}]"
+
+    # user roles
+    varb64=$(cat "$EEM_GEN_USER_ROLES_CUSTOMFILE" | base64 -w0)
+    oc -n $MY_OC_PROJECT patch secret "${MY_EEM_INSTANCE_NAME}-ibm-eem-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$varb64\"}]"
+
+    # launch custom script
+    mylog info "Customise EEM"
+  fi
 }
 
 ################################################
@@ -841,7 +830,7 @@ function install_egw () {
   # Creating EventGateway instance (Event Gateway)
   if $MY_EGW;then
     mylog info "==== Installing Event Endpoint Gateway." 1>&2
-    export MY_EEM_MANAGER_GATEWAY_ROUTE=$(oc get eem $MY_EEM_INSTANCE_NAME -n $MY_OC_PROJECT -o jsonpath='{.status.endpoints[1].uri}')
+    export MY_EEM_MANAGER_GATEWAY_ROUTE=$(oc -n $MY_OC_PROJECT get eem $MY_EEM_INSTANCE_NAME -o jsonpath='{.status.endpoints[1].uri}')
 
     lf_file="${OPERANDSDIR}EG-Capability.yaml"
     lf_ns="${MY_OC_PROJECT}"
@@ -858,28 +847,29 @@ function install_egw () {
 # Install EP
 function install_ep () {
   local lf_in_ns=$1
+  local varb64
+
   if $MY_EP;then
     mylog info "==== Installing Event Processing." 1>&2
     # add catalog sources using ibm_pak plugin
     check_add_cs_ibm_pak ibm-eventprocessing MY_EP_CASE amd64
-    oc ibm-pak launch ibm-eventprocessing --version $MY_EP_CASE --inventory epOperatorSetup --action installCatalog -n  $lf_in_ns
+    #oc -n  $lf_in_ns ibm-pak launch ibm-eventprocessing --version $MY_EP_CASE --inventory epOperatorSetup --action installCatalog
 
     ## Creating Event processing operator subscription
-    lf_inventory="epOperatorSetup"
-    lf_resource_name="ibm-eventprocessing"
-    lf_namespace=$MY_OPERATORS_NAMESPACE
-    lf_path="{.status.phase}"
-    lf_state="Succeeded"
-    lf_type="clusterserviceversion" 
-    lf_version=$MY_EP_CASE
+    lf_operator_name="ibm-eventprocessing"
+    lf_current_chl=$MY_EP_CHL
+    lf_catalog_source_name="ibm-eventprocessing-catalog"
+    lf_operator_namespace=$MY_OPERATORS_NAMESPACE
+    lf_strategy="Automatic"
     lf_wait_for_state=1
-    create_ea_operators "${lf_inventory}" "${lf_resource_name}" "${lf_namespace}" "${lf_path}" "${lf_state}" "${lf_type}" "${lf_version}" "${lf_wait_for_state}"
+    lf_startingcsv=$MY_EP_OPERATOR_STARTINGCSV
+    create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_startingcsv}"
 
     ## SB]20231023 to check the status of Event processing : https://ibm.github.io/event-automation/ep/installing/post-installation/
     ## The Status column displays the current state of the EventProcessing custom resource. 
     ## When the Event Processing instance is ready, the phase displays Phase: Running.
     ## Creating EventProcessing instance (Event Processing)
-    ## oc get eventprocessing <instance-name> -n <namespace> -o jsonpath='{.status.phase}'
+    ## oc -n <namespace> get eventprocessing <instance-name> -o jsonpath='{.status.phase}'
     ## Creating Event processing instance
     lf_file="${OPERANDSDIR}EP-Capability.yaml"
     lf_ns="${MY_OC_PROJECT}"
@@ -889,6 +879,27 @@ function install_ep () {
     lf_type="EventProcessing"
     lf_wait_for_state=0
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
+  fi
+
+  # start customization
+  # Takes all the templates associated with the capabilities and generate the files from the context variables
+  # The files are generated into ./customisation/working/<capability>/config
+  ## Creating Event Processing users and roles
+  if $MY_EP_CUSTOM;then
+    # generate properties files
+    cat  $EP_TMPL_USER_CREDENTIALS_CUSTOMFILE | envsubst >  $EP_GEN_USER_CREDENTIALS_CUSTOMFILE
+    cat  $EP_TMPL_USER_ROLE_CUSTOMFILE | envsubst >  $EP_GEN_USER_ROLES_CUSTOMFILE
+
+    # user credentials
+    varb64=$(cat "$EP_GEN_USER_CREDENTIALS_CUSTOMFILE" | base64 -w0)
+    oc -n $MY_OC_PROJECT patch secret "${MY_EP_INSTANCE_NAME}-ibm-ep-user-credentials" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-credentials.json\" ,\"value\" : \"$varb64\"}]"
+
+    # user roles
+    varb64=$(cat "$EP_GEN_USER_ROLES_CUSTOMFILE" | base64 -w0)
+    oc -n $MY_OC_PROJECT patch secret "${MY_EP_INSTANCE_NAME}-ibm-ep-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$varb64\"}]"
+
+    # launch custom script
+    mylog info "Customise Event Processing"
   fi
 }
 
@@ -921,6 +932,48 @@ function install_es () {
     lf_wait_for_state=0
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
   fi
+
+  # start customization
+  # Takes all the templates associated with the capabilities and generate the files from the context variables
+  # The files are generated into ./customisation/working/<capability>/config
+
+  # Creating Eventstream topic,
+  # SB]20231019 
+  # 2 options : 
+  #   Option1 : using the es plugin : cloudctl es topic-create.
+  #   You have to install the ES plugin for ibmcloud command : cloudct. 
+  #   https://ibm.github.io/event-automation/es/installing/post-installation/#installing-the-event-streams-command-line-interface, part : IBM Cloud Pak CLI plugin (cloudctl es)
+  #  
+  #   Option2 : using a yaml configuration file
+
+  # SB]20231026 Creating : 
+  # - operands properties file, 
+  # - topics, ...
+  if $MY_ES_CUSTOM;then
+    # generate the differents properties files
+    # SB]20231109 some generated files (yaml) are based on other generated files (properties), so :
+    # - in template custom dirs, separate the files to two categories : scripts (*.properties) and config (*.yaml)
+    # - generate first the *.properties files to be sourced then generate the *.yaml files
+    if [ ! -d ${ES_GEN_CUSTOMDIR}scripts ]; then
+      mkdir -p ${ES_GEN_CUSTOMDIR}scripts
+    fi
+    if [ ! -d ${ES_GEN_CUSTOMDIR}config ]; then
+      mkdir -p ${ES_GEN_CUSTOMDIR}config
+    fi
+    generate_files $ES_TMPL_CUSTOMDIR $ES_GEN_CUSTOMDIR false
+
+    # SB]20231211 https://ibm.github.io/event-automation/es/installing/installing/
+    # Question : Do we have to create this configmap before installing ES or even after ? Used for monitoring
+    lf_type="configmap"
+    lf_cr_name="cluster-monitoring-config"
+    lf_yaml_file="${RESOURCSEDIR}openshift-monitoring-cm.yaml"
+    lf_namespace="openshift-monitoring"
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
+ 
+    # launch custom script
+      mylog info "Customise Event Streams"
+    . ${ES_SCRIPTDIR}scripts/es.config.sh
+  fi
 }
 
 ################################################
@@ -934,22 +987,22 @@ function install_flink () {
     ## https://ibm.github.io/event-automation/ep/installing/installing/, Chapter Applying catalog sources to your cluster
     # event flink
     check_add_cs_ibm_pak ibm-eventautomation-flink MY_FLINK_CASE amd64
-    oc ibm-pak launch ibm-eventautomation-flink --version $MY_FLINK_CASE --inventory flinkKubernetesOperatorSetup --action installCatalog -n $lf_in_ns
+    #oc -n $lf_in_ns ibm-pak launch ibm-eventautomation-flink --version $MY_FLINK_CASE --inventory flinkKubernetesOperatorSetup --action installCatalog
 
     ## SB]20231020 For Flink and Event processing install the operator with the following command :
     ## https://ibm.github.io/event-automation/ep/installing/installing/, Chapter : Install the operator by using the CLI (oc ibm-pak)
     ## event flink
     ## Creating Eventautomation Flink operator subscription
-    lf_inventory="flinkKubernetesOperatorSetup"
-    lf_resource_name="ibm-eventautomation-flink"
-    lf_namespace=$MY_OPERATORS_NAMESPACE
-    lf_path="{.status.phase}"
-    lf_state="Succeeded"
-    lf_type="clusterserviceversion" 
-    lf_version=$MY_FLINK_CASE
-    lf_startingcsv=$MY_FLINK_OPERATOR_SARTINGCSV
+    ## Creating Event processing operator subscription
+    lf_operator_name="ibm-eventautomation-flink"
+    lf_current_chl=$MY_FLINK_CHL
+    lf_catalog_source_name="ibm-eventautomation-flink-catalog"
+    lf_operator_namespace=$MY_OPERATORS_NAMESPACE
+    lf_strategy="Automatic"
     lf_wait_for_state=1
-    create_ea_operators "${lf_inventory}" "${lf_resource_name}" "${lf_namespace}" "${lf_path}" "${lf_state}" "${lf_type}" "${lf_version}" "${lf_wait_for_state}"
+    lf_startingcsv=$MY_FLINK_OPERATOR_STARTINGCSV
+    create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_startingcsv}"
+
   
     ## Creation of Event automation Flink PVC and instance
     # Even if it's a pvc we use the same generic function
@@ -998,8 +1051,8 @@ function install_hsts () {
     create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_startingcsv}"
 
     # Creating Aspera HSTS instance
-    oc apply -f "${OPERANDSDIR}AsperaCM-cp4i-hsts-prometheus-lock.yaml"
-    oc apply -f "${OPERANDSDIR}AsperaCM-cp4i-hsts-engine-lock.yaml"
+    #oc apply -f "${OPERANDSDIR}AsperaCM-cp4i-hsts-prometheus-lock.yaml"
+    #oc apply -f "${OPERANDSDIR}AsperaCM-cp4i-hsts-engine-lock.yaml"
 
     lf_file="${OPERANDSDIR}AsperaHSTS-Capability.yaml"
     lf_ns="${MY_OC_PROJECT}"
@@ -1037,7 +1090,7 @@ function install_mq () {
     lf_ns="${MY_OC_PROJECT}"
     lf_path="{.status.phase}"
     lf_resource="$MY_MQ_INSTANCE_NAME"
-    lf_state="Ready"
+    lf_state="Running"
     lf_type="QueueManager"
     lf_wait_for_state=0
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
@@ -1061,7 +1114,7 @@ function install_instana () {
     lf_startingcsv=$MY_INSTANA_OPERATOR_STARTINGCSV
     lf_wait_for_state=1
     create_namespace $MY_INSTANA_AGENT_NAMESPACE 
-    oc adm policy add-scc-to-user privileged -z instana-agent -n $MY_INSTANA_AGENT_NAMESPACE    
+    oc -n $MY_INSTANA_AGENT_NAMESPACE adm policy add-scc-to-user privileged -z instana-agent
     create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_startingcsv}"
 
     # Creating Instana agent
@@ -1116,23 +1169,23 @@ function install_nexus () {
 ################################################################################################
 # Start of the script main entry
 ################################################################################################
-# @param my_properties_file: file path and name of the properties file
+# @param sc_properties_file: file path and name of the properties file
 # @param MY_OC_PROJECT: namespace where to create the operators and capabilities
-# @param my_cluster_name: name of the cluster
+# @param sc_cluster_name: name of the cluster
 # example of invocation: ./provision_cluster-v2.sh private/my-cp4i.properties sbtest cp4i-sb-cluster
 # other example: ./provision_cluster-v2.sh cp4i.properties ./versions/cp4i-2023.4.properties cp4i sb20240102
-# other example: ./provision_cluster-v2.sh cp4i.properties ./versions/cp4i-2023.4.properties cp4i cp4iad22023
-my_properties_file=$1
-my_versions_file=$2
+# other example: ./provision_cluster-v2.sh cp4i.properties ./versions/cp4i-2023.4.properties cp4i cp4iad2023
+sc_properties_file=$1
+sc_versions_file=$2
 export MY_OC_PROJECT=$3
-my_cluster_name=$4
+sc_cluster_name=$4
 
 # end with / on purpose (if var not defined, uses CWD - Current Working Directory)
 # MAINSCRIPTDIR=$(dirname "$0")/
 MAINSCRIPTDIR=${PWD}/
 
 if [ $# -ne 4 ]; then
-  echo "the number of arguments should be 4 : properties_file versions_file namespace cluster "
+  echo "the number of arguments should be 4 : properties_file versions_file namespace cluster"
   exit
 else echo "The provided arguments are: $@"
 fi
@@ -1141,20 +1194,19 @@ fi
 . "${MAINSCRIPTDIR}"lib.sh
 
 # Read all the properties
-read_config_file "$my_properties_file"
+read_config_file "$sc_properties_file"
 
 # Read versions properties
-read_config_file "$my_versions_file"
+read_config_file "$sc_versions_file"
 
 # Read user file properties
 my_user_file="${PRIVATEDIR}user.properties"
 read_config_file "$my_user_file"
 
-# check the differents pre requisites
-check_exec_prereqs
-
 : <<'END_COMMENT'
 END_COMMENT
+# check the differents pre requisites
+check_exec_prereqs
 
 # Log to IBM Cloud
 login_2_ibm_cloud
@@ -1164,6 +1216,7 @@ create_openshift_cluster_wait_4_availability
 
 # Log to openshift cluster
 login_2_openshift_cluster
+
 
 # Create project namespace.
 # SB]20231213 erreur obtenue juste après la création du cluster openshift : Error from server (Forbidden): You may not request a new project via this API.
@@ -1177,7 +1230,6 @@ login_2_openshift_cluster
 oc create clusterrolebinding myname-cluster-admin-binding --clusterrole=cluster-admin --user=$MY_USER > /dev/null 2>&1
 oc create clusterrolebinding myname-cluster-binding --clusterrole=admin --user=$MY_USER > /dev/null 2>&1
 oc adm policy add-cluster-role-to-user self-provisioner $MY_USER -n $MY_OC_PROJECT
-
 
 # https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.4?topic=operators-installing-by-using-cli
 # (Only if your preferred installation mode is a specific namespace on the cluster) Create an OperatorGroup
@@ -1202,10 +1254,8 @@ check_create_oc_yaml "${ls_type}" "${ls_cr_name}" "${ls_yaml_file}" "${ls_namesp
 
 # Add ibm entitlement key to namespace
 # SB]20230209 Aspera hsts service cannot be created because a problem with the entitlement, it muste be added in the openshift-operators namespace.
-add_ibm_entitlement $MY_OC_PROJECT
-add_ibm_entitlement $MY_OPERATORS_NAMESPACE
-#add_ibm_entitlement_podman $MY_OC_PROJECT
-#add_ibm_entitlement_podman $MY_OPERATORS_NAMESPACE
+add_ibm_entitlement $MY_OC_PROJECT $MY_CONTAINER_ENGINE
+add_ibm_entitlement $MY_OPERATORS_NAMESPACE $MY_CONTAINER_ENGINE
 
 #SB]20231214 Installing Foundation services
 mylog info "==== Installing foundational services (Cert Manager, Licensing Server and Common Services)." 1>&2
@@ -1237,6 +1287,7 @@ install_egw
 # For each capability install : case, operator, operand 
 install_ep $MY_CATALOGSOURCES_NAMESPACE
 
+
 # For each capability install : case, operator, operand 
 install_es
 
@@ -1261,12 +1312,6 @@ install_instana
 ## Display information to access CP4I
 mylog info "==== Displaying Access Info to CP4I." 1>&2
 display_access_info
-
-# Start customization
-mylog info "==== Customization." 1>&2
-start_customization $MY_OC_PROJECT
-
-launch_customization $MY_OC_PROJECT
 
 #work in progress
 #SB]20230214 Ajout Configuration ACE

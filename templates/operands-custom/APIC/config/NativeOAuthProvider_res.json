@@ -4,7 +4,6 @@
     "name": "nativeprovider",
     "title": "NativeProvider",
     "debug": false,
-    "owned": true,
     "provider_type": "native",
     "scopes": {
         "openid": "Support OIDC",
@@ -98,7 +97,6 @@
         "api": {
             "info": {
                 "description": "Internal OAuth Provider shared among organisations",
-                "x-ibm-name": "nativeprovidere5f45a6d-c124-47ca-bb8f-697c3faa4e6c",
                 "version": "1.0.0",
                 "title": "nativeprovider"
             },
@@ -848,9 +846,8 @@
         "type": "public"
     },
     "user_registry_urls": [
-        "https://cpd-cp4i.cp4iad22023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/integration/apis/cp4i/cp4i-apic/api/user-registries/e80b4f5d-c5ea-45d7-8dd4-52242c088f97/de85fcb8-9680-402f-9fa6-c6d0142a150b"
+        "https://cp4i-apic-mgmt-platform-api-cp4i.cp4iad22023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/api/user-registries/e8e73dde-c011-4916-8f34-cfd3fbef0612/926fa00d-8ae5-4876-b69e-a801e85d64d9"
     ],
     "tls_client_profile_urls": [],
-    "org_url": "https://cpd-cp4i.cp4iad22023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/integration/apis/cp4i/cp4i-apic/api/orgs/e80b4f5d-c5ea-45d7-8dd4-52242c088f97",
-    "url": "https://cpd-cp4i.cp4iad22023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/integration/apis/cp4i/cp4i-apic/api/orgs/e80b4f5d-c5ea-45d7-8dd4-52242c088f97/oauth-providers/e5f45a6d-c124-47ca-bb8f-697c3faa4e6c"
+    "org_url": "https://cp4i-apic-mgmt-platform-api-cp4i.cp4iad22023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/api/orgs/e8e73dde-c011-4916-8f34-cfd3fbef0612"
 }

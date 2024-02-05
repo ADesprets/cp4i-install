@@ -5,15 +5,15 @@
 starting=$(date);
 
 # end with / on purpose (if var not defined, uses CWD - Current Working Directory)
-scriptdir=$(dirname "$0")/
-configdir="${scriptdir}../config/"
-MAINSCRIPTDIR="${scriptdir}../../../"
+scriptdir=${PWD}/
 
 # load helper functions
-. "${MAINSCRIPTDIR}"lib.sh
+. "${scriptdir}"lib.sh
 
-read_config_file "${MAINSCRIPTDIR}cp4i.properties"
-read_config_file "${configdir}es.properties"
+#assumptions on the name od the file
+read_config_file "${scriptdir}cp4i.properties"
+
+read_config_file "${ES_GEN_CUSTOMDIR}scripts/es.properties"
 
 # Creation de Topics
 SECONDS=0
@@ -23,17 +23,19 @@ topic_spec_names=("FLIGHT.TAKEOFFS" "WEATHER.ARMONK" "WEATHER.HURSLEY" "WEATHER.
 
 for index in ${!topic_names[@]}
 do
+    mylog info "topic name: ${topic_names[$index]}, topic spec name: ${topic_spec_names[$index]},  es_instance: ${es_instance}"
     # need to make those variables visible to the envsubst command used in lib.sh
     export es_topic_name=${topic_names[$index]}
     export es_spec_topic_name=${topic_spec_names[$index]}
 
-    check_create_oc_yaml "KafkaTopic" "${es_topic_name}" "${configdir}generic-topic.yaml" $es_project
+    # CRD described at https://ibm.github.io/event-automation/es/reference/api-reference-es/
+    check_create_oc_yaml "KafkaTopic" "${es_topic_name}" "${ES_GEN_CUSTOMDIR}config/topic.yaml" $es_project
     # check_resource_availability "KafkaTopic" "${es_topic_name}" $es_project
     # wait_for_state KafkaTopic "${es_topic_name}" "Ready" '.status.phase' $es_project
 done
 
 # Create Kafka user
-check_create_oc_yaml "KafkaUser" "${es_topic_name}" "${configdir}user.yaml" $es_project
+check_create_oc_yaml "KafkaUser" "${es_topic_name}" "${ES_GEN_CUSTOMDIR}config/user.yaml" $es_project
 
 duration=$SECONDS
 mylog info "Creation of the Kafka Topics took $duration seconds to execute." 1>&2

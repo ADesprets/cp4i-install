@@ -20,16 +20,16 @@ echo "eem-demo_project: ${eem-demo_project}"
 # Work in progress
 SECONDS=0
 	mylog check "Checking ${octype} ${name} in ${ns}"
-	if oc get deployement ${name} -n ${ns} > /dev/null 2>&1; then mylog ok;else
+	if oc -n ${ns} get deployement ${name} > /dev/null 2>&1; then mylog ok;else
 		mylog info "Creating LDAP server"
 
 		# deploy openldap and take in account the PVCs just created
 		# check that deployment of openldap was not done
-		if oc get "deployment" "openldap" -n ${ns} > /dev/null 2>&1; then mylog ok;else
+		if oc -n ${ns} get "deployment" "openldap" > /dev/null 2>&1; then mylog ok;else
 			oc -n ${ns} new-app osixia/${name}
 			oc -n ${ns} get deployment.apps/openldap -o json | jq '. | del(."status")' > ${WORKINGDIR}openldap.json
 			jq -s '.[0] * .[1] ' ${WORKINGDIR}openldap.json ${YAMLDIR}kube_resources/ldap-config.json > ${WORKINGDIR}openldap.new.json
-			oc apply -n ldap -f ${WORKINGDIR}openldap.new.json
+			oc -n ldap apply -f ${WORKINGDIR}openldap.new.json
 
 			# expose service externaly and get host and port
 			oc -n ${ns} expose service/${name} --target-port=389 --name=openldap-external

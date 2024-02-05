@@ -2,7 +2,7 @@
 # function to print message if debug is set to 1
 function decho() {
   if [ -n "$ADEBUG" ]; then
-    mylog info "$@"
+    mylog debug "$@"
   fi
 }
 
@@ -56,6 +56,19 @@ function cmp_versions() {
 }
 
 ################################################
+# Save a certificate in pem format
+function save_certificate() {
+  local lf_in_ns=$1
+  local lf_in_secret_name=$2
+  local lf_in_destination_path=$3
+
+  mylog info "Save certificate ${lf_in_secret_name} to ${lf_in_destination_path}${lf_in_secret_name}.pem"
+  cert=$(oc -n cp4i get secret ${lf_in_secret_name} -o jsonpath='{.data.ca\.crt}')
+  echo $cert | base64 --decode > "${lf_in_destination_path}${lf_in_secret_name}.pem"
+}
+
+
+################################################
 # Check that the CASE is already downloaded
 # example pour filtrer avec conditions : 
 # avec jsonpath=$.[?(@.name=='ibm-licensing' && @.version=='4.2.1')]
@@ -94,7 +107,7 @@ function is_case_downloaded() {
         lf_cmp=$?
         case $lf_cmp in
           0) return 1 ;;
-          1) sed -i "/$lf_in_version_varid/c$lf_in_version_varid=$lf_latestversion" "$my_versions_file" 
+          1) sed -i "/$lf_in_version_varid/c$lf_in_version_varid=$lf_latestversion" "$sc_versions_file" 
              return 1 ;;
         esac
       fi
@@ -120,13 +133,15 @@ function is_cr_newer() {
   local lf_file_timestamp
   local lf_path="{.metadata.creationTimestamp}"
 
-  lf_customresource_timestamp=$(oc get $lf_in_type $lf_in_customresource -n $lf_in_namespace -o jsonpath='$lf_path'| date -d - +%s)
+  #oc -n $lf_in_namespace get $lf_in_type $lf_in_customresource -o jsonpath='$lf_path'| date -d - +%s
+  lf_customresource_timestamp=$(oc -n $lf_in_namespace get $lf_in_type $lf_in_customresource -o json | jq -r  '.metadata.creationTimestamp')
+  lf_customresource_timestamp=$(echo "$lf_customresource_timestamp" | date -d - +%s )
   lf_file_timestamp=$(stat -c %Y $lf_in_file)
 
   if [ $lf_customresource_timestamp -gt $lf_file_timestamp ]; then
-    echo 1
+    return 1
   else
-    echo 0
+    return 0
   fi
 }
 
@@ -175,22 +190,23 @@ function check_directory_contains_files () {
 
 ################################################
 function read_config_file() {
+  local lf_config_file
 	if test -n "$PC_CONFIG";then
-	  config_file="$PC_CONFIG"
+	  lf_config_file="$PC_CONFIG"
 	else
-	  config_file="$1"
+	  lf_config_file="$1"
 	fi
-	if test -z "$config_file";then
+	if test -z "$lf_config_file";then
 		mylog error "Usage: $0 <config file>" 1>&2
 		mylog info "Example: $0 ${MAINSCRIPTDIR}cp4i.conf"
 		exit 1
 	fi
 
-	check_file_exist $config_file
+	check_file_exist $lf_config_file
 
 	# load user specific variables, "set -a" so that variables are part of environment for envsubst
 	set -a
-	. "${config_file}"
+	. "${lf_config_file}"
 	set +a
 }
 
@@ -214,13 +230,17 @@ function var_fail() {
 # simple logging with colors
 # @param 1 level (info/error/warn/wait/check/ok/no)
 function mylog() {
-	p=
-	w=
-	s=
+  # prefix
+	local p=
+  # do not output the trailing newline
+	local w=
+  # suffix
+	local s=
 	case $1 in
 	  info) c=2;; #green
 	  error) c=1;p='ERROR: ';; #red
 	  warn) c=3;;#yellow
+	  debug) c=8;p='CMD: ';; #yellow
 	  wait) c=4;p="$(date) ";; #blue
 	  check) c=6;w=-n;s=...;; #cyan
 	  ok) c=2;p=OK;; #green
@@ -236,7 +256,7 @@ function mylog() {
 function check_exec_prereqs() {
   check_command_exist awk
   check_command_exist curl
-  check_command_exist docker
+  check_command_exist $MY_CONTAINER_ENGINE
   check_command_exist ibmcloud
   check_command_exist jq
   check_command_exist keytool
@@ -265,29 +285,6 @@ function send_email() {
     --mail-from cp4i-admin@ibm.com \
     --mail-rcpt cp4i-user@ibm.com \
     --upload-file ${MAINSCRIPTDIR}templates/emails/test-email.txt
-}
-
-################################################
-# wait for Cluster availability
-# set variable my_cluster_url
-function wait_for_cluster_availability () {
-  SECONDS=0	
-  wait_for_state 'Cluster state' 'normal-All Workers Normal' "ibmcloud oc cluster get --cluster $my_cluster_name --output json|jq -r '.state+\"-\"+.status'"
-  mylog info "Checking Cluster state took: $SECONDS seconds." 1>&2
-
-  SECONDS=0
-  mylog check "Checking Cluster URL"
-  my_cluster_url=$(ibmcloud ks cluster get --cluster $my_cluster_name --output json | jq -r "$gbl_cluster_url_filter")
-  case "$my_cluster_url" in
-	https://*)
-	mylog ok " -> $my_cluster_url"
-    mylog info "Checking Cluster availability took: $SECONDS seconds." 1>&2
-	;;
-	*)
-	mylog error "Error getting cluster URL for $my_cluster_name" 1>&2
-	exit 1
-	;;
-  esac
 }
 
 ################################################
@@ -328,20 +325,23 @@ function wait_for_state() {
 # @param yaml: the file with the definition of the resource, example: "${subscriptionsdir}Navigator-Sub.yaml"
 # @param ns: name space where the reousrce is created, example: $MY_OPERATORS_NAMESPACE
 function check_create_oc_yaml() {
-	local lf_in_octype="$1"
-	local lf_in_cr_name="$2"
-	local lf_in_yaml_file="$3"
+  local lf_in_octype="$1"
+  local lf_in_cr_name="$2"
+  local lf_in_yaml_file="$3"
   local lf_in_ns="$4"
-	export MY_NAMESPACE="$4"
+	
+  export MY_NAMESPACE="$4"
 
   local newer
   
 	check_file_exist $lf_in_yaml_file
 	mylog check "Checking ${lf_in_octype} ${lf_in_cr_name} in ${lf_in_ns} project"
+  decho "oc -n ${lf_in_ns} get ${lf_in_octype} ${lf_in_cr_name}"
 
-	if oc get ${lf_in_octype} ${lf_in_cr_name} -n ${lf_in_ns} > /dev/null 2>&1; then
-    newer=$(is_cr_newer $lf_in_octype $lf_in_cr_name $lf_in_yaml_file $lf_in_ns)
-    if [ $newer ]; then 
+	if oc -n ${lf_in_ns} get ${lf_in_octype} ${lf_in_cr_name} > /dev/null 2>&1; then
+    is_cr_newer $lf_in_octype $lf_in_cr_name $lf_in_yaml_file $lf_in_ns
+    newer=$?
+    if [ $newer -eq 1 ]; then 
       mylog ok
       mylog info "Custom Resource $lf_in_cr_name is newer than file $lf_in_yaml_file"
     else
@@ -358,13 +358,13 @@ function provision_persistence_openldap() {
   local lf_in_namespace="$1"
   # handle persitence for Openldap
   # only check one, assume that if one is created the other one is also created (short cut to optimize time)
-  if oc get "PersistentVolumeClaim" "pvc-ldap-main" -n ${lf_in_namespace} > /dev/null 2>&1; then mylog ok;else
+  if oc -n ${lf_in_namespace} get "PersistentVolumeClaim" "pvc-ldap-main" > /dev/null 2>&1; then mylog ok;else
   	envsubst < "${YAMLDIR}ldap/ldap-pvc.main.yaml" > "${WORKINGDIR}ldap-pvc.main.yaml"
   	envsubst < "${YAMLDIR}ldap/ldap-pvc.config.yaml" > "${WORKINGDIR}ldap-pvc.config.yaml"
-  	oc create -f ${WORKINGDIR}ldap-pvc.main.yaml -n ${lf_in_namespace}
-  	oc create -f ${WORKINGDIR}ldap-pvc.config.yaml -n ${lf_in_namespace}
-  	wait_for_state "pvc pvc-ldap-config status.phase is Bound" "Bound" "oc get pvc pvc-ldap-config -n ${lf_in_namespace} -o jsonpath='{.status.phase}'"
-  	wait_for_state "pvc pvc-ldap-main status.phase is Bound" "Bound" "oc get pvc pvc-ldap-main -n ${lf_in_namespace} -o jsonpath='{.status.phase}'"
+  	oc -n ${lf_in_namespace} create -f ${WORKINGDIR}ldap-pvc.main.yaml
+  	oc -n ${lf_in_namespace} create -f ${WORKINGDIR}ldap-pvc.config.yaml
+  	wait_for_state "pvc pvc-ldap-config status.phase is Bound" "Bound" "oc -n ${lf_in_namespace} get pvc pvc-ldap-config -o jsonpath='{.status.phase}'"
+  	wait_for_state "pvc pvc-ldap-main status.phase is Bound" "Bound" "oc -n ${lf_in_namespace} get pvc pvc-ldap-main -o jsonpath='{.status.phase}'"
   fi
 }
 
@@ -378,7 +378,7 @@ function deploy_openldap(){
   local lf_in_namespace="$3"
   # check if deploment already performed
   mylog check "Checking ${lf_in_octype} ${lf_in_name} in ${lf_in_namespace}"
-  if oc get ${lf_in_octype} ${lf_in_name} -n ${lf_in_namespace} > /dev/null 2>&1; then mylog ok
+  if oc -n ${lf_in_namespace} get ${lf_in_octype} ${lf_in_name} > /dev/null 2>&1; then mylog ok
   else
     mylog check "Checking service ${lf_in_name} in ${lf_in_namespace}"
     if oc -n ${lf_in_namespace} get service ${lf_in_name} > /dev/null 2>&1; then mylog ok
@@ -451,13 +451,14 @@ function create_namespace () {
 # @param ns: namespace/project to perform the search
 # TODO The var variable is initialised for another function, this is not good
 function check_resource_availability () {
-  local lf_type="$1"
-  local lf_name="$2"
-  local lf_namespace="$3"
+  local lf_in_type="$1"
+  local lf_in_name="$2"
+  local lf_in_namespace="$3"
   
-  var=$(oc get -n $lf_namespace $lf_type $lf_name --ignore-not-found=true -o jsonpath='{.metadata.name}')
+  decho "oc -n $lf_in_namespace get $lf_in_type $lf_in_name --ignore-not-found=true -o jsonpath='{.metadata.name}'"
+  var=$(oc -n $lf_in_namespace get $lf_in_type $lf_in_name --ignore-not-found=true -o jsonpath='{.metadata.name}')
   while test -z $var;  do
-    var=$(oc get -n $lf_namespace $lf_type $lf_name --ignore-not-found=true -o jsonpath='{.metadata.name}')
+    var=$(oc -n $lf_in_namespace get $lf_in_type $lf_in_name --ignore-not-found=true -o jsonpath='{.metadata.name}')
   done
   #SB]20231013 simulate a return value by echoing it
   echo $var
@@ -519,26 +520,27 @@ function create_operator_subscription() {
   SECONDS=0
   
   file="${OPERATORSDIR}subscription.yaml"
-  type="subscription"
+  type="Subscription"
   check_create_oc_yaml "${type}" "${MY_OPERATOR_NAME}" "${file}" "${MY_OPERATOR_NAMESPACE}"
 
   if [ ! -z $MY_STARTING_CSV ]; then
-    type="subscription"
+    type="Subscription"
     path="{.status.installedCSV}"
     state="$MY_STARTING_CSV"
-    resource=$(check_resource_availability "subscription" $MY_OPERATOR_NAME $MY_OPERATOR_NAMESPACE)
-    decho "wait_for_state $type $resource $path is $state | $state | oc get $type $resource -n $MY_OPERATOR_NAMESPACE -o jsonpath=$path"
+    decho "wait_for_state $type $resource $path is $state | $state | oc -n $MY_OPERATOR_NAMESPACE get $type $resource -o jsonpath=$path"
+    resource=$(check_resource_availability "${type}" "${MY_OPERATOR_NAME}" "${MY_OPERATOR_NAMESPACE}")
+    decho "wait_for_state $type $resource $path is $state | $state | oc -n $MY_OPERATOR_NAMESPACE get $type $resource -o jsonpath=$path"
     if [ $lf_in_wait ]; then 
-      wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $MY_OPERATOR_NAMESPACE -o jsonpath='$path'"
+      wait_for_state "$type $resource $path is $state" "$state" "oc -n $MY_OPERATOR_NAMESPACE get $type $resource -o jsonpath='$path'"
     fi
 
-    type="clusterserviceversion"
+    type="ClusterServiceVersion"
     path="{.status.phase}"
     state="Succeeded"
     startingcsv=$MY_STARTING_CSV
-    decho "wait_for_state $type $startingcsv $path is $state | $state | oc get $type $startingcsv -n $MY_OPERATOR_NAMESPACE -o jsonpath=$path"
+    decho "wait_for_state $type $startingcsv $path is $state | $state | oc -n $MY_OPERATOR_NAMESPACE get $type $startingcsv -o jsonpath=$path"
     if [ $lf_in_wait ]; then 
-      wait_for_state "$type $startingcsv $path is $state" "$state" "oc get $type $startingcsv -n $MY_OPERATOR_NAMESPACE -o jsonpath='$path'"
+      wait_for_state "$type $startingcsv $path is $state" "$state" "oc -n $MY_OPERATOR_NAMESPACE get $type $startingcsv -o jsonpath='$path'"
     fi
   else
     decho "check_resource_availability clusterserviceversion $MY_OPERATOR_NAME $MY_OPERATOR_NAMESPACE"
@@ -547,37 +549,10 @@ function create_operator_subscription() {
     path="{.status.phase}"
     state="Succeeded"
     if [ $lf_in_wait ]; then 
-      wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $MY_OPERATOR_NAMESPACE -o jsonpath='$path'"
+      wait_for_state "$type $resource $path is $state" "$state" "oc -n $MY_OPERATOR_NAMESPACE get $type $resource -o jsonpath='$path'"
     fi
   fi
   mylog info "Creation of $MY_OPERATOR_NAME operator took $SECONDS seconds to execute." 1>&2
-}
-
-
-#########################################################
-##SB]20231205 create flink and event processing operators 
-function create_ea_operators() {
-  local inventory=$1
-  local name=$2
-  local ns=$3
-  local path=$4
-  local state=$5
-  local type=$6
-  local version=$7
-  local lf_in_wait=$8
-
-  local case_name="${name}.v${version}"
-  SECONDS=0
-
-  mylog check "Checking ${type} ${case_name} in ${ns} project"
-  if oc get ${type} ${case_name} -n ${ns} > /dev/null 2>&1; then mylog ok;else
-    oc ibm-pak launch $name --version $version --inventory $inventory --action installOperator -n $ns
-    resource=$(check_resource_availability "clusterserviceversion" "${case_name}" $ns)
-    if [ $lf_in_wait ]; then 
-      wait_for_state "$type $resource $path is $state" "$state" "oc get $type $resource -n $ns -o jsonpath='$path'"
-    fi
-    mylog info "Creation of $case_name operator took $SECONDS seconds to execute." 1>&2
-  fi
 }
 
 ################################################
@@ -593,9 +568,9 @@ function create_operand_instance() {
 
   SECONDS=0
   check_create_oc_yaml $lf_in_type $lf_in_resource $lf_in_file $lf_in_ns
-  decho "wait_for_state | $lf_in_type $lf_in_resource $lf_in_path is $lf_in_state | $lf_in_state | oc get $lf_in_type $lf_in_resource -n $lf_in_ns -o jsonpath=$lf_in_path"
+  decho "wait_for_state | $lf_in_type $lf_in_resource $lf_in_path is $lf_in_state | $lf_in_state | oc -n $lf_in_ns get $lf_in_type $lf_in_resource -o jsonpath=$lf_in_path"
   if [ $lf_in_wait ]; then 
-    wait_for_state "$lf_in_type $lf_in_resource $lf_in_path is $lf_in_state" "$lf_in_state" "oc get $lf_in_type $lf_in_resource -n $lf_in_ns -o jsonpath='$lf_in_path'"
+    wait_for_state "$lf_in_type $lf_in_resource $lf_in_path is $lf_in_state" "$lf_in_state" "oc -n $lf_in_ns get $lf_in_type $lf_in_resource -o jsonpath='$lf_in_path'"
   fi
   mylog info "Creation of $lf_in_type instance took $SECONDS seconds to execute." 1>&2
 }
@@ -604,33 +579,33 @@ function create_operand_instance() {
 # Get useful information to start using the stack
 # Need to check that the resource exist.
 function get_navigator_access() {
-	cp4i_url=$(oc get platformnavigator cp4i-navigator -n $MY_OC_PROJECT -o jsonpath='{range .status.endpoints[?(@.name=="navigator")]}{.uri}{end}')
-	cp4i_uid=$(oc get secret ibm-iam-bindinfo-platform-auth-idp-credentials -n $MY_OC_PROJECT -o jsonpath={.data.admin_username} | base64 -d)
-	cp4i_pwd=$(oc get secret ibm-iam-bindinfo-platform-auth-idp-credentials -n $MY_OC_PROJECT -o jsonpath={.data.admin_password} | base64 -d)
+	cp4i_url=$(oc -n $MY_OC_PROJECT get platformnavigator cp4i-navigator -o jsonpath='{range .status.endpoints[?(@.name=="navigator")]}{.uri}{end}')
+	# cp4i_uid=$(oc -n $MY_OC_PROJECT get secret ibm-iam-bindinfo-platform-auth-idp-credentials -o jsonpath={.data.admin_username} | base64 -d)
 	mylog info "CP4I Platform UI URL: " $cp4i_url
-	mylog info "CP4I admin user: " $cp4i_uid
-	mylog info "CP4I admin password: " $cp4i_pwd
+	# mylog info "CP4I admin user: " $cp4i_uid
+	# mylog info "CP4I admin password: " $cp4i_pwd
 }
 
 #########################################################################################################
-##SB]20231109 Generate properties and yaml files
+##SB]20231109 Generate properties and yaml/json files
 ## input parameter the operand custom dir (and generated dir both with config and scripts subdirectories)
 function generate_files () {
   local customdir=$1
   local gendir=$2
+  local transform=$3
   local nfiles
 
   # generate the differents properties files
-  # SB]20231109 some generated files (yaml) are based on other generated files (properties), so :
-  # - in template custom dirs, separate the files to two categories : scripts (*.properties) and config (*.yaml)
-  # - generate first the *.properties files to be sourced then generate the *.yaml files
+  # SB]20231109 some generated files (yaml/json) are based on other generated files (properties), so :
+  # - in template custom dirs, separate the files to two categories : scripts (*.properties) and config (*.yaml or .json)
+  # - generate first the *.properties files to be sourced then generate the *.yaml/*.json files
 
   config_customdir="${customdir}config/"
   scripts_customdir="${customdir}scripts/"
   config_gendir="${gendir}config/"
   scripts_gendir="${gendir}scripts/"
 
-  #set -a
+  # set -a
   # Start with *.properties files 
   nfiles=$(check_directory_contains_files $scripts_customdir)
   if [ $nfiles -gt 0 ]; then 
@@ -641,12 +616,18 @@ function generate_files () {
     done
   fi
 
-  # Continue *.yaml files 
+  # Continue *.yaml files
   nfiles=$(check_directory_contains_files $config_customdir)
-  if [ $nfiles -gt 0 ]; then 
+  if [ $nfiles -gt 0 ]; then
     for file in ${config_customdir}*; do
       filename=$(basename -- "$file")
-      cat  $file | envsubst >  "${config_gendir}${filename}"
+      if $transform;then
+        # mylog info "Transform $file file"
+        cat  $file | envsubst >  "${config_gendir}${filename}"
+      else
+        # mylog info "Copy $file file"
+        cat  $file  >  "${config_gendir}${filename}"
+      fi
     done
   fi
   #set +a
@@ -671,14 +652,14 @@ function create_catalogsource () {
  	if [ -z "$result" ]; then
 		mylog info "no catalogsource $CATALOG_SOURCE_NAME found in namespace $CATALOG_SOURCE_NAMESPACE"
     envsubst < "${file}" | oc -n ${CATALOG_SOURCE_NAMESPACE} apply -f - || exit 1
-    wait_for_state "$type $CATALOG_SOURCE_NAME $path is $state" "$state" "oc get ${type} ${CATALOG_SOURCE_NAME} -n ${CATALOG_SOURCE_NAMESPACE} -o jsonpath='$path'"
+    wait_for_state "$type $CATALOG_SOURCE_NAME $path is $state" "$state" "oc -n ${CATALOG_SOURCE_NAMESPACE} get ${type} ${CATALOG_SOURCE_NAME} -o jsonpath='$path'"
   else 
-    newer=$(is_cr_newer $type $CATALOG_SOURCE_NAME $file $CATALOG_SOURCE_NAMESPACE)
-    if [ $newer ]; then 
+    is_cr_newer $type $CATALOG_SOURCE_NAME $file $CATALOG_SOURCE_NAMESPACE
+    if [ $? -eq 1 ]; then 
       mylog info "Custom Resource $CATALOG_SOURCE_NAME exists in ns $CATALOG_SOURCE_NAMESPACE and is newer than file $file"
     else
       envsubst < "${file}" | oc -n ${CATALOG_SOURCE_NAMESPACE} apply -f - || exit 1
-      wait_for_state "$type $CATALOG_SOURCE_NAME $path is $state" "$state" "oc get ${type} ${CATALOG_SOURCE_NAME} -n ${CATALOG_SOURCE_NAMESPACE} -o jsonpath='$path'"
+      wait_for_state "$type $CATALOG_SOURCE_NAME $path is $state" "$state" "oc -n ${CATALOG_SOURCE_NAMESPACE} get ${type} ${CATALOG_SOURCE_NAME} -o jsonpath='$path'"
     fi
   fi
 }

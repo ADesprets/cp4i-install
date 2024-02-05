@@ -8,7 +8,7 @@ spec:
   license:
     accept: true
     license: $MY_ACE_LIC
-    use: $MY_ACE_LIC_usage
+    use: $MY_ACE_LIC_USAGE
   couchdb:
     storage:
       size: 10Gi

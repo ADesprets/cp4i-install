@@ -4,7 +4,7 @@
     "name": "url_registry",
     "title": "url_registry",
     "summary": "Sample URL registry using the fake authentication service.",
-    "integration_url": "https://cpd-cp4i.cp4iad22023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/integration/apis/cp4i/cp4i-apic/api/cloud/integrations/user-registry/9637d632-2d09-4ea9-ba04-89ac84633d48",
+    "integration_url": "https://cp4i-apic-mgmt-platform-api-cp4i.cp4iad22023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/api/cloud/integrations/user-registry/975455a7-ed83-49af-a7aa-879dcf2be8fa",
     "registry_type": "authurl",
     "user_managed": false,
     "user_registry_managed": false,
@@ -23,6 +23,6 @@
     },
     "configuration": {},
     "endpoint": {
-        "endpoint": "https://cp4i-apic-gw-gateway-cp4i.cp4iad22023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/org1/prod/fakeauth/v1/basic-auth"
+        "endpoint": "https://cp4i-apic-gw-gateway-cp4i.cp4iad22023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/org1/uat/fakeauth/v1/basic-auth"
     }
 }

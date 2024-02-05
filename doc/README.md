@@ -1,43 +1,25 @@
-# cp4i-install
+# Scenario driven CP4I Installation using scripts
 
-Objectives here:
+## Introduction
 
-1 Good quality documentation and shared in GitHub
+The goal is to install a CP4I platform (including Openshift cluster) to demonstrate various scenarios around integration. The installation is started with one command.
 
-2 Automation but customizable easily to choose what is needed, idempotent
+The principles followed to implement this asset are the following:
 
-3 Installation, initial configuration, Advanced configuration
+* Automation but highly customizable to choose what capability is needed, and if it must be configured
+* Idempotence everywhere
+* Expandable by using as much as possible reusable functions to perform any task
+* Use of variables as much as possible to reduce the complexity of the code and the number of files
+* Reduce dependencies, this is the reason why we do not use ansible playbooks
+* Secured by using a private directory where the user has his own credentials
+* Follow good practice around scripting
+* Run everywhere, the use of ibm-pak allows an installation on IBM Red Hat Openshift in IBM Cloud, onPremise, with CRC - RedHat Code Ready Container, on TechZone. (It has been tested on the three first platforms)
 
-This manual shows how the setup of the following components using one script:
+## Pre-requisites and preliminary tasks
 
-* IBM Red Hat Openshift on IBM Cloud (ROKS)
-* IBM Cloud Pak for Integration (CP4I) on ROKS
-* This installation is deploying operators either on a single namespace or in all namespaces in automatic update option
+Prerequisites are minimal. There is a method in lib.sh called *check_exec_prereqs* that will ensure at the start of the installation that all utilities are installed.
 
-The following tasks will happen:
-
-1 Installation of the OpenShift cluster
-
-2 Installation of the operators of the cloud pak
-
-3 Deployment of the capabilities
-
-4 Configuration des capabilities
-
-## Pre-requisites
-
-The following command line tools are used:
-
-* `bash`: Or equivalent (`zsh...`). Command lines in this document assume that a shell such as bash or zsh is used. If another shell is used, adapt the command if necessary. As well as standard shell tools: `sed`, `base64` ...
-* `curl`: HTTPS operations are executed using the curl command
-* `jq`: jq is used to parse JSON results
-* `ibmcloud`: The IBM Cloud CLI.
-* `ibm-pak-plugin`: explanation: [installation instructions](https://github.com/IBM/ibm-pak#download-and-verify-software).
-* `oc`: The Redhat OpenShift CLI.
-* `docker`: The Docker CLI
-* `terraform`: The Terraform CLI.
-
-## Installation
+### Clone repository
 
 Clone the repo locally on your machine:
 
@@ -45,36 +27,57 @@ Clone the repo locally on your machine:
 git clone https://github.com/ADesprets/cp4i-install
 ```
 
-## Configuration
+### Create files for your credentials
 
-1. Create a folder for private configuration files:
+Regarding the access and credentials, you need 3 files to be installed in the private folder.
 
 ```bash
   mkdir private
 ```
 
-In this folder you can add the various specific files that you are going to use to connect to ibmcloud and access image registry.
-It contains:
+| File                              | Description                  | Obtained from  |
+| --------------------------------- |:----------------------------:| --------------:|
+| apikey.json                       | api key to work in IBM cloud |                |
+| ibm_container_entitlement_key.txt | access to image registry     |                |
+| user.properties                   | id of the account            |                |
 
-* apikey.json to login to ibmcloud.
-* ibm_container_entitlement_key.txt to access the image registry.
-
-  Note that those files in `private` are ignored by git.
+Note that those files in `private` are ignored by git.
 
 1. Navigate to: [IBM Cloud &rarr; Manage &rarr; Access &rarr; API Keys](https://cloud.ibm.com/iam/apikeys), use or create a new API key, and save your IBM Cloud API key **JSON data** to file: `private/apikey.json`. Note that the default configuration file reads the JSON.
 
 1. Navigate to [My IBM &rarr; Container software library](https://myibm.ibm.com/products-services/containerlibrary) and save your IBM Marketplace entitlement key in file: `private/ibm_container_entitlement_key.txt`
 
-1. **Customize** the cp4i.properties file with your own parameters
+1. private/user.properties contains one line such :
 
-> Hint: The script is using ibm-pak, so it is important to validate that you have the latest version. For more information click [ibm-pak overview](https://github.com/IBM/ibm-pak#overview). To check the version, enter `oc ibm-pak --version`.
+```properties
+MY_USER="IAM#<your_email>"
+```
 
-Good practice:
-* Update the capabilities you want to be deployed
+### Configuration
+
+**Customize** the cp4i.properties file with your own parameters
 
 ## Usage
 
+```bash
 cd <directory where provision_cluster-v2.sh exists>
+./provision_cluster-v2.sh cp4i.properties ./versions/cp4i-2023.4.properties <namespace to deploy capabilities> <cluster_name>
+```
+
+## Design
+
+Read this chapter if you want to adapt the scripts to your needs.
+
+* This installation is deploying operators either on a single namespace or in all namespaces in automatic update option
+
+The following tasks will happen:
+
+1. Installation of the OpenShift cluster
+2. Installation of the operators of the cloud pak
+3. Deployment of the capabilities
+4. Configuration of the capabilities
+
+> Hint: The script is using ibm-pak, so it is important to validate that you have the latest version. For more information click [ibm-pak overview](https://github.com/IBM/ibm-pak#overview). To check the version, enter `oc ibm-pak --version`.
 
 > Duration time for all CP4I components including cluster creation: 2 hours 30 min
 
@@ -110,11 +113,6 @@ cd <directory where provision_cluster-v2.sh exists>
 > Note: once the Openshift cluster is created, it is required to login once using the web interface to trigger the activation of your api key in the cluster.
 
 For long-running steps, a progress message is displayed.
-
-## Login helper
-
-There is also a helper script to login to ibmcloud and to the cluster if it exists.
-You need to change the name of the cluster which is hard coded inside the script or you can pass it as a parameter.
 
 ## Directory structure
 
@@ -209,3 +207,5 @@ In the subscription folder we have the definition of the operators. Since they a
 1) The source of documents are in the templates/operands-custom/<capability>/scripts (or config) folders
 2) The generated files are in customisation/<capability>/scripts (or config) folders
 3) We execute the customisation from customisation/<capability>/scripts
+
+This asset is the result of the collaboration of several people included in the git. You are welcome to join the gang.

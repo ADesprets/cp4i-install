@@ -6,9 +6,8 @@ metadata:
 spec:
   license:
     accept: true
-    key: >-
-$my_aspera_license_text
-    use: CloudPakForIntegrationNonProduction
+    key: $(sed 's/^/      /'<$MY_ASPERA_LICENSE_FILE)
+    use: $MY_HSTS_LIC_USAGE
   deployments:
     default:
       replicas: 1

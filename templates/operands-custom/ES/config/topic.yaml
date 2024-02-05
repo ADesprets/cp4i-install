@@ -3,7 +3,8 @@ kind: KafkaTopic
 metadata:
   labels:
     eventstreams.ibm.com/cluster: ${es_instance}
-  name: ${es_meta_topic_name}
+    app.kubernetes.io/instance: ${es_instance}
+  name: ${es_topic_name}
 spec:
   config:
     min.insync.replicas: "1"

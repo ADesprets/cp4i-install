@@ -1,0 +1,661 @@
+<pre>./provision_cluster-v2.sh cp4i.properties ./versions/cp4i-2023.4.properties cp4i cp4iad22023
+The provided arguments are: cp4i.properties ./versions/cp4i-2023.4.properties cp4i cp4iad22023
+<font color="#26A269">user already logged to IBM Cloud.</font>
+<font color="#2AA1B3">Checking OpenShift: cp4iad22023...</font><font color="#A2734C">, cluster does not exist</font>
+<font color="#26A269">Getting current version for OC: 4.14</font>
+<font color="#26A269">Found: 4.14.5_openshift</font>
+<font color="#26A269">Creating OpenShift cluster: cp4iad22023</font>
+<font color="#F66151">Creating cluster...</font>
+<font color="#26A269"><b>OK</b></font>
+Cluster created with ID <font color="#2AA1B3"><b>cmnkv6lf01ccu4q8qoog</b></font>
+<font color="#26A269">Creation of the cluster took: 17 seconds.</font>
+<font color="#2AA1B3">Checking Cluster state...</font><font color="#A2734C">NO</font>
+<font color="#12488B">mar. 23 janv. 2024 06:33:18 CET deploying-</font>
+<font color="#12488B">mar. 23 janv. 2024 06:50:51 CET pending-The worker nodes are being provisioned and are not available in the cluster</font>
+
+<font color="#F66151">Plug-in &apos;container-service 1.0.589&apos; is now available (you have 1.0.579).</font>
+<font color="#F66151">Use &apos;ibmcloud plugin update container-service&apos; to upgrade the plug-in.</font>
+<font color="#F66151">Use &apos;ibmcloud config --check-version=false&apos; to disable update check.</font>
+
+<font color="#12488B">mar. 23 janv. 2024 06:57:43 CET critical-All Workers Critical</font>
+<font color="#26A269">OK, normal-All Workers Normal</font>
+<font color="#26A269">Checking Cluster state took: 1489 seconds.</font>
+<font color="#2AA1B3">Checking Cluster URL...</font><font color="#26A269">OK -&gt; https://c101-e.eu-de.containers.cloud.ibm.com:30119</font>
+<font color="#26A269">Checking Cluster availability took: 1 seconds.</font>
+<font color="#2AA1B3">Checking Ingress address...</font><font color="#A2734C">not ready</font>
+<font color="#12488B">mar. 23 janv. 2024 06:58:08 CET waiting for ingress address</font>
+<font color="#12488B">mar. 23 janv. 2024 06:59:39 CET waiting for ingress address</font>
+<font color="#12488B">mar. 23 janv. 2024 07:01:10 CET waiting for ingress address</font>
+<font color="#26A269">OK, cp4iad22023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud</font>
+<font color="#26A269">Checking Ingress availability took 274 seconds to execute.</font>
+<font color="#26A269"><b>OK</b></font>
+The configuration for <font color="#2AA1B3"><b>cp4iad22023</b></font> was downloaded successfully.
+
+Added context for <font color="#2AA1B3"><b>cp4iad22023</b></font> to the current kubeconfig file.
+Waiting for RBAC synchronization to complete...
+You can now execute &apos;<font color="#A2734C"><b>kubectl</b></font>&apos; commands against your cluster. For example, run &apos;<font color="#A2734C"><b>kubectl get nodes</b></font>&apos;.
+<font color="#26A269">OK</font>
+<font color="#26A269">Logging to Cluster took: 9 seconds.</font>
+<font color="#F66151">Error from server (Forbidden): clusterrolebindings.rbac.authorization.k8s.io is forbidden: User &quot;IAM#arnauld_desprets@fr.ibm.com&quot; cannot list resource &quot;clusterrolebindings&quot; in API group &quot;rbac.authorization.k8s.io&quot; at the cluster scope</font>
+<font color="#2AA1B3">Checking project cp4i...</font><font color="#26A269">Creating project cp4i</font>
+<font color="#F66151">Now using project &quot;cp4i&quot; on server &quot;https://c101-e.eu-de.containers.cloud.ibm.com:30119&quot;.</font>
+<font color="#F66151">You can add applications to this project with the &apos;new-app&apos; command. For example, try:</font>
+<font color="#F66151">    oc new-app rails-postgresql-example</font>
+<font color="#F66151">to build a new example application in Ruby. Or use kubectl to deploy a simple Kubernetes application:</font>
+<font color="#F66151">    kubectl create deployment hello-node --image=k8s.gcr.io/e2e-test-images/agnhost:2.33 -- /agnhost serve-hostname</font>
+<font color="#2AA1B3">Checking project ibm-common-services...</font><font color="#26A269">Creating project ibm-common-services</font>
+<font color="#F66151">Now using project &quot;ibm-common-services&quot; on server &quot;https://c101-e.eu-de.containers.cloud.ibm.com:30119&quot;.</font>
+<font color="#F66151">You can add applications to this project with the &apos;new-app&apos; command. For example, try:</font>
+<font color="#F66151">    oc new-app rails-postgresql-example</font>
+<font color="#F66151">to build a new example application in Ruby. Or use kubectl to deploy a simple Kubernetes application:</font>
+<font color="#F66151">    kubectl create deployment hello-node --image=k8s.gcr.io/e2e-test-images/agnhost:2.33 -- /agnhost serve-hostname</font>
+<font color="#2AA1B3">Checking project cert-manager-operator...</font><font color="#26A269">Creating project cert-manager-operator</font>
+<font color="#F66151">Now using project &quot;cert-manager-operator&quot; on server &quot;https://c101-e.eu-de.containers.cloud.ibm.com:30119&quot;.</font>
+<font color="#F66151">You can add applications to this project with the &apos;new-app&apos; command. For example, try:</font>
+<font color="#F66151">    oc new-app rails-postgresql-example</font>
+<font color="#F66151">to build a new example application in Ruby. Or use kubectl to deploy a simple Kubernetes application:</font>
+<font color="#F66151">    kubectl create deployment hello-node --image=k8s.gcr.io/e2e-test-images/agnhost:2.33 -- /agnhost serve-hostname</font>
+<font color="#2AA1B3">Checking OperatorGroup cert-manager-operatorgroup in cert-manager-operator project...</font><font color="#F66151">operatorgroup.operators.coreos.com/operatorgroup created</font>
+<font color="#2AA1B3">Checking project ibm-licensing...</font><font color="#26A269">Creating project ibm-licensing</font>
+<font color="#F66151">Now using project &quot;ibm-licensing&quot; on server &quot;https://c101-e.eu-de.containers.cloud.ibm.com:30119&quot;.</font>
+<font color="#F66151">You can add applications to this project with the &apos;new-app&apos; command. For example, try:</font>
+<font color="#F66151">    oc new-app rails-postgresql-example</font>
+<font color="#F66151">to build a new example application in Ruby. Or use kubectl to deploy a simple Kubernetes application:</font>
+<font color="#F66151">    kubectl create deployment hello-node --image=k8s.gcr.io/e2e-test-images/agnhost:2.33 -- /agnhost serve-hostname</font>
+<font color="#2AA1B3">Checking OperatorGroup license-server-operatorgroup in ibm-licensing project...</font><font color="#F66151">operatorgroup.operators.coreos.com/operatorgroup created</font>
+<font color="#2AA1B3">Checking ibm-entitlement-key in cp4i...</font><font color="#26A269">Checking ibm-entitlement-key validity</font>
+<font color="#F66151">WARNING! Your password will be stored unencrypted in /home/desprets/.docker/config.json.</font>
+<font color="#F66151">Configure a credential helper to remove this warning. See</font>
+<font color="#F66151">https://docs.docker.com/engine/reference/commandline/login/#credentials-store</font>
+<font color="#F66151">Login Succeeded</font>
+<font color="#26A269">Adding ibm-entitlement-key to cp4i</font>
+<font color="#F66151">secret/ibm-entitlement-key created</font>
+<font color="#2AA1B3">Checking ibm-entitlement-key in openshift-operators...</font><font color="#26A269">Checking ibm-entitlement-key validity</font>
+<font color="#F66151">WARNING! Your password will be stored unencrypted in /home/desprets/.docker/config.json.</font>
+<font color="#F66151">Configure a credential helper to remove this warning. See</font>
+<font color="#F66151">https://docs.docker.com/engine/reference/commandline/login/#credentials-store</font>
+<font color="#F66151">Login Succeeded</font>
+<font color="#26A269">Adding ibm-entitlement-key to openshift-operators</font>
+<font color="#F66151">secret/ibm-entitlement-key created</font>
+<font color="#26A269">==== Installing foundational services (Cert Manager, Licensing Server and Common Services).</font>
+<font color="#26A269">Custom Resource redhat-operators exists in ns openshift-marketplace and is newer than file /home/desprets/installcp4i/templates/resources/catalog_source.yaml</font>
+<font color="#2AA1B3">Checking subscription openshift-cert-manager-operator in cert-manager-operator project...</font><font color="#F66151">subscription.operators.coreos.com/openshift-cert-manager-operator created</font>
+<font color="#2AA1B3">Checking subscription openshift-cert-manager-operator {.status.installedCSV} is cert-manager-operator.v1.12.1...</font><font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#26A269">OK, cert-manager-operator.v1.12.1</font>
+<font color="#2AA1B3">Checking clusterserviceversion cert-manager-operator.v1.12.1 {.status.phase} is Succeeded...</font><font color="#A2734C">NO</font>
+<font color="#12488B">mar. 23 janv. 2024 07:05:10 CET InstallReady</font>
+<font color="#12488B">mar. 23 janv. 2024 07:05:15 CET Installing</font>
+<font color="#26A269">OK, Succeeded</font>
+<font color="#26A269">Creation of openshift-cert-manager-operator operator took 143 seconds to execute.</font>
+<font color="#26A269">case ibm-licensing 4.2.1 already downloaded</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ibm-licensing-catalog created</font>
+<font color="#26A269">Adding case ibm-licensing took 2 seconds to execute.</font>
+<font color="#26A269">Custom Resource ibm-licensing-catalog exists in ns openshift-marketplace and is newer than file /home/desprets/installcp4i/templates/resources/catalog_source.yaml</font>
+<font color="#2AA1B3">Checking subscription ibm-licensing-operator-app in ibm-licensing project...</font><font color="#F66151">subscription.operators.coreos.com/ibm-licensing-operator-app created</font>
+<font color="#2AA1B3">Checking subscription ibm-licensing-operator-app {.status.installedCSV} is ibm-licensing-operator.v4.2.1...</font><font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#26A269">OK, ibm-licensing-operator.v4.2.1</font>
+<font color="#2AA1B3">Checking clusterserviceversion ibm-licensing-operator.v4.2.1 {.status.phase} is Succeeded...</font><font color="#A2734C">NO</font>
+<font color="#12488B">mar. 23 janv. 2024 07:06:09 CET Pending</font>
+<font color="#12488B">mar. 23 janv. 2024 07:06:14 CET Installing</font>
+<font color="#26A269">OK, Succeeded</font>
+<font color="#26A269">Creation of ibm-licensing-operator-app operator took 72 seconds to execute.</font>
+<font color="#26A269">case ibm-cp-common-services 4.3.1 already downloaded</font>
+<font color="#F66151">catalogsource.operators.coreos.com/cloud-native-postgresql-catalog created</font>
+<font color="#F66151">catalogsource.operators.coreos.com/opencloud-operators created</font>
+<font color="#26A269">Adding case ibm-cp-common-services took 3 seconds to execute.</font>
+<font color="#26A269">Custom Resource opencloud-operators exists in ns openshift-marketplace and is newer than file /home/desprets/installcp4i/templates/resources/catalog_source.yaml</font>
+<font color="#2AA1B3">Checking subscription ibm-common-service-operator in openshift-operators project...</font><font color="#F66151">subscription.operators.coreos.com/ibm-common-service-operator created</font>
+<font color="#2AA1B3">Checking subscription ibm-common-service-operator {.status.installedCSV} is ibm-common-service-operator.v4.3.1...</font><font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#26A269">OK, ibm-common-service-operator.v4.3.1</font>
+<font color="#2AA1B3">Checking clusterserviceversion ibm-common-service-operator.v4.3.1 {.status.phase} is Succeeded...</font><font color="#A2734C">NO</font>
+<font color="#12488B">mar. 23 janv. 2024 07:07:28 CET Pending</font>
+<font color="#12488B">mar. 23 janv. 2024 07:07:33 CET Installing</font>
+<font color="#26A269">OK, Succeeded</font>
+<font color="#26A269">Creation of ibm-common-service-operator operator took 65 seconds to execute.</font>
+<font color="#F66151">Error from server (NotFound): namespaces &quot;-o&quot; not found</font>
+<font color="#F66151">Error from server (NotFound): namespaces &quot;-o&quot; not found</font>
+<font color="#F66151">Error from server (NotFound): namespaces &quot;--type&quot; not found</font>
+<font color="#F66151">Error from server (NotFound): namespaces &quot;--type&quot; not found</font>
+<font color="#2AA1B3">Checking CommonService common-service in openshift-operators project...</font><font color="#F66151">commonservice.operator.ibm.com/common-service created</font>
+<font color="#26A269">==== Installing Navigator.</font>
+<font color="#26A269">case ibm-integration-platform-navigator 7.2.0 already downloaded</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ibm-integration-platform-navigator-catalog created</font>
+<font color="#26A269">Adding case ibm-integration-platform-navigator took 3 seconds to execute.</font>
+<font color="#2AA1B3">Checking subscription ibm-integration-platform-navigator in openshift-operators project...</font><font color="#F66151">subscription.operators.coreos.com/ibm-integration-platform-navigator created</font>
+<font color="#2AA1B3">Checking subscription ibm-integration-platform-navigator {.status.installedCSV} is ibm-integration-platform-navigator.v7.2.0...</font><font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#26A269">OK, ibm-integration-platform-navigator.v7.2.0</font>
+<font color="#2AA1B3">Checking clusterserviceversion ibm-integration-platform-navigator.v7.2.0 {.status.phase} is Succeeded...</font><font color="#A2734C">NO</font>
+<font color="#12488B">mar. 23 janv. 2024 07:08:56 CET Installing</font>
+<font color="#26A269">OK, Succeeded</font>
+<font color="#26A269">Creation of ibm-integration-platform-navigator operator took 81 seconds to execute.</font>
+<font color="#2AA1B3">Checking PlatformNavigator cp4i-navigator in cp4i project...</font><font color="#F66151">platformnavigator.integration.ibm.com/cp4i-navigator created</font>
+<font color="#2AA1B3">Checking PlatformNavigator cp4i-navigator {.status.conditions[0].type} is Ready...</font><font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#12488B">mar. 23 janv. 2024 07:09:44 CET Pending</font>
+========================================================================================================
+<font color="#26A269"><b>desprets@ubuntu</b></font>:<font color="#12488B"><b>~/installcp4i</b></font>$ ./provision_cluster-v2.sh cp4i.properties ./versions/cp4i-2023.4.properties cp4i cp4iad22023
+The provided arguments are: cp4i.properties ./versions/cp4i-2023.4.properties cp4i cp4iad22023
+<font color="#26A269">user already logged to IBM Cloud.</font>
+<font color="#2AA1B3">Checking OpenShift: cp4iad22023...</font><font color="#26A269">OK, cluster exists</font>
+<font color="#26A269">Checking Openshift cluster took: 2 seconds.</font>
+<font color="#2AA1B3">Checking Cluster state...</font><font color="#26A269">OK, normal-All Workers Normal</font>
+<font color="#26A269">Checking Cluster state took: 1 seconds.</font>
+<font color="#2AA1B3">Checking Cluster URL...</font><font color="#26A269">OK -&gt; https://c101-e.eu-de.containers.cloud.ibm.com:30119</font>
+<font color="#26A269">Checking Cluster availability took: 1 seconds.</font>
+<font color="#2AA1B3">Checking Ingress address...</font><font color="#26A269">OK, cp4iad22023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud</font>
+<font color="#26A269">Checking Ingress availability took 1 seconds to execute.</font>
+<font color="#26A269">user already logged to openshift cluster.</font>
+<font color="#F66151">Warning: User &apos;IAM#arnauld.desprets@fr.ibm.com&apos; not found</font>
+<font color="#F66151">clusterrole.rbac.authorization.k8s.io/self-provisioner added: &quot;IAM#arnauld.desprets@fr.ibm.com&quot;</font>
+<font color="#2AA1B3">Checking project cp4i...</font><font color="#26A269">OK</font>
+<font color="#2AA1B3">Checking project ibm-common-services...</font><font color="#26A269">OK</font>
+<font color="#2AA1B3">Checking project cert-manager-operator...</font><font color="#26A269">OK</font>
+<font color="#2AA1B3">Checking OperatorGroup cert-manager-operatorgroup in cert-manager-operator project...</font><font color="#F66151">operatorgroup.operators.coreos.com/operatorgroup unchanged</font>
+<font color="#2AA1B3">Checking project ibm-licensing...</font><font color="#26A269">OK</font>
+<font color="#2AA1B3">Checking OperatorGroup license-server-operatorgroup in ibm-licensing project...</font><font color="#F66151">operatorgroup.operators.coreos.com/operatorgroup unchanged</font>
+<font color="#2AA1B3">Checking ibm-entitlement-key in cp4i...</font><font color="#26A269">OK</font>
+<font color="#2AA1B3">Checking ibm-entitlement-key in openshift-operators...</font><font color="#26A269">OK</font>
+<font color="#26A269">==== Installing foundational services (Cert Manager, Licensing Server and Common Services).</font>
+<font color="#26A269">Custom Resource redhat-operators exists in ns openshift-marketplace and is newer than file /home/desprets/installcp4i/templates/resources/catalog_source.yaml</font>
+<font color="#2AA1B3">Checking subscription openshift-cert-manager-operator in cert-manager-operator project...</font><font color="#26A269">OK</font>
+<font color="#26A269">Custom Resource openshift-cert-manager-operator is newer than file /home/desprets/installcp4i/templates/operators/subscription.yaml</font>
+<font color="#2AA1B3">Checking subscription openshift-cert-manager-operator {.status.installedCSV} is cert-manager-operator.v1.12.1...</font><font color="#26A269">OK, cert-manager-operator.v1.12.1</font>
+<font color="#2AA1B3">Checking clusterserviceversion cert-manager-operator.v1.12.1 {.status.phase} is Succeeded...</font><font color="#26A269">OK, Succeeded</font>
+<font color="#26A269">Creation of openshift-cert-manager-operator operator took 2 seconds to execute.</font>
+<font color="#26A269">case ibm-licensing 4.2.1 already downloaded</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ibm-licensing-catalog unchanged</font>
+<font color="#26A269">Adding case ibm-licensing took 1 seconds to execute.</font>
+<font color="#26A269">Custom Resource ibm-licensing-catalog exists in ns openshift-marketplace and is newer than file /home/desprets/installcp4i/templates/resources/catalog_source.yaml</font>
+<font color="#2AA1B3">Checking subscription ibm-licensing-operator-app in ibm-licensing project...</font><font color="#26A269">OK</font>
+<font color="#26A269">Custom Resource ibm-licensing-operator-app is newer than file /home/desprets/installcp4i/templates/operators/subscription.yaml</font>
+<font color="#2AA1B3">Checking subscription ibm-licensing-operator-app {.status.installedCSV} is ibm-licensing-operator.v4.2.1...</font><font color="#26A269">OK, ibm-licensing-operator.v4.2.1</font>
+<font color="#2AA1B3">Checking clusterserviceversion ibm-licensing-operator.v4.2.1 {.status.phase} is Succeeded...</font><font color="#26A269">OK, Succeeded</font>
+<font color="#26A269">Creation of ibm-licensing-operator-app operator took 2 seconds to execute.</font>
+<font color="#26A269">case ibm-cp-common-services 4.3.1 already downloaded</font>
+<font color="#F66151">catalogsource.operators.coreos.com/cloud-native-postgresql-catalog unchanged</font>
+<font color="#F66151">catalogsource.operators.coreos.com/opencloud-operators unchanged</font>
+<font color="#26A269">Adding case ibm-cp-common-services took 1 seconds to execute.</font>
+<font color="#26A269">Custom Resource opencloud-operators exists in ns openshift-marketplace and is newer than file /home/desprets/installcp4i/templates/resources/catalog_source.yaml</font>
+<font color="#2AA1B3">Checking subscription ibm-common-service-operator in openshift-operators project...</font><font color="#26A269">OK</font>
+<font color="#26A269">Custom Resource ibm-common-service-operator is newer than file /home/desprets/installcp4i/templates/operators/subscription.yaml</font>
+<font color="#2AA1B3">Checking subscription ibm-common-service-operator {.status.installedCSV} is ibm-common-service-operator.v4.3.1...</font><font color="#26A269">OK, ibm-common-service-operator.v4.3.1</font>
+<font color="#2AA1B3">Checking clusterserviceversion ibm-common-service-operator.v4.3.1 {.status.phase} is Succeeded...</font><font color="#26A269">OK, Succeeded</font>
+<font color="#26A269">Creation of ibm-common-service-operator operator took 1 seconds to execute.</font>
+<font color="#F66151">Error from server (NotFound): namespaces &quot;-o&quot; not found</font>
+<font color="#F66151">Error from server (NotFound): namespaces &quot;-o&quot; not found</font>
+<font color="#F66151">Error from server (NotFound): namespaces &quot;--type&quot; not found</font>
+<font color="#F66151">Error from server (NotFound): namespaces &quot;--type&quot; not found</font>
+<font color="#2AA1B3">Checking CommonService common-service in openshift-operators project...</font><font color="#26A269">OK</font>
+<font color="#26A269">Custom Resource common-service is newer than file /home/desprets/installcp4i/templates/resources/foundational-services-cr.yaml</font>
+<font color="#26A269">==== Installing Navigator.</font>
+<font color="#26A269">case ibm-integration-platform-navigator 7.2.0 already downloaded</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ibm-integration-platform-navigator-catalog unchanged</font>
+<font color="#26A269">Adding case ibm-integration-platform-navigator took 1 seconds to execute.</font>
+<font color="#2AA1B3">Checking subscription ibm-integration-platform-navigator in openshift-operators project...</font><font color="#26A269">OK</font>
+<font color="#26A269">Custom Resource ibm-integration-platform-navigator is newer than file /home/desprets/installcp4i/templates/operators/subscription.yaml</font>
+<font color="#2AA1B3">Checking subscription ibm-integration-platform-navigator {.status.installedCSV} is ibm-integration-platform-navigator.v7.2.0...</font><font color="#26A269">OK, ibm-integration-platform-navigator.v7.2.0</font>
+<font color="#2AA1B3">Checking clusterserviceversion ibm-integration-platform-navigator.v7.2.0 {.status.phase} is Succeeded...</font><font color="#26A269">OK, Succeeded</font>
+<font color="#26A269">Creation of ibm-integration-platform-navigator operator took 2 seconds to execute.</font>
+<font color="#2AA1B3">Checking PlatformNavigator cp4i-navigator in cp4i project...</font><font color="#26A269">OK</font>
+<font color="#26A269">Custom Resource cp4i-navigator is newer than file /home/desprets/installcp4i/templates/operands/Navigator-Capability.yaml</font>
+<font color="#2AA1B3">Checking PlatformNavigator cp4i-navigator {.status.conditions[0].type} is Ready...</font><font color="#A2734C">NO</font>
+<font color="#12488B">mar. 23 janv. 2024 08:05:47 CET Pending</font>
+<font color="#12488B">mar. 23 janv. 2024 08:32:58 CET Error</font>
+<font color="#12488B">mar. 23 janv. 2024 08:33:57 CET Pending</font>
+<font color="#12488B">mar. 23 janv. 2024 08:36:31 CET Error</font>
+<font color="#12488B">mar. 23 janv. 2024 08:36:59 CET Pending</font>
+<font color="#12488B">mar. 23 janv. 2024 08:42:33 CET Error</font>
+<font color="#12488B">mar. 23 janv. 2024 08:43:00 CET Pending</font>
+<font color="#26A269">OK, Ready</font>
+<font color="#26A269">Creation of PlatformNavigator instance took 2435 seconds to execute.</font>
+<font color="#26A269">==== Installing ACE.</font>
+<font color="#26A269">case ibm-appconnect 11.1.0 already downloaded</font>
+<font color="#F66151">catalogsource.operators.coreos.com/appconnect-operator-catalogsource created</font>
+<font color="#26A269">Adding case ibm-appconnect took 2 seconds to execute.</font>
+<font color="#2AA1B3">Checking subscription ibm-appconnect in openshift-operators project...</font><font color="#F66151">subscription.operators.coreos.com/ibm-appconnect created</font>
+<font color="#2AA1B3">Checking subscription ibm-appconnect {.status.installedCSV} is ibm-appconnect.v11.1.0...</font><font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#26A269">OK, ibm-appconnect.v11.1.0</font>
+<font color="#2AA1B3">Checking clusterserviceversion ibm-appconnect.v11.1.0 {.status.phase} is Succeeded...</font><font color="#A2734C">NO</font>
+<font color="#12488B">mar. 23 janv. 2024 08:47:08 CET Pending</font>
+<font color="#12488B">mar. 23 janv. 2024 08:47:13 CET Installing</font>
+<font color="#26A269">OK, Succeeded</font>
+<font color="#26A269">Creation of ibm-appconnect operator took 60 seconds to execute.</font>
+<font color="#2AA1B3">Checking Dashboard cp4i-ace-db in cp4i project...</font><font color="#F66151">dashboard.appconnect.ibm.com/cp4i-ace-db created</font>
+<font color="#2AA1B3">Checking Dashboard cp4i-ace-db {.status.conditions[0].type} is Ready...</font><font color="#A2734C">NO</font>
+<font color="#12488B">mar. 23 janv. 2024 08:47:28 CET Pending</font>
+<font color="#26A269">OK, Ready</font>
+<font color="#26A269">Creation of Dashboard instance took 137 seconds to execute.</font>
+<font color="#2AA1B3">Checking DesignerAuthoring cp4i-ace-dg in cp4i project...</font><font color="#F66151">designerauthoring.appconnect.ibm.com/cp4i-ace-dg created</font>
+<font color="#2AA1B3">Checking DesignerAuthoring cp4i-ace-dg {.status.conditions[0].type} is Ready...</font><font color="#A2734C">NO</font>
+<font color="#12488B">mar. 23 janv. 2024 08:49:43 CET Pending</font>
+<font color="#26A269">OK, Ready</font>
+<font color="#26A269">Creation of DesignerAuthoring instance took 390 seconds to execute.</font>
+<font color="#26A269">==== Installing APIC.</font>
+<font color="#26A269">case ibm-apiconnect 5.1.0 already downloaded</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ibm-apiconnect-catalog created</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ibm-datapower-operator-catalog created</font>
+<font color="#26A269">Adding case ibm-apiconnect took 2 seconds to execute.</font>
+<font color="#2AA1B3">Checking subscription ibm-apiconnect in openshift-operators project...</font><font color="#F66151">subscription.operators.coreos.com/ibm-apiconnect created</font>
+<font color="#2AA1B3">Checking subscription ibm-apiconnect {.status.installedCSV} is ibm-apiconnect.v5.1.0...</font><font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#26A269">OK, ibm-apiconnect.v5.1.0</font>
+<font color="#2AA1B3">Checking clusterserviceversion ibm-apiconnect.v5.1.0 {.status.phase} is Succeeded...</font><font color="#A2734C">NO</font>
+<font color="#12488B">mar. 23 janv. 2024 08:57:44 CET Installing</font>
+<font color="#26A269">OK, Succeeded</font>
+<font color="#26A269">Creation of ibm-apiconnect operator took 102 seconds to execute.</font>
+<font color="#2AA1B3">Checking APIConnectCluster cp4i-apic in cp4i project...</font><font color="#F66151">apiconnectcluster.apiconnect.ibm.com/cp4i-apic created</font>
+<font color="#2AA1B3">Checking APIConnectCluster cp4i-apic {.status.phase} is Ready...</font><font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#12488B">mar. 23 janv. 2024 08:58:05 CET Pending</font>
+<font color="#26A269">OK, Ready</font>
+<font color="#26A269">Creation of APIConnectCluster instance took 1404 seconds to execute.</font>
+<font color="#26A269">==== Installing Event Endpoint Management.</font>
+<font color="#26A269">case ibm-eventendpointmanagement 11.1.1 already downloaded</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ibm-eventendpointmanagement-catalog created</font>
+<font color="#26A269">Adding case ibm-eventendpointmanagement took 2 seconds to execute.</font>
+<font color="#F66151">Welcome to the CASE launcher</font>
+<font color="#F66151">Attempting to retrieve and extract the CASE from the specified location</font>
+<font color="#F66151">[✓] CASE has been retrieved and extracted</font>
+<font color="#F66151">Attempting to validate the CASE</font>
+<font color="#F66151">[✓] CASE has been successfully validated</font>
+<font color="#F66151">Attempting to locate the launch inventory item, script, and action in the specified CASE</font>
+<font color="#F66151">[✓] Found the specified launch inventory item, action, and script for the CASE</font>
+<font color="#F66151">Attempting to check the cluster and machine for required prerequisites for launching the item</font>
+<font color="#F66151">Checking for required prereqs...</font>
+<font color="#F66151">                                                         </font>
+<font color="#F66151">Prerequisite                                                        Result</font>
+<font color="#F66151">Cluster has at least one amd64                                      true</font>
+<font color="#F66151">OpenShift Container Platform Kubernetes version is 1.23 or greater  true</font>
+<font color="#F66151">Client has oc version 4.3.0 or greater                              true</font>
+<font color="#F66151">Required prereqs result: OK</font>
+<font color="#F66151">Checking user permissions...</font>
+<font color="#F66151">No user rules specified.</font>
+<font color="#F66151">[✓] Cluster and Client Prerequisites have been met for the CASE</font>
+<font color="#F66151">Running the CASE eemOperatorSetup launch script with the following action context: installCatalog</font>
+<font color="#F66151">oc: Client Version: 4.12.0-202305301015.p0.g97c75d0.assembly.stream-97c75d0</font>
+<font color="#F66151">Kustomize Version: v4.5.7</font>
+<font color="#F66151">Server Version: 4.14.5</font>
+<font color="#F66151">Kubernetes Version: v1.27.6+d548052</font>
+<font color="#F66151">Executing inventory item eemOperatorSetup, action installCatalog : launch.sh</font>
+<font color="#F66151">Checking arguments for install catalog action</font>
+<font color="#F66151">-------------Installing catalog source-------------</font>
+<font color="#F66151">apiVersion: operators.coreos.com/v1alpha1</font>
+<font color="#F66151">kind: CatalogSource</font>
+<font color="#F66151">metadata:</font>
+<font color="#F66151">  name: eem-operator-catalog</font>
+<font color="#F66151">  namespace: openshift-marketplace</font>
+<font color="#F66151">spec:</font>
+<font color="#F66151">  displayName: IBM Event Endpoint Management</font>
+<font color="#F66151">  image: icr.io/cpopen/ibm-eventendpointmanagement-operator-catalog@sha256:ea0fccc22503422d8b07dc0baf991c98d83596b29027749b2e3ebabb723bd355</font>
+<font color="#F66151">  publisher: IBM</font>
+<font color="#F66151">  sourceType: grpcdone</font>
+<font color="#F66151">catalogsource.operators.coreos.com/eem-operator-catalog created</font>
+<font color="#F66151">[✓] CASE launch script completed successfully</font>
+<font color="#2AA1B3">Checking subscription ibm-eventendpointmanagement in openshift-operators project...</font><font color="#F66151">subscription.operators.coreos.com/ibm-eventendpointmanagement created</font>
+<font color="#2AA1B3">Checking subscription ibm-eventendpointmanagement {.status.installedCSV} is ibm-eventendpointmanagement.v11.1.1...</font><font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#26A269">OK, ibm-eventendpointmanagement.v11.1.1</font>
+<font color="#2AA1B3">Checking clusterserviceversion ibm-eventendpointmanagement.v11.1.1 {.status.phase} is Succeeded...</font><font color="#A2734C">NO</font>
+<font color="#12488B">mar. 23 janv. 2024 09:22:30 CET Installing</font>
+<font color="#26A269">OK, Succeeded</font>
+<font color="#26A269">Creation of ibm-eventendpointmanagement operator took 125 seconds to execute.</font>
+<font color="#2AA1B3">Checking EventEndpointManagement cp4i-eem in cp4i project...</font><font color="#F66151">eventendpointmanagement.events.ibm.com/cp4i-eem created</font>
+<font color="#2AA1B3">Checking EventEndpointManagement cp4i-eem {.status.conditions[0].type} is Ready...</font><font color="#A2734C">NO</font>
+<font color="#26A269">OK, Ready</font>
+<font color="#26A269">Creation of EventEndpointManagement instance took 13 seconds to execute.</font>
+<font color="#26A269">==== Installing Event Endpoint Gateway.</font>
+<font color="#2AA1B3">Checking EventGateway cp4i-eg in cp4i project...</font><font color="#F66151">eventgateway.events.ibm.com/cp4i-eg created</font>
+<font color="#2AA1B3">Checking EventGateway cp4i-eg {.status.conditions[0].type} is Ready...</font><font color="#A2734C">NO</font>
+<font color="#26A269">OK, Ready</font>
+<font color="#26A269">Creation of EventGateway instance took 9 seconds to execute.</font>
+<font color="#26A269">==== Installing Event Processing.</font>
+<font color="#26A269">case ibm-eventprocessing 1.1.1 already downloaded</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ibm-eventprocessing-catalog created</font>
+<font color="#26A269">Adding case ibm-eventprocessing took 3 seconds to execute.</font>
+<font color="#F66151">Welcome to the CASE launcher</font>
+<font color="#F66151">Attempting to retrieve and extract the CASE from the specified location</font>
+<font color="#F66151">[✓] CASE has been retrieved and extracted</font>
+<font color="#F66151">Attempting to validate the CASE</font>
+<font color="#F66151">[✓] CASE has been successfully validated</font>
+<font color="#F66151">Attempting to locate the launch inventory item, script, and action in the specified CASE</font>
+<font color="#F66151">[✓] Found the specified launch inventory item, action, and script for the CASE</font>
+<font color="#F66151">Attempting to check the cluster and machine for required prerequisites for launching the item</font>
+<font color="#F66151">Checking for required prereqs...</font>
+<font color="#F66151">                                                         </font>
+<font color="#F66151">Prerequisite                                                        Result</font>
+<font color="#F66151">Cluster has at least one amd64                                      true</font>
+<font color="#F66151">OpenShift Container Platform Kubernetes version is 1.23 or greater  true</font>
+<font color="#F66151">Client has oc version 4.3.0 or greater                              true</font>
+<font color="#F66151">Required prereqs result: OK</font>
+<font color="#F66151">Checking user permissions...</font>
+<font color="#F66151">No user rules specified.</font>
+<font color="#F66151">[✓] Cluster and Client Prerequisites have been met for the CASE</font>
+<font color="#F66151">Running the CASE epOperatorSetup launch script with the following action context: installCatalog</font>
+<font color="#F66151">oc: Client Version: 4.12.0-202305301015.p0.g97c75d0.assembly.stream-97c75d0</font>
+<font color="#F66151">Kustomize Version: v4.5.7</font>
+<font color="#F66151">Server Version: 4.14.5</font>
+<font color="#F66151">Kubernetes Version: v1.27.6+d548052</font>
+<font color="#F66151">Executing inventory item epOperatorSetup, action installCatalog : launch.sh</font>
+<font color="#F66151">Checking arguments for install catalog action</font>
+<font color="#F66151">-------------Installing catalog source-------------</font>
+<font color="#F66151">apiVersion: operators.coreos.com/v1alpha1</font>
+<font color="#F66151">kind: CatalogSource</font>
+<font color="#F66151">metadata:</font>
+<font color="#F66151">  name: ea-sp-operator-catalog</font>
+<font color="#F66151">  namespace: openshift-marketplace</font>
+<font color="#F66151">spec:</font>
+<font color="#F66151">  displayName: IBM Event Processing</font>
+<font color="#F66151">  image: icr.io/cpopen/ibm-eventprocessing-operator-catalog@sha256:29f0a99d3e4d5d39f562abf54a35cdb51f6f3b38b9c8604fa2bcf5d2a94e5355</font>
+<font color="#F66151">  publisher: IBM</font>
+<font color="#F66151">  sourceType: grpcdone</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ea-sp-operator-catalog created</font>
+<font color="#F66151">[✓] CASE launch script completed successfully</font>
+<font color="#2AA1B3">Checking clusterserviceversion ibm-eventprocessing.v1.1.1 in openshift-operators project...</font><font color="#F66151">Welcome to the CASE launcher</font>
+<font color="#F66151">Attempting to retrieve and extract the CASE from the specified location</font>
+<font color="#F66151">[✓] CASE has been retrieved and extracted</font>
+<font color="#F66151">Attempting to validate the CASE</font>
+<font color="#F66151">[✓] CASE has been successfully validated</font>
+<font color="#F66151">Attempting to locate the launch inventory item, script, and action in the specified CASE</font>
+<font color="#F66151">[✓] Found the specified launch inventory item, action, and script for the CASE</font>
+<font color="#F66151">Attempting to check the cluster and machine for required prerequisites for launching the item</font>
+<font color="#F66151">Checking for required prereqs...</font>
+<font color="#F66151">                                                          </font>
+<font color="#F66151">Prerequisite                                                        Result</font>
+<font color="#F66151">/case/prereqs//k8sResources/workerIntelLinux                        true</font>
+<font color="#F66151">OpenShift Container Platform Kubernetes version is 1.23 or greater  true</font>
+<font color="#F66151">Namespace is using the restricted SecurityContextConstraint         true</font>
+<font color="#F66151">Required prereqs result: OK</font>
+<font color="#F66151">Checking user permissions...</font>
+<font color="#F66151">                                                 </font>
+<font color="#F66151">Kubernetes RBAC Prerequisite         Verbs   Result  Reason</font>
+<font color="#F66151">operators.coreos.com.catalogsource/  create  true</font>
+<font color="#F66151">operators.coreos.com.subscription/   create  true</font>
+<font color="#F66151">User permissions result: OK</font>
+<font color="#F66151">[✓] Cluster and Client Prerequisites have been met for the CASE</font>
+<font color="#F66151">Running the CASE epOperatorSetup launch script with the following action context: installOperator</font>
+<font color="#F66151">oc: Client Version: 4.12.0-202305301015.p0.g97c75d0.assembly.stream-97c75d0</font>
+<font color="#F66151">Kustomize Version: v4.5.7</font>
+<font color="#F66151">Server Version: 4.14.5</font>
+<font color="#F66151">Kubernetes Version: v1.27.6+d548052</font>
+<font color="#F66151">Executing inventory item epOperatorSetup, action installOperator : launch.sh</font>
+<font color="#F66151">Checking install arguments for install</font>
+<font color="#F66151">check for any existing operator group in openshift-operators ...</font>
+<font color="#F66151">found operator group</font>
+<font color="#F66151">apiVersion: v1</font>
+<font color="#F66151">items:</font>
+<font color="#F66151">- apiVersion: operators.coreos.com/v1</font>
+<font color="#F66151">  kind: OperatorGroup</font>
+<font color="#F66151">  metadata:</font>
+<font color="#F66151">    annotations:</font>
+<font color="#F66151">      include.release.openshift.io/ibm-cloud-managed: &quot;true&quot;</font>
+<font color="#F66151">      include.release.openshift.io/self-managed-high-availability: &quot;true&quot;</font>
+<font color="#F66151">      olm.providedAPIs: API.v1beta1.apiconnect.ibm.com,APIConnectCluster.v1beta1.apiconnect.ibm.com,AnalyticsBackup.v1beta1.analytics.apiconnect.ibm.com,AnalyticsCluster.v1beta1.analytics.apiconnect.ibm.com,AnalyticsRestore.v1beta1.analytics.apiconnect.ibm.com,Backup.v1.postgresql.k8s.enterprisedb.io,Cluster.v1.postgresql.k8s.enterprisedb.io,CommonService.v3.operator.ibm.com,Configuration.v1beta1.appconnect.ibm.com,Cp4iServicesBinding.v1.cp4i.ibm.com,Dashboard.v1beta1.appconnect.ibm.com,DataPowerMonitor.v1beta2.datapower.ibm.com,DataPowerMustGather.v1beta1.datapower.ibm.com,DataPowerMustGatherManager.v1beta1.datapower.ibm.com,DataPowerRollout.v1beta1.datapower.ibm.com,DataPowerService.v1beta1.datapower.ibm.com,DataPowerService.v1beta2.datapower.ibm.com,DataPowerService.v1beta3.datapower.ibm.com,DataPowerServiceBinding.v1beta1.datapower.ibm.com,DesignerAuthoring.v1beta1.appconnect.ibm.com,EventEndpointManagement.v1beta1.events.ibm.com,EventGateway.v1beta1.events.ibm.com,GatewayCluster.v1beta1.gateway.apiconnect.ibm.com,IntegrationAssembly.v1beta1.integration.ibm.com,IntegrationFlow.v1beta1.appconnect.ibm.com,IntegrationKeycloakClient.v1beta1.keycloak.integration.ibm.com,IntegrationKeycloakUser.v1beta1.keycloak.integration.ibm.com,IntegrationRuntime.v1beta1.appconnect.ibm.com,IntegrationServer.v1beta1.appconnect.ibm.com,ManagementCluster.v1beta1.management.apiconnect.ibm.com,ManagementDBUpgrade.v1beta1.management.apiconnect.ibm.com,ManagementRestore.v1beta1.management.apiconnect.ibm.com,ManagementSecretRotation.v1beta1.management.apiconnect.ibm.com,OperandBindInfo.v1alpha1.operator.ibm.com,OperandConfig.v1alpha1.operator.ibm.com,OperandRegistry.v1alpha1.operator.ibm.com,OperandRequest.v1alpha1.operator.ibm.com,PlatformNavigator.v1beta1.integration.ibm.com,Pooler.v1.postgresql.k8s.enterprisedb.io,PortalBackup.v1beta1.portal.apiconnect.ibm.com,PortalCluster.v1beta1.portal.apiconnect.ibm.com,PortalRestore.v1beta1.portal.apiconnect.ibm.com,PortalSecretRotation.v1beta1.portal.apiconnect.ibm.com,Product.v1beta1.apiconnect.ibm.com,ScheduledBackup.v1.postgresql.k8s.enterprisedb.io,SwitchServer.v1beta1.appconnect.ibm.com,Trace.v1beta1.appconnect.ibm.com</font>
+<font color="#F66151">    creationTimestamp: &quot;2024-01-23T05:41:28Z&quot;</font>
+<font color="#F66151">    generation: 1</font>
+<font color="#F66151">    name: global-operators</font>
+<font color="#F66151">    namespace: openshift-operators</font>
+<font color="#F66151">    ownerReferences:</font>
+<font color="#F66151">    - apiVersion: config.openshift.io/v1</font>
+<font color="#F66151">      controller: true</font>
+<font color="#F66151">      kind: ClusterVersion</font>
+<font color="#F66151">      name: version</font>
+<font color="#F66151">      uid: 4b78c406-b58b-4f1f-9025-a972fe9fd4f8</font>
+<font color="#F66151">    resourceVersion: &quot;94244&quot;</font>
+<font color="#F66151">    uid: 5ca32c9e-ae05-4d13-b3e4-1897e6c2b952</font>
+<font color="#F66151">  spec:</font>
+<font color="#F66151">    upgradeStrategy: Default</font>
+<font color="#F66151">  status:</font>
+<font color="#F66151">    lastUpdated: &quot;2024-01-23T06:01:17Z&quot;</font>
+<font color="#F66151">    namespaces:</font>
+<font color="#F66151">    - &quot;&quot;</font>
+<font color="#F66151">kind: List</font>
+<font color="#F66151">metadata:</font>
+<font color="#F66151">  resourceVersion: &quot;&quot;</font>
+<font color="#F66151">-------------Installing via OLM-------------</font>
+<font color="#F66151">checking if catalog source exists ...</font>
+<font color="#F66151">NAME                     DISPLAY                TYPE   PUBLISHER   AGE</font>
+<font color="#F66151">ea-sp-operator-catalog   IBM Event Processing   grpc   IBM         3s</font>
+<font color="#F66151">apiVersion: operators.coreos.com/v1alpha1</font>
+<font color="#F66151">kind: Subscription</font>
+<font color="#F66151">metadata:</font>
+<font color="#F66151">  name: sp</font>
+<font color="#F66151">spec:</font>
+<font color="#F66151">  channel: v1.1</font>
+<font color="#F66151">  installPlanApproval: Automatic</font>
+<font color="#F66151">  name: ibm-eventprocessing</font>
+<font color="#F66151">  source: ea-sp-operator-catalog</font>
+<font color="#F66151">  sourceNamespace: openshift-marketplace</font>
+<font color="#F66151">subscription.operators.coreos.com/sp created</font>
+<font color="#F66151">[✓] CASE launch script completed successfully</font>
+<font color="#2AA1B3">Checking clusterserviceversion ibm-eventprocessing.v1.1.1 {.status.phase} is Succeeded...</font><font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#12488B">mar. 23 janv. 2024 09:24:46 CET Pending</font>
+<font color="#12488B">mar. 23 janv. 2024 09:24:51 CET Installing</font>
+<font color="#26A269">OK, Succeeded</font>
+<font color="#26A269">Creation of ibm-eventprocessing.v1.1.1 operator took 88 seconds to execute.</font>
+<font color="#2AA1B3">Checking EventProcessing cp4i-ep in cp4i project...</font><font color="#F66151">eventprocessing.events.ibm.com/cp4i-ep created</font>
+<font color="#2AA1B3">Checking EventProcessing cp4i-ep {.status.phase} is Running...</font><font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#12488B">mar. 23 janv. 2024 09:25:37 CET Pending</font>
+<font color="#26A269">OK, Running</font>
+<font color="#26A269">Creation of EventProcessing instance took 134 seconds to execute.</font>
+<font color="#26A269">==== Installing Event Streams.</font>
+<font color="#26A269">case ibm-eventstreams 3.3.0 already downloaded</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ibm-eventstreams created</font>
+<font color="#26A269">Adding case ibm-eventstreams took 3 seconds to execute.</font>
+<font color="#2AA1B3">Checking subscription ibm-eventstreams in openshift-operators project...</font><font color="#F66151">subscription.operators.coreos.com/ibm-eventstreams created</font>
+<font color="#2AA1B3">Checking subscription ibm-eventstreams {.status.installedCSV} is ibm-eventstreams.v3.3.0...</font><font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#26A269">OK, ibm-eventstreams.v3.3.0</font>
+<font color="#2AA1B3">Checking clusterserviceversion ibm-eventstreams.v3.3.0 {.status.phase} is Succeeded...</font><font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#12488B">mar. 23 janv. 2024 09:28:59 CET Installing</font>
+<font color="#26A269">OK, Succeeded</font>
+<font color="#26A269">Creation of ibm-eventstreams operator took 212 seconds to execute.</font>
+<font color="#2AA1B3">Checking EventStreams cp4i-es in cp4i project...</font><font color="#F66151">eventstreams.eventstreams.ibm.com/cp4i-es created</font>
+<font color="#2AA1B3">Checking EventStreams cp4i-es {.status.phase} is Ready...</font><font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#12488B">mar. 23 janv. 2024 09:31:36 CET Pending</font>
+<font color="#12488B">mar. 23 janv. 2024 09:36:19 CET Failed</font>
+<font color="#26A269">OK, Ready</font>
+<font color="#26A269">Creation of EventStreams instance took 546 seconds to execute.</font>
+<font color="#26A269">==== Installing Flink.</font>
+<font color="#F66151">[WARNING]: Download operation timed out Get &quot;https://github.com/IBM/cloud-pak/raw/master/repo/case/index.yaml&quot;: context deadline exceeded (Client.Timeout exceeded while awaiting headers). Retrying...</font>
+<font color="#F66151">Error: Unable to query the index file from the CASE repo at location &quot;https://github.com/IBM/cloud-pak/raw/master/repo/case/&quot; for CASE name &quot;&quot;</font>
+<font color="#F66151">CASE repository: IBM Cloud-Pak Github Repo (https://github.com/IBM/cloud-pak/raw/master/repo/case/)</font>
+<font color="#F66151">Downloading and extracting the CASE ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Retrieving CASE version ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Validating the CASE ...</font>
+<font color="#F66151">Validating the signature for the ibm-eventautomation-flink CASE...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Creating inventory ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Finding inventory items</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Resolving inventory items ...</font>
+<font color="#F66151">Parsing inventory items</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Download of CASE: ibm-eventautomation-flink, version: 1.1.1 is complete</font>
+<font color="#F66151">Generating ComponentSetConfig of CASE: ibm-eventautomation-flink, version: 1.1.1 to /home/desprets/.ibm-pak/data/cases/ibm-eventautomation-flink/1.1.1/component-set-config.yaml is complete</font>
+<font color="#F66151">ibm-eventautomation-flink-1.1.1  done</font>
+<font color="#F66151">Generating mirror manifests of CASE: ibm-eventautomation-flink, version: 1.1.1 is complete</font>
+<font color="#F66151">Next steps</font>
+<font color="#F66151">- To mirror the images:</font>
+<font color="#F66151"> oc image mirror -f /home/desprets/.ibm-pak/data/mirror/ibm-eventautomation-flink/1.1.1/images-mapping.txt --filter-by-os &apos;.*&apos; -a $REGISTRY_AUTH_FILE --insecure --skip-multiple-scopes --max-per-registry=1</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ibm-eventautomation-flink-catalog created</font>
+<font color="#26A269">Adding case ibm-eventautomation-flink took 14 seconds to execute.</font>
+<font color="#F66151">Welcome to the CASE launcher</font>
+<font color="#F66151">Attempting to retrieve and extract the CASE from the specified location</font>
+<font color="#F66151">[✓] CASE has been retrieved and extracted</font>
+<font color="#F66151">Attempting to validate the CASE</font>
+<font color="#F66151">[✓] CASE has been successfully validated</font>
+<font color="#F66151">Attempting to locate the launch inventory item, script, and action in the specified CASE</font>
+<font color="#F66151">[✓] Found the specified launch inventory item, action, and script for the CASE</font>
+<font color="#F66151">Attempting to check the cluster and machine for required prerequisites for launching the item</font>
+<font color="#F66151">Checking for required prereqs...</font>
+<font color="#F66151">                                                         </font>
+<font color="#F66151">Prerequisite                                                        Result</font>
+<font color="#F66151">Cluster has at least one amd64                                      true</font>
+<font color="#F66151">OpenShift Container Platform Kubernetes version is 1.23 or greater  true</font>
+<font color="#F66151">Client has oc version 4.3.0 or greater                              true</font>
+<font color="#F66151">Required prereqs result: OK</font>
+<font color="#F66151">Checking user permissions...</font>
+<font color="#F66151">No user rules specified.</font>
+<font color="#F66151">[✓] Cluster and Client Prerequisites have been met for the CASE</font>
+<font color="#F66151">Running the CASE flinkKubernetesOperatorSetup launch script with the following action context: installCatalog</font>
+<font color="#F66151">oc: Client Version: 4.12.0-202305301015.p0.g97c75d0.assembly.stream-97c75d0</font>
+<font color="#F66151">Kustomize Version: v4.5.7</font>
+<font color="#F66151">Server Version: 4.14.5</font>
+<font color="#F66151">Kubernetes Version: v1.27.6+d548052</font>
+<font color="#F66151">Executing inventory item flinkKubernetesOperatorSetup, action installCatalog : launch.sh</font>
+<font color="#F66151">Checking arguments for install catalog action</font>
+<font color="#F66151">-------------Installing catalog source-------------</font>
+<font color="#F66151">apiVersion: operators.coreos.com/v1alpha1</font>
+<font color="#F66151">kind: CatalogSource</font>
+<font color="#F66151">metadata:</font>
+<font color="#F66151">  name: ea-flink-operator-catalog</font>
+<font color="#F66151">  namespace: openshift-marketplace</font>
+<font color="#F66151">spec:</font>
+<font color="#F66151">  displayName: IBM Operator for Apache Flink</font>
+<font color="#F66151">  image: icr.io/cpopen/ibm-eventautomation-flink-operator-catalog@sha256:7cbc3659c1a15b73855527ddea1de5b3100ca12f5c599aa6ecb35229567fcfc2</font>
+<font color="#F66151">  publisher: IBM</font>
+<font color="#F66151">  sourceType: grpcdone</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ea-flink-operator-catalog created</font>
+<font color="#F66151">[✓] CASE launch script completed successfully</font>
+<font color="#2AA1B3">Checking clusterserviceversion ibm-eventautomation-flink.v1.1.1 in openshift-operators project...</font><font color="#F66151">Welcome to the CASE launcher</font>
+<font color="#F66151">Attempting to retrieve and extract the CASE from the specified location</font>
+<font color="#F66151">[✓] CASE has been retrieved and extracted</font>
+<font color="#F66151">Attempting to validate the CASE</font>
+<font color="#F66151">[✓] CASE has been successfully validated</font>
+<font color="#F66151">Attempting to locate the launch inventory item, script, and action in the specified CASE</font>
+<font color="#F66151">[✓] Found the specified launch inventory item, action, and script for the CASE</font>
+<font color="#F66151">Attempting to check the cluster and machine for required prerequisites for launching the item</font>
+<font color="#F66151">Checking for required prereqs...</font>
+<font color="#F66151">                                                          </font>
+<font color="#F66151">Prerequisite                                                        Result</font>
+<font color="#F66151">/case/prereqs//k8sResources/workerIntelLinux                        true</font>
+<font color="#F66151">OpenShift Container Platform Kubernetes version is 1.23 or greater  true</font>
+<font color="#F66151">Namespace is using the restricted SecurityContextConstraint         true</font>
+<font color="#F66151">Required prereqs result: OK</font>
+<font color="#F66151">Checking user permissions...</font>
+<font color="#F66151">                                                 </font>
+<font color="#F66151">Kubernetes RBAC Prerequisite         Verbs   Result  Reason</font>
+<font color="#F66151">operators.coreos.com.catalogsource/  create  true</font>
+<font color="#F66151">operators.coreos.com.subscription/   create  true</font>
+<font color="#F66151">User permissions result: OK</font>
+<font color="#F66151">[✓] Cluster and Client Prerequisites have been met for the CASE</font>
+<font color="#F66151">Running the CASE flinkKubernetesOperatorSetup launch script with the following action context: installOperator</font>
+<font color="#F66151">oc: Client Version: 4.12.0-202305301015.p0.g97c75d0.assembly.stream-97c75d0</font>
+<font color="#F66151">Kustomize Version: v4.5.7</font>
+<font color="#F66151">Server Version: 4.14.5</font>
+<font color="#F66151">Kubernetes Version: v1.27.6+d548052</font>
+<font color="#F66151">Executing inventory item flinkKubernetesOperatorSetup, action installOperator : launch.sh</font>
+<font color="#F66151">Checking install arguments for install</font>
+<font color="#F66151">check for any existing operator group in openshift-operators ...</font>
+<font color="#F66151">found operator group</font>
+<font color="#F66151">apiVersion: v1</font>
+<font color="#F66151">items:</font>
+<font color="#F66151">- apiVersion: operators.coreos.com/v1</font>
+<font color="#F66151">  kind: OperatorGroup</font>
+<font color="#F66151">  metadata:</font>
+<font color="#F66151">    annotations:</font>
+<font color="#F66151">      include.release.openshift.io/ibm-cloud-managed: &quot;true&quot;</font>
+<font color="#F66151">      include.release.openshift.io/self-managed-high-availability: &quot;true&quot;</font>
+<font color="#F66151">      olm.providedAPIs: API.v1beta1.apiconnect.ibm.com,APIConnectCluster.v1beta1.apiconnect.ibm.com,AnalyticsBackup.v1beta1.analytics.apiconnect.ibm.com,AnalyticsCluster.v1beta1.analytics.apiconnect.ibm.com,AnalyticsRestore.v1beta1.analytics.apiconnect.ibm.com,Backup.v1.postgresql.k8s.enterprisedb.io,Cluster.v1.postgresql.k8s.enterprisedb.io,CommonService.v3.operator.ibm.com,Configuration.v1beta1.appconnect.ibm.com,Cp4iServicesBinding.v1.cp4i.ibm.com,Dashboard.v1beta1.appconnect.ibm.com,DataPowerMonitor.v1beta2.datapower.ibm.com,DataPowerMustGather.v1beta1.datapower.ibm.com,DataPowerMustGatherManager.v1beta1.datapower.ibm.com,DataPowerRollout.v1beta1.datapower.ibm.com,DataPowerService.v1beta1.datapower.ibm.com,DataPowerService.v1beta2.datapower.ibm.com,DataPowerService.v1beta3.datapower.ibm.com,DataPowerServiceBinding.v1beta1.datapower.ibm.com,DesignerAuthoring.v1beta1.appconnect.ibm.com,EventEndpointManagement.v1beta1.events.ibm.com,EventGateway.v1beta1.events.ibm.com,EventProcessing.v1beta1.events.ibm.com,EventStreams.v1beta2.eventstreams.ibm.com,EventStreamsGeoReplicator.v1beta1.eventstreams.ibm.com,GatewayCluster.v1beta1.gateway.apiconnect.ibm.com,IntegrationAssembly.v1beta1.integration.ibm.com,IntegrationFlow.v1beta1.appconnect.ibm.com,IntegrationKeycloakClient.v1beta1.keycloak.integration.ibm.com,IntegrationKeycloakUser.v1beta1.keycloak.integration.ibm.com,IntegrationRuntime.v1beta1.appconnect.ibm.com,IntegrationServer.v1beta1.appconnect.ibm.com,Kafka.v1beta2.eventstreams.ibm.com,KafkaBridge.v1beta2.eventstreams.ibm.com,KafkaConnect.v1beta2.eventstreams.ibm.com,KafkaConnector.v1beta2.eventstreams.ibm.com,KafkaMirrorMaker2.v1beta2.eventstreams.ibm.com,KafkaNodePool.v1beta2.eventstreams.ibm.com,KafkaRebalance.v1beta2.eventstreams.ibm.com,KafkaTopic.v1beta2.eventstreams.ibm.com,KafkaUser.v1beta2.eventstreams.ibm.com,ManagementCluster.v1beta1.management.apiconnect.ibm.com,ManagementDBUpgrade.v1beta1.management.apiconnect.ibm.com,ManagementRestore.v1beta1.management.apiconnect.ibm.com,ManagementSecretRotation.v1beta1.management.apiconnect.ibm.com,OperandBindInfo.v1alpha1.operator.ibm.com,OperandConfig.v1alpha1.operator.ibm.com,OperandRegistry.v1alpha1.operator.ibm.com,OperandRequest.v1alpha1.operator.ibm.com,PlatformNavigator.v1beta1.integration.ibm.com,Pooler.v1.postgresql.k8s.enterprisedb.io,PortalBackup.v1beta1.portal.apiconnect.ibm.com,PortalCluster.v1beta1.portal.apiconnect.ibm.com,PortalRestore.v1beta1.portal.apiconnect.ibm.com,PortalSecretRotation.v1beta1.portal.apiconnect.ibm.com,Product.v1beta1.apiconnect.ibm.com,ScheduledBackup.v1.postgresql.k8s.enterprisedb.io,StrimziPodSet.v1beta2.core.eventstreams.ibm.com,SwitchServer.v1beta1.appconnect.ibm.com,Trace.v1beta1.appconnect.ibm.com</font>
+<font color="#F66151">    creationTimestamp: &quot;2024-01-23T05:41:28Z&quot;</font>
+<font color="#F66151">    generation: 1</font>
+<font color="#F66151">    name: global-operators</font>
+<font color="#F66151">    namespace: openshift-operators</font>
+<font color="#F66151">    ownerReferences:</font>
+<font color="#F66151">    - apiVersion: config.openshift.io/v1</font>
+<font color="#F66151">      controller: true</font>
+<font color="#F66151">      kind: ClusterVersion</font>
+<font color="#F66151">      name: version</font>
+<font color="#F66151">      uid: 4b78c406-b58b-4f1f-9025-a972fe9fd4f8</font>
+<font color="#F66151">    resourceVersion: &quot;98641&quot;</font>
+<font color="#F66151">    uid: 5ca32c9e-ae05-4d13-b3e4-1897e6c2b952</font>
+<font color="#F66151">  spec:</font>
+<font color="#F66151">    upgradeStrategy: Default</font>
+<font color="#F66151">  status:</font>
+<font color="#F66151">    lastUpdated: &quot;2024-01-23T06:01:17Z&quot;</font>
+<font color="#F66151">    namespaces:</font>
+<font color="#F66151">    - &quot;&quot;</font>
+<font color="#F66151">kind: List</font>
+<font color="#F66151">metadata:</font>
+<font color="#F66151">  resourceVersion: &quot;&quot;</font>
+<font color="#F66151">-------------Installing via OLM-------------</font>
+<font color="#F66151">checking if catalog source exists ...</font>
+<font color="#F66151">NAME                        DISPLAY                         TYPE   PUBLISHER   AGE</font>
+<font color="#F66151">ea-flink-operator-catalog   IBM Operator for Apache Flink   grpc   IBM         3s</font>
+<font color="#F66151">apiVersion: operators.coreos.com/v1alpha1</font>
+<font color="#F66151">kind: Subscription</font>
+<font color="#F66151">metadata:</font>
+<font color="#F66151">  name: ibm-eventautomation-flink</font>
+<font color="#F66151">spec:</font>
+<font color="#F66151">  channel: v1.1</font>
+<font color="#F66151">  installPlanApproval: Automatic</font>
+<font color="#F66151">  name: ibm-eventautomation-flink</font>
+<font color="#F66151">  source: ea-flink-operator-catalog</font>
+<font color="#F66151">  sourceNamespace: openshift-marketplacesubscription.operators.coreos.com/ibm-eventautomation-flink created</font>
+<font color="#F66151">[✓] CASE launch script completed successfully</font>
+<font color="#2AA1B3">Checking clusterserviceversion ibm-eventautomation-flink.v1.1.1 {.status.phase} is Succeeded...</font><font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#12488B">mar. 23 janv. 2024 09:42:00 CET Installing</font>
+<font color="#26A269">OK, Succeeded</font>
+<font color="#26A269">Creation of ibm-eventautomation-flink.v1.1.1 operator took 115 seconds to execute.</font>
+<font color="#2AA1B3">Checking PersistentVolumeClaim ibm-flink-pvc in cp4i project...</font><font color="#F66151">persistentvolumeclaim/ibm-flink-pvc created</font>
+<font color="#2AA1B3">Checking PersistentVolumeClaim ibm-flink-pvc {.status.phase} is Bound...</font><font color="#A2734C">NO</font>
+<font color="#12488B">mar. 23 janv. 2024 09:42:35 CET Pending</font>
+<font color="#26A269">OK, Bound</font>
+<font color="#26A269">Creation of PersistentVolumeClaim instance took 73 seconds to execute.</font>
+<font color="#2AA1B3">Checking FlinkDeployment cp4i-flk in cp4i project...</font><font color="#F66151">flinkdeployment.flink.apache.org/cp4i-flk created</font>
+<font color="#2AA1B3">Checking FlinkDeployment cp4i-flk {.status.lifecycleState}-{.status.jobManagerDeploymentStatus} is STABLE-READY...</font><font color="#A2734C">NO</font>
+<font color="#12488B">mar. 23 janv. 2024 09:43:51 CET -</font>
+<font color="#12488B">mar. 23 janv. 2024 09:43:56 CET UPGRADING-MISSING</font>
+<font color="#12488B">mar. 23 janv. 2024 09:44:07 CET DEPLOYED-DEPLOYING</font>
+<font color="#12488B">mar. 23 janv. 2024 09:45:20 CET DEPLOYED-DEPLOYED_NOT_READY</font>
+<font color="#26A269">OK, STABLE-READY</font>
+<font color="#26A269">Creation of FlinkDeployment instance took 107 seconds to execute.</font>
+<font color="#26A269">==== Installing MQ.</font>
+<font color="#26A269">case ibm-mq 3.0.0 already downloaded</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ibmmq-operator-catalogsource created</font>
+<font color="#26A269">Adding case ibm-mq took 2 seconds to execute.</font>
+<font color="#2AA1B3">Checking subscription ibm-mq in openshift-operators project...</font><font color="#F66151">subscription.operators.coreos.com/ibm-mq created</font>
+<font color="#2AA1B3">Checking subscription ibm-mq {.status.installedCSV} is ibm-mq.v3.0.0...</font><font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#26A269">OK, ibm-mq.v3.0.0</font>
+<font color="#2AA1B3">Checking clusterserviceversion ibm-mq.v3.0.0 {.status.phase} is Succeeded...</font><font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#12488B">mar. 23 janv. 2024 09:46:49 CET Pending</font>
+<font color="#12488B">mar. 23 janv. 2024 09:46:54 CET Installing</font>
+<font color="#26A269">OK, Succeeded</font>
+<font color="#26A269">Creation of ibm-mq operator took 103 seconds to execute.</font>
+<font color="#2AA1B3">Checking QueueManager cp4i-mq in cp4i project...</font><font color="#F66151">The QueueManager &quot;cp4i-mq&quot; is invalid: spec.queueManager.name: Invalid value: &quot;cp4i-mq&quot;: spec.queueManager.name in body should match &apos;^[a-zA-Z0-9._%/]*$&apos;</font>
+</pre>

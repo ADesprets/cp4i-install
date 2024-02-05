@@ -62,3 +62,5 @@ cat file dans variable
 kubectl -n cp4i create configmap example-config --from-file=auto-startup.cfg auto-startup.cfg
 	Remove wait to login to openshift console la première fois
 Backup/restore
+
+

@@ -12,9 +12,11 @@ spec:
   license: 
     license: $MY_ES_LIC
     accept: true
-    use: $MY_ES_LIC_usage
+    use: $MY_ES_LIC_USAGE
 
   strimziOverrides:
+    entityOperator:
+      topicOperator: {}
     kafka:
       replicas: 3
       authorization:
