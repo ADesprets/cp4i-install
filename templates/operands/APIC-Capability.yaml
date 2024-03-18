@@ -20,7 +20,7 @@ spec:
     testAndMonitor:
       enabled: true
       aiEnabled: false
-      autoTestEnabled: false
+      autoTestEnabled: true
   license:
     accept: true
     license: $MY_APIC_LIC

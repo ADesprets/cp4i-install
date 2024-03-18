@@ -40,7 +40,7 @@ SECONDS=0
 
 			# load users and groups into LDAP
 			envsubst < "${YAMLDIR}config/Import.tmpl" > "${YAMLDIR}config/Import.ldiff"
-			ldapadd -H ldap://$hostname:$port -D "$ldap_admin_dn" -w "$ldap_admin_password" -f ${YAMLDIR}kube_resources/ldap-users.ldif
+			$LDAP_COMMAND -H ldap://$hostname:$port -D "$ldap_admin_dn" -w "$ldap_admin_password" -f ${YAMLDIR}kube_resources/ldap-users.ldif
 
 			mylog info "You can search entries with the following command: "
 			# ldapmodify -H ldap://$hostname:$port -D "$ldap_admin_dn" -w admin -f ${LDAPDIR}Import.ldiff

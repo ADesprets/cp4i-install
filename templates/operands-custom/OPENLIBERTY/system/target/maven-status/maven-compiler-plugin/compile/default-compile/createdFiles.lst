@@ -1,0 +1,5 @@
+io/openliberty/guides/system/SystemApplication.class
+io/openliberty/guides/system/SystemResource.class
+io/openliberty/guides/system/health/SystemStartupCheck.class
+io/openliberty/guides/system/health/SystemReadinessCheck.class
+io/openliberty/guides/system/health/SystemLivenessCheck.class

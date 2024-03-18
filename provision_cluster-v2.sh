@@ -213,7 +213,7 @@ function create_openshift_cluster () {
 # set variable my_cluster_url
 function wait_for_cluster_availability () {
   SECONDS=0	
-  wait_for_state 'Cluster state' 'normal-All Workers Normal' "ibmcloud oc cluster get --cluster $sc_cluster_name --output json|jq -r '.state+\"-\"+.status'"
+  wait_for_state 'Cluster state' 'normal-All Workers Normal' "ibmcloud oc cluster get --cluster $sc_cluster_name --output json|jq -r '(.state + \"-\" + .status)'"
   mylog info "Checking Cluster state took: $SECONDS seconds." 1>&2
 
   SECONDS=0
@@ -270,14 +270,16 @@ function wait_4_ingress_address_availability () {
 # Create openshift cluster if it does not exist
 # and wait for both availability of the cluster and the ingress address
 function create_openshift_cluster_wait_4_availability () {
-  # Create openshift cluster
-  create_openshift_cluster
+  if ! ${TECHZONE}; then
+    # Create openshift cluster
+    create_openshift_cluster
 
-  # Wait for Cluster availability
-  wait_for_cluster_availability
+    # Wait for Cluster availability
+    wait_for_cluster_availability
 
-  # Wait for ingress address availability
-  wait_4_ingress_address_availability
+    # Wait for ingress address availability
+    wait_4_ingress_address_availability
+  fi
 }
 
 ################################################
@@ -309,6 +311,10 @@ function install_openldap () {
 ################################################
 # Display information to access CP4I
 function display_access_info () {
+  mylog info "==== Displaying Access Info to CP4I." 1>&2
+  # Temporary access with Keycloack
+  temp_integration_admin_pwd=$(oc -n $MY_COMMON_SERVICES_NAMESPACE get secret integration-admin-initial-temporary-credentials -o jsonpath={.data.password} | base64 -d)
+  mylog info "Integration admin password: ${temp_integration_admin_pwd}"
 
   if $MY_NAVIGATOR_INSTANCE;then
     get_navigator_access
@@ -405,21 +411,23 @@ function accept_license_fs () {
 ################################################
 # Log in IBM Cloud
 function login_2_ibm_cloud () {
-  SECONDS=0
-  
-  if ibmcloud resource groups -q > /dev/null 2>&1;then
-    mylog info "user already logged to IBM Cloud." 
-  else
-    mylog info "user not logged to IBM Cloud." 1>&2
-    var_fail MY_IC_APIKEY "Create and save API key JSON file from: https://cloud.ibm.com/iam/apikeys"
-    mylog check "Login to IBM Cloud"
-    if ! ibmcloud login -q --no-region --apikey $MY_IC_APIKEY > /dev/null;then
-      mylog error "Fail to login to IBM Cloud, check API key: $MY_IC_APIKEY" 1>&2
-      exit 1
-    else mylog ok
-    mylog info "Connecting to IBM Cloud took: $SECONDS seconds." 1>&2
+  if ! ${TECHZONE}; then
+    SECONDS=0
+    
+    if ibmcloud resource groups -q > /dev/null 2>&1;then
+      mylog info "user already logged to IBM Cloud." 
+    else
+      mylog info "user not logged to IBM Cloud." 1>&2
+      var_fail MY_IC_APIKEY "Create and save API key JSON file from: https://cloud.ibm.com/iam/apikeys"
+      mylog check "Login to IBM Cloud"
+      if ! ibmcloud login -q --no-region --apikey $MY_IC_APIKEY > /dev/null;then
+        mylog error "Fail to login to IBM Cloud, check API key: $MY_IC_APIKEY" 1>&2
+        exit 1
+      else mylog ok
+      mylog info "Connecting to IBM Cloud took: $SECONDS seconds." 1>&2
+      fi
     fi
-  fi 
+  fi
 }
 
 ################################################
@@ -432,16 +440,20 @@ function login_2_openshift_cluster () {
   if oc whoami > /dev/null 2>&1;then
     mylog info "user already logged to openshift cluster." 
   else
-    mylog check "Login to cluster"
-    # SB 20231208 The following command sets your command line context for the cluster and download the TLS certificates and permission files for the administrator.
-    # more details here : https://cloud.ibm.com/docs/openshift?topic=openshift-access_cluster#access_public_se
-    ibmcloud ks cluster config --cluster ${sc_cluster_name} --admin
-    while ! oc login -u apikey -p $MY_IC_APIKEY --server=$my_cluster_url > /dev/null;do
-      mylog error "$(date) Fail to login to Cluster, retry in a while (login using web to unblock)" 1>&2
-      sleep 30
-    done
-    mylog ok
-    mylog info "Logging to Cluster took: $SECONDS seconds." 1>&2
+    if $TECHZONE; then
+      oc login -u ${MY_TECHZONE_USERNAME} -p ${MY_TECHZONE_PASSWORD} ${MY_TECHZONE_OPENSHIFT_API_URL}
+    else
+      mylog check "Login to cluster"
+      # SB 20231208 The following command sets your command line context for the cluster and download the TLS certificates and permission files for the administrator.
+      # more details here : https://cloud.ibm.com/docs/openshift?topic=openshift-access_cluster#access_public_se
+      ibmcloud ks cluster config --cluster ${sc_cluster_name} --admin
+      while ! oc login -u apikey -p $MY_IC_APIKEY --server=$my_cluster_url > /dev/null;do
+        mylog error "$(date) Fail to login to Cluster, retry in a while (login using web to unblock)" 1>&2
+        sleep 30
+      done
+      mylog ok
+      mylog info "Logging to Cluster took: $SECONDS seconds." 1>&2
+    fi
   fi
 }
 
@@ -568,7 +580,7 @@ function install_navigator () {
     lf_strategy="Automatic"
     lf_wait_for_state=1
     lf_startingcsv=$MY_NAVIGATOR_OPERATOR_STARTINGCSV
-    # create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_startingcsv}"
+    create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_startingcsv}"
   fi
 
   if $MY_NAVIGATOR_INSTANCE;then
@@ -649,6 +661,7 @@ function install_ace () {
     lf_strategy="Automatic"
     lf_startingcsv=$MY_ACE_OPERATOR_STARTINGCSV
     lf_wait_for_state=1
+    decho "create_operator_subscription \"${lf_operator_name}\" \"${lf_current_chl}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_startingcsv}\""
     create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_startingcsv}"
 
     # Creating ACE Dashboard instance
@@ -727,24 +740,128 @@ function install_apic () {
   # Takes all the templates associated with the capabilities and generate the files from the context variables
   # The files are generated into ./customisation/working/<capability>/config
   if $MY_APIC_CUSTOM;then
-    # generate the differents properties files
-    # SB]20231109 some generated files (yaml) are based on other generated files (properties), so :
-    # - in template custom dirs, separate the files to two categories : scripts (*.properties) and config (*.yaml)
-    # - generate first the *.properties files to be sourced then generate the *.yaml files
-    if [ ! -d ${APIC_GEN_CUSTOMDIR}scripts ]; then
-      mkdir -p ${APIC_GEN_CUSTOMDIR}scripts
-    fi
-    if [ ! -d ${APIC_GEN_CUSTOMDIR}config ]; then
-      mkdir -p ${APIC_GEN_CUSTOMDIR}config
-    fi
-    generate_files $APIC_TMPL_CUSTOMDIR $APIC_GEN_CUSTOMDIR true
-
     save_certificate ${MY_OC_PROJECT} cp4i-apic-ingress-ca ${WORKINGDIR}
     save_certificate ${MY_OC_PROJECT} cp4i-apic-gw-gateway ${WORKINGDIR}
 
-   # launch custom script
-   mylog info "Customise APIC"
-#    . ${APIC_SCRIPTDIR}scripts/apic.config.sh
+    # launch custom script
+    mylog info "Customise APIC"
+    . ${APIC_SCRIPTDIR}scripts/apic.config.sh
+  fi
+}
+
+################################################
+# Install APIC
+function install_openliberty () {
+  # backend J2EE applications
+  if $MY_OPENLIBERTY;then
+    mylog info "==== Installing OPEN Liberty." 1>&2
+
+    create_namespace $MY_BACKEND_NAMESPACE
+
+    # TODO other approach is to use the catalog which already inludes the Open Liberty operator and use a subscription
+    # Case exists 1.3.1, and IBM/RedHat Catalog
+
+    export OPEN_LIBERTY_OPERATOR_NAMESPACE=$MY_BACKEND_NAMESPACE
+    export OPEN_LIBERTY_OPERATOR_WATCH_NAMESPACE=$MY_BACKEND_NAMESPACE
+    # TODO Check hat is this value
+    export WATCH_NAMESPACE='""'
+    adapt_file ${OPENLIBERTY_TMPL_CUSTOMDIR}config/ ${OPENLIBERTY_GEN_CUSTOMDIR}config/ openliberty-app-rbac-watch-all.yaml
+    adapt_file ${OPENLIBERTY_TMPL_CUSTOMDIR}config/ ${OPENLIBERTY_GEN_CUSTOMDIR}config/ openliberty-app-crd.yaml
+    adapt_file ${OPENLIBERTY_TMPL_CUSTOMDIR}config/ ${OPENLIBERTY_GEN_CUSTOMDIR}config/ openliberty-app-operator.yaml
+
+    # Creating APIC operator subscription (Check arbitrarely one resource, the deployment of the operator)
+    local lf_octype='deployment'
+    local lf_name='olo-controller-manager'
+    
+    # check if deployment of the operator already performed
+    mylog check "Checking ${lf_octype} ${lf_name} in ${MY_BACKEND_NAMESPACE}"
+    if oc -n ${MY_BACKEND_NAMESPACE} get ${lf_octype} ${lf_name} > /dev/null 2>&1; then mylog ok
+    else
+      oc apply --server-side -f ${OPENLIBERTY_GEN_CUSTOMDIR}config/openliberty-app-crd.yaml
+      oc apply -f ${OPENLIBERTY_GEN_CUSTOMDIR}config/openliberty-app-rbac-watch-all.yaml
+      oc apply -n ${MY_BACKEND_NAMESPACE} -f ${OPENLIBERTY_GEN_CUSTOMDIR}config/openliberty-app-operator.yaml
+    fi
+
+    # Handle private image registry
+    # I'm using a service id associated to my email, information are configured in private/users.properties (See README.dm)
+    # Creating the secret to access the images in the private registry
+    local lf_octype='secret'
+    local lf_name='my-image-registry-secret'
+      
+    # check if secret already created
+    mylog check "Checking ${lf_octype} ${lf_name} in ${MY_BACKEND_NAMESPACE}"
+    if oc -n ${MY_BACKEND_NAMESPACE} get ${lf_octype} ${lf_name} > /dev/null 2>&1; then mylog ok
+    else
+      kubectl -n ${MY_BACKEND_NAMESPACE} create secret docker-registry my-image-registry-secret \
+        --docker-server=${MY_IMAGE_REGISTRY} \
+        --docker-username=${MY_IMAGE_REGISTRY_USERNAME} \
+        --docker-password=${MY_IMAGE_REGISTRY_PASSWORD}  \
+        --docker-email=${MY_USER_EMAIL}
+    fi
+
+    # Build and create image, then load it into registry, this is optional because images won't change very often
+    if $MY_OPENLIBERTY_CUSTOM;then
+    pushd ${OPENLIBERTY_TMPL_CUSTOMDIR}system
+      mylog info "Compile code"
+      mvn clean install
+
+      mylog info "Login to docker registry"
+      docker login -u $MY_IMAGE_REGISTRY_USERNAME -p $MY_IMAGE_REGISTRY_PASSWORD $MY_IMAGE_REGISTRY
+      ibmcloud cr login --client docker -u myappscreds -p $MY_IMAGE_REGISTRY_PASSWORD $MY_IMAGE_REGISTRY
+
+      mylog info "Build docker image oljaxrs:1.0"
+      docker build -t oljaxrs:1.0 .
+
+      mylog info "Push image to ${MY_IMAGE_REGISTRY}"
+      # olo1 is a namespace that belongs to me, in my private registry
+      docker image tag oljaxrs:1.0 ${MY_IMAGE_REGISTRY}/${MY_IMAGE_REGISTRY_NS1}/oljaxrs:1.0
+      docker push ${MY_IMAGE_REGISTRY}/${MY_IMAGE_REGISTRY_NS1}/oljaxrs:1.0
+      # Check everything is correct
+      # docker images
+      # ibmcloud cr login --client docker
+      # ibmcloud cr image-inspect de.icr.io/${MY_IMAGE_REGISTRY_NS1}/oljaxrs:1.0
+      popd
+    fi
+
+    # Deploy the image in the $MY_BACKEND_NAMESPACE namespace
+    adapt_file ${OPENLIBERTY_TMPL_CUSTOMDIR}config/ ${OPENLIBERTY_GEN_CUSTOMDIR}config/ system-appdeploy.yaml
+    kubectl -n ${MY_BACKEND_NAMESPACE} apply -f ${OPENLIBERTY_GEN_CUSTOMDIR}config/system-appdeploy.yaml
+    # kubectl run <service_name> --image=de.icr.io/olo1/oljaxrs
+    # kubectl -n ${MY_BACKEND_NAMESPACE} get OpenLibertyApplications
+    # kubectl -n ${MY_BACKEND_NAMESPACE} describe olapps/mysystem
+
+exit
+
+    lf_operator_name="ibm-apiconnect"
+    lf_current_chl=$MY_APIC_CHL
+    lf_catalog_source_name="ibm-apiconnect-catalog"
+    lf_operator_namespace=$MY_OPERATORS_NAMESPACE
+    lf_strategy="Automatic"
+    lf_wait_for_state=1
+    lf_startingcsv=$MY_APIC_OPERATOR_STARTINGCSV
+    create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_startingcsv}"
+
+    # Creating APIC instance
+    lf_file="${OPERANDSDIR}APIC-Capability.yaml"
+    lf_ns="${MY_OC_PROJECT}"
+    lf_path="{.status.phase}"
+    lf_resource="$MY_APIC_INSTANCE_NAME"
+    lf_state="Ready"
+    lf_type="APIConnectCluster"
+    lf_wait_for_state=0
+    create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
+  fi
+
+  # start customization
+  # Takes all the templates associated with the capabilities and generate the files from the context variables
+  # The files are generated into ./customisation/working/<capability>/config
+  if $MY_OPENLIBERTY_CUSTOM;then
+    save_certificate ${MY_OC_PROJECT} cp4i-apic-ingress-ca ${WORKINGDIR}
+    save_certificate ${MY_OC_PROJECT} cp4i-apic-gw-gateway ${WORKINGDIR}
+
+    # launch custom script
+    mylog info "Customise OPENLIBERTY"
+    # . ${OPENLIBERTY_SCRIPTDIR}scripts/openliberty.config.sh
   fi
 }
 
@@ -1174,7 +1291,7 @@ function install_nexus () {
 # @param sc_cluster_name: name of the cluster
 # example of invocation: ./provision_cluster-v2.sh private/my-cp4i.properties sbtest cp4i-sb-cluster
 # other example: ./provision_cluster-v2.sh cp4i.properties ./versions/cp4i-2023.4.properties cp4i sb20240102
-# other example: ./provision_cluster-v2.sh cp4i.properties ./versions/cp4i-2023.4.properties cp4i cp4iad2023
+# other example: ./provision_cluster-v2.sh cp4i.properties ./versions/cp4i-2023.4.properties cp4i ad202341
 sc_properties_file=$1
 sc_versions_file=$2
 export MY_OC_PROJECT=$3
@@ -1190,6 +1307,7 @@ if [ $# -ne 4 ]; then
 else echo "The provided arguments are: $@"
 fi
 
+trap 'display_access_info' EXIT
 # load helper functions
 . "${MAINSCRIPTDIR}"lib.sh
 
@@ -1203,8 +1321,6 @@ read_config_file "$sc_versions_file"
 my_user_file="${PRIVATEDIR}user.properties"
 read_config_file "$my_user_file"
 
-: <<'END_COMMENT'
-END_COMMENT
 # check the differents pre requisites
 check_exec_prereqs
 
@@ -1217,7 +1333,8 @@ create_openshift_cluster_wait_4_availability
 # Log to openshift cluster
 login_2_openshift_cluster
 
-
+: <<'END_COMMENT'
+END_COMMENT
 # Create project namespace.
 # SB]20231213 erreur obtenue juste après la création du cluster openshift : Error from server (Forbidden): You may not request a new project via this API.
 # Solution : https://stackoverflow.com/questions/51657711/openshift-allow-serviceaccount-to-create-project
@@ -1227,9 +1344,11 @@ login_2_openshift_cluster
 # You'll need to add the "self-provisioner" role to your service account as well. Although you've made it project admin, that only means its admin rights are scoped to that one project, which is not enough to allow it to request new projects.
 # oc adm policy add-cluster-role-to-user self-provisioner system:serviceaccount:<project>:<cx-jenkins
 # oc create clusterrolebinding myname-cluster-admin-binding --clusterrole=cluster-admin --user=IAM#saad.benachi@fr.ibm.com
-oc create clusterrolebinding myname-cluster-admin-binding --clusterrole=cluster-admin --user=$MY_USER > /dev/null 2>&1
-oc create clusterrolebinding myname-cluster-binding --clusterrole=admin --user=$MY_USER > /dev/null 2>&1
-oc adm policy add-cluster-role-to-user self-provisioner $MY_USER -n $MY_OC_PROJECT
+if ! ${TECHZONE};then
+  oc create clusterrolebinding myname-cluster-admin-binding --clusterrole=cluster-admin --user=$MY_USER_ID > /dev/null 2>&1
+  oc create clusterrolebinding myname-cluster-binding --clusterrole=admin --user=$MY_USER_ID > /dev/null 2>&1
+  oc adm policy add-cluster-role-to-user self-provisioner $MY_USER_ID -n $MY_OC_PROJECT
+fi
 
 # https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.4?topic=operators-installing-by-using-cli
 # (Only if your preferred installation mode is a specific namespace on the cluster) Create an OperatorGroup
@@ -1253,7 +1372,8 @@ ls_namespace=$MY_LICENSE_SERVER_NAMESPACE
 check_create_oc_yaml "${ls_type}" "${ls_cr_name}" "${ls_yaml_file}" "${ls_namespace}"
 
 # Add ibm entitlement key to namespace
-# SB]20230209 Aspera hsts service cannot be created because a problem with the entitlement, it muste be added in the openshift-operators namespace.
+# SB]20230209 Aspera hsts service cannot be created because a problem with the entitlement, it must be added in the openshift-operators namespace.
+mylog info "Creating entitlement, need to check if it is needed or works"
 add_ibm_entitlement $MY_OC_PROJECT $MY_CONTAINER_ENGINE
 add_ibm_entitlement $MY_OPERATORS_NAMESPACE $MY_CONTAINER_ENGINE
 
@@ -1262,6 +1382,12 @@ mylog info "==== Installing foundational services (Cert Manager, Licensing Serve
 install_cert_manager
 install_lic_srv
 install_fs
+
+# Add OpenLdap app to openshift
+install_openldap
+
+# Add Nexus Repository to openshift
+install_nexus
 
 # For each capability install : case, operator, operand 
 install_navigator
@@ -1275,7 +1401,8 @@ install_assetrepo
 # For each capability install : case, operator, operand 
 install_ace
 
-# For each capability install : case, operator, operand 
+# For each capability install : case, operator, operand
+# install_openliberty
 install_apic
 
 # For each capability install : case, operator, operand 
@@ -1286,7 +1413,6 @@ install_egw
 
 # For each capability install : case, operator, operand 
 install_ep $MY_CATALOGSOURCES_NAMESPACE
-
 
 # For each capability install : case, operator, operand 
 install_es
@@ -1300,17 +1426,10 @@ install_hsts
 # For each capability install : case, operator, operand 
 install_mq
 
-# Add OpenLdap app to openshift
-install_openldap
-
-# Add Nexus Repository to openshift
-install_nexus
-
 # Add Instana
 install_instana
 
 ## Display information to access CP4I
-mylog info "==== Displaying Access Info to CP4I." 1>&2
 display_access_info
 
 #work in progress

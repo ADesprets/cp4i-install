@@ -107,7 +107,8 @@ function is_case_downloaded() {
         lf_cmp=$?
         case $lf_cmp in
           0) return 1 ;;
-          1) sed -i "/$lf_in_version_varid/c$lf_in_version_varid=$lf_latestversion" "$sc_versions_file" 
+          1) mylog info "newer version of case $lf_in_case is available. Current version=$lf_version. Latest version=$lf_latestversion"
+             # sed -i "/$lf_in_version_varid/c$lf_in_version_varid=$lf_latestversion" "$sc_versions_file" 
              return 1 ;;
         esac
       fi
@@ -421,8 +422,8 @@ function expose_service_openldap() {
   # load users and groups into LDAP
   envsubst < "${YAMLDIR}ldap/ldap-users.ldif" > "${WORKINGDIR}ldap-users.ldif"
   mylog info "Adding LDAP entries with following command: "
-  mylog info "ldapadd -H ldap://${lf_hostname}:${lf_port0} -x -D \"$ldap_admin_dn\" -w \"$ldap_admin_password\" -f ${WORKINGDIR}ldap-users.ldif"
-  ldapadd -H ldap://${lf_hostname}:${lf_port0} -D "${ldap_admin_dn}" -w "${ldap_admin_password}" -f ${WORKINGDIR}ldap-users.ldif
+  mylog info "$LDAP_COMMAND -H ldap://${lf_hostname}:${lf_port0} -x -D \"$ldap_admin_dn\" -w \"$ldap_admin_password\" -f ${WORKINGDIR}ldap-users.ldif"
+  $LDAP_COMMAND -H ldap://${lf_hostname}:${lf_port0} -D "${ldap_admin_dn}" -w "${ldap_admin_password}" -f ${WORKINGDIR}ldap-users.ldif
      
   mylog info "You can search entries with the following command: "
   # ldapmodify -H ldap://$lf_hostname:$lf_port0 -D "$ldap_admin_dn" -w admin -f ${LDAPDIR}Import.ldiff
@@ -524,15 +525,15 @@ function create_operator_subscription() {
   check_create_oc_yaml "${type}" "${MY_OPERATOR_NAME}" "${file}" "${MY_OPERATOR_NAMESPACE}"
 
   if [ ! -z $MY_STARTING_CSV ]; then
-    type="Subscription"
-    path="{.status.installedCSV}"
-    state="$MY_STARTING_CSV"
-    decho "wait_for_state $type $resource $path is $state | $state | oc -n $MY_OPERATOR_NAMESPACE get $type $resource -o jsonpath=$path"
-    resource=$(check_resource_availability "${type}" "${MY_OPERATOR_NAME}" "${MY_OPERATOR_NAMESPACE}")
-    decho "wait_for_state $type $resource $path is $state | $state | oc -n $MY_OPERATOR_NAMESPACE get $type $resource -o jsonpath=$path"
-    if [ $lf_in_wait ]; then 
-      wait_for_state "$type $resource $path is $state" "$state" "oc -n $MY_OPERATOR_NAMESPACE get $type $resource -o jsonpath='$path'"
-    fi
+    # type="Subscription"
+    # path="{.status.installedCSV}"
+    # state="$MY_STARTING_CSV"
+    # decho "wait_for_state $type $resource $path is $state | $state | oc -n $MY_OPERATOR_NAMESPACE get $type $resource -o jsonpath=$path"
+    # resource=$(check_resource_availability "${type}" "${MY_OPERATOR_NAME}" "${MY_OPERATOR_NAMESPACE}")
+    # decho "wait_for_state $type $resource $path is $state | $state | oc -n $MY_OPERATOR_NAMESPACE get $type $resource -o jsonpath=$path"
+    # if [ $lf_in_wait ]; then 
+    #   wait_for_state "$type $resource $path is $state" "$state" "oc -n $MY_OPERATOR_NAMESPACE get $type $resource -o jsonpath='$path'"
+    # fi
 
     type="ClusterServiceVersion"
     path="{.status.phase}"
@@ -661,6 +662,22 @@ function create_catalogsource () {
       envsubst < "${file}" | oc -n ${CATALOG_SOURCE_NAMESPACE} apply -f - || exit 1
       wait_for_state "$type $CATALOG_SOURCE_NAME $path is $state" "$state" "oc -n ${CATALOG_SOURCE_NAMESPACE} get ${type} ${CATALOG_SOURCE_NAME} -o jsonpath='$path'"
     fi
+  fi
+}
+
+#########################################################################################################
+## adapt file into working dir
+## called generate_files before
+function adapt_file () {
+  local sourcedir=$1
+  local destdir=$2
+  local filename=$3
+  
+  if [ ! -d ${destdir} ]; then
+    mkdir -p ${destdir}
+  fi
+  if [ -e "${sourcedir}$filename" ];then
+    cat  "${sourcedir}$filename" | envsubst >  "${destdir}${filename}"
   fi
 }
 
