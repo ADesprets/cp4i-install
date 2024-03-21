@@ -404,6 +404,28 @@ function deploy_openldap(){
 }
 
 ################################################
+# @param octype: kubernetes resource class, example: "deployment"
+# @param ocname: name of the resource, example: "mailhog"
+# See https://github.com/osixia/docker-openldap for more details especialy all the configurations possible
+function deploy_mailhog(){
+  local lf_in_octype="$1"
+  local lf_in_name="$2"
+  local lf_in_namespace="$3"
+
+  # check if deploment already performed
+  mylog check "Checking ${lf_in_octype} ${lf_in_name} in ${lf_in_namespace}"
+  if oc -n ${lf_in_namespace} get ${lf_in_octype} ${lf_in_name} > /dev/null 2>&1; then mylog ok
+  else
+    mylog check "Checking service ${lf_in_name} in ${lf_in_namespace}"
+    if oc -n ${lf_in_namespace} get service ${lf_in_name} > /dev/null 2>&1; then mylog ok
+    else
+  	  mylog info "Creating mailhog server"
+      oc -n ${lf_in_namespace} new-app ${lf_in_name}/${lf_in_name}
+    fi
+  fi
+}
+
+################################################
 # @param name: name of the resource, example: "openldap"
 # @param namespace: the namespace to use
 function expose_service_openldap() {
@@ -429,6 +451,22 @@ function expose_service_openldap() {
   # ldapmodify -H ldap://$lf_hostname:$lf_port0 -D "$ldap_admin_dn" -w admin -f ${LDAPDIR}Import.ldiff
   mylog info "ldapsearch -H ldap://${lf_hostname}:${lf_port0} -x -D \"$ldap_admin_dn\" -w \"$ldap_admin_password\" -b \"$ldap_base_dn\" -s sub -a always -z 1000 \"(objectClass=*)\""
 }
+################################################
+# @param name: name of the resource, example: "mailhog"
+# @param namespace: the namespace to use
+function expose_service_mailhog() {
+  local lf_in_name="$1"
+  local lf_in_namespace="$2"
+  local lf_port="$3"
+
+  # expose service externaly and get host and port
+  oc -n $lf_in_name expose svc/lf_in_name --port=${lf_port} --name=${lf_in_name}
+  lf_hostname=$(oc -n ${lf_in_namespace} get route ${lf_in_name} -o jsonpath='{.spec.host}')
+  mylog info "MailHog exposed on ${lf_hostname}"
+  lf_clusterIP=oc -n ${lf_in_namespace} get svc/${lf_in_name} -o jsonpath='{.spec.clusterIP}'
+  mylog info "To configre the mail server the clusterIP is ${lf_clusterIP}"
+}
+
 
 ################################################
 # Create namespace

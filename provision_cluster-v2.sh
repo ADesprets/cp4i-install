@@ -302,9 +302,30 @@ function install_openldap () {
     check_file_exist ${YAMLDIR}ldap/ldap-config.json
     check_file_exist ${YAMLDIR}ldap/ldap-users.ldif
 
-    deploy_openldap ${lf_type} ${lf_name} ${lf_namespace}
     provision_persistence_openldap ${lf_namespace}
+    deploy_openldap ${lf_type} ${lf_name} ${lf_namespace}
     expose_service_openldap ${lf_name} ${lf_namespace}
+  fi
+}
+
+################################################
+# Add mailhog app to openshift
+# Port is hard coded to 8025 and is defined by mailhog (default port)
+function install_mailhog () {
+  if $MY_MAILHOG;then
+    mylog info "==== Installing mail hog serve rand client." 1>&2
+    local lf_namespace="mail"
+    local lf_type="deployment"
+    local lf_name="openldap"
+
+    # May need some properties
+    # read_config_file "${YAMLDIR}ldap/ldap.properties"
+
+    # create namespace if needed
+    create_namespace ${lf_namespace}
+
+    deploy_mailhog ${lf_type} ${lf_name} ${lf_namespace}
+    expose_service_mailhog ${lf_name} ${lf_namespace} '8025'
   fi
 }
 
@@ -747,6 +768,7 @@ function install_apic () {
     mylog info "Customise APIC"
     . ${APIC_SCRIPTDIR}scripts/apic.config.sh
   fi
+  exit
 }
 
 ################################################
@@ -1334,7 +1356,7 @@ create_openshift_cluster_wait_4_availability
 login_2_openshift_cluster
 
 : <<'END_COMMENT'
-END_COMMENT
+
 # Create project namespace.
 # SB]20231213 erreur obtenue juste après la création du cluster openshift : Error from server (Forbidden): You may not request a new project via this API.
 # Solution : https://stackoverflow.com/questions/51657711/openshift-allow-serviceaccount-to-create-project
@@ -1401,6 +1423,7 @@ install_assetrepo
 # For each capability install : case, operator, operand 
 install_ace
 
+END_COMMENT
 # For each capability install : case, operator, operand
 # install_openliberty
 install_apic
