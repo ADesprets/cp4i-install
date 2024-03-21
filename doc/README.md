@@ -15,6 +15,23 @@ The principles followed to implement this asset are the following:
 * Follow good practice around scripting
 * Run everywhere, the use of ibm-pak allows an installation on IBM Red Hat Openshift in IBM Cloud, onPremise, with CRC - RedHat Code Ready Container, on TechZone. (It has been tested on the three first platforms)
 
+Scenarios
+	Basics MQ
+	Basics ES
+	Taxi lab
+		Montrer Async API
+	Cycle de base d'une API
+	Nouvelle version d'une Product (API)
+	Auto test/AI Insight
+	devOps
+	Securité LDAP / Keycloak
+
+	Open Liberty 
+		JAX WS
+		JAX RS
+	Licence service
+	noname integration APIC et DP
+
 ## Pre-requisites and preliminary tasks
 
 Prerequisites are minimal. There is a method in lib.sh called *check_exec_prereqs* that will ensure at the start of the installation that all utilities are installed.
@@ -47,10 +64,14 @@ Note that those files in `private` are ignored by git.
 
 1. Navigate to [My IBM &rarr; Container software library](https://myibm.ibm.com/products-services/containerlibrary) and save your IBM Marketplace entitlement key in file: `private/ibm_container_entitlement_key.txt`
 
-1. private/user.properties contains one line such :
+1. private/user.properties contains :
 
-```properties
-MY_USER="IAM#<your_email>"
+``` properties
+MY_USER_EMAIL='<your email>'
+MY_USER_ID="IAM#${MY_USER_EMAIL}"
+MY_IMAGE_REGISTRY='<image reigstry>' # example: de.icr.io
+MY_IMAGE_REGISTRY_USERNAME='iamapikey'
+MY_IMAGE_REGISTRY_PASSWORD='<your password>'
 ```
 
 ### Configuration
@@ -209,3 +230,16 @@ In the subscription folder we have the definition of the operators. Since they a
 3) We execute the customisation from customisation/<capability>/scripts
 
 This asset is the result of the collaboration of several people included in the git. You are welcome to join the gang.
+
+## email
+
+Using mailhog as a mail server
+
+oc new-project mail
+oc -n mail new-app mailhog/mailhog
+oc -n mail expose svc/mailhog --port=8025 --name=mailhogweb
+Get the clusterIP
+Configure APIC mail
+Configure topology
+
+As mail client: Roundcube https://roundcube.net/
