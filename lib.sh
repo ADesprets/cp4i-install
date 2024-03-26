@@ -460,13 +460,10 @@ function expose_service_mailhog() {
   local lf_port="$3"
 
   # expose service externaly and get host and port
-  oc -n $lf_in_name expose svc/lf_in_name --port=${lf_port} --name=${lf_in_name}
+  oc -n ${lf_in_namespace} expose svc/${lf_in_name} --port=${lf_port} --name=${lf_in_name}
   lf_hostname=$(oc -n ${lf_in_namespace} get route ${lf_in_name} -o jsonpath='{.spec.host}')
-  mylog info "MailHog exposed on ${lf_hostname}"
-  lf_clusterIP=oc -n ${lf_in_namespace} get svc/${lf_in_name} -o jsonpath='{.spec.clusterIP}'
-  mylog info "To configre the mail server the clusterIP is ${lf_clusterIP}"
+  mylog info "MailHog accessible at ${lf_hostname}"
 }
-
 
 ################################################
 # Create namespace

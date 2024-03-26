@@ -287,14 +287,13 @@ function create_openshift_cluster_wait_4_availability () {
 function install_openldap () {
   if $MY_LDAP;then
     mylog info "==== Installing OpenLdap." 1>&2
-    local lf_namespace="ldap"
     local lf_type="deployment"
     local lf_name="openldap"
 
     read_config_file "${YAMLDIR}ldap/ldap.properties"
 
     # create namespace if needed
-    create_namespace ${lf_namespace}
+    create_namespace $MY_LDAP_NAMESPACE
 
     #SB]20231207 checks if used directories and files exists
     check_file_exist ${YAMLDIR}ldap/ldap-pvc.main.yaml
@@ -313,16 +312,15 @@ function install_openldap () {
 # Port is hard coded to 8025 and is defined by mailhog (default port)
 function install_mailhog () {
   if $MY_MAILHOG;then
-    mylog info "==== Installing mail hog serve rand client." 1>&2
-    local lf_namespace="mail"
+    mylog info "==== Installing mailhog (server and client)." 1>&2
     local lf_type="deployment"
-    local lf_name="openldap"
+    local lf_name="mailhog"
 
     # May need some properties
     # read_config_file "${YAMLDIR}ldap/ldap.properties"
 
     # create namespace if needed
-    create_namespace ${lf_namespace}
+    create_namespace ${MY_MAIL_SERVER_NAMESPACE}
 
     deploy_mailhog ${lf_type} ${lf_name} ${lf_namespace}
     expose_service_mailhog ${lf_name} ${lf_namespace} '8025'
@@ -785,7 +783,7 @@ function install_openliberty () {
 
     export OPEN_LIBERTY_OPERATOR_NAMESPACE=$MY_BACKEND_NAMESPACE
     export OPEN_LIBERTY_OPERATOR_WATCH_NAMESPACE=$MY_BACKEND_NAMESPACE
-    # TODO Check hat is this value
+    # TODO Check that is this value
     export WATCH_NAMESPACE='""'
     adapt_file ${OPENLIBERTY_TMPL_CUSTOMDIR}config/ ${OPENLIBERTY_GEN_CUSTOMDIR}config/ openliberty-app-rbac-watch-all.yaml
     adapt_file ${OPENLIBERTY_TMPL_CUSTOMDIR}config/ ${OPENLIBERTY_GEN_CUSTOMDIR}config/ openliberty-app-crd.yaml
@@ -1356,6 +1354,7 @@ create_openshift_cluster_wait_4_availability
 login_2_openshift_cluster
 
 : <<'END_COMMENT'
+END_COMMENT
 
 # Create project namespace.
 # SB]20231213 erreur obtenue juste après la création du cluster openshift : Error from server (Forbidden): You may not request a new project via this API.
@@ -1404,6 +1403,7 @@ mylog info "==== Installing foundational services (Cert Manager, Licensing Serve
 install_cert_manager
 install_lic_srv
 install_fs
+install_mailhog
 
 # Add OpenLdap app to openshift
 install_openldap
@@ -1423,7 +1423,6 @@ install_assetrepo
 # For each capability install : case, operator, operand 
 install_ace
 
-END_COMMENT
 # For each capability install : case, operator, operand
 # install_openliberty
 install_apic
