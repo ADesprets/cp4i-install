@@ -4,7 +4,7 @@ metadata:
   annotations: 
     apiconnect-operator/backups-not-configured: "true"  
   name: $MY_APIC_INSTANCE_NAME
-  namespace: $MY_OC_PROJECT
+  namespace: $MY_APIC_PROJECT
 spec:
   analytics:
     storage:
@@ -17,6 +17,8 @@ spec:
     - ibm-entitlement-key
   imageRegistry: cp.icr.io/cp/apic
   management:
+    governance:
+      enabled: true
     testAndMonitor:
       enabled: true
       aiEnabled: false

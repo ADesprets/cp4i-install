@@ -123,21 +123,20 @@ function create_topology() {
   tlsServer=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles" \
    -H "Authorization: Bearer $access_token" \
    -H 'Accept: application/json' --compressed | jq .results[0].url  | sed -e s/\"//g);
-  # mylog info  "tlsServer: $tlsServer"
+  decho "tlsServer: $tlsServer"
   
   tlsClientDefault=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-client-profiles" \
    -H "Authorization: Bearer $access_token" \
    -H 'Accept: application/json' --compressed | jq '.results[] | select(.name=="tls-client-profile-default")| .url' | sed -e s/\"//g);
-  # mylog info  "tlsClientDefault: $tlsClientDefault"
+  decho "tlsClientDefault: $tlsClientDefault"
   
   #TODO  : use and in select : select(.integration_type=="gateway_service" --and .name=="datapower-api-gateway")| .url'
   integration_url=$(curl -sk "${PLATFORM_API_URL}api/cloud/integrations" \
    -H "Authorization: Bearer $access_token" \
    -H 'Accept: application/json' --compressed | jq -r '.results[] | select(.integration_type=="gateway_service" and .name=="datapower-api-gateway")| .url');
-  # mylog info  "integration_url: $integration_url"
+  decho "integration_url: $integration_url"
   
-
-  # mylog info  "{\"name\":\"apigateway-service\",\"title\":\"API Gateway Service\",\"endpoint\":\"https://$EP_GWD\",\"api_endpoint_base\":\"https://$EP_GW\",\"tls_client_profile_url\":\"$tlsClientDefault\",\"gateway_service_type\":\"$ep_gwType\",\"visibility\":{\"type\":\"public\"},\"sni\":[{\"host\":\"*\",\"tls_server_profile_url\":\"$tlsServer\"}],\"integration_url\":\"${lf_integration_url}\"}"
+  mylog info  "{\"name\":\"apigateway-service\",\"title\":\"API Gateway Service\",\"endpoint\":\"https://$EP_GWD\",\"api_endpoint_base\":\"https://$EP_GW\",\"tls_client_profile_url\":\"$tlsClientDefault\",\"gateway_service_type\":\"$ep_gwType\",\"visibility\":{\"type\":\"public\"},\"sni\":[{\"host\":\"*\",\"tls_server_profile_url\":\"$tlsServer\"}],\"integration_url\":\"${lf_integration_url}\"}"
 
   dpUrl=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services" \
   -H "Authorization: Bearer $access_token" \
@@ -147,10 +146,11 @@ function create_topology() {
   --data-binary "{\"name\":\"apigateway-service\",\"title\":\"API Gateway Service\",\"endpoint\":\"https://$EP_GWD\",\"api_endpoint_base\":\"https://$EP_GW\",\"tls_client_profile_url\":\"$tlsClientDefault\",\"gateway_service_type\":\"$ep_gwType\",\"visibility\":{\"type\":\"public\"},\"sni\":[{\"host\":\"*\",\"tls_server_profile_url\":\"$tlsServer\"}],\"integration_url\":\"${lf_integration_url}\"}" \
   --compressed | jq .url | sed -e s/\"//g);
 
+  decho "dpUrl: $dpUrl"
+
   mylog info "Gateway service already exists, use it."
 
   mylog info  Set gateway Service as default for catalogs
-
   setGWdefault=$(curl -sk --request PUT "${PLATFORM_API_URL}api/cloud/settings" \
     -H "Authorization: Bearer $access_token" \
     -H 'Content-Type: application/json' \
@@ -170,7 +170,7 @@ function create_topology() {
   --data-binary "{\"title\":\"API Analytics Service\",\"name\":\"analytics-service\",\"endpoint\":\"https://$EP_AI\"}" \
   --compressed | jq .url | sed -e s/\"//g);
 
-  # mylog info "analytUrl: $analytUrl"
+  decho "analytUrl: $analytUrl"
 
   mylog info "Associate Analytics Service with Gateway"
 
@@ -192,7 +192,7 @@ function create_topology() {
   -H "content-type: application/json"\
   --data "{\"title\":\"API Portal Service\",\"name\":\"portal-service\",\"endpoint\":\"https://$EP_PADMIN\",\"web_endpoint_base\":\"https://$EP_PORTAL\",\"visibility\":{\"group_urls\":null,\"org_urls\":null,\"type\":\"public\"}}");
 
-  # mylog info "createPortal: $createPortal"
+  decho "createPortal: $createPortal"
 }
 
 ################################################
@@ -451,7 +451,7 @@ function init_apic_variables() {
 }
 
 ################################################
-# Download toolkit
+# Download APIC toolkit
 # @param org_name: The name of the organisation.
 function download_tools () {
   # APIC_NAMESPACE=$(oc get apiconnectcluster -A -o jsonpath='{..namespace}')
@@ -567,6 +567,12 @@ scriptdir=${PWD}/
 # load helper functions
 . "${scriptdir}"lib.sh
 
+# Get ClusterIP for the mail server if MailHog
+mail_server_cluster_ip=$(oc -n ${MY_MAIL_SERVER_NAMESPACE} get svc/mailhog -o jsonpath='{.spec.clusterIP}')
+# TODO check error, if not there, ...
+mylog info "To configure the mail server the clusterIP is ${mail_server_cluster_ip}"
+export MY_MAIL_SERVER_HOST_IP=${mail_server_cluster_ip}
+
 # Will create both directories needed later on
 adapt_file ${APIC_TMPL_CUSTOMDIR}scripts/ ${APIC_GEN_CUSTOMDIR}scripts/ apic.properties
 adapt_file ${APIC_TMPL_CUSTOMDIR}config/ ${APIC_GEN_CUSTOMDIR}config/ web-mgmt.cfg
@@ -579,7 +585,7 @@ init_apic_variables
 # Download toolkit/designer+loopback+toolkit
 download_tools
 
-# Create Cloud Manager token
+# get access token with user admin
 create_cm_token
 
 
@@ -593,17 +599,21 @@ curl -ks "${TOOLKIT_CREDS_URL}" -H "Authorization: Bearer ${access_token}" -H "A
 # 	[[ -e creds.json ]] && rm creds.json
 # fi
 
-# create_mail_server "${APIC_SMTP_SERVER}" "${APIC_SMTP_SERVER_PORT}"
+# Get ClusterIP of the mail service
+# mail server derived from MY_MAIL_SERVER_HOST_IP which is defined above from mailhog
+create_mail_server "${APIC_SMTP_SERVER}" "${APIC_SMTP_SERVER_PORT}"
 
 # TODO Add idempotence
+# Topology should already be created when using the cp4i
 # create_topology $integration_url
 
 create_org "${APIC_PROVIDER_ORG1}" "${APIC_ORG1_USERNAME}" "${APIC_ORG1_PASSWORD}" "${APIC_ORG1_USER_EMAIL}"
 
 # Create API Manager token
 create_am_token
-
-create_catalog "${APIC_PROVIDER_ORG1}"
+if $APIC_ADD_CATALOGS; then
+  create_catalog "${APIC_PROVIDER_ORG1}"
+if
 
 create_apic_resources $access_token $amToken
 

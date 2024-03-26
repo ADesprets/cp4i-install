@@ -90,11 +90,14 @@ function add_ibm_entitlement () {
   then mylog ok
   else
     var_fail MY_ENTITLEMENT_KEY "Missing entitlement key"
-    mylog info "Checking ibm-entitlement-key validity"
-    $MY_CONTAINER_ENGINE -h > /dev/null 2>&1
-    if test $? -eq 0 && ! echo $MY_ENTITLEMENT_KEY | $MY_CONTAINER_ENGINE login cp.icr.io --username cp --password-stdin;then
-      mylog error "Invalid entitlement key" 1>&2
-      exit 1
+
+    if [ $MY_CONTAINER_ENGINE != "NULL" ]; then
+      mylog info "Checking ibm-entitlement-key validity"
+      $MY_CONTAINER_ENGINE -h > /dev/null 2>&1
+      if test $? -eq 0 && ! echo $MY_ENTITLEMENT_KEY | $MY_CONTAINER_ENGINE login cp.icr.io --username cp --password-stdin;then
+        mylog error "Invalid entitlement key" 1>&2
+        exit 1
+      fi
     fi
     mylog info "Adding ibm-entitlement-key to $lf_in_ns"
     if ! oc -n $lf_in_ns create secret docker-registry ibm-entitlement-key --docker-username=cp --docker-password=$MY_ENTITLEMENT_KEY --docker-server=cp.icr.io;then
@@ -287,7 +290,8 @@ function create_openshift_cluster_wait_4_availability () {
 function install_openldap () {
   if $MY_LDAP;then
     mylog info "==== Installing OpenLdap." 1>&2
-    local lf_namespace="ldap"
+    local lf_namespace=$MY_LDAP_NAMESPACE
+    #"ldap"
     local lf_type="deployment"
     local lf_name="openldap"
 
@@ -302,9 +306,30 @@ function install_openldap () {
     check_file_exist ${YAMLDIR}ldap/ldap-config.json
     check_file_exist ${YAMLDIR}ldap/ldap-users.ldif
 
-    deploy_openldap ${lf_type} ${lf_name} ${lf_namespace}
     provision_persistence_openldap ${lf_namespace}
+    deploy_openldap ${lf_type} ${lf_name} ${lf_namespace}
     expose_service_openldap ${lf_name} ${lf_namespace}
+  fi
+}
+
+################################################
+# Add mailhog app to openshift
+# Port is hard coded to 8025 and is defined by mailhog (default port)
+function install_mailhog () {
+  if $MY_MAILHOG;then
+    mylog info "==== Installing mailhog (server and client)." 1>&2
+    local lf_type="deployment"
+    local lf_name="mailhog"
+    local lf_mailhog_ns=$MY_MAIL_SERVER_NAMESPACE
+
+    # May need some properties
+    # read_config_file "${YAMLDIR}ldap/ldap.properties"
+
+    # create namespace if needed
+    create_namespace ${lf_mailhog_ns}
+
+    deploy_mailhog ${lf_type} ${lf_name} ${lf_mailhog_ns}
+    expose_service_mailhog ${lf_name} ${lf_mailhog_ns} '8025'
   fi
 }
 
@@ -314,7 +339,8 @@ function display_access_info () {
   mylog info "==== Displaying Access Info to CP4I." 1>&2
   # Temporary access with Keycloack
   temp_integration_admin_pwd=$(oc -n $MY_COMMON_SERVICES_NAMESPACE get secret integration-admin-initial-temporary-credentials -o jsonpath={.data.password} | base64 -d)
-  mylog info "Integration admin password: ${temp_integration_admin_pwd}"
+  integration_admin_user=$(oc -n $MY_COMMON_SERVICES_NAMESPACE get secret integration-admin-initial-temporary-credentials -o jsonpath={.data.username} | base64 -d)
+  mylog info "Integration admin user: ${integration_admin_user} with temp password: ${temp_integration_admin_pwd}"
 
   if $MY_NAVIGATOR_INSTANCE;then
     get_navigator_access
@@ -328,19 +354,19 @@ function display_access_info () {
   fi
 
   if $MY_APIC;then
-    gtw_url=$(oc -n $MY_OC_PROJECT get GatewayCluster -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].status.endpoints[?(@.name=="gateway")].uri}')
+    gtw_url=$(oc -n $MY_APIC_PROJECT get GatewayCluster -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].status.endpoints[?(@.name=="gateway")].uri}')
 	  mylog info "APIC Gateway endpoint: ${gtw_url}"
-    apic_gtw_admin_pwd_secret_name=$(oc -n $MY_OC_PROJECT get GatewayCluster -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].spec.adminUser.secretName}')
-    cm_admin_pwd=$(oc -n $MY_OC_PROJECT get secret ${apic_gtw_admin_pwd_secret_name} -o jsonpath={.data.password} | base64 -d)
+    apic_gtw_admin_pwd_secret_name=$(oc -n $MY_APIC_PROJECT get GatewayCluster -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].spec.adminUser.secretName}')
+    cm_admin_pwd=$(oc -n $MY_APIC_PROJECT get secret ${apic_gtw_admin_pwd_secret_name} -o jsonpath={.data.password} | base64 -d)
 	  mylog info "APIC Gateway admin password: ${cm_admin_pwd}"
-    cm_url=$(oc -n $MY_OC_PROJECT get APIConnectCluster -o=jsonpath='{.items[?(@.kind=="APIConnectCluster")].status.endpoints[?(@.name=="admin")].uri}')
+    cm_url=$(oc -n $MY_APIC_PROJECT get APIConnectCluster -o=jsonpath='{.items[?(@.kind=="APIConnectCluster")].status.endpoints[?(@.name=="admin")].uri}')
 	  mylog info "APIC Cloud Manager endpoint: ${cm_url}"
-    cm_admin_pwd_secret_name=$(oc -n $MY_OC_PROJECT get ManagementCluster -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].spec.adminUser.secretName}')
-    cm_admin_pwd=$(oc -n $MY_OC_PROJECT get secret ${cm_admin_pwd_secret_name} -o jsonpath='{.data.password}' | base64 -d)
+    cm_admin_pwd_secret_name=$(oc -n $MY_APIC_PROJECT get ManagementCluster -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].spec.adminUser.secretName}')
+    cm_admin_pwd=$(oc -n $MY_APIC_PROJECT get secret ${cm_admin_pwd_secret_name} -o jsonpath='{.data.password}' | base64 -d)
     mylog info "APIC Cloud Manager admin password: ${cm_admin_pwd}"
-    mgr_url=$(oc -n $MY_OC_PROJECT get APIConnectCluster -o=jsonpath='{.items[?(@.kind=="APIConnectCluster")].status.endpoints[?(@.name=="ui")].uri}')
+    mgr_url=$(oc -n $MY_APIC_PROJECT get APIConnectCluster -o=jsonpath='{.items[?(@.kind=="APIConnectCluster")].status.endpoints[?(@.name=="ui")].uri}')
 	  mylog info "APIC API Manager endpoint: ${mgr_url}" 
-    ptl_url=$(oc -n $MY_OC_PROJECT get PortalCluster -o=jsonpath='{.items[?(@.kind=="PortalCluster")].status.endpoints[?(@.name=="portalWeb")].uri}')
+    ptl_url=$(oc -n $MY_APIC_PROJECT get PortalCluster -o=jsonpath='{.items[?(@.kind=="PortalCluster")].status.endpoints[?(@.name=="portalWeb")].uri}')
     mylog info "APIC Web Portal root endpoint: ${ptl_url}"
   fi
 
@@ -363,6 +389,11 @@ function display_access_info () {
 	  mylog info "Event Streams Management REST Producer endpoint: ${es_restproducer_url}"
     es_bootstrap_urls=$(oc -n $MY_OC_PROJECT get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.kafkaListeners[*].bootstrapServers}')
 	  mylog info "Event Streams Bootstraps servers endpoints: ${es_bootstrap_urls}" 
+  fi
+
+  if $MY_MAILHOG; then
+    mail_hostname=$(oc -n $MY_MAIL_SERVER_NAMESPACE get route mailhog -o jsonpath='{.spec.host}')
+    mylog info "MailHog exposed on ${mail_hostname}"
   fi
 
   if $MY_LDAP;then
@@ -584,6 +615,12 @@ function install_navigator () {
   fi
 
   if $MY_NAVIGATOR_INSTANCE;then
+
+    #TODO: check if already patched. Check if var exists (not sure how to do it if it is a string)
+    lf_def_storage_class="${MY_DEFAULT_STORAGE_CLASS}"
+    mylog info "800 -> patching storage class ${lf_def_storage_class}"
+    oc patch storageclass ${lf_def_storage_class} -p='{"metadata": {"annotations": {"storageclass.kubernetes.io/is-default-class": "true"}}}'
+
     # Creating Navigator instance
     lf_file="${OPERANDSDIR}Navigator-Capability.yaml"
     lf_ns="${MY_OC_PROJECT}"
@@ -595,6 +632,7 @@ function install_navigator () {
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
   fi
 }
+
 
 ################################################
 # Install Integration Assembly
@@ -726,31 +764,38 @@ function install_apic () {
     create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_startingcsv}"
 
     # Creating APIC instance
+    create_namespace $MY_APIC_PROJECT
     lf_file="${OPERANDSDIR}APIC-Capability.yaml"
-    lf_ns="${MY_OC_PROJECT}"
+    lf_ns="${MY_APIC_PROJECT}"
     lf_path="{.status.phase}"
     lf_resource="$MY_APIC_INSTANCE_NAME"
     lf_state="Ready"
     lf_type="APIConnectCluster"
     lf_wait_for_state=0
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
-  fi
 
-  # start customization
-  # Takes all the templates associated with the capabilities and generate the files from the context variables
-  # The files are generated into ./customisation/working/<capability>/config
-  if $MY_APIC_CUSTOM;then
-    save_certificate ${MY_OC_PROJECT} cp4i-apic-ingress-ca ${WORKINGDIR}
-    save_certificate ${MY_OC_PROJECT} cp4i-apic-gw-gateway ${WORKINGDIR}
 
-    # launch custom script
-    mylog info "Customise APIC"
-    . ${APIC_SCRIPTDIR}scripts/apic.config.sh
-  fi
+
+    fi
+
+
+    # TODO: shouldn't this customisation made only if MY_APIC is true ?
+    # start customization
+    # Takes all the templates associated with the capabilities and generate the files from the context variables
+    # The files are generated into ./customisation/working/<capability>/config
+    if $MY_APIC_CUSTOM;then
+
+      save_certificate ${MY_APIC_PROJECT} cp4i-apic-ingress-ca ${WORKINGDIR}
+      save_certificate ${MY_APIC_PROJECT} cp4i-apic-gw-gateway ${WORKINGDIR}
+
+      # launch custom script
+      mylog info "Customise APIC"
+      . ${APIC_SCRIPTDIR}scripts/apic.config.sh
+    fi
 }
 
 ################################################
-# Install APIC
+# Install openLiberty
 function install_openliberty () {
   # backend J2EE applications
   if $MY_OPENLIBERTY;then
@@ -843,7 +888,7 @@ exit
 
     # Creating APIC instance
     lf_file="${OPERANDSDIR}APIC-Capability.yaml"
-    lf_ns="${MY_OC_PROJECT}"
+    lf_ns="${MY_APIC_PROJECT}"
     lf_path="{.status.phase}"
     lf_resource="$MY_APIC_INSTANCE_NAME"
     lf_state="Ready"
@@ -1295,21 +1340,31 @@ function install_nexus () {
 sc_properties_file=$1
 sc_versions_file=$2
 export MY_OC_PROJECT=$3
+
 sc_cluster_name=$4
 
 # end with / on purpose (if var not defined, uses CWD - Current Working Directory)
 # MAINSCRIPTDIR=$(dirname "$0")/
 MAINSCRIPTDIR=${PWD}/
 
-if [ $# -ne 4 ]; then
-  echo "the number of arguments should be 4 : properties_file versions_file namespace cluster"
-  exit
-else echo "The provided arguments are: $@"
+if [ $# -eq 3 ]; then
+  echo "3 arguments -- assuming OCP is deployed on techzone"
+  echo "The provided arguments are: $@"
+else
+  if [ $# -ne 4 ]; then
+      echo "the number of arguments should be 4 : properties_file versions_file namespace cluster"
+      exit
+  else 
+    echo "The provided arguments are: $@"
+  fi
 fi
 
 trap 'display_access_info' EXIT
+
 # load helper functions
 . "${MAINSCRIPTDIR}"lib.sh
+
+decho "executing cmd: ${MAINSCRIPTDIR}lib.s"
 
 # Read all the properties
 read_config_file "$sc_properties_file"
@@ -1318,37 +1373,40 @@ read_config_file "$sc_properties_file"
 read_config_file "$sc_versions_file"
 
 # Read user file properties
-my_user_file="${PRIVATEDIR}user.properties"
-read_config_file "$my_user_file"
+# PR > not sure the usage of this
+#my_user_file="${PRIVATEDIR}user.properties"
+#read_config_file "$my_user_file"
 
 # check the differents pre requisites
 check_exec_prereqs
 
-# Log to IBM Cloud
-login_2_ibm_cloud
 
-# Create Openshift cluster
-create_openshift_cluster_wait_4_availability
-
-# Log to openshift cluster
-login_2_openshift_cluster
-
-: <<'END_COMMENT'
-END_COMMENT
-# Create project namespace.
-# SB]20231213 erreur obtenue juste après la création du cluster openshift : Error from server (Forbidden): You may not request a new project via this API.
-# Solution : https://stackoverflow.com/questions/51657711/openshift-allow-serviceaccount-to-create-project
-#          : https://stackoverflow.com/questions/44349987/error-from-server-forbidden-error-when-creating-clusterroles-rbac-author
-#          : https://bugzilla.redhat.com/show_bug.cgi?id=1639197
-# extrait du lien ci-dessus:
-# You'll need to add the "self-provisioner" role to your service account as well. Although you've made it project admin, that only means its admin rights are scoped to that one project, which is not enough to allow it to request new projects.
-# oc adm policy add-cluster-role-to-user self-provisioner system:serviceaccount:<project>:<cx-jenkins
-# oc create clusterrolebinding myname-cluster-admin-binding --clusterrole=cluster-admin --user=IAM#saad.benachi@fr.ibm.com
 if ! ${TECHZONE};then
+#PR: If techzone (or cluster provided), not sure if this is required... 
+
+  # Log to IBM Cloud
+  login_2_ibm_cloud
+
+  # Create Openshift cluster
+  create_openshift_cluster_wait_4_availability
+
+  # Log to openshift cluster
+  login_2_openshift_cluster
+
+  # Create project namespace.
+  # SB]20231213 erreur obtenue juste après la création du cluster openshift : Error from server (Forbidden): You may not request a new project via this API.
+  # Solution : https://stackoverflow.com/questions/51657711/openshift-allow-serviceaccount-to-create-project
+  #          : https://stackoverflow.com/questions/44349987/error-from-server-forbidden-error-when-creating-clusterroles-rbac-author
+  #          : https://bugzilla.redhat.com/show_bug.cgi?id=1639197
+  # extrait du lien ci-dessus:
+  # You'll need to add the "self-provisioner" role to your service account as well. Although you've made it project admin, that only means its admin rights are scoped to that one project, which is not enough to allow it to request new projects.
+  # oc adm policy add-cluster-role-to-user self-provisioner system:serviceaccount:<project>:<cx-jenkins
+  # oc create clusterrolebinding myname-cluster-admin-binding --clusterrole=cluster-admin --user=IAM#saad.benachi@fr.ibm.com
   oc create clusterrolebinding myname-cluster-admin-binding --clusterrole=cluster-admin --user=$MY_USER_ID > /dev/null 2>&1
   oc create clusterrolebinding myname-cluster-binding --clusterrole=admin --user=$MY_USER_ID > /dev/null 2>&1
   oc adm policy add-cluster-role-to-user self-provisioner $MY_USER_ID -n $MY_OC_PROJECT
 fi
+
 
 # https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.4?topic=operators-installing-by-using-cli
 # (Only if your preferred installation mode is a specific namespace on the cluster) Create an OperatorGroup
@@ -1382,6 +1440,7 @@ mylog info "==== Installing foundational services (Cert Manager, Licensing Serve
 install_cert_manager
 install_lic_srv
 install_fs
+install_mailhog
 
 # Add OpenLdap app to openshift
 install_openldap
