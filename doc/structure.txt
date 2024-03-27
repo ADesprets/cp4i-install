@@ -1,0 +1,58 @@
+A mettre dans plus tard https://github.ibm.com/icp4i
+
+Create_Capabilities(ns)
+	check_create_oc_yaml(octype, name, yaml, ns)
+	wait_for_oc_state(octype, ocname, ocstate, ocpath)
+		wait_for_state(what, value, command)
+check_resource_availability (octype, name)
+
+Manque DP capabilities
+
+D:.
+│   .gitignore
+│   cp4i.properties
+│   delete-all.sh
+│   lib.sh
+│   LICENSE
+│   provision_cluster-v2.sh
+│   README.md
+│   show_creds.sh
+│   TODO.txt
+├───ldap
+│       Import.ldiff
+│       Import.tmpl
+├───private
+├───resources
+│       design.drawio
+│       structure.txt
+├───templates
+│   │   ibm-operator-catalog.yaml
+│   │   operator-source-cs.yaml
+│   ├───capabilities
+│   │       ACE-Dashboard-Capability.yaml
+│   │       ACE-Designer-Capability.yaml
+│   │       APIC-Capability.yaml
+│   │       AR-Capability.yaml
+│   │       AsperaHSTS-Capability.yaml
+│   │       ES-Capability.yaml
+│   │       MQ-Capability.yaml
+│   │       Navigator-Capability.yaml
+│   ├───monitoring
+│   │       cluster-monitoring-config.yaml
+│   └───subscriptions
+│           subscription.yaml
+├───terraform
+│       cluster-openshift.tf
+│       cos.tf
+│       log-analysis.tf
+│       monitoring-sysdig.tf
+│       network.tf
+│       provider.tf
+│       resource-group.tf
+│       terraform.tfstate
+│       variables.tf
+│       var_override.tfvars
+└───versions
+        cp4i-2021.4
+        cp4i-2022.2
+        cp4i-2023.2

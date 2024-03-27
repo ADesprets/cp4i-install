@@ -1,0 +1,51 @@
+{
+  "spec": {
+    "template": {
+      "spec": {
+        "containers": [
+          {
+            "name": "openldap",
+            "volumeMounts": [
+              {
+                "name": "ldap-db-main",
+                "mountPath": "/var/lib/ldap"
+              },
+              {
+                "name": "ldap-db-config",
+                "mountPath": "/etc/ldap/slapd.d"
+              }
+            ],
+            "env": [
+              {
+                "name": "LDAP_DOMAIN",
+                "value": "$ldap_domain"
+              },
+              {
+                "name": "LDAP_ORGANISATION",
+                "value": "$ldap_organisation"
+              },
+              {
+                "name": "LDAP_ADMIN_PASSWORD",
+                "value": "$ldap_admin_password"
+              }
+            ]
+          }
+        ],
+        "volumes": [
+          {
+            "name": "ldap-db-main",
+            "persistentVolumeClaim": {
+              "claimName": "pvc-ldap-main"
+            }
+          },
+          {
+            "name": "ldap-db-config",
+            "persistentVolumeClaim": {
+              "claimName": "pvc-ldap-config"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

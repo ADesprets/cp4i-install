@@ -1,0 +1,28 @@
+apiVersion: mq.ibm.com/v1beta1
+kind: QueueManager
+metadata:
+  name: $MY_MQ_INSTANCE_NAME
+  namespace: $MY_OC_PROJECT
+spec:
+  license:
+    accept: true
+    license: $MY_MQ_LIC
+    use: NonProduction
+  web:
+    console:
+      authentication:
+        provider: integration-keycloak
+      authorization:
+        provider: integration-keycloak
+    enabled: true
+  queueManager:
+    availability:
+      type: SingleInstance
+    storage:
+      queueManager:
+        type: persistent-claim
+        class: $MY_BLOCK_STORAGE_CLASS
+        size: 2Gi
+      defaultClass: $MY_BLOCK_STORAGE_CLASS
+    name: $MY_MQ_INSTANCE_NAME
+  version: $MY_MQ_VERSION

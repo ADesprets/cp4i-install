@@ -1,0 +1,285 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: '1'
+    kubectl.kubernetes.io/last-applied-configuration: >
+      {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"labels":{"app":"eem-demo-apis","app.kubernetes.io/component":"eem-demo-apis","app.kubernetes.io/instance":"eem-demo-apis","app.kubernetes.io/part-of":"eem-demo-apis"},"name":"eem-demo-apis","namespace":"cp4i"},"spec":{"replicas":1,"selector":{"matchLabels":{"app":"eem-demo-apis"}},"template":{"metadata":{"creationTimestamp":null,"labels":{"app":"eem-demo-apis","app.kubernetes.io/component":"eem-demo-apis","app.kubernetes.io/instance":"eem-demo-apis","app.kubernetes.io/part-of":"eem-demo-apis"}},"spec":{"containers":[{"env":[{"name":"BOOTSTRAP_ADDRESS","value":"cp4i-es-kafka-bootstrap-cp4i.cp4iad22023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud:443"},{"name":"SSL_PASSWORD","valueFrom":{"secretKeyRef":{"key":"ca.password","name":"cp4i-es-cluster-ca-cert"}}},{"name":"USERNAME","value":"cp4i-es--eem-user"},{"name":"PASSWORD","valueFrom":{"secretKeyRef":{"key":"password","name":"cp4i-es--eem-user"}}}],"image":"quay.io/nictownsend/eem-demo-datagen","imagePullPolicy":"Always","name":"eem-demo-kafka-seed","resources":{"limits":{"cpu":"1","memory":"1Gi"},"requests":{"cpu":"500m","memory":"500Mi"}},"volumeMounts":[{"mountPath":"/app/cas","name":"certs"},{"mountPath":"/tmp","name":"temp"}]},{"image":"quay.io/dale-lane/eem-demo-apis","imagePullPolicy":"Always","name":"eem-demo-rest-apis","ports":[{"containerPort":1880,"name":"rest-api","protocol":"TCP"}],"resources":{"limits":{"cpu":"200m","memory":"400Mi"},"requests":{"cpu":"100m","memory":"200Mi"}}}],"volumes":[{"name":"certs","secret":{"items":[{"key":"ca.p12","path":"cert.p12"}],"secretName":"cp4i-es-cluster-ca-cert"}},{"emptyDir":{},"name":"temp"}]}}}}
+  resourceVersion: '20126164'
+  name: eem-demo-apis
+  uid: 21ca440d-dc74-401e-8e5f-184f651fa407
+  creationTimestamp: '2023-10-04T06:42:13Z'
+  generation: 1
+  managedFields:
+    - manager: oc
+      operation: Update
+      apiVersion: apps/v1
+      time: '2023-10-04T06:42:13Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:metadata':
+          'f:annotations':
+            .: {}
+            'f:kubectl.kubernetes.io/last-applied-configuration': {}
+          'f:labels':
+            .: {}
+            'f:app': {}
+            'f:app.kubernetes.io/component': {}
+            'f:app.kubernetes.io/instance': {}
+            'f:app.kubernetes.io/part-of': {}
+        'f:spec':
+          'f:progressDeadlineSeconds': {}
+          'f:replicas': {}
+          'f:revisionHistoryLimit': {}
+          'f:selector': {}
+          'f:strategy':
+            'f:rollingUpdate':
+              .: {}
+              'f:maxSurge': {}
+              'f:maxUnavailable': {}
+            'f:type': {}
+          'f:template':
+            'f:metadata':
+              'f:labels':
+                .: {}
+                'f:app': {}
+                'f:app.kubernetes.io/component': {}
+                'f:app.kubernetes.io/instance': {}
+                'f:app.kubernetes.io/part-of': {}
+            'f:spec':
+              'f:containers':
+                'k:{"name":"eem-demo-kafka-seed"}':
+                  'f:image': {}
+                  'f:volumeMounts':
+                    .: {}
+                    'k:{"mountPath":"/app/cas"}':
+                      .: {}
+                      'f:mountPath': {}
+                      'f:name': {}
+                    'k:{"mountPath":"/tmp"}':
+                      .: {}
+                      'f:mountPath': {}
+                      'f:name': {}
+                  'f:terminationMessagePolicy': {}
+                  .: {}
+                  'f:resources':
+                    .: {}
+                    'f:limits':
+                      .: {}
+                      'f:cpu': {}
+                      'f:memory': {}
+                    'f:requests':
+                      .: {}
+                      'f:cpu': {}
+                      'f:memory': {}
+                  'f:env':
+                    .: {}
+                    'k:{"name":"BOOTSTRAP_ADDRESS"}':
+                      .: {}
+                      'f:name': {}
+                      'f:value': {}
+                    'k:{"name":"PASSWORD"}':
+                      .: {}
+                      'f:name': {}
+                      'f:valueFrom':
+                        .: {}
+                        'f:secretKeyRef': {}
+                    'k:{"name":"SSL_PASSWORD"}':
+                      .: {}
+                      'f:name': {}
+                      'f:valueFrom':
+                        .: {}
+                        'f:secretKeyRef': {}
+                    'k:{"name":"USERNAME"}':
+                      .: {}
+                      'f:name': {}
+                      'f:value': {}
+                  'f:terminationMessagePath': {}
+                  'f:imagePullPolicy': {}
+                  'f:name': {}
+                'k:{"name":"eem-demo-rest-apis"}':
+                  .: {}
+                  'f:image': {}
+                  'f:imagePullPolicy': {}
+                  'f:name': {}
+                  'f:ports':
+                    .: {}
+                    'k:{"containerPort":1880,"protocol":"TCP"}':
+                      .: {}
+                      'f:containerPort': {}
+                      'f:name': {}
+                      'f:protocol': {}
+                  'f:resources':
+                    .: {}
+                    'f:limits':
+                      .: {}
+                      'f:cpu': {}
+                      'f:memory': {}
+                    'f:requests':
+                      .: {}
+                      'f:cpu': {}
+                      'f:memory': {}
+                  'f:terminationMessagePath': {}
+                  'f:terminationMessagePolicy': {}
+              'f:dnsPolicy': {}
+              'f:restartPolicy': {}
+              'f:schedulerName': {}
+              'f:securityContext': {}
+              'f:terminationGracePeriodSeconds': {}
+              'f:volumes':
+                .: {}
+                'k:{"name":"certs"}':
+                  .: {}
+                  'f:name': {}
+                  'f:secret':
+                    .: {}
+                    'f:defaultMode': {}
+                    'f:items': {}
+                    'f:secretName': {}
+                'k:{"name":"temp"}':
+                  .: {}
+                  'f:emptyDir': {}
+                  'f:name': {}
+    - manager: kube-controller-manager
+      operation: Update
+      apiVersion: apps/v1
+      time: '2023-10-05T10:48:13Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:metadata':
+          'f:annotations':
+            'f:deployment.kubernetes.io/revision': {}
+        'f:status':
+          'f:conditions':
+            .: {}
+            'k:{"type":"Available"}':
+              .: {}
+              'f:lastTransitionTime': {}
+              'f:lastUpdateTime': {}
+              'f:message': {}
+              'f:reason': {}
+              'f:status': {}
+              'f:type': {}
+            'k:{"type":"Progressing"}':
+              .: {}
+              'f:lastTransitionTime': {}
+              'f:lastUpdateTime': {}
+              'f:message': {}
+              'f:reason': {}
+              'f:status': {}
+              'f:type': {}
+          'f:observedGeneration': {}
+          'f:replicas': {}
+          'f:unavailableReplicas': {}
+          'f:updatedReplicas': {}
+      subresource: status
+  namespace: cp4i
+  labels:
+    app: eem-demo-apis
+    app.kubernetes.io/component: eem-demo-apis
+    app.kubernetes.io/instance: eem-demo-apis
+    app.kubernetes.io/part-of: eem-demo-apis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: eem-demo-apis
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: eem-demo-apis
+        app.kubernetes.io/component: eem-demo-apis
+        app.kubernetes.io/instance: eem-demo-apis
+        app.kubernetes.io/part-of: eem-demo-apis
+    spec:
+      volumes:
+        - name: certs
+          secret:
+            secretName: cp4i-es-cluster-ca-cert
+            items:
+              - key: ca.p12
+                path: cert.p12
+            defaultMode: 420
+        - name: temp
+          emptyDir: {}
+      containers:
+        - name: eem-demo-kafka-seed
+          image: quay.io/nictownsend/eem-demo-datagen
+          env:
+            - name: BOOTSTRAP_ADDRESS
+              value: >-
+                cp4i-es-kafka-bootstrap-cp4i.cp4iad22023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud:443
+            - name: SSL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cp4i-es-cluster-ca-cert
+                  key: ca.password
+            - name: USERNAME
+              value: cp4i-es--eem-user
+            - name: PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cp4i-es--eem-user
+                  key: password
+          resources:
+            limits:
+              cpu: '1'
+              memory: 1Gi
+            requests:
+              cpu: 500m
+              memory: 500Mi
+          volumeMounts:
+            - name: certs
+              mountPath: /app/cas
+            - name: temp
+              mountPath: /tmp
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: Always
+        - name: eem-demo-rest-apis
+          image: quay.io/dale-lane/eem-demo-apis
+          ports:
+            - name: rest-api
+              containerPort: 1880
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 200m
+              memory: 400Mi
+            requests:
+              cpu: 100m
+              memory: 200Mi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: Always
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      securityContext: {}
+      schedulerName: default-scheduler
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
+status:
+  observedGeneration: 1
+  replicas: 1
+  updatedReplicas: 1
+  unavailableReplicas: 1
+  conditions:
+    - type: Progressing
+      status: 'True'
+      lastUpdateTime: '2023-10-04T07:05:12Z'
+      lastTransitionTime: '2023-10-04T07:05:12Z'
+      reason: NewReplicaSetAvailable
+      message: ReplicaSet "eem-demo-apis-5485684b7b" has successfully progressed.
+    - type: Available
+      status: 'False'
+      lastUpdateTime: '2023-10-05T10:48:13Z'
+      lastTransitionTime: '2023-10-05T10:48:13Z'
+      reason: MinimumReplicasUnavailable
+      message: Deployment does not have minimum availability.

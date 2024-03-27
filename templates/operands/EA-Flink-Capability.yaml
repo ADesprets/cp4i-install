@@ -1,0 +1,45 @@
+apiVersion: flink.apache.org/v1beta1
+kind: FlinkDeployment
+metadata:
+  namespace: $MY_OC_PROJECT
+  name: $MY_FLINK_INSTANCE_NAME
+spec:
+  flinkConfiguration:
+    license.use: EventAutomationNonProduction
+    license.license: $MY_FLINK_LIC
+    license.accept: 'true'
+    execution.checkpointing.interval: '5000'
+    state.backend.type: rocksdb
+    state.checkpoints.num-retained: '3'
+    taskmanager.numberOfTaskSlots: '8'
+    table.exec.source.idle-timeout: '30 s'
+  serviceAccount: flink
+  podTemplate:
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: pod-template
+    spec:
+      containers:
+        - name: flink-main-container
+          volumeMounts:
+            - name: flink-logs
+              mountPath: /opt/flink/log
+            - name: flink-volume
+              mountPath: /opt/flink/volume
+      volumes:
+        - name: flink-logs
+          emptyDir: {}
+        - name: flink-volume
+          persistentVolumeClaim:
+            claimName: ibm-flink-pvc
+  jobManager:
+    replicas: 1
+    resource:
+      memory: '2048m'
+      cpu: 0.5
+  taskManager:
+    resource:
+      memory: '2048m'
+      cpu: 1
+  mode: native

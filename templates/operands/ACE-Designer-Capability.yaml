@@ -1,0 +1,30 @@
+apiVersion: appconnect.ibm.com/v1beta1
+kind: DesignerAuthoring
+metadata:
+  name: $MY_ACE_DESIGNER_INSTANCE_NAME
+  namespace: $MY_OC_PROJECT
+spec:
+spec:
+  license:
+    accept: true
+    license: $MY_ACE_LIC
+    use: $MY_ACE_LIC_USAGE
+  couchdb:
+    storage:
+      size: 10Gi
+      type: persistent-claim
+      class: $MY_BLOCK_STORAGE_CLASS
+    replicas: 1
+  designerMappingAssist:
+    incrementalLearning:
+      schedule: Every 15 days
+    enabled: true
+  designerFlowsOperationMode: local
+  replicas: 1
+  authentication:
+    integrationKeycloak:
+      enabled: true
+  authorization:
+    integrationKeycloak:
+      enabled: true
+  version: $MY_ACE_VERSION

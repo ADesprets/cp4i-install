@@ -1,0 +1,29 @@
+apiVersion: hsts.aspera.ibm.com/v1
+kind: IbmAsperaHsts
+metadata:
+  namespace: $MY_OC_PROJECT
+  name: $MY_HSTS_INSTANCE_NAME
+spec:
+  license:
+    accept: true
+    key: $(sed 's/^/      /'<$MY_ASPERA_LICENSE_FILE)
+    use: $MY_HSTS_LIC_USAGE
+  deployments:
+    default:
+      replicas: 1
+  version: $MY_HSTS_VERSION
+  storages:
+    - claimName: hsts-transfer-pvc
+      class: $MY_FILE_STORAGE_CLASS
+      deleteClaim: true
+      mountPath: /data/
+      size: 50Gi
+  redis:
+    persistence:
+      enabled: false
+      storageClass: $MY_FILE_STORAGE_CLASS
+  services:
+    httpProxy:
+      type: ClusterIP
+    tcpProxy:
+      type: LoadBalancer

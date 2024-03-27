@@ -1,0 +1,12 @@
+cmd /c %APIC_EXE_Full_PATH% login -s %APIC_SRV% -u %APIC_LOGIN% -p %APIC_PASSWORD% -r %APIC_REALM%
+
+apic login -s cp4i-apic-mgmt-platform-api-cp4i.cp4iad2023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud -u org1owner -p Passw0rd! -r provider/default-idp-2 --debug
+
+set ep=cp4i-apic-mgmt-platform-api-cp4i.cp4iad2023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud
+set amtok=<token>
+echo %ep%
+
+curl -sk "https://%ep%/api/me" -H "accept: application/json" -H "authorization: Bearer %amtok%" -H "content-type: application/json" -H "Connection: keep-alive"
+
+/api/cloud/integrations/user-registry
+/api/orgs/org1/user-registries

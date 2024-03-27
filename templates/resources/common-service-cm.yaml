@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+ name: common-service-maps
+ namespace: kube-public
+data: 
+ common-service-maps.yaml: |
+   namespaceMapping:
+   - requested-from-namespace:
+     - $MY_OC_PROJECT
+     - $MY_LICENSE_SERVER_NAMESPACE
+     map-to-common-service-namespace: $MY_COMMON_SERVICES_NAMESPACE
+   defaultCsNs: $MY_COMMON_SERVICES_NAMESPACE

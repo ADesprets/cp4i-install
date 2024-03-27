@@ -1,0 +1,20 @@
+apiVersion: integration.ibm.com/v1beta1
+kind: PlatformNavigator
+metadata:
+  name: $MY_NAVIGATOR_INSTANCE_NAME
+  namespace: $MY_OC_PROJECT
+spec:
+  license:
+    accept: true
+    license: $MY_NAVIGATOR_LIC
+#Setting [spec.mqDashboard] is not supported for version [2023.4.1-0] of the Platform UI. 
+#Remove the [mqDashboard] section from the spec to remove this warning.     
+#  mqDashboard: true
+  replicas: 1
+#Generated from ibm-integration-platform-navigator-operator
+#The Platform UI no longer creates any Persistent Volume Claims. 
+#Setting [spec.storage] is not needed and is not used by any resource for version [2023.4.1-0] of the Platform UI. 
+#Remove the [storage] section from the spec to remove this warning.
+#  storage:
+#    class: $MY_FILE_STORAGE_CLASS
+  version: $MY_NAVIGATOR_VERSION

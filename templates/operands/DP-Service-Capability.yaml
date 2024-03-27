@@ -1,0 +1,55 @@
+apiVersion: datapower.ibm.com/v1beta3
+kind: DataPowerService
+metadata:
+  name: $my_cp_datapower_instance_name
+  namespace: $MY_OC_PROJECT
+spec:
+  version: $my_ibm_cp_datapower_version
+  license:
+    accept: true
+    use: nonproduction
+    license: $my_ibm_cp_datapower_license
+  replicas: 1
+  resources:
+    requests:
+      cpu: '1'
+      memory: 8Gi
+    limits:
+      cpu: '4'
+      memory: 8Gi
+  users:
+    - name: admin
+      passwordSecret: admin-credentials
+      accessLevel: privileged
+  healthCheck:
+    logLevel: info
+    probe:
+      port: 7879
+    watchdog:
+      enabled: true
+      hardTimeoutSeconds: 80
+      softTimeoutSeconds: 60
+  readinessProbe:
+    failureThreshold: 3
+    httpGet:
+      path: /healthz
+      port: 7879
+      scheme: HTTP
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    successThreshold: 1
+    timeoutSeconds: 5
+  livenessProbe:
+    failureThreshold: 3
+    httpGet:
+      path: /healthz
+      port: 7879
+      scheme: HTTP
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    successThreshold: 1
+    timeoutSeconds: 5
+  terminationGracePeriodSeconds: 30
+  imagePullPolicy: IfNotPresent
+  createServiceBinding: automatic
+  podManagementPolicy: Parallel

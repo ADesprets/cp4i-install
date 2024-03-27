@@ -1,0 +1,44 @@
+properties:
+- items:
+  - name: name
+    semantic: name
+  json_ptr: '#/definitions/ErrorTarget'
+- items:
+  - name: message
+    semantic: sentence
+  json_ptr: '#/definitions/ErrorItem'
+- items:
+  - name: book_id
+    semantic: id
+  - name: author_id
+    semantic: id
+  json_ptr: '#/definitions/Book'
+- items:
+  - name: date
+    semantic: date
+  - name: language
+    semantic: language
+  - name: title
+    semantic: sentence
+  - name: author
+    semantic: last_name
+  - name: publisher
+    semantic: username
+  json_ptr: '#/definitions/BookDetail'
+resources:
+  Book:
+    dependencies: []
+    operations:
+      create:
+      - json_ptr: '#/paths/~1books/post'
+      delete:
+      - json_ptr: '#/paths/~1books~1{book_id}/delete'
+      retrieve:
+      - json_ptr: '#/paths/~1books~1{book_id}/get'
+      update:
+      - json_ptr: '#/paths/~1books~1{book_id}/put'
+    properties:
+      id_name: $.book_id
+    schemas:
+      primary:
+        json_ptr: '#/definitions/Book'
