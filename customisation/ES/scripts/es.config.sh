@@ -42,6 +42,16 @@ check_create_oc_yaml "KafkaUser" "es-all-access" "${ES_GEN_CUSTOMDIR}config/user
 # Create KafkaConnect for demo
 check_create_oc_yaml "KafkaConnect" "demo-${MY_ES_INSTANCE_NAME}" "${ES_GEN_CUSTOMDIR}config/es-kafka-connect.yaml" $es_project
 # Create KafkaConnector for demo
+
+type="KafkaConnect"
+path="{.status.conditions[0].type}"
+state="Ready"
+kafkaconnect_name=demo-${MY_ES_INSTANCE_NAME}
+decho "wait_for_state $type $kafkaconnect_name $path is $state | $state | oc -n $es_project get $type $kafkaconnect_name -o jsonpath=$path"
+if [ $lf_in_wait ]; then 
+    wait_for_state "$type $kafkaconnect_name $path is $state" "$state" "oc -n $es_project get $type $kafkaconnect_name -o jsonpath='$path'"
+fi
+
 check_create_oc_yaml "KafkaConnector" "kafka-datagen" "${ES_GEN_CUSTOMDIR}config/es-datagen.yaml" $es_project
 
 duration=$SECONDS

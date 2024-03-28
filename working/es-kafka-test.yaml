@@ -1,0 +1,67 @@
+apiVersion: eventstreams.ibm.com/v1beta2
+kind: KafkaConnect
+metadata:
+  annotations:
+    eventstreams.ibm.com/use-connector-resources: 'true'
+  name: demo-test                  
+  namespace: event           
+spec:
+  config:
+    group.id: kafka-connect-test
+    client.id: kafka-connect-itest-client
+    config.storage.topic: connect-test-configs
+    offset.storage.topic: connect-test-offsets
+    status.storage.topic: connect-test-status
+  bootstrapServers: es-demo-kafka-bootstrap.event.svc:9095
+  resources:
+    limits:
+      cpu: 2048m
+      memory: 2Gi
+    requests:
+      cpu: 2048m
+      memory: 2Gi
+  authentication:
+    passwordSecret:
+      password: password
+      secretName: es-all-access
+    type: scram-sha-512
+    username: es-all-access
+  template:
+    buildConfig:
+      pullSecret: ibm-entitlement-key
+    connectContainer:
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+        privileged: false
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true
+    pod:
+      imagePullSecrets: []
+      metadata:
+        annotations:
+          cloudpakId: c8b82d189e7545f0892db9ef2731b90d
+          productVersion: 11.3.0
+          productID: 2a79e49111f44ec3acd89608e56138f5
+          cloudpakName: IBM Cloud Pak for Integration
+          productChargedContainers: demo-test-connect
+          productCloudpakRatio: '2:1'
+          productName: IBM Event Streams for Non Production
+          eventstreams.production.type: CloudPakForIntegrationNonProduction
+          productMetric: VIRTUAL_PROCESSOR_CORE
+  tls:
+    trustedCertificates:
+      - certificate: ca.crt
+        secretName: es-demo-cluster-ca-cert
+  replicas: 1
+  build:
+    output:
+      type: docker
+      image: image-registry.openshift-image-registry.svc:5000/event/test-kconnect-cluster-image:latest
+    plugins:
+      - name: datagen
+        artifacts:
+          - type: jar
+            url: https://github.com/IBM/kafka-connect-loosehangerjeans-source/releases/download/0.0.1/kafka-connect-loosehangerjeans-source-0.0.1-jar-with-dependencies.jar
