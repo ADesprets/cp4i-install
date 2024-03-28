@@ -4,7 +4,7 @@ metadata:
   annotations:
     eventstreams.ibm.com/apicurio-registry-version: '>=2.4'
   name: $MY_ES_INSTANCE_NAME
-  namespace: $MY_OC_PROJECT
+  namespace: $MY_ES_PROJECT
   labels:
     backup.eventstreams.ibm.com/component: eventstreams
 spec:
@@ -17,10 +17,11 @@ spec:
   strimziOverrides:
     entityOperator:
       topicOperator: {}
+      userOperator: {}
     kafka:
       replicas: 3
       authorization:
-        type: runas
+        type: simple
       config:
         inter.broker.protocol.version: '3.5'
         log.cleaner.threads: 6
@@ -43,6 +44,12 @@ spec:
           type: internal
           authentication:
             type: tls
+        - authentication:
+            type: scram-sha-512
+          name: authsslsvc
+          port: 9095
+          tls: true
+          type: internal
       metricsConfig:
         type: jmxPrometheusExporter
         valueFrom:

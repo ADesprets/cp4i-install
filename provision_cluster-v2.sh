@@ -354,6 +354,7 @@ function display_access_info () {
   fi
 
   if $MY_APIC;then
+    mylog info "== API Connect"
     gtw_url=$(oc -n $MY_APIC_PROJECT get GatewayCluster -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].status.endpoints[?(@.name=="gateway")].uri}')
 	  mylog info "APIC Gateway endpoint: ${gtw_url}"
     apic_gtw_admin_pwd_secret_name=$(oc -n $MY_APIC_PROJECT get GatewayCluster -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].spec.adminUser.secretName}')
@@ -371,27 +372,34 @@ function display_access_info () {
   fi
 
   if $MY_EEM;then
-    eem_ui_url=$(oc -n $MY_OC_PROJECT get EventEndpointManagement -o=jsonpath='{.items[?(@.kind=="EventEndpointManagement")].status.endpoints[?(@.name=="ui")].uri}')
+    mylog info "== Event Automation = EEM"
+    eem_ui_url=$(oc -n $MY_EEM_PROJECT get EventEndpointManagement -o=jsonpath='{.items[?(@.kind=="EventEndpointManagement")].status.endpoints[?(@.name=="ui")].uri}')
 	  mylog info "Event Endpoint Management UI endpoint: ${eem_ui_url}"
-    eem_gtw_url=$(oc -n $MY_OC_PROJECT get EventEndpointManagement -o=jsonpath='{.items[?(@.kind=="EventEndpointManagement")].status.endpoints[?(@.name=="gateway")].uri}')
+    eem_gtw_url=$(oc -n $MY_EEM_PROJECT get EventEndpointManagement -o=jsonpath='{.items[?(@.kind=="EventEndpointManagement")].status.endpoints[?(@.name=="gateway")].uri}')
 	  mylog info "Event Endpoint Management Gateway endpoint: ${eem_gtw_url}"
     mylog info "The credentials are defined in the file ./customisation/EP/config/user-credentials.yaml"
   fi
 
   if $MY_ES;then
-    es_ui_url=$(oc -n $MY_OC_PROJECT get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="ui")].uri}')
+    mylog info "== Event Automation = ES"
+    es_ui_url=$(oc -n $MY_ES_PROJECT get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="ui")].uri}')
 	  mylog info "Event Streams Management UI endpoint: ${es_ui_url}"
-    es_admin_url=$(oc -n $MY_OC_PROJECT get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="admin")].uri}')
+    es_admin_url=$(oc -n $MY_ES_PROJECT get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="admin")].uri}')
 	  mylog info "Event Streams Management admin endpoint: ${es_admin_url}"
-    es_apicurioregistry_url=$(oc -n $MY_OC_PROJECT get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="apicurioregistry")].uri}')
+    es_apicurioregistry_url=$(oc -n $MY_ES_PROJECT get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="apicurioregistry")].uri}')
 	  mylog info "Event Streams Management apicurio registry endpoint: ${es_apicurioregistry_url}" 
-    es_restproducer_url=$(oc -n $MY_OC_PROJECT get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="restproducer")].uri}')
+    es_restproducer_url=$(oc -n $MY_ES_PROJECT get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="restproducer")].uri}')
 	  mylog info "Event Streams Management REST Producer endpoint: ${es_restproducer_url}"
-    es_bootstrap_urls=$(oc -n $MY_OC_PROJECT get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.kafkaListeners[*].bootstrapServers}')
+    es_bootstrap_urls=$(oc -n $MY_ES_PROJECT get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.kafkaListeners[*].bootstrapServers}')
 	  mylog info "Event Streams Bootstraps servers endpoints: ${es_bootstrap_urls}" 
   fi
-
+  if $MY_EP;then
+    mylog info "== Event Automation = EP"
+    ep_ui_url=$(oc -n $MY_ES_PROJECT get eventprocessing -o=jsonpath='{.items[?(@.kind=="EventProcessing")].status.endpoints[?(@.name=="ui")].uri}')
+	  mylog info "Event Processing UI endpoint: ${ep_ui_url}"
+  if 
   if $MY_MAILHOG; then
+    mylog info "== TOOLS = Mail"
     mail_hostname=$(oc -n $MY_MAIL_SERVER_NAMESPACE get route mailhog -o jsonpath='{.spec.host}')
     mylog info "MailHog exposed on ${mail_hostname}"
   fi
@@ -954,7 +962,7 @@ function install_eem () {
 
     # Creating EventEndpointManager instance (Event Processing)
     lf_file="${OPERANDSDIR}EEM-Capability.yaml"
-    lf_ns="${MY_OC_PROJECT}"
+    lf_ns="${MY_EEM_PROJECT}"
     lf_path="{.status.conditions[0].type}"
     lf_resource="$MY_EEM_INSTANCE_NAME"
     lf_state="Ready"
@@ -974,12 +982,12 @@ function install_eem () {
 
     # base64 generates an error ": illegal base64 data at input byte 76". Solution found here : https://bugzilla.redhat.com/show_bug.cgi?id=1809431. use base64 -w0
     # user credentials
-    varb64=$(cat "$EEM_GEN_USER_CREDENTIALS_CUSTOMFILE" | base64 -w0)
-    oc -n $MY_OC_PROJECT patch secret "${MY_EEM_INSTANCE_NAME}-ibm-eem-user-credentials" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-credentials.json\" ,\"value\" : \"$varb64\"}]"
+    varb64=$(cat "$EEM_GEN_USER_CREDENTIALS_CUSTOMFILE" | base64)
+    oc -n $MY_EEM_PROJECT patch secret "${MY_EEM_INSTANCE_NAME}-ibm-eem-user-credentials" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-credentials.json\" ,\"value\" : \"$varb64\"}]"
 
     # user roles
-    varb64=$(cat "$EEM_GEN_USER_ROLES_CUSTOMFILE" | base64 -w0)
-    oc -n $MY_OC_PROJECT patch secret "${MY_EEM_INSTANCE_NAME}-ibm-eem-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$varb64\"}]"
+    varb64=$(cat "$EEM_GEN_USER_ROLES_CUSTOMFILE" | base64)
+    oc -n $MY_EEM_PROJECT patch secret "${MY_EEM_INSTANCE_NAME}-ibm-eem-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$varb64\"}]"
 
     # launch custom script
     mylog info "Customise EEM"
@@ -992,10 +1000,10 @@ function install_egw () {
   # Creating EventGateway instance (Event Gateway)
   if $MY_EGW;then
     mylog info "==== Installing Event Endpoint Gateway." 1>&2
-    export MY_EEM_MANAGER_GATEWAY_ROUTE=$(oc -n $MY_OC_PROJECT get eem $MY_EEM_INSTANCE_NAME -o jsonpath='{.status.endpoints[1].uri}')
+    export MY_EEM_MANAGER_GATEWAY_ROUTE=$(oc -n $MY_EEM_PROJECT get eem $MY_EEM_INSTANCE_NAME -o jsonpath='{.status.endpoints[1].uri}')
 
     lf_file="${OPERANDSDIR}EG-Capability.yaml"
-    lf_ns="${MY_OC_PROJECT}"
+    lf_ns="${MY_EEM_PROJECT}"
     lf_path="{.status.conditions[0].type}"
     lf_resource="$MY_EGW_INSTANCE_NAME"
     lf_state="Ready"
@@ -1034,7 +1042,7 @@ function install_ep () {
     ## oc -n <namespace> get eventprocessing <instance-name> -o jsonpath='{.status.phase}'
     ## Creating Event processing instance
     lf_file="${OPERANDSDIR}EP-Capability.yaml"
-    lf_ns="${MY_OC_PROJECT}"
+    lf_ns="${MY_EP_PROJECT}"
     lf_path="{.status.phase}"
     lf_resource="$MY_EP_INSTANCE_NAME"
     lf_state="Running"
@@ -1053,12 +1061,12 @@ function install_ep () {
     cat  $EP_TMPL_USER_ROLE_CUSTOMFILE | envsubst >  $EP_GEN_USER_ROLES_CUSTOMFILE
 
     # user credentials
-    varb64=$(cat "$EP_GEN_USER_CREDENTIALS_CUSTOMFILE" | base64 -w0)
-    oc -n $MY_OC_PROJECT patch secret "${MY_EP_INSTANCE_NAME}-ibm-ep-user-credentials" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-credentials.json\" ,\"value\" : \"$varb64\"}]"
+    varb64=$(cat "$EP_GEN_USER_CREDENTIALS_CUSTOMFILE" | base64)
+    oc -n $MY_EP_PROJECT patch secret "${MY_EP_INSTANCE_NAME}-ibm-ep-user-credentials" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-credentials.json\" ,\"value\" : \"$varb64\"}]"
 
     # user roles
-    varb64=$(cat "$EP_GEN_USER_ROLES_CUSTOMFILE" | base64 -w0)
-    oc -n $MY_OC_PROJECT patch secret "${MY_EP_INSTANCE_NAME}-ibm-ep-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$varb64\"}]"
+    varb64=$(cat "$EP_GEN_USER_ROLES_CUSTOMFILE" | base64)
+    oc -n $MY_EP_PROJECT patch secret "${MY_EP_INSTANCE_NAME}-ibm-ep-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$varb64\"}]"
 
     # launch custom script
     mylog info "Customise Event Processing"
@@ -1084,9 +1092,19 @@ function install_es () {
     lf_startingcsv=$MY_ES_OPERATOR_STARTINGCSV
     create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_startingcsv}"
 
+    # SB]20231211 https://ibm.github.io/event-automation/es/installing/installing/
+    # Question : Do we have to create this configmap before installing ES or even after ? Used for monitoring
+    # PR: I think before ... 
+    lf_type="configmap"
+    lf_cr_name="cluster-monitoring-config"
+    lf_yaml_file="${RESOURCSEDIR}openshift-monitoring-cm.yaml"
+    lf_namespace="openshift-monitoring"
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
+ 
+    create_namespace $MY_ES_PROJECT
     # Creating Event Streams instance
     lf_file="${OPERANDSDIR}ES-Capability.yaml"
-    lf_ns="${MY_OC_PROJECT}"
+    lf_ns="${MY_ES_PROJECT}"
     lf_path="{.status.phase}"
     lf_resource="$MY_ES_INSTANCE_NAME"
     lf_state="Ready"
@@ -1124,14 +1142,7 @@ function install_es () {
     fi
     generate_files $ES_TMPL_CUSTOMDIR $ES_GEN_CUSTOMDIR false
 
-    # SB]20231211 https://ibm.github.io/event-automation/es/installing/installing/
-    # Question : Do we have to create this configmap before installing ES or even after ? Used for monitoring
-    lf_type="configmap"
-    lf_cr_name="cluster-monitoring-config"
-    lf_yaml_file="${RESOURCSEDIR}openshift-monitoring-cm.yaml"
-    lf_namespace="openshift-monitoring"
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
- 
+
     # launch custom script
       mylog info "Customise Event Streams"
     . ${ES_SCRIPTDIR}scripts/es.config.sh
@@ -1169,7 +1180,7 @@ function install_flink () {
     ## Creation of Event automation Flink PVC and instance
     # Even if it's a pvc we use the same generic function
     lf_file="${OPERANDSDIR}EA-Flink-PVC.yaml"
-    lf_ns="${MY_OC_PROJECT}"
+    lf_ns="${MY_EP_PROJECT}"
     lf_path="{.status.phase}"
     lf_resource="ibm-flink-pvc"
     lf_state="Bound"
@@ -1182,7 +1193,7 @@ function install_flink () {
     ## When the Flink instance is ready, the custom resource displays status.lifecycleState: STABLE and status.jobManagerDeploymentStatus: READY.
     ## STANLE and READY (uppercase!!!)
     lf_file="${OPERANDSDIR}EA-Flink-Capability.yaml"
-    lf_ns="${MY_OC_PROJECT}"
+    lf_ns="${MY_EP_PROJECT}"
     lf_path="{.status.lifecycleState}-{.status.jobManagerDeploymentStatus}"
     lf_resource="$MY_FLINK_INSTANCE_NAME"
     lf_state="STABLE-READY"
@@ -1465,19 +1476,18 @@ install_ace
 install_apic
 
 # For each capability install : case, operator, operand 
+install_es
+
+# For each capability install : case, operator, operand 
 install_eem $MY_CATALOGSOURCES_NAMESPACE
 
 # For each capability install : case, operator, operand 
 install_egw
 
 # For each capability install : case, operator, operand 
-install_ep $MY_CATALOGSOURCES_NAMESPACE
-
-# For each capability install : case, operator, operand 
-install_es
-
 # For each capability install : case, operator, operand 
 install_flink $MY_CATALOGSOURCES_NAMESPACE
+install_ep $MY_CATALOGSOURCES_NAMESPACE
 
 # For each capability install : case, operator, operand 
 install_hsts

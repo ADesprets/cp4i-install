@@ -2,7 +2,7 @@ apiVersion: events.ibm.com/v1beta1
 kind: EventGateway
 metadata:
   name: $MY_EGW_INSTANCE_NAME
-  namespace: $MY_OC_PROJECT
+  namespace: $MY_EEM_PROJECT
 spec:
   license:
     accept: true

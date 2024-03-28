@@ -1,7 +1,7 @@
 apiVersion: flink.apache.org/v1beta1
 kind: FlinkDeployment
 metadata:
-  namespace: $MY_OC_PROJECT
+  namespace: $MY_EP_PROJECT
   name: $MY_FLINK_INSTANCE_NAME
 spec:
   flinkConfiguration:

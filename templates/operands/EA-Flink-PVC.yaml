@@ -1,7 +1,7 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  namespace: $MY_OC_PROJECT
+  namespace: $MY_EP_PROJECT
   name: ibm-flink-pvc
 spec:
   accessModes:

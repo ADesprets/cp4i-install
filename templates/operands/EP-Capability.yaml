@@ -2,14 +2,14 @@ apiVersion: events.ibm.com/v1beta1
 kind: EventProcessing
 metadata:
   name: ${MY_EP_INSTANCE_NAME}
-  namespace: ${MY_OC_PROJECT}
+  namespace: ${MY_EP_PROJECT}
 spec:
   license:
     accept: true
     license: $MY_EP_LIC
     use: EventAutomationNonProduction
   flink:
-    endpoint: ${MY_EP_INSTANCE_NAME}-rest.${MY_OC_PROJECT}.svc.cluster.local:8081
+    endpoint: ${MY_EP_INSTANCE_NAME}-rest.${MY_EP_PROJECT}.svc.cluster.local:8081
   authoring:
     authConfig:
       authType: LOCAL

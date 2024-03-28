@@ -2,7 +2,7 @@ apiVersion: events.ibm.com/v1beta1
 kind: EventEndpointManagement
 metadata:
   name: $MY_EEM_INSTANCE_NAME
-  namespace: $MY_OC_PROJECT
+  namespace: $MY_EEM_PROJECT
 spec:
   license:
     accept: true
@@ -15,4 +15,16 @@ spec:
     storage: 
       storageClassName: $MY_FILE_STORAGE_CLASS 
       type: persistent-claim
+    template:
+      pod:
+        spec:
+          containers:
+            - name: manager
+              resources:
+                limits:
+                  cpu: '0.5'
+                  memory: 512Mi
+                requests:
+                  cpu: '0.25'
+                  memory: 256Mi
   version: $MY_EEM_VERSION
