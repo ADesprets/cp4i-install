@@ -1,0 +1,15 @@
+apiVersion: eventstreams.ibm.com/v1beta2
+kind: KafkaConnector
+metadata:
+  name: kafka-datagen
+  namespace: ${MY_ES_PROJECT}
+  labels:
+    eventstreams.ibm.com/cluster: demo-${MY_ES_INSTANCE_NAME}
+spec:
+  class: com.ibm.eventautomation.demos.loosehangerjeans.DatagenSourceConnector
+  tasksMax: 1
+  config:
+    key.converter: org.apache.kafka.connect.storage.StringConverter
+    key.converter.schemas.enable: false
+    value.converter: org.apache.kafka.connect.json.JsonConverter
+    value.converter.schemas.enable: false

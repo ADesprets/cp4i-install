@@ -383,13 +383,13 @@ function display_access_info () {
   if $MY_ES;then
     mylog info "== Event Automation = ES"
     es_ui_url=$(oc -n $MY_ES_PROJECT get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="ui")].uri}')
-	  mylog info "Event Streams Management UI endpoint: ${es_ui_url}"
+	  mylog info "Event Streams UI endpoint: ${es_ui_url}"
     es_admin_url=$(oc -n $MY_ES_PROJECT get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="admin")].uri}')
-	  mylog info "Event Streams Management admin endpoint: ${es_admin_url}"
+	  mylog info "Event Streams ADMIN endpoint: ${es_admin_url}"
     es_apicurioregistry_url=$(oc -n $MY_ES_PROJECT get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="apicurioregistry")].uri}')
-	  mylog info "Event Streams Management apicurio registry endpoint: ${es_apicurioregistry_url}" 
+	  mylog info "Event Streams APICURIO registry endpoint: ${es_apicurioregistry_url}" 
     es_restproducer_url=$(oc -n $MY_ES_PROJECT get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="restproducer")].uri}')
-	  mylog info "Event Streams Management REST Producer endpoint: ${es_restproducer_url}"
+	  mylog info "Event Streams REST Producer endpoint: ${es_restproducer_url}"
     es_bootstrap_urls=$(oc -n $MY_ES_PROJECT get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.kafkaListeners[*].bootstrapServers}')
 	  mylog info "Event Streams Bootstraps servers endpoints: ${es_bootstrap_urls}" 
   fi
@@ -397,7 +397,7 @@ function display_access_info () {
     mylog info "== Event Automation = EP"
     ep_ui_url=$(oc -n $MY_ES_PROJECT get eventprocessing -o=jsonpath='{.items[?(@.kind=="EventProcessing")].status.endpoints[?(@.name=="ui")].uri}')
 	  mylog info "Event Processing UI endpoint: ${ep_ui_url}"
-  if 
+  fi 
   if $MY_MAILHOG; then
     mylog info "== TOOLS = Mail"
     mail_hostname=$(oc -n $MY_MAIL_SERVER_NAMESPACE get route mailhog -o jsonpath='{.spec.host}')
@@ -960,6 +960,9 @@ function install_eem () {
     lf_startingcsv=$MY_EEM_OPERATOR_STARTINGCSV
     create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_startingcsv}"
 
+    create_namespace $MY_EEM_PROJECT
+    add_ibm_entitlement $MY_EEM_PROJECT
+
     # Creating EventEndpointManager instance (Event Processing)
     lf_file="${OPERANDSDIR}EEM-Capability.yaml"
     lf_ns="${MY_EEM_PROJECT}"
@@ -1041,6 +1044,9 @@ function install_ep () {
     ## Creating EventProcessing instance (Event Processing)
     ## oc -n <namespace> get eventprocessing <instance-name> -o jsonpath='{.status.phase}'
     ## Creating Event processing instance
+    create_namespace $MY_EP_PROJECT
+    add_ibm_entitlement $MY_EP_PROJECT
+
     lf_file="${OPERANDSDIR}EP-Capability.yaml"
     lf_ns="${MY_EP_PROJECT}"
     lf_path="{.status.phase}"
@@ -1102,6 +1108,7 @@ function install_es () {
     check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
  
     create_namespace $MY_ES_PROJECT
+    add_ibm_entitlement $MY_ES_PROJECT
     # Creating Event Streams instance
     lf_file="${OPERANDSDIR}ES-Capability.yaml"
     lf_ns="${MY_ES_PROJECT}"

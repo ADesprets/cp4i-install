@@ -37,7 +37,12 @@ do
 done
 
 # Create Kafka user
-check_create_oc_yaml "KafkaUser" "${es_topic_name}" "${ES_GEN_CUSTOMDIR}config/user.yaml" $es_project
+check_create_oc_yaml "KafkaUser" "es-all-access" "${ES_GEN_CUSTOMDIR}config/user.yaml" $es_project
+
+# Create KafkaConnect for demo
+check_create_oc_yaml "KafkaConnect" "demo-${MY_ES_INSTANCE_NAME}" "${ES_GEN_CUSTOMDIR}config/es-kafka-connect.yaml" $es_project
+# Create KafkaConnector for demo
+check_create_oc_yaml "KafkaConnector" "kafka-datagen" "${ES_GEN_CUSTOMDIR}config/es-datagen.yaml" $es_project
 
 duration=$SECONDS
 mylog info "Creation of the Kafka Topics took $duration seconds to execute." 1>&2
@@ -46,3 +51,5 @@ ending=$(date);
 # echo "------------------------------------"
 mylog info "Start: $starting - end: $ending" 1>&2
 mylog info "$(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."  1>&2
+
+
