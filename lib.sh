@@ -136,8 +136,10 @@ function is_cr_newer() {
 
   #oc -n $lf_in_namespace get $lf_in_type $lf_in_customresource -o jsonpath='$lf_path'| date -d - +%s
   lf_customresource_timestamp=$(oc -n $lf_in_namespace get $lf_in_type $lf_in_customresource -o json | jq -r  '.metadata.creationTimestamp')
-  lf_customresource_timestamp=$(echo "$lf_customresource_timestamp" | date -d - +%s )
-  lf_file_timestamp=$(stat -c %Y $lf_in_file)
+  #TODO provide the right date format for mac --> lf_customresource_timestamp=$(echo "$lf_customresource_timestamp" | date +%s )
+  #TODO provide the right stat format for mac -->   lf_file_timestamp=$(stat %Y $lf_in_file)
+  lf_customresource_timestamp=$(echo "$lf_customresource_timestamp" | date +%s )
+  lf_file_timestamp=$(stat -f '%Sm' -t %s $lf_in_file)
 
   if [ $lf_customresource_timestamp -gt $lf_file_timestamp ]; then
     return 1
