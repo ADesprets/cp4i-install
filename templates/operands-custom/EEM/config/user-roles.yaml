@@ -1,13 +1,13 @@
 {
   "mappings": [
     {
-      "id": "author1",
+      "id": "eem-admin",
       "roles": [
         "author"
       ]
     },
     {
-      "id": "viewer1",
+      "id": "eem-viewer",
       "roles": [
         "viewer"
       ]

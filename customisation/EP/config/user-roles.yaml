@@ -1,13 +1,13 @@
 {
   "mappings": [
     {
-      "id": "author1",
+      "id": "ep-admin",
       "roles": [
         "author", "user"
       ]
     },
     {
-      "id": "viewer1",
+      "id": "ep-viewer",
       "roles": [
         "viewer", "user"
       ]
