@@ -1,0 +1,18 @@
+{
+    "type": "kafka",
+    "encoding": "application/json",
+    "name": "CUSTOMERS.NEW",
+    "contact": "kevin@loosehangers.com",
+    "description": "New customer registrations from the customer management system.",
+    "tags": [
+        "retail",
+        "customers"
+    ],
+    "sampleMessages": [
+        "{\n    \"customerid\": \"f727464e-9e90-40ac-a7e3-1bbfddb8a698\",\n    \"customername\": \"Connie Upton\",\n    \"registered\": \"2023-05-25 22:38:29.453\"\n}"
+    ],
+    "clusterId": "<templated>",
+    "topic": {
+        "name": "CUSTOMERS.NEW"
+    }
+}

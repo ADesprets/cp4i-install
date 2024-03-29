@@ -1,0 +1,18 @@
+{
+    "type": "kafka",
+    "encoding": "application/json",
+    "name": "cp4i-es-demo-topic",
+    "contact": "jgr@demo.cp4i.ibm.com",
+    "description": "Events for order cancellations recorded by the order management system.\n\nAn event will be emitted for every order that is cancelled.\n\nNote that no specific information about the order details is included in the event. You could use the Orders topic to identify information about the order based on the orderid field in the cancellation event.",
+    "tags": [
+        "cp4i",
+        "demo"
+    ],
+    "sampleMessages": [
+        "{\n    \"id\": \"00Q0o000000l0aaAAA\",\n    \"fname\": \"Thomas\",\n    \"lname\": \"Monard\",\n    \"email\": \"bupmivwa@rihcotje.ma\",\n    \"phone\": \"(609) 705-1122\",\n    \"company\": \"pefnehakaavizuk\",\n    \"comments\": \"lapub\"\n}"
+    ],
+    "clusterId": "<templated>",
+    "topic": {
+        "name": "cp4i-es-demo-topic"
+    }
+}

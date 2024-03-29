@@ -1,0 +1,18 @@
+{
+    "type": "kafka",
+    "encoding": "application/json",
+    "name": "SENSOR.READINGS",
+    "contact": "jenn@loosehangers.com",
+    "description": "Readings from the logistics team's IoT network, capturing internal temperature and humidity data for areas where product is stored.\n\nNote that sensor events can take up to 5 minutes to reach the Kafka topic, so the sensortime value in the message payload should be treated as the canonical timestamp for the event.\n",
+    "tags": [
+        "operations",
+        "logistics"
+    ],
+    "sampleMessages": [
+        "{\n    \"sensortime\": \"Thu Jun 22 21:34:27 GMT 2023\",\n    \"sensorid\": \"DE-1-19\",\n    \"temperature\": 20.3,\n    \"humidity\": 48\n}"
+    ],
+    "clusterId": "<templated>",
+    "topic": {
+        "name": "SENSOR.READINGS"
+    }
+}

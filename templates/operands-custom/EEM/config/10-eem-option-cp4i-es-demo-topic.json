@@ -1,0 +1,10 @@
+{
+    "eventSourceId": "<templated>",
+    "alias": "cp4i-es-demo-topic",
+    "name": "cp4i-es-demo-topic",
+    "description": "Events for order cancellations recorded by the order management system.\n\nAn event will be emitted for every order that is cancelled.\n\nNote that no specific information about the order details is included in the event. You could use the Orders topic to identify information about the order based on the orderid field in the cancellation event.",
+    "hidden": false,
+    "allowSubscriptions": true,
+    "gatewayGroups": [ "egw-group" ],
+    "controls": []
+}

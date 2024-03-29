@@ -1,0 +1,10 @@
+{
+    "eventSourceId": "<templated>",
+    "alias": "SENSOR.READINGS",
+    "name": "SENSOR.READINGS",
+    "description": "Readings from the logistics team's IoT network, capturing internal temperature and humidity data for areas where product is stored.\n\nNote that sensor events can take up to 5 minutes to reach the Kafka topic, so the sensortime value in the message payload should be treated as the canonical timestamp for the event.\n",
+    "hidden": false,
+    "allowSubscriptions": true,
+    "gatewayGroups": [ "egw-group" ],
+    "controls": []
+}

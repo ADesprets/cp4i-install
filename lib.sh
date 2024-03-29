@@ -531,7 +531,7 @@ function check_add_cs_ibm_pak () {
     oc ibm-pak get ${lf_in_case_name} --version ${lf_case_version}
     oc ibm-pak generate mirror-manifests ${lf_in_case_name} icr.io --version ${lf_case_version}
   fi
-  
+
   file=~/.ibm-pak/data/mirror/${lf_in_case_name}/${lf_case_version}/catalog-sources.yaml
   if [  -e "$file" ]; then
     oc apply -f $file

@@ -1,0 +1,23 @@
+{
+    "name": "es-demo",
+    "bootstrapServers": [
+        {
+            "host": "${es_boostrap_svc}",
+            "port": 9095,
+            "ssl": true,
+            "certificates": [
+                {
+                    "pem": "${es_certificate}"
+                }
+            ]
+        }
+    ],
+    "credentials": {
+        "type": "SASL",
+        "data": {
+            "username": "es-all-access",
+            "password": "${es_user_pwd}",
+            "mechanism": "SCRAM-SHA-512"
+        }
+    }
+}
