@@ -1,0 +1,21 @@
+{
+    "communication_kind": "external",
+    "communication_to_analytics_with_jwt": true,
+    "name": "eem-gateway-service",
+    "title": "eem-gateway-service",
+    "summary": "Event Gateway for EEM",
+    "endpoint": "https://${EEM_MANAGER_APIC_HOST}",
+    "api_endpoint_base": "${EEM_GATEWAY_RT_HOST}:443",
+    "tls_client_profile_url": "${APIC_INST_NAME_TLS_CLIENT_PROFILE_URL}",
+    "gateway_service_type": "event-gateway",
+    "visibility": {
+        "type": "public"
+    },
+    "sni": [
+        {
+            "host": "*",
+            "tls_server_profile_url": "${DEFAULT_TLS_SERVER_PROFILE_URL}"
+        }
+    ],
+    "integration_url": "${INTEGRATION_URL}"
+}

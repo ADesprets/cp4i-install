@@ -1,0 +1,11 @@
+type: 'truststore'
+api_version: '2.0.0'
+id: '079114d6-8614-4c36-837a-ddec87afd874'
+name: 'eem-truststore'
+title: 'eem-truststore'
+summary: 'Truststore for EEM'
+entry_urls:
+  - 'https://apic-mgmt-platform-api-apic.apps.65ffffc42b8a10001e5e6cda.cloud.techzone.ibm.com/api/orgs/6dbe5611-200b-4f9f-9f0f-a6e21aa15751/truststores/079114d6-8614-4c36-837a-ddec87afd874/entries/b48bada3-1043-4bbd-b813-691f08962287'
+created_at: '2024-03-29T17:06:35.000Z'
+updated_at: '2024-03-29T17:06:35.000Z'
+url: 'https://apic-mgmt-platform-api-apic.apps.65ffffc42b8a10001e5e6cda.cloud.techzone.ibm.com/api/orgs/6dbe5611-200b-4f9f-9f0f-a6e21aa15751/truststores/079114d6-8614-4c36-837a-ddec87afd874'
