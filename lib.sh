@@ -478,7 +478,8 @@ function expose_service_mailhog() {
 # @param ns namespace to be created
 function create_namespace () {
   local lf_in_ns=$1
-  var_fail MY_OC_PROJECT "Please define project name in config"
+  #don't know why this has to be checked ... commenting it
+  #var_fail MY_OC_PROJECT "Please define project name in config"
   mylog check "Checking project $lf_in_ns"
   if oc get project $lf_in_ns > /dev/null 2>&1; then mylog ok; else
     mylog info "Creating project $lf_in_ns"
@@ -724,3 +725,29 @@ function adapt_file () {
   fi
 }
 
+################################################
+# add ibm entitlement key to namespace
+# @param ns namespace where secret is created
+function add_ibm_entitlement () {
+  local lf_in_ns=$1
+
+  mylog check "Checking ibm-entitlement-key in $lf_in_ns"
+  if oc -n $lf_in_ns get secret ibm-entitlement-key > /dev/null 2>&1
+  then mylog ok
+  else
+    var_fail MY_ENTITLEMENT_KEY "Missing entitlement key"
+
+    if [ $MY_CONTAINER_ENGINE != "NULL" ]; then
+      mylog info "Checking ibm-entitlement-key validity"
+      $MY_CONTAINER_ENGINE -h > /dev/null 2>&1
+      if test $? -eq 0 && ! echo $MY_ENTITLEMENT_KEY | $MY_CONTAINER_ENGINE login cp.icr.io --username cp --password-stdin;then
+        mylog error "Invalid entitlement key" 1>&2
+        exit 1
+      fi
+    fi
+    mylog info "Adding ibm-entitlement-key to $lf_in_ns"
+    if ! oc -n $lf_in_ns create secret docker-registry ibm-entitlement-key --docker-username=cp --docker-password=$MY_ENTITLEMENT_KEY --docker-server=cp.icr.io;then
+      exit 1
+    fi
+  fi
+}

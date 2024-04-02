@@ -82,6 +82,8 @@ function create_openshift_cluster_vpc () {
 ################################################
 # add ibm entitlement key to namespace
 # @param ns namespace where secret is created
+# Moving it to lib as this could be used to create new NS and deploy custom cp4i capabilities
+' .
 function add_ibm_entitlement () {
   local lf_in_ns=$1
 
@@ -105,7 +107,7 @@ function add_ibm_entitlement () {
     fi
   fi
 }
-
+'
 ################################################
 # start customization
 # Takes all the templates associated with the capabilities and generate the files from the context variables
@@ -1268,21 +1270,14 @@ function install_mq () {
     lf_wait_for_state=1
     lf_startingcsv=$MY_MQ_OPERATOR_STARTINGCSV
     create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_startingcsv}"
-
-    create_namespace $MY_MQ_PROJECT
-    add_ibm_entitlement $MY_MQ_PROJECT
-
-    
-    # Creating MQ instance
-    lf_file="${OPERANDSDIR}MQ-Capability.yaml"
-    lf_ns="${MY_MQ_PROJECT}"
-    lf_path="{.status.phase}"
-    lf_resource="$MY_MQ_INSTANCE_NAME"
-    lf_state="Running"
-    lf_type="QueueManager"
-    lf_wait_for_state=0
-    create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
   fi
+
+  if $MY_MQ_CUSTOM;then
+      mylog info "Customise MQ - launching custom script"
+    . ${MQ_CUSTOM_SCRIPT}
+  fi
+
+
 }
 
 ################################################
