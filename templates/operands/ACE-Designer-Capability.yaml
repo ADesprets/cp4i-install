@@ -2,7 +2,7 @@ apiVersion: appconnect.ibm.com/v1beta1
 kind: DesignerAuthoring
 metadata:
   name: $MY_ACE_DESIGNER_INSTANCE_NAME
-  namespace: $MY_OC_PROJECT
+  namespace: $MY_ACE_PROJECT
 spec:
 spec:
   license:

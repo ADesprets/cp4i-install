@@ -347,9 +347,9 @@ function display_access_info () {
   fi
 
   if $MY_ACE;then
-    ace_ui_db_url=$(oc -n $MY_OC_PROJECT get Dashboard -o=jsonpath='{.items[?(@.kind=="Dashboard")].status.endpoints[?(@.name=="ui")].uri}')
+    ace_ui_db_url=$(oc -n $MY_ACE_PROJECT get Dashboard -o=jsonpath='{.items[?(@.kind=="Dashboard")].status.endpoints[?(@.name=="ui")].uri}')
 	  mylog info "ACE Dahsboard UI endpoint: " $ace_ui_db_url
-    ace_ui_dg_url=$(oc -n $MY_OC_PROJECT get DesignerAuthoring -o=jsonpath='{.items[?(@.kind=="DesignerAuthoring")].status.endpoints[?(@.name=="ui")].uri}')
+    ace_ui_dg_url=$(oc -n $MY_ACE_PROJECT get DesignerAuthoring -o=jsonpath='{.items[?(@.kind=="DesignerAuthoring")].status.endpoints[?(@.name=="ui")].uri}')
 	  mylog info "ACE Designer UI endpoint: " $ace_ui_dg_url
   fi
 
@@ -710,9 +710,13 @@ function install_ace () {
     decho "create_operator_subscription \"${lf_operator_name}\" \"${lf_current_chl}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_startingcsv}\""
     create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_startingcsv}"
 
+    create_namespace $MY_ACE_PROJECT
+    add_ibm_entitlement $MY_ACE_PROJECT
+
+
     # Creating ACE Dashboard instance
     lf_file="${OPERANDSDIR}ACE-Dashboard-Capability.yaml"
-    lf_ns="${MY_OC_PROJECT}"
+    lf_ns="${MY_ACE_PROJECT}"
     lf_path="{.status.conditions[0].type}"
     lf_resource="$MY_ACE_DASHBOARD_INSTANCE_NAME"
     lf_state="Ready"
@@ -722,7 +726,7 @@ function install_ace () {
   
     # Creating ACE Designer instance
     lf_file="${OPERANDSDIR}ACE-Designer-Capability.yaml"
-    lf_ns="${MY_OC_PROJECT}"
+    lf_ns="${MY_ACE_PROJECT}"
     lf_path="{.status.conditions[0].type}"
     lf_resource="$MY_ACE_DESIGNER_INSTANCE_NAME"
     lf_state="Ready"
@@ -1265,9 +1269,13 @@ function install_mq () {
     lf_startingcsv=$MY_MQ_OPERATOR_STARTINGCSV
     create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_startingcsv}"
 
+    create_namespace $MY_MQ_PROJECT
+    add_ibm_entitlement $MY_MQ_PROJECT
+
+    
     # Creating MQ instance
     lf_file="${OPERANDSDIR}MQ-Capability.yaml"
-    lf_ns="${MY_OC_PROJECT}"
+    lf_ns="${MY_MQ_PROJECT}"
     lf_path="{.status.phase}"
     lf_resource="$MY_MQ_INSTANCE_NAME"
     lf_state="Running"

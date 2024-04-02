@@ -1,0 +1,10 @@
+apiVersion: appconnect.ibm.com/v1beta1
+kind: Configuration
+metadata:
+  name: ${CONFIG_NAME}
+  namespace: ${CONFIG_NS}
+spec:
+  type: ${CONFIG_TYPE}
+  description: ${CONFIG_DESCRIPTION}
+  contents: >-
+    ${CONFIG_CONTENT_BASE64}

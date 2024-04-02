@@ -1,7 +1,7 @@
 apiVersion: appconnect.ibm.com/v1beta1
 kind: Dashboard
 metadata:
-  namespace: $MY_OC_PROJECT
+  namespace: $MY_ACE_PROJECT
   name: $MY_ACE_DASHBOARD_INSTANCE_NAME
 spec:
   license:
@@ -29,10 +29,10 @@ spec:
   #useCommonServices: false         
   authentication:
     integrationKeycloak:
-      enabled: false
+      enabled: $MY_ACE_USE_KeyCloak
   authorization:
     integrationKeycloak:
-      enabled: false
+      enabled: $MY_ACE_USE_KeyCloak
   version: $MY_ACE_VERSION
   storage:
     size: 5Gi
