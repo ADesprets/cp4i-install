@@ -293,7 +293,7 @@ function install_openldap () {
     read_config_file "${YAMLDIR}ldap/ldap.properties"
 
     # create namespace if needed
-    create_namespace $MY_LDAP_NAMESPACE
+    create_namespace ${MY_LDAP_NAMESPACE}
 
     #SB]20231207 checks if used directories and files exists
     check_file_exist ${YAMLDIR}ldap/ldap-pvc.main.yaml
@@ -301,9 +301,9 @@ function install_openldap () {
     check_file_exist ${YAMLDIR}ldap/ldap-config.json
     check_file_exist ${YAMLDIR}ldap/ldap-users.ldif
 
-    provision_persistence_openldap ${lf_namespace}
-    deploy_openldap ${lf_type} ${lf_name} ${lf_namespace}
-    expose_service_openldap ${lf_name} ${lf_namespace}
+    provision_persistence_openldap ${MY_LDAP_NAMESPACE}
+    deploy_openldap ${lf_type} ${lf_name} ${MY_LDAP_NAMESPACE}
+    expose_service_openldap ${lf_name} ${MY_LDAP_NAMESPACE}
   fi
 }
 
@@ -322,8 +322,8 @@ function install_mailhog () {
     # create namespace if needed
     create_namespace ${MY_MAIL_SERVER_NAMESPACE}
 
-    deploy_mailhog ${lf_type} ${lf_name} ${lf_namespace}
-    expose_service_mailhog ${lf_name} ${lf_namespace} '8025'
+    deploy_mailhog ${lf_type} ${lf_name} ${MY_MAIL_SERVER_NAMESPACE}
+    expose_service_mailhog ${lf_name} ${MY_MAIL_SERVER_NAMESPACE} '8025'
   fi
 }
 
@@ -850,26 +850,24 @@ function install_openliberty () {
     # kubectl -n ${MY_BACKEND_NAMESPACE} get OpenLibertyApplications
     # kubectl -n ${MY_BACKEND_NAMESPACE} describe olapps/mysystem
 
-exit
-
-    lf_operator_name="ibm-apiconnect"
-    lf_current_chl=$MY_APIC_CHL
-    lf_catalog_source_name="ibm-apiconnect-catalog"
-    lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-    lf_strategy="Automatic"
-    lf_wait_for_state=1
-    lf_startingcsv=$MY_APIC_OPERATOR_STARTINGCSV
-    create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_startingcsv}"
-
-    # Creating APIC instance
-    lf_file="${OPERANDSDIR}APIC-Capability.yaml"
-    lf_ns="${MY_OC_PROJECT}"
-    lf_path="{.status.phase}"
-    lf_resource="$MY_APIC_INSTANCE_NAME"
-    lf_state="Ready"
-    lf_type="APIConnectCluster"
-    lf_wait_for_state=0
-    create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
+    # lf_operator_name="ibm-apiconnect"
+    # lf_current_chl=$MY_APIC_CHL
+    # lf_catalog_source_name="ibm-apiconnect-catalog"
+    # lf_operator_namespace=$MY_OPERATORS_NAMESPACE
+    # lf_strategy="Automatic"
+    # lf_wait_for_state=1
+    # lf_startingcsv=$MY_APIC_OPERATOR_STARTINGCSV
+    # create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_startingcsv}"
+ 
+    # # Creating APIC instance
+    # lf_file="${OPERANDSDIR}APIC-Capability.yaml"
+    # lf_ns="${MY_OC_PROJECT}"
+    # lf_path="{.status.phase}"
+    # lf_resource="$MY_APIC_INSTANCE_NAME"
+    # lf_state="Ready"
+    # lf_type="APIConnectCluster"
+    # lf_wait_for_state=0
+    # create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
   fi
 
   # start customization
@@ -1347,14 +1345,13 @@ check_exec_prereqs
 # Log to IBM Cloud
 login_2_ibm_cloud
 
+: <<'END_COMMENT'
 # Create Openshift cluster
 create_openshift_cluster_wait_4_availability
 
 # Log to openshift cluster
 login_2_openshift_cluster
 
-: <<'END_COMMENT'
-END_COMMENT
 
 # Create project namespace.
 # SB]20231213 erreur obtenue juste après la création du cluster openshift : Error from server (Forbidden): You may not request a new project via this API.
@@ -1423,6 +1420,7 @@ install_assetrepo
 # For each capability install : case, operator, operand 
 install_ace
 
+END_COMMENT
 # For each capability install : case, operator, operand
 # install_openliberty
 install_apic

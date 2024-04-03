@@ -136,14 +136,14 @@ function create_topology() {
    -H 'Accept: application/json' --compressed | jq -r '.results[] | select(.integration_type=="gateway_service" and .name=="datapower-api-gateway")| .url');
   decho "integration_url: $integration_url"
   
-  mylog info  "{\"name\":\"apigateway-service\",\"title\":\"API Gateway Service\",\"endpoint\":\"https://$EP_GWD\",\"api_endpoint_base\":\"https://$EP_GW\",\"tls_client_profile_url\":\"$tlsClientDefault\",\"gateway_service_type\":\"$ep_gwType\",\"visibility\":{\"type\":\"public\"},\"sni\":[{\"host\":\"*\",\"tls_server_profile_url\":\"$tlsServer\"}],\"integration_url\":\"${lf_integration_url}\"}"
+  mylog info "{\"name\":\"apigateway-service\",\"title\":\"API Gateway Service\",\"endpoint\":\"https://$EP_GWD\",\"api_endpoint_base\":\"https://$EP_GW\",\"tls_client_profile_url\":\"$tlsClientDefault\",\"gateway_service_type\":\"$ep_gwType\",\"visibility\":{\"type\":\"public\"},\"sni\":[{\"host\":\"*\",\"tls_server_profile_url\":\"$tlsServer\"}],\"integration_url\":\"${integration_url}\"}"
 
   dpUrl=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services" \
   -H "Authorization: Bearer $access_token" \
   -H 'Content-Type: application/json' \
   -H 'Accept: application/json' \
   -H 'Connection: keep-alive' \
-  --data-binary "{\"name\":\"apigateway-service\",\"title\":\"API Gateway Service\",\"endpoint\":\"https://$EP_GWD\",\"api_endpoint_base\":\"https://$EP_GW\",\"tls_client_profile_url\":\"$tlsClientDefault\",\"gateway_service_type\":\"$ep_gwType\",\"visibility\":{\"type\":\"public\"},\"sni\":[{\"host\":\"*\",\"tls_server_profile_url\":\"$tlsServer\"}],\"integration_url\":\"${lf_integration_url}\"}" \
+  --data-binary "{\"name\":\"apigateway-service\",\"title\":\"API Gateway Service\",\"endpoint\":\"https://$EP_GWD\",\"api_endpoint_base\":\"https://$EP_GW\",\"tls_client_profile_url\":\"$tlsClientDefault\",\"gateway_service_type\":\"$ep_gwType\",\"visibility\":{\"type\":\"public\"},\"sni\":[{\"host\":\"*\",\"tls_server_profile_url\":\"$tlsServer\"}],\"integration_url\":\"${integration_url}\"}" \
   --compressed | jq .url | sed -e s/\"//g);
 
   decho "dpUrl: $dpUrl"
@@ -513,7 +513,7 @@ function create_cm_token(){
    -H 'Accept: application/json' \
    --data-binary "@${APIC_GEN_CUSTOMDIR}config/creds.json")
   
-  decho "cmToken: $cmToken"
+  # decho "cmToken: $cmToken"
 
   if [ $(echo $cmToken | jq .status ) = "401" ] ; then
     mylog error "Error with login -> $cmToken"
@@ -567,10 +567,13 @@ scriptdir=${PWD}/
 # load helper functions
 . "${scriptdir}"lib.sh
 
+# TODO Cannot work the variable for mail ns is not ready at that time, quick fix below
+MY_MAIL_SERVER_NAMESPACE='mail'
+
 # Get ClusterIP for the mail server if MailHog
-mail_server_cluster_ip=oc -n ${MY_MAIL_SERVER_NAMESPACE} get svc/mailhog -o jsonpath='{.spec.clusterIP}'
+mail_server_cluster_ip=$(oc -n ${MY_MAIL_SERVER_NAMESPACE} get svc/mailhog -o jsonpath='{.spec.clusterIP}')
 # TODO check error, if not there, ...
-mylog info "To configure the mail server the clusterIP is ${lf_clusterIP}"
+mylog info "To configure the mail server the clusterIP is ${mail_server_cluster_ip}"
 export MY_MAIL_SERVER_HOST_IP=${mail_server_cluster_ip}
 
 # Will create both directories needed later on
