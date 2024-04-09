@@ -1,0 +1,34 @@
+apiVersion: appconnect.ibm.com/v1beta1
+kind: IntegrationRuntime
+metadata:
+  name: ace-kafka-mail
+  namespace: $MY_ACE_PROJECT
+spec:
+  license:
+    accept: true
+    license: $MY_ACE_LIC
+    use: $MY_ACE_LIC_USAGE
+  template:
+    spec:
+      containers:
+        - name: runtime
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 500m
+              memory: 512Mi
+  replicas: 1
+  version: '12.0'
+  barURL: 
+    - >-
+      https://github.com/prichelle/cp4i-demo-pr/raw/main/ace-bar-files/paymentAPI-backend.bar
+  configurations:
+    - github-barauth
+    - ace-es-demo-scram-policy
+    - ace-es-demo-scram-secid
+    - es-cert.jks
+    - ace-email-server-policy
+    - ace-email-server-secid
+    - ace-cp4i-demo-policy

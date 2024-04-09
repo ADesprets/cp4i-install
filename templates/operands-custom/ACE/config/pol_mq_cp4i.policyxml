@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<policies>
+  <policy policyType="MQEndpoint" policyName="pol_mq_cp4i" policyTemplate="MQEndpoint">
+    <connection>CLIENT</connection>
+    <destinationQueueManagerName>$QMGR_NAME</destinationQueueManagerName>
+    <queueManagerHostname>${QMGR_NAME}-ibm-mq.$MY_ACE_PROJECT.svc.cluster.local</queueManagerHostname>
+    <listenerPortNumber>1414</listenerPortNumber>
+    <channelName>CL.PAYMENTS</channelName>
+    <securityIdentity></securityIdentity>
+    <useSSL>false</useSSL>
+    <SSLPeerName></SSLPeerName>
+    <SSLCipherSpec></SSLCipherSpec>
+  </policy>
+</policies>

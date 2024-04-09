@@ -1,0 +1,2 @@
+truststore::truststorePass dummy $TRUSTSTORE_PWD
+kafka::esdemoSecId $ES_USER_ID $ES_USER_PWD

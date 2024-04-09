@@ -50,7 +50,7 @@ check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_mq_ns}
 lf_file="${MQ_GEN_CUSTOMDIR}config/MQ-Capability.yaml"
 lf_ns="${MY_MQ_PROJECT}"
 lf_path="{.status.phase}"
-lf_resource="$MY_MQ_INSTANCE_NAME"
+lf_resource="$mq_qmgr_name"
 lf_state="Running"
 lf_type="QueueManager"
 lf_wait_for_state=0
