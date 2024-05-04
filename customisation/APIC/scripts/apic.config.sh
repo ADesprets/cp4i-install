@@ -289,8 +289,8 @@ function create_apic_resources() {
     mylog info "URL Fake Authentication URL registry already exists, do not load it."
   fi
 
-  # Get the url of the url registry in org1
-  lf_org=org1
+  # Get the url of the url registry in org
+  lf_org=APIC_PROVIDER_ORG
   lf_urlregistryname=url_registry
   lf_apicpath=api/user-registries/$lf_org/$lf_urlregistryname?fields=url
   local sandboxURLRegistries=$(curl -sk "${PLATFORM_API_URL}${lf_apicpath}" -H "Authorization: Bearer $lf_am_token" -H 'Accept: application/json' | jq -r .url )
@@ -339,8 +339,8 @@ function create_apic_resources() {
     decho "oauthProvider: $oauthProvider"
   fi
 
-  # Get the url of the oauth provider in org1
-  lf_org=org1
+  # Get the url of the oauth provider in org
+  lf_org=APIC_PROVIDER_ORG
   lf_apicpath=api/orgs/$lf_org/oauth-providers/$lf_oauthprovidername?fields=url
   local oauthProviderURL=$(curl -sk "${PLATFORM_API_URL}${lf_apicpath}" -H "Authorization: Bearer $lf_am_token" -H 'Accept: application/json' | jq -r .url )
   decho "oauthProviderURL: $oauthProviderURL"
@@ -352,7 +352,7 @@ function create_apic_resources() {
 
   # Add it if not already added TODO if
   if [ 2 -gt 3 ]; then
-    lf_org=org1
+    lf_org=APIC_PROVIDER_ORG
     lf_apicpath=api/catalogs/$org/$catalog/configured-oauth-providers
     export APIC_OAUTH_PROVIDER=$oauthProviderURL
     adapt_file ${APIC_TMPL_CUSTOMDIR}config/ ${APIC_GEN_CUSTOMDIR}config/ ConfiguredOAuthProvider_res.json
@@ -607,19 +607,19 @@ create_mail_server "${APIC_SMTP_SERVER}" "${APIC_SMTP_SERVER_PORT}"
 # TODO Add idempotence
 create_topology $integration_url
 
-create_org "${APIC_PROVIDER_ORG1}" "${APIC_ORG1_USERNAME}" "${APIC_ORG1_PASSWORD}" "${APIC_ORG1_USER_EMAIL}"
+create_org "${APIC_PROVIDER_ORG}" "${APIC_ORG1_USERNAME}" "${APIC_ORG1_PASSWORD}" "${APIC_ORG1_USER_EMAIL}"
 
 # Create API Manager token
 create_am_token
 
-create_catalog "${APIC_PROVIDER_ORG1}"
+create_catalog "${APIC_PROVIDER_ORG}"
 
 create_apic_resources $access_token $amToken
 
 # Push API into draft
-apic_provider_org1_lower=$(echo "$APIC_PROVIDER_ORG1" | awk '{print tolower($0)}')
+apic_provider_org_lower=$(echo "$APIC_PROVIDER_ORG" | awk '{print tolower($0)}')
 
-load_apis $PLATFORM_API_URL $apic_provider_org1_lower $amToken
+load_apis $PLATFORM_API_URL $apic_provider_org_lower $amToken
 
 duration=$SECONDS
 ending=$(date);

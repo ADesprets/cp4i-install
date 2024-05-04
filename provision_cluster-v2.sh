@@ -335,6 +335,9 @@ function display_access_info () {
   temp_integration_admin_pwd=$(oc -n $MY_COMMON_SERVICES_NAMESPACE get secret integration-admin-initial-temporary-credentials -o jsonpath={.data.password} | base64 -d)
   mylog info "Integration admin password: ${temp_integration_admin_pwd}"
 
+  mailhog_hostname=$(oc -n ${MY_MAIL_SERVER_NAMESPACE} get route maillhog -o jsonpath='{.spec.host}')
+  decho "MailHog accessible at https://${mailhog_hostname}"
+
   if $MY_NAVIGATOR_INSTANCE;then
     get_navigator_access
   fi
@@ -1346,13 +1349,15 @@ check_exec_prereqs
 login_2_ibm_cloud
 
 : <<'END_COMMENT'
+
+
 # Create Openshift cluster
 create_openshift_cluster_wait_4_availability
 
 # Log to openshift cluster
 login_2_openshift_cluster
 
-
+END_COMMENT
 # Create project namespace.
 # SB]20231213 erreur obtenue juste après la création du cluster openshift : Error from server (Forbidden): You may not request a new project via this API.
 # Solution : https://stackoverflow.com/questions/51657711/openshift-allow-serviceaccount-to-create-project
@@ -1420,7 +1425,6 @@ install_assetrepo
 # For each capability install : case, operator, operand 
 install_ace
 
-END_COMMENT
 # For each capability install : case, operator, operand
 # install_openliberty
 install_apic

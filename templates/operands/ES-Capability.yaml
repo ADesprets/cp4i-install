@@ -22,7 +22,7 @@ spec:
       authorization:
         type: runas
       config:
-        inter.broker.protocol.version: '3.5'
+        inter.broker.protocol.version: '3.6'
         log.cleaner.threads: 6
         num.io.threads: 24
         num.network.threads: 9

@@ -407,6 +407,7 @@ function deploy_openldap(){
 # @param octype: kubernetes resource class, example: "deployment"
 # @param ocname: name of the resource, example: "mailhog"
 # See https://github.com/osixia/docker-openldap for more details especialy all the configurations possible
+# To add a user/password protection to the web UI: https://stackoverflow.com/questions/60162842/how-can-i-add-basic-authentication-to-the-mailhog-service-in-ddev-local
 function deploy_mailhog(){
   local lf_in_octype="$1"
   local lf_in_name="$2"
@@ -462,7 +463,7 @@ function expose_service_mailhog() {
   # expose service externaly and get host and port
   oc -n ${lf_in_namespace} expose svc/${lf_in_name} --port=${lf_port} --name=${lf_in_name}
   lf_hostname=$(oc -n ${lf_in_namespace} get route ${lf_in_name} -o jsonpath='{.spec.host}')
-  mylog info "MailHog accessible at ${lf_hostname}"
+  decho "MailHog accessible at ${lf_hostname}"
 }
 
 ################################################
