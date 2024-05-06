@@ -335,8 +335,8 @@ function display_access_info () {
   temp_integration_admin_pwd=$(oc -n $MY_COMMON_SERVICES_NAMESPACE get secret integration-admin-initial-temporary-credentials -o jsonpath={.data.password} | base64 -d)
   mylog info "Integration admin password: ${temp_integration_admin_pwd}"
 
-  mailhog_hostname=$(oc -n ${MY_MAIL_SERVER_NAMESPACE} get route maillhog -o jsonpath='{.spec.host}')
-  decho "MailHog accessible at https://${mailhog_hostname}"
+  mailhog_hostname=$(oc -n ${MY_MAIL_SERVER_NAMESPACE} get route mailhog -o jsonpath='{.spec.host}')
+  mylog info "MailHog accessible at http://${mailhog_hostname}"
 
   if $MY_NAVIGATOR_INSTANCE;then
     get_navigator_access
@@ -480,6 +480,38 @@ function login_2_openshift_cluster () {
 }
 
 ################################################
+# Install GitOps 
+function install_gitops () {
+  # https://docs.openshift.com/gitops/1.12/installing_gitops/installing-openshift-gitops.html
+
+  #mylog info "==== Redhat Openshift GitOps." 1>&2
+  #create_namespace $MY_GITOPS_NAMESPACE 
+  # Error: Checking project openshift-gitops-operator...Creating project openshift-gitops-operator
+  #        Error from server (Forbidden): project.project.openshift.io "openshift-gitops-operator" is forbidden: cannot request a project starting with "openshift-"
+  # Le problème provient aussi d'une certaine confusion concernant le ns dans lequel cet operateur doit être installé : openshift-operators ou openshift-gitops-operator
+  # Le ns openshift-gitops-operator n'est pas crée automatiquement dans le cluster comme l'est openshift-operators !!!
+  # L'installation depuis la console à partir de "OperatorHub", crée le ns openshift-gitops-operator et si on supprime l'operator et qu'on relance le script : cette fois-ci 
+  # ça fonctionne parceque le ns opeshift-gitops-operator existe.
+  # Après j'ai essayé de suivre dans la mesure du possible la procédure https://github.com/IBM/cloudpak-gitops/blob/main/docs/install.md
+
+  #ls_type="OperatorGroup"
+  #ls_cr_name="${MY_GITOPS_OPERATORGROUP}"
+  #ls_yaml_file="${RESOURCSEDIR}operator-group-gitops.yaml"
+  #ls_namespace=$MY_GITOPS_NAMESPACE
+  #check_create_oc_yaml "${ls_type}" "${ls_cr_name}" "${ls_yaml_file}" "${ls_namespace}"
+
+  lf_operator_name="$MY_GITOPS_OPERATORGROUP"
+  lf_current_chl=$MY_GITOPS_CHL
+  lf_catalog_source_name="redhat-operators"
+  lf_operator_namespace=$MY_GITOPS_NAMESPACE
+  lf_strategy="Automatic"
+  lf_wait_for_state=1
+  lf_startingcsv=$MY_GITOPS_STARTINGCSV
+  decho "create_operator_subscription \"${lf_operator_name}\" \"${lf_current_chl}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_startingcsv}\""
+  create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_startingcsv}"
+}
+
+################################################
 # Install Cert Manager 
 function install_cert_manager () {
   mylog info "==== Redhat Cert Manager catalog." 1>&2
@@ -576,6 +608,7 @@ function install_fs () {
   accept_license_fs $lf_operator_namespace
 
   # Configuring foundational services by using the CommonService custom resource.
+   lf_operator_namespace=$MY_COMMON_SERVICES_NAMESPACE
   lf_type="CommonService"
   lf_cr_name=$MY_COMMONSERVICES_INSTANCE_NAME
   lf_yaml_file="${RESOURCSEDIR}foundational-services-cr.yaml"
@@ -769,7 +802,6 @@ function install_apic () {
     mylog info "Customise APIC"
     . ${APIC_SCRIPTDIR}scripts/apic.config.sh
   fi
-  exit
 }
 
 ################################################
@@ -1109,8 +1141,10 @@ function install_es () {
     check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
  
     # launch custom script
+    if $MY_ES_CUSTOM;then
       mylog info "Customise Event Streams"
-    . ${ES_SCRIPTDIR}scripts/es.config.sh
+      . ${ES_SCRIPTDIR}scripts/es.config.sh
+    fi
   fi
 }
 
@@ -1233,6 +1267,16 @@ function install_mq () {
     lf_wait_for_state=0
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
   fi
+
+  # start customization
+  # Takes all the templates associated with the capabilities and generate the files from the context variables
+  # The files are generated into ./customisation/working/<capability>/config
+  if $MY_MQ_CUSTOM;then
+    # launch custom script
+    mylog info "Customise MQ"
+    . ${MQ_SCRIPTDIR}scripts/mq.config.sh -i ./cp4i.properties ./versions/cp4i-2023.4.properties ${MY_MQ_INSTANCE_NAME}
+  fi
+
 }
 
 ################################################
@@ -1324,7 +1368,7 @@ MAINSCRIPTDIR=${PWD}/
 
 if [ $# -ne 4 ]; then
   echo "the number of arguments should be 4 : properties_file versions_file namespace cluster"
-  exit
+  exit 1
 else echo "The provided arguments are: $@"
 fi
 
@@ -1350,7 +1394,6 @@ login_2_ibm_cloud
 
 : <<'END_COMMENT'
 
-
 # Create Openshift cluster
 create_openshift_cluster_wait_4_availability
 
@@ -1358,6 +1401,7 @@ create_openshift_cluster_wait_4_availability
 login_2_openshift_cluster
 
 END_COMMENT
+
 # Create project namespace.
 # SB]20231213 erreur obtenue juste après la création du cluster openshift : Error from server (Forbidden): You may not request a new project via this API.
 # Solution : https://stackoverflow.com/questions/51657711/openshift-allow-serviceaccount-to-create-project
@@ -1399,6 +1443,11 @@ check_create_oc_yaml "${ls_type}" "${ls_cr_name}" "${ls_yaml_file}" "${ls_namesp
 mylog info "Creating entitlement, need to check if it is needed or works"
 add_ibm_entitlement $MY_OC_PROJECT $MY_CONTAINER_ENGINE
 add_ibm_entitlement $MY_OPERATORS_NAMESPACE $MY_CONTAINER_ENGINE
+# add_ibm_entitlement $MY_GITOPS_NAMESPACE $MY_CONTAINER_ENGINE
+
+#SB]20240429 Installing Red Hat OpenShift GitOps Operator
+# mylog info "==== Installing Red Hat OpenShift GitOps Operator." 1>&2
+# install_gitops
 
 #SB]20231214 Installing Foundation services
 mylog info "==== Installing foundational services (Cert Manager, Licensing Server and Common Services)." 1>&2
@@ -1429,6 +1478,7 @@ install_ace
 # install_openliberty
 install_apic
 
+
 # For each capability install : case, operator, operand 
 install_eem $MY_CATALOGSOURCES_NAMESPACE
 
@@ -1453,11 +1503,14 @@ install_mq
 # Add Instana
 install_instana
 
+
 ## Display information to access CP4I
-display_access_info
+# display_access_info
 
 #work in progress
 #SB]20230214 Ajout Configuration ACE
 # export my_global_index="04"
 # configure_ace_is $MY_OC_PROJECT
 #configure_ace_is cp4i cp4i-ace-is-02 ./tmpl/configuration/ACE/ACE-IS-02.yaml cp4i-ace-barauth-02 ./tmpl/configuration/ACE/ACE-barauth-02.yaml
+ 
+ exit 0

@@ -23,6 +23,6 @@
     },
     "configuration": {},
     "endpoint": {
-        "endpoint": "${APIC_EP_GTW}org1/prod/fakeauth/v1/basic-auth"
+        "endpoint": "${APIC_EP_GTW}${APIC_PROVIDER_ORG}/prod/fakeauth/v1/basic-auth"
     }
 }

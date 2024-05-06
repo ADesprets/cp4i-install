@@ -13,7 +13,6 @@ spec:
     license: $MY_ES_LIC
     accept: true
     use: $MY_ES_LIC_USAGE
-
   strimziOverrides:
     entityOperator:
       topicOperator: {}
@@ -22,14 +21,11 @@ spec:
       authorization:
         type: runas
       config:
-        inter.broker.protocol.version: '3.6'
-        log.cleaner.threads: 6
-        num.io.threads: 24
-        num.network.threads: 9
-        num.replica.fetchers: 3
-        offsets.topic.replication.factor: 3
+        auto.create.topics.enable: true
         default.replication.factor: 3
+        inter.broker.protocol.version: '3.6'
         min.insync.replicas: 2
+        offsets.topic.replication.factor: 3
       listeners:
         - name: external
           port: 9094

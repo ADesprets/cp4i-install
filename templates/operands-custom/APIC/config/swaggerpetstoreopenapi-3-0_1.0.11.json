@@ -1229,7 +1229,7 @@
         },
         "servers": [
             {
-                "url": "https://cp4i-apic-gw-gateway-cp4i.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/org1/sandbox/v3"
+                "url": "https://cp4i-apic-gw-gateway-cp4i.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/${APIC_PROVIDER_ORG}/sandbox/v3"
             }
         ],
         "testable": true,

@@ -243,7 +243,7 @@ function LoadAPI () {
   echo "pingAPI: $pingAPI"
   if [ -z "$pingAPI" ] || [ "$pingAPI" = "null" ]; then
   # if ! curl -sk "${platform_api_url}api/orgs/$apic_provider_org/drafts/draft-apis/$api_name?fields=url" -H "Authorization: Bearer $amToken" -H 'Accept: application/json' > /dev/null 2>&1; then
-    # draftAPICLEAR=$(curl -sk --request DELETE "${platform_api_url}api/orgs/$apic_provider_org/drafts/draft-apis/pingapi?confirm=$APIC_PROVIDER_ORG1" -H "Accept: application/json" -H "authorization: Bearer $amToken");
+    # draftAPICLEAR=$(curl -sk --request DELETE "${platform_api_url}api/orgs/$apic_provider_org/drafts/draft-apis/pingapi?confirm=$APIC_PROVIDER_ORG" -H "Accept: application/json" -H "authorization: Bearer $amToken");
     mylog info "Load test API (Ping API) as a draft"
     api=`cat ${configdir}apis/ping-api_1.0.0.json`;
     draftAPI=$(curl -sk "${platform_api_url}api/orgs/${apic_provider_org}/drafts/draft-apis?api_type=rest"\
@@ -590,7 +590,7 @@ gateway_service="datapower-api-gateway"
 
 CreateTopology
 
-CreateOrg "${APIC_PROVIDER_ORG1}" "${APIC_ORG1_USERNAME}" "${APIC_ORG1_PASSWORD}" "${APIC_ORG1_USER_EMAIL}"
+CreateOrg "${APIC_PROVIDER_ORG}" "${APIC_ORG1_USERNAME}" "${APIC_ORG1_PASSWORD}" "${APIC_ORG1_USER_EMAIL}"
 
 # get token for the API Manager for 
 amToken=$(curl -sk --fail -X POST "${PLATFORM_API_URL}api/token" \
@@ -606,10 +606,10 @@ if [ $retVal -ne 0 ] || [ -z "$amToken" ] || [ "$amToken" = "null" ]; then
   exit 1
 fi
 
-CreateCatalog "${APIC_PROVIDER_ORG1}"
+CreateCatalog "${APIC_PROVIDER_ORG}"
 
 # Push API into draft
-apic_provider_org1_lower=$(echo "$APIC_PROVIDER_ORG1" | awk '{print tolower($0)}')
+apic_provider_org1_lower=$(echo "$APIC_PROVIDER_ORG" | awk '{print tolower($0)}')
 api_name=ping-api
 # TODO Make it a function, to load any API
 # LoadAPI $PLATFORM_API_URL $apic_provider_org1_lower $api_name $amToken
@@ -618,7 +618,7 @@ pingAPI=$(curl -sk "${PLATFORM_API_URL}api/orgs/$apic_provider_org1_lower/drafts
 # mylog info "pingAPI: $pingAPI"
 if [ -z "$pingAPI" ] || [ "$pingAPI" = "null" ]; then
 # if ! curl -sk "${PLATFORM_API_URL}api/orgs/$apic_provider_org1_lower/drafts/draft-apis/$api_name?fields=url" -H "Authorization: Bearer $amToken" -H 'Accept: application/json' > /dev/null 2>&1; then
-  # draftAPICLEAR=$(curl -sk --request DELETE "${PLATFORM_API_URL}api/orgs/$APIC_PROVIDER_ORG1/drafts/draft-apis/pingapi?confirm=$APIC_PROVIDER_ORG1" -H "Accept: application/json" -H "authorization: Bearer $amToken");
+  # draftAPICLEAR=$(curl -sk --request DELETE "${PLATFORM_API_URL}api/orgs/$APIC_PROVIDER_ORG/drafts/draft-apis/pingapi?confirm=$APIC_PROVIDER_ORG" -H "Accept: application/json" -H "authorization: Bearer $amToken");
   mylog info "Load test API (Ping API) as a draft"
   api=`cat ${configdir}apis/ping-api_1.0.0.json`;
 
