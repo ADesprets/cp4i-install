@@ -1,8 +1,10 @@
 apiVersion: apiconnect.ibm.com/v1beta1
 kind: APIConnectCluster
 metadata:
-  name: $my_cp_apic_instance_name
-  namespace: $my_oc_project
+  annotations: 
+    apiconnect-operator/backups-not-configured: "true"  
+  name: $MY_APIC_INSTANCE_NAME
+  namespace: $MY_OC_PROJECT
 spec:
   analytics:
     storage:
@@ -14,11 +16,16 @@ spec:
   imagePullSecrets:
     - ibm-entitlement-key
   imageRegistry: cp.icr.io/cp/apic
+  management:
+    testAndMonitor:
+      enabled: true
+      aiEnabled: false
+      autoTestEnabled: true
   license:
     accept: true
-    license: $my_ibm_cp_apic_license
+    license: $MY_APIC_LIC
     metric: VIRTUAL_PROCESSOR_CORE
     use: nonproduction
-  profile: $my_ibm_cp_apic_profile
-  storageClassName: $my_block_storage_class
-  version: $my_ibm_cp_apic_version
+  profile: $MY_APIC_PROFILE
+  storageClassName: $MY_BLOCK_STORAGE_CLASS
+  version: $MY_APIC_VERSION

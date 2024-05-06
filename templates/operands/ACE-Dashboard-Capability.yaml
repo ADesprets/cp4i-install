@@ -1,13 +1,13 @@
 apiVersion: appconnect.ibm.com/v1beta1
 kind: Dashboard
 metadata:
-  namespace: $my_oc_project
-  name: $my_cp_ace_dashboard_instance_name
+  namespace: $MY_OC_PROJECT
+  name: $MY_ACE_DASHBOARD_INSTANCE_NAME
 spec:
   license:
     accept: true
-    license: $my_ibm_cp_ace_license
-    use: $my_ibm_ace_license_usage
+    license: $MY_ACE_LIC
+    use: $MY_ACE_LIC_USAGE
   pod:
     containers:
       content-server:
@@ -26,10 +26,16 @@ spec:
           requests:
             cpu: 50m
             memory: 125Mi
-  useCommonServices: false
-  version: $my_ibm_cp_ace_version
+  #useCommonServices: false         
+  authentication:
+    integrationKeycloak:
+      enabled: false
+  authorization:
+    integrationKeycloak:
+      enabled: false
+  version: $MY_ACE_VERSION
   storage:
     size: 5Gi
-    class: $my_file_storage_class
+    class: $MY_FILE_STORAGE_CLASS
     type: persistent-claim
   replicas: 2

@@ -1,11 +1,11 @@
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
 metadata:
-  name: $operator_name
-  namespace: $operator_ns
+  name: $MY_OPERATOR_NAME
+  namespace: $MY_OPERATOR_NAMESPACE
 spec:
-  channel: $current_channel
-  installPlanApproval: $strategy
-  name: $operator_name
-  source: $catalog_source_name
-  sourceNamespace: $my_oc_cs_ns
+  channel: $MY_CURRENT_CHL
+  installPlanApproval: $MY_STRATEGY
+  name: $MY_OPERATOR_NAME
+  source: $MY_CATALOG_SOURCE_NAME
+  sourceNamespace: $MY_CATALOGSOURCES_NAMESPACE

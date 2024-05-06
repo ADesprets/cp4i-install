@@ -1,0 +1,388 @@
+{
+    "basePath": "/order",
+    "consumes": [
+        "application/json"
+    ],
+    "externalDocs": {
+        "description": "Github project for this API, containing source code and deployment pipeline",
+        "url": "https://github.com/ibm-apiconnect/sample-orders-api"
+    },
+    "info": {
+        "contact": {
+            "name": "IBM Corporation",
+            "url": "https://www.ibm.com/products/api-connect"
+        },
+        "description": "View and track your orders and deliveries.",
+        "termsOfService": "This API is provided as a sample with no associated guarantees.  ",
+        "title": "Order",
+        "version": "1.0.0",
+        "x-ibm-name": "ibm-sample-order-api"
+    },
+    "paths": {
+        "/{orderNumber}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Order found successfully",
+                        "schema": {
+                            "properties": {
+                                "created_at": {
+                                    "format": "date-time",
+                                    "title": "Date Order Created",
+                                    "type": "string"
+                                },
+                                "order_number": {
+                                    "example": "ORD00989792",
+                                    "title": "Order Number",
+                                    "type": "string"
+                                },
+                                "shipped_at": {
+                                    "format": "date-time",
+                                    "title": "Date Shipped",
+                                    "type": "string"
+                                },
+                                "status": {
+                                    "enum": [
+                                        "SHIPPED",
+                                        "PICKED",
+                                        "PENDING",
+                                        "DELIVERED"
+                                    ],
+                                    "title": "Order Status",
+                                    "type": "string"
+                                },
+                                "tracking_reference": {
+                                    "title": "Tracking Reference",
+                                    "type": "string"
+                                },
+                                "tracking_status": {
+                                    "title": "Tracking Status",
+                                    "type": "object"
+                                }
+                            },
+                            "title": "Order Details",
+                            "type": "object"
+                        }
+                    }
+                },
+                "summary": "Retrieve the details of your order."
+            },
+            "parameters": [
+                {
+                    "description": "Order number to lookup - you should find this in your confirmation e-mail",
+                    "in": "path",
+                    "name": "orderNumber",
+                    "required": true,
+                    "type": "string"
+                }
+            ]
+        }
+    },
+    "produces": [
+        "application/json"
+    ],
+    "schemes": [
+        "https"
+    ],
+    "security": [
+        {
+            "clientID": [
+            ]
+        }
+    ],
+    "securityDefinitions": {
+        "clientID": {
+            "in": "header",
+            "name": "X-IBM-Client-Id",
+            "type": "apiKey"
+        }
+    },
+    "swagger": "2.0",
+    "x-ibm-configuration": {
+        "activity-log": {
+            "enabled": true,
+            "error-content": "payload",
+            "success-content": "activity"
+        },
+        "assembly": {
+            "execute": [
+                {
+                    "invoke": {
+                        "backend-type": "json",
+                        "description": "Retrieves order data from the fulfillment system using the key of the provided order number.",
+                        "follow-redirects": false,
+                        "header-control": {
+                            "type": "blocklist",
+                            "values": [
+                            ]
+                        },
+                        "inject-proxy-headers": true,
+                        "output": "order",
+                        "parameter-control": {
+                            "type": "blocklist",
+                            "values": [
+                            ]
+                        },
+                        "persistent-connection": true,
+                        "target-url": "$(target-url)",
+                        "timeout": 60,
+                        "title": "order lookup",
+                        "verb": "keep",
+                        "version": "2.0.0"
+                    }
+                },
+                {
+                    "parse": {
+                        "description": "Parse the JSON from the order fulfillment system so that the values can be used later in the flow.",
+                        "input": "order",
+                        "output": "order",
+                        "parse-settings-reference": {
+                            "default": "apic-default-parsesettings"
+                        },
+                        "title": "parse response",
+                        "version": "2.1.0"
+                    }
+                },
+                {
+                    "map": {
+                        "actions": [
+                            {
+                                "from": "input.delivery_method",
+                                "set": "output.shipper"
+                            },
+                            {
+                                "from": "input.tracking_reference",
+                                "set": "output.reference"
+                            }
+                        ],
+                        "inputs": {
+                            "input": {
+                                "schema": {
+                                    "properties": {
+                                        "delivery_method": {
+                                            "name": "delivery_method",
+                                            "type": "string"
+                                        },
+                                        "tracking_reference": {
+                                            "name": "tracking_reference",
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                },
+                                "variable": "order.body"
+                            }
+                        },
+                        "outputs": {
+                            "output": {
+                                "content": "application/json",
+                                "schema": {
+                                    "properties": {
+                                        "reference": {
+                                            "name": "reference",
+                                            "type": "string"
+                                        },
+                                        "shipper": {
+                                            "name": "shipper",
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                },
+                                "variable": "message.body"
+                            }
+                        },
+                        "title": "map input to lambda",
+                        "version": "2.0.0"
+                    }
+                },
+                {
+                    "invoke": {
+                        "backend-type": "detect",
+                        "cache-response": "protocol",
+                        "cache-ttl": 900,
+                        "chunked-uploads": true,
+                        "description": "Call lambda function to look up the tracking for a  parcel with the associated shipping company.",
+                        "graphql-send-type": "detect",
+                        "header-control": {
+                            "type": "blocklist",
+                            "values": [
+                            ]
+                        },
+                        "http-version": "HTTP/1.1",
+                        "output": "tracking",
+                        "parameter-control": {
+                            "type": "allowlist",
+                            "values": [
+                            ]
+                        },
+                        "persistent-connection": true,
+                        "stop-on-error": [
+                        ],
+                        "target-url": "https://plgej7e2skungmxzjakprvhe340qkrkl.lambda-url.us-east-1.on.aws/",
+                        "timeout": 60,
+                        "title": "lambda: track shipment",
+                        "verb": "POST",
+                        "version": "2.2.0",
+                        "websocket-upgrade": false
+                    }
+                },
+                {
+                    "map": {
+                        "actions": [
+                            {
+                                "from": "order.order_number",
+                                "set": "output.order_number"
+                            },
+                            {
+                                "from": "tracking.trackResponse.shipment.package.activity.status",
+                                "set": "output.tracking_status"
+                            },
+                            {
+                                "from": "order.shipped_at",
+                                "set": "output.shipped_at"
+                            },
+                            {
+                                "from": "order.tracking_reference",
+                                "set": "output.tracking_reference"
+                            },
+                            {
+                                "from": "order.status",
+                                "set": "output.status"
+                            },
+                            {
+                                "from": "order.created_at",
+                                "set": "output.created_at"
+                            }
+                        ],
+                        "inputs": {
+                            "order": {
+                                "schema": {
+                                    "properties": {
+                                        "created_at": {
+                                            "name": "created_at",
+                                            "type": "string"
+                                        },
+                                        "order_number": {
+                                            "name": "order_number",
+                                            "type": "string"
+                                        },
+                                        "shipped_at": {
+                                            "name": "shipped_at",
+                                            "type": "string"
+                                        },
+                                        "status": {
+                                            "name": "status",
+                                            "type": "string"
+                                        },
+                                        "tracking_reference": {
+                                            "name": "tracking_reference",
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                },
+                                "variable": "order.body"
+                            },
+                            "tracking": {
+                                "schema": {
+                                    "properties": {
+                                        "trackResponse": {
+                                            "name": "trackResponse",
+                                            "properties": {
+                                                "shipment": {
+                                                    "name": "shipment",
+                                                    "properties": {
+                                                        "package": {
+                                                            "name": "package",
+                                                            "properties": {
+                                                                "activity": {
+                                                                    "items": {
+                                                                        "properties": {
+                                                                            "status": {
+                                                                                "name": "status",
+                                                                                "type": "object"
+                                                                            }
+                                                                        },
+                                                                        "type": "object"
+                                                                    },
+                                                                    "name": "activity",
+                                                                    "type": "array"
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                },
+                                "variable": "tracking.body"
+                            }
+                        },
+                        "outputs": {
+                            "output": {
+                                "schema": {
+                                    "properties": {
+                                        "created_at": {
+                                            "name": "created_at",
+                                            "type": "string"
+                                        },
+                                        "order_number": {
+                                            "name": "order_number",
+                                            "type": "string"
+                                        },
+                                        "shipped_at": {
+                                            "name": "shipped_at",
+                                            "type": "string"
+                                        },
+                                        "status": {
+                                            "name": "status",
+                                            "type": "string"
+                                        },
+                                        "tracking_reference": {
+                                            "name": "tracking_reference",
+                                            "type": "string"
+                                        },
+                                        "tracking_status": {
+                                            "name": "tracking_status",
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                },
+                                "variable": "message.body"
+                            }
+                        },
+                        "title": "combine data for response",
+                        "version": "2.0.0"
+                    }
+                }
+            ],
+            "finally": [
+            ]
+        },
+        "cors": {
+            "enabled": true
+        },
+        "enforced": true,
+        "gateway": "datapower-api-gateway",
+        "phase": "realized",
+        "properties": {
+            "target-url": {
+                "description": "URL of the proxy policy",
+                "encoded": false,
+                "value": "https://sample-api.us-east-a.apiconnect.automation.ibm.com/orders/order/{orderNumber}"
+            }
+        },
+        "testable": true,
+        "type": "rest"
+    }
+}

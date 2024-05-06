@@ -8,5 +8,5 @@ spec:
   resources:
     requests:
       storage: 1Gi
-  storageClassName: ibmc-file-bronze
+  storageClassName: $MY_FILE_LDAP_STORAGE_CLASS
   volumeMode: Filesystem

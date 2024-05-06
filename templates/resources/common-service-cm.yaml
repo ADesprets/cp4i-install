@@ -7,6 +7,7 @@ data:
  common-service-maps.yaml: |
    namespaceMapping:
    - requested-from-namespace:
-     - $my_oc_project
-     map-to-common-service-namespace: ${my_oc_project}-fs
-   defaultCsNs: ibm-common-services
+     - $MY_OC_PROJECT
+     - $MY_LICENSE_SERVER_NAMESPACE
+     map-to-common-service-namespace: $MY_COMMON_SERVICES_NAMESPACE
+   defaultCsNs: $MY_COMMON_SERVICES_NAMESPACE

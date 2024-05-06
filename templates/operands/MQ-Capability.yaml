@@ -1,19 +1,79 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "${MY_MQ_INSTANCE_NAME}-mqsc-cm"
+  namespace: $MY_OC_PROJECT
+data:
+  ${QMGR}.mqsc: |
+    DEFINE QLOCAL('Q1') REPLACE DEFPSIST(YES) 
+    DEFINE CHANNEL('${MY_MQ_INSTANCE_NAME_UC}CHL') CHLTYPE(SVRCONN) REPLACE TRPTYPE(TCP) SSLCAUTH(OPTIONAL) SSLCIPH('ANY_TLS12_OR_HIGHER')
+    SET CHLAUTH('${MY_MQ_INSTANCE_NAME_UC}CHL') TYPE(BLOCKUSER) USERLIST(NOBODY) ACTION(ADD)
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: "${MY_MQ_INSTANCE_NAME}_ROUTE"
+  namespace: $MY_OC_PROJECT
+spec:
+  host: "${MY_MQ_INSTANCE_NAME}chl.chl.mq.ibm.com"
+  to:
+    kind: Service
+    name: ${MY_MQ_INSTANCE_NAME}-ibm-mq
+  port:
+    targetPort: 1414
+  tls:
+    termination: passthrough
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: "${MY_MQ_INSTANCE_NAME}_SECRET"
+  namespace: $MY_OC_PROJECT
+data:
+  tls.crt: $B64_QMGR_CRT
+  tls.key: $B64_QMGR_KEY
+  ca.crt: $B64_CA_CRT
+type: kubernetes.io/tls
+---
 apiVersion: mq.ibm.com/v1beta1
 kind: QueueManager
 metadata:
-  name: $my_cp_mq_instance_name
-  namespace: $my_oc_project
+  name: $MY_MQ_INSTANCE_NAME
+  namespace: $MY_OC_PROJECT
 spec:
   license:
     accept: true
-    license: $my_ibm_cp_mq_license
+    license: $MY_MQ_LIC
     use: NonProduction
-  tracing:
-    enabled: false
-    namespace: $my_oc_project
-  web:
-    enabled: true
-  version: $my_ibm_cp_mq_version
+  pki:
+    keys:
+      - name: $MY_MQ_INSTANCE_NAME
+        secret:
+          secretName: "${MY_MQ_INSTANCE_NAME}_SECRET"
+          items:
+            - tls.key
+            - tls.crt
+            - ca.crt
+  queueManager:
+    name: $MY_MQ_INSTANCE_NAME_UC
+    availability:
+      type: SingleInstance
+    mqsc:
+      - configMap:
+          name: "${MY_MQ_INSTANCE_NAME}-mqsc-cm"
+          items:
+            - "${MY_MQ_INSTANCE_NAME}.mqsc"
+    resources:
+      limits:
+        cpu: 500m
+      requests:
+        cpu: 500m
+    storage:
+      queueManager:
+        type: persistent-claim
+        class: $MY_BLOCK_STORAGE_CLASS
+        size: 2Gi
+      defaultClass: $MY_BLOCK_STORAGE_CLASS
   template:
     pod:
       containers:
@@ -21,30 +81,11 @@ spec:
             - name: MQSNOAUT
               value: 'yes'
           name: qmgr
-  queueManager:
-    resources:
-      limits:
-        cpu: 500m
-      requests:
-        cpu: 500m
-    securityContext:
-      allowPrivilegeEscalation: false
-      capabilities:
-        drop:
-        - ALL
-      privileged: false
-      readOnlyRootFilesystem: false
-    availability:
-      type: NativeHA
-      updateStrategy: RollingUpdate
-    storage:
-      defaultClass: my_block_storage_class
-      persistedData:
-        enabled: false
-      queueManager:
-        size: 2Gi
-        type: persistent-claim
-      recoveryLogs:
-        enabled: false  
-    securityContext:
-     supplementalGroups: [99]
+  version: $MY_MQ_VERSION
+  web:
+    console:
+      authentication:
+        provider: integration-keycloak
+      authorization:
+        provider: integration-keycloak
+    enabled: true

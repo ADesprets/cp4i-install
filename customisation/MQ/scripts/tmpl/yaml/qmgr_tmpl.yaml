@@ -1,0 +1,81 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ${QMGR}-secret
+  namespace: $OC_PROJECT
+data:
+  tls.crt: $B64_QMGR_CRT
+  tls.key: $B64_QMGR_KEY
+type: kubernetes.io/tls
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: ${QMGR}-route
+  namespace: $OC_PROJECT
+spec:
+  host: ${CHL}.chl.mq.ibm.com
+  to:
+    kind: Service
+    name: ${QMGR}-ibm-mq
+  port:
+    targetPort: 1414
+  tls:
+    termination: passthrough
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ${QMGR}-mqsc-cm
+  namespace: $OC_PROJECT
+data:
+  ${QMGR}.mqsc: |
+    DEFINE QLOCAL('Q1') REPLACE DEFPSIST(YES) 
+    DEFINE CHANNEL('${QMGR_UC}CHL') CHLTYPE(SVRCONN) REPLACE TRPTYPE(TCP) SSLCAUTH(OPTIONAL) SSLCIPH('ANY_TLS12_OR_HIGHER')
+    SET CHLAUTH('${QMGR_UC}CHL') TYPE(BLOCKUSER) USERLIST(NOBODY) ACTION(ADD)
+---
+apiVersion: mq.ibm.com/v1beta1
+kind: QueueManager
+metadata:
+  name: $QMGR
+  namespace: $OC_PROJECT
+spec:
+  license:
+    accept: true
+    license: $MY_MQ_LIC
+    use: "NonProduction"
+  pki:
+    keys:
+      - name: $QMGR
+        secret:
+          secretName: ${QMGR}-secret
+          items:
+            - tls.key
+            - tls.crt
+  queueManager:
+    name: $QMGR_UC
+    resources:
+      limits:
+        cpu: 500m
+      requests:
+        cpu: 500m
+    storage:
+      queueManager:
+        type: ephemeral
+    availability:
+      type: SingleInstance
+    mqsc:
+      - configMap:
+          name: ${QMGR}-mqsc-cm
+          items:
+            - ${QMGR}.mqsc   
+  template:
+    pod:
+      containers:
+        - env:
+            - name: MQSNOAUT
+              value: 'yes'
+          name: qmgr
+  version: $MY_MQ_VERSION
+  web:
+    enabled: true

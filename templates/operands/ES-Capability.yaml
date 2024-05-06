@@ -3,34 +3,29 @@ kind: EventStreams
 metadata:
   annotations:
     eventstreams.ibm.com/apicurio-registry-version: '>=2.4'
-  name: $my_cp_es_instance_name
-  namespace: $my_oc_project
+  name: $MY_ES_INSTANCE_NAME
+  namespace: $MY_OC_PROJECT
+  labels:
+    backup.eventstreams.ibm.com/component: eventstreams
 spec:
-  version: $my_ibm_cp_es_version
+  version: $MY_ES_VERSION
   license: 
-    license: $my_ibm_cp_es_license
+    license: $MY_ES_LIC
     accept: true
-    use: $my_ibm_es_license_usage
-  requestIbmServices:
-    iam: false
-    monitoring: false
+    use: $MY_ES_LIC_USAGE
   strimziOverrides:
     entityOperator:
       topicOperator: {}
-      userOperator: {}
     kafka:
       replicas: 3
       authorization:
         type: runas
       config:
-        inter.broker.protocol.version: '3.5'
-        log.cleaner.threads: 6
-        num.io.threads: 24
-        num.network.threads: 9
-        num.replica.fetchers: 3
-        offsets.topic.replication.factor: 3
+        auto.create.topics.enable: true
         default.replication.factor: 3
+        inter.broker.protocol.version: '3.6'
         min.insync.replicas: 2
+        offsets.topic.replication.factor: 3
       listeners:
         - name: external
           port: 9094
@@ -49,10 +44,10 @@ spec:
         valueFrom:
           configMapKeyRef:
             key: kafka-metrics-config.yaml
-            name: $my_cp_es_kafka_metricsConfig_name
+            name: $MY_ES_METRICS_CM
       storage:
         type: persistent-claim
-        class: $my_block_storage_class
+        class: $MY_BLOCK_STORAGE_CLASS
         size: 10Gi
     zookeeper:
       replicas: 3
@@ -61,13 +56,15 @@ spec:
         valueFrom:
           configMapKeyRef:
             key: zookeeper-metrics-config.yaml
-            name: $my_cp_es_kafka_metricsConfig_name
+            name: $MY_ES_METRICS_CM
       storage:
         type: persistent-claim
-        class: $my_block_storage_class
+        class: $MY_BLOCK_STORAGE_CLASS
         size: 4Gi
   adminApi: {}
-  adminUI: {}
+  adminUI:
+    authentication:
+      - type: integrationKeycloak
   apicurioRegistry: {}
   collector: {}
   restProducer: {}

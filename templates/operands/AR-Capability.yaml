@@ -1,16 +1,18 @@
 apiVersion: integration.ibm.com/v1beta1
 kind: AssetRepository
 metadata:
-  name: $my_cp_ar_instance_name
-  namespace: $my_oc_project
+  name: $MY_ASSETREPO_INSTANCE_NAME
+  namespace: $MY_OC_PROJECT
 spec:
   license:
     accept: true
-    license: $my_ibm_cp_ar_license
+    license: $MY_ASSETREPO_LIC
   replicas: 1
   storage:
     assetDataVolume:
-      class: $my_file_storage_class
+      class: $MY_FILE_STORAGE_CLASS
     couchVolume:
-      class: $my_block_storage_class
-  version: $my_ibm_cp_ar_version
+      class: $MY_BLOCK_STORAGE_CLASS
+  version: $MY_ASSETREPO_VERSION
+  designerAIFeatures:
+    enabled: true

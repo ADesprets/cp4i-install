@@ -1,10 +1,3 @@
---- TODO 0 --- APIC Initial Configuration ---
-Configure OpenLDAP Arnauld + Saad
-
-Create Catalogs
-Clear Ping API
-Load test API (Ping API) as a draft
-
 --- TODO 1 --- Manque DP capabilities
 --- TODO 2 --- Improve README  ---
 --- TODO 3 --- Improve code documentation  ---
@@ -48,7 +41,7 @@ Load test API (Ping API) as a draft
 --- TODO 12 --- Check if reuse from https://github.ibm.com/kskhong/terraform-cp4i
 --- TODO 13 --- Variabiliser le stockage pour les capabilities
 --- TODO 14 --- Security TODOs
-	Certificates: Check if we need to createte the secret before maybe using the cert manager and provide it to the CR
+	Certificates: Check if we need to create the secret before maybe using the cert manager and provide it to the CR
 	Login car on passe par CP4I pour accéder à APIC à enlever ????
 		En principe, le provisionning a du laisser dans le repertoire d’install un fichier kubeconfig. Ce fichier contient tout ce qu’il faut.
 		Si tu le trouves, tu peux
@@ -60,6 +53,14 @@ Load test API (Ping API) as a draft
 		https://cloud.ibm.com/docs/containers?topic=containers-kubernetes-service-cli#cs_cluster_config
 
 		Attention, si tu tentes un oc login, la commande, il tentera de le modifier et ca ne fonctionnera plus par la suite
-
+--- TODO 15 --- Enable web-mgmt access to apic gateway
+Add following before or after # REST Management enabled\nrest-mgmt
+    key: >-
+$my_aspera_license_text
+ou 
+cat file dans variable
+kubectl -n cp4i create configmap example-config --from-file=auto-startup.cfg auto-startup.cfg
 	Remove wait to login to openshift console la première fois
 Backup/restore
+
+
