@@ -5,7 +5,7 @@
     "annotations": {
       "openshift.io/generated-by": "OpenShiftNewApp"
     },
-    "creationTimestamp": "2024-04-02T13:01:43Z",
+    "creationTimestamp": "2024-05-07T09:21:23Z",
     "labels": {
       "app": "openldap",
       "app.kubernetes.io/component": "openldap",
@@ -13,13 +13,13 @@
     },
     "name": "openldap",
     "namespace": "ldap",
-    "resourceVersion": "10582127",
-    "uid": "d642e4fb-ee8e-45a8-8cec-fc6a102161db"
+    "resourceVersion": "560527",
+    "uid": "71c55274-c1c7-4f60-aba4-54c69c5fa96d"
   },
   "spec": {
-    "clusterIP": "172.30.204.40",
+    "clusterIP": "172.30.238.138",
     "clusterIPs": [
-      "172.30.204.40"
+      "172.30.238.138"
     ],
     "externalTrafficPolicy": "Cluster",
     "internalTrafficPolicy": "Cluster",

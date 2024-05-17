@@ -1,0 +1,66 @@
+﻿kind: NexusRepo
+apiVersion: sonatype.com/v1alpha1
+metadata:
+  name: $MY_NEXUS_INSTANCE_NAME
+  namespace: $MY_OC_PROJECT
+spec:
+  config:
+    enabled: false
+    mountPath: /sonatype-nexus-conf
+  deployment:
+    terminationGracePeriodSeconds: 120
+  deploymentStrategy:
+    type: Recreate
+  ingress:
+    annotations: {}
+    enabled: false
+    path: /
+    tls:
+      enabled: true
+      secretName: nexus-tls
+  nexus:
+    dockerPort: 5003
+    env:
+      - name: INSTALL4J_ADD_VM_PARAMS
+        value: -Xms2703M -Xmx2703M -XX:MaxDirectMemorySize=2703M -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -XX:ActiveProcessorCount=4
+      - name: NEXUS_SECURITY_RANDOMPASSWORD
+        value: 'false'
+    hostAliases: []
+    imagePullPolicy: IfNotPresent
+    livenessProbe:
+      failureThreshold: 6
+      initialDelaySeconds: 30
+      path: /
+      periodSeconds: 30
+    nexusPort: 8081
+    readinessProbe:
+      failureThreshold: 6
+      initialDelaySeconds: 30
+      path: /
+      periodSeconds: 30
+    service:
+      type: NodePort
+  nexusProxyRoute:
+    enabled: false
+  persistence:
+    accessMode: ReadWriteOnce
+    enabled: true
+    storageSize: 8Gi
+  replicaCount: 1
+  route:
+    enabled: false
+    name: docker
+    portName: docker
+  secret:
+    enabled: false
+    mountPath: /etc/secret-volume
+    readOnly: true
+  service:
+    enabled: false
+    ports:
+      - name: nexus-service
+        port: 80
+        targetPort: 80
+  statefulset:
+    enabled: false
+  tolerations: []

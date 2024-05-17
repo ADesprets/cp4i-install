@@ -64,7 +64,7 @@ spec:
   adminApi: {}
   adminUI:
     authentication:
-      - type: integrationKeycloak
+      - type: scram-sha-512
   apicurioRegistry: {}
   collector: {}
   restProducer: {}

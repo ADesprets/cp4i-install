@@ -1,23 +1,23 @@
 {
-    "cloud_id": "e73f2ea2-0c2b-4d47-b489-73c27142f6af",
+    "cloud_id": "02d8de1a-c2a2-4bdb-84c4-9e5612cfc8bd",
     "toolkit": {
-        "endpoint": "https://cp4i-apic-mgmt-platform-api-cp4i.apps.ocp-100000abb1-8vgs.cloud.techzone.ibm.com/api",
-        "client_id": "33609424-f458-4813-8a8c-57765e137ed6",
-        "client_secret": "0b2d32df-a8b1-4a84-99ea-f63deeb74700"
+        "endpoint": "https://cp4i-apic-mgmt-platform-api-cp4i.apps.6639020e8a817e001e4315f3.cloud.techzone.ibm.com/api",
+        "client_id": "a21b6310-9804-46d3-aa70-df9c2bb3e89d",
+        "client_secret": "a5ce1e44-2d2a-4319-b9ee-9e91b68f6673"
     },
     "consumer_toolkit": {
-        "endpoint": "https://cp4i-apic-mgmt-consumer-api-cp4i.apps.ocp-100000abb1-8vgs.cloud.techzone.ibm.com/consumer-api",
-        "client_id": "aeda39de-51dc-479e-a9d3-a6483b478db7",
-        "client_secret": "c64658fb-a818-411f-bc70-6b061dae104e"
+        "endpoint": "https://cp4i-apic-mgmt-consumer-api-cp4i.apps.6639020e8a817e001e4315f3.cloud.techzone.ibm.com/consumer-api",
+        "client_id": "ab502e44-141c-48df-aae2-6f818f1ffecf",
+        "client_secret": "f8e5c11e-5b0e-49b6-b27c-4f49384ddef0"
     },
     "governance": {
-        "endpoint": "https://cp4i-apic-mgmt-platform-api-cp4i.apps.ocp-100000abb1-8vgs.cloud.techzone.ibm.com/governance",
-        "client_id": "f7edaed9-b514-469c-8c14-757f57838de1",
-        "client_secret": "fffcf5f3-341c-40c6-8284-601b63629fda"
+        "endpoint": "https://cp4i-apic-mgmt-platform-api-cp4i.apps.6639020e8a817e001e4315f3.cloud.techzone.ibm.com/governance",
+        "client_id": "2db5e90c-4c65-48ac-8445-5ef73738895a",
+        "client_secret": "c25a45b5-9ea7-4e7f-9ced-72c5ea01e94c"
     },
     "discovery": {
-        "endpoint": "https://cp4i-apic-mgmt-platform-api-cp4i.apps.ocp-100000abb1-8vgs.cloud.techzone.ibm.com/discovery",
-        "client_id": "317ddf34-7fa6-47ba-9d52-0e4879f713c1",
-        "client_secret": "89a88a45-33a5-4b5d-b87a-b7ed785eb812"
+        "endpoint": "https://cp4i-apic-mgmt-platform-api-cp4i.apps.6639020e8a817e001e4315f3.cloud.techzone.ibm.com/discovery",
+        "client_id": "aaa65dc4-801e-4603-bb65-797f1aee7c16",
+        "client_secret": "929899ac-3740-42f7-93bf-027bbb3e18c8"
     }
 }

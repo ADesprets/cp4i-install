@@ -9,7 +9,7 @@ spec:
     license: $MY_EP_LIC
     use: EventAutomationNonProduction
   flink:
-    endpoint: ${MY_EP_INSTANCE_NAME}-rest.${MY_OC_PROJECT}.svc.cluster.local:8081
+    endpoint: ${MY_FLINK_INSTANCE_NAME}-rest.${MY_OC_PROJECT}.svc.cluster.local:8081
   authoring:
     authConfig:
       authType: LOCAL

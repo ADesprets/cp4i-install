@@ -1,0 +1,28 @@
+{
+    "channel":
+    [
+        {
+            "name": "CP4IMQCHL",
+            "connectionManagement":
+            {
+              "heartbeatInterval": 30
+            },
+            "clientConnection":
+            {
+                "connection":
+                [
+                    {
+                        "host": "cp4imq-ibm-mq-qm-cp4i.apps.6639020e8a817e001e4315f3.cloud.techzone.ibm.com",
+                        "port": 443
+                    }
+                ],
+                "queueManager": "CP4IMQ"
+            },
+            "transmissionSecurity":
+            {
+              "cipherSpecification": "ANY_TLS12_OR_HIGHER"
+            },
+            "type": "clientConnection"
+        }
+   ]
+}

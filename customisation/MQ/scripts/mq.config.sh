@@ -6,49 +6,95 @@
 # Site qui explique comment utiliser des CA dans TLS MQ
 #####################################################################################################################
 
+########################################################
+# Get the CA (cs-ca-issuer) tls resources (ca, cert key)
+########################################################
+function get_issuer_tls_resources () {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
+  decho "F:IN :get_issuer_tls_resources"
+
+  local lf_ca_crt="${sc_ca_crtdir}ca-crt.pem"
+
+  # SB]20240506: based on the script found here: 
+  # https://blog.kubovy.eu/2020/05/16/retrieve-tls-certificates-from-kubernetes/
+
+  KUBECTL="kubectl"
+  NAME=cs-ca-certificate-secret
+  NAMESPACE=ibm-common-services
+
+  if [ -n "$(${KUBECTL} get secret -n ${NAMESPACE} ${NAME} -o json | jq -r '.data."tls.crt"' | base64 -d)" ]; then
+    check_directory_exist_create "${sc_ca_crtdir}"
+    ${KUBECTL} get secret -n ${NAMESPACE} ${NAME} -o json | jq -r '.data."tls.key"' | base64 -d > "${sc_ca_crtdir}ca-key.pem"
+    ${KUBECTL} get secret -n ${NAMESPACE} ${NAME} -o json | jq -r '.data."tls.crt"' | base64 -d > "${sc_ca_crtdir}ca-crt.pem"
+  else
+    mylog error " secret $NAME not found in namespace $NAMESPACE"
+    exit 1
+  fi  
+
+  decho "F:OUT:get_issuer_tls_resources"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
+}
+
 #####################################################
-# Prepare self signed certificates for qmgr
+# Prepare CA signed certificates for qmgr
 #####################################################
-function create_qmgr_ss_tls () {
-  sc_spaces_counter=$((sc_spaces_counter+$sc_spaces_incr))
-  decho "F:IN :create_qmgr_ss_tls"
+function create_qmgr_ca_tls () {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
+  decho "F:IN :create_qmgr_ca_tls"
 
   local lf_crt_file="${sc_srv_crtdir}qmgr-crt.pem"
+  local lf_csr_file="${sc_srv_crtdir}qmgr-req.pem"
   local lf_key_file="${sc_srv_crtdir}qmgr-key.pem"
   local lf_subject=${SUBJECT_SRV}
   
-  # Generate the qmgr self signed certificate
-  openssl x509 -req -newkey -days ${VALIDITY_DAYS}  rsa:${KEY_SIZE} -nodes -subj "${lf_subject}" -keyout $lf_key_file -out $lf_crt_file > /dev/null 2>&1
+  # Generate the CSR for the enity (qmgr|client)
+  openssl req -new -newkey rsa:${KEY_SIZE} -nodes -passout file:${PASSPHRASE_FILE} -subj "${lf_subject}" -keyout ${lf_key_file} -out ${lf_csr_file}
 
-  decho "F:OUT:create_qmgr_ss_tls"
-  sc_spaces_counter=$((sc_spaces_counter-$sc_spaces_incr))
+  # Generate the entity (qmgr|client) certificate signed by the CA
+  openssl x509 -req -days ${VALIDITY_DAYS} -passin file:${PASSPHRASE_FILE} -in ${lf_csr_file} -out ${lf_crt_file} -CA "${sc_ca_crtdir}ca-crt.pem" -CAkey "${sc_ca_crtdir}ca-key.pem"
+
+  decho "F:OUT:create_qmgr_ca_tls"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
 }
 
 #################################################
 # Create client key repository
 #################################################
 function create_clnt_kdb () {
-  sc_spaces_counter=$((sc_spaces_counter+$sc_spaces_incr))
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
   decho "F:IN :create_clnt_kdb"
 
-  local lf_clnt_keydb="${sc_clnt_crtdir}${sc_clnt}-keystore.p12"
+  mylog "info" "Creating   : client key database for $sc_clnt to use with MQSSLKEYR env variable."
+
+  case $KEYDB_TYPE in
+    cms)  local lf_clnt_keydb="${sc_clnt_crtdir}${sc_clnt}-keystore.kdb";;
+    pkcs12) local lf_clnt_keydb="${sc_clnt_crtdir}${sc_clnt}-keystore.p12";;
+  esac  
 
   # Create the client1 key database:
   runmqakm -keydb -create -db $lf_clnt_keydb -pw password -type $KEYDB_TYPE -stash > /dev/null 2>&1  
 
   decho "F:OUT:create_clnt_kdb"
-  sc_spaces_counter=$((sc_spaces_counter-$sc_spaces_incr))
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
 }
 
 ################################################
 # Add qmgr certs to client keydb
 #################################################
 function add_qmgr_crt_2_clnt_kdb () {
-  sc_spaces_counter=$((sc_spaces_counter+$sc_spaces_incr))
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
   decho "F:IN :add_qmgr_crt_2_clnt_kdb"
 
-  local lf_clnt_keydb="${sc_clnt_crtdir}${sc_clnt}-keystore.p12"
+  mylog "info" "Adding     : qmgr certificate to the client key database"
+
   local lf_srv_crt="${sc_srv_crtdir}qmgr-crt.pem"
+
+  case $KEYDB_TYPE in
+    cms)  local lf_clnt_keydb="${sc_clnt_crtdir}${sc_clnt}-keystore.kdb";;
+    pkcs12) local lf_clnt_keydb="${sc_clnt_crtdir}${sc_clnt}-keystore.p12";;
+  esac  
+
+  #decho "lf_clnt_keydb=$lf_clnt_keydb|lf_srv_crt=$lf_srv_crt"
 
   # Add the queue manager public key to the client key database
 	runmqakm -cert -add -db $lf_clnt_keydb -label $QMGR -file $lf_srv_crt -format ascii -stashed > /dev/null 2>&1
@@ -58,19 +104,59 @@ function add_qmgr_crt_2_clnt_kdb () {
   runmqakm -cert -list -db $lf_clnt_keydb -stashed #> /dev/null 2>&1
 
   decho "F:OUT:add_qmgr_crt_2_clnt_kdb"
-  sc_spaces_counter=$((sc_spaces_counter-$sc_spaces_incr))
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
+}
+
+###############################################################################################################################
+# Add CA crt to client keydb
+# MQ Explorer is a Java application. 
+# Java applications use a different type of key store, called JKS. 
+# In JKS, there are two stores:
+#   - Trust store: this will contain the queue manager's signer (CA) certificate. 
+#                  In the case of self-signed certificates, the trust store will contain the queue manager's certificate itself.
+#   - Key store: this will contain the client's (that is, MQ Explorer's) certificate and private key.
+###############################################################################################################################
+function add_ca_crt_2_clnt_kdb () {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
+  decho "F:IN :add_ca_crt_2_clnt_kdb"
+
+  local lf_ca_crt="${sc_ca_crtdir}ca-crt.pem"
+
+  case $KEYDB_TYPE in
+    cms)  local lf_clnt_keydb="${sc_clnt_crtdir}${sc_clnt}-keystore.kdb";;
+    pkcs12) local lf_clnt_keydb="${sc_clnt_crtdir}${sc_clnt}-keystore.p12";;
+  esac  
+                                        
+  # In order for the cert validation chain to work, we also import the CA cert. 
+  # The client program will therefore be able to validate the cert send from the qmgr that is signed by this CA.
+  # check first if the ca certificate is already in keystore
+  runmqakm -cert -details -label "ca" -db $lf_clnt_keydb -stashed > /dev/null 2>&1 
+  if [ $? -ne 0 ]; then
+    runmqakm -cert -add -db $lf_clnt_keydb -label "CN=cs-ca-certificate" -file $lf_ca_crt -format ascii -stashed > /dev/null 2>&1  
+  fi
+                    
+  # Check. List the database certificates:
+  mylog "info" "listing    : certificates in keydb : $lf_clnt_keydb"
+  runmqakm -cert -list -db $lf_clnt_keydb -stashed #> /dev/null 2>&1  
+
+  decho "F:OUT:add_ca_crt_2_clnt_kdb"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
 }
 
 #####################################################
 # Create pki infrastructure : keys, certs, kdb, ....
 #####################################################
 function create_pki_cr () {
-  sc_spaces_counter=$((sc_spaces_counter+$sc_spaces_incr))
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
   decho "F:IN :create_pki_cr"
 
+  ##-- Get the private/cert/ca for the Issuer cs-ca-issuer 
+  mylog "info" "Getting   : certificate and key for CA"
+  get_issuer_tls_resources
+  
   ##-- Create a private key and a ca signed certificate for the queue manager
   mylog "info" "Creating   : certificate and key for qmgr $QMGR"
-  create_qmgr_ss_tls
+  create_qmgr_ca_tls
 
   ##-- Create the client key database 
   mylog "info" "Creating   : client key database for $sc_clnt to use with MQSSLKEYR env variable."
@@ -80,51 +166,32 @@ function create_pki_cr () {
   mylog "info" "Adding     : qmgr certificate to the client key database"
   add_qmgr_crt_2_clnt_kdb
   
+  ##-- Add CA crt to client kdb
+  mylog "info" "Adding     : ca certificate to client kdb for $sc_clnt"
+  add_ca_crt_2_clnt_kdb
+
   decho "F:OUT:create_pki_cr"
-  sc_spaces_counter=$((sc_spaces_counter-$sc_spaces_incr))
-}
-
-################################################
-# Create Openshift secret
-################################################
-function create_qmgr_secret () {
-  sc_spaces_counter=$((sc_spaces_counter+$sc_spaces_incr))
-  decho "F:IN :create_qmgr_secret"
-
-  local lf_in_applyflag=$1    # ex: applyyamlflag  
-  
-  local lf_srv_crt="${sc_srv_crtdir}qmgr-crt.pem"
-  local lf_srv_key="${sc_srv_crtdir}qmgr-key.pem"
-  local lf_tmpl_file="${TMPLYAMLDIR}qmgr-secret_tmpl.yaml" 
-  local lf_gen_file="${sc_generatedyamldir}qmgr-secret.yaml"
-
-  export B64_QMGR_CRT=$(encode_b64_file $lf_srv_crt)
-  export B64_QMGR_KEY=$(encode_b64_file $lf_srv_key)
-
-  envsubst < ${lf_tmpl_file}  > ${lf_gen_file}
-
-  # Apply
-  case $lf_in_applyflag in
-    y|Y)  oc apply -f $lf_gen_file ;;
-  esac
-
-  decho "F:OUT:create_qmgr_secret"
-  sc_spaces_counter=$((sc_spaces_counter-$sc_spaces_incr))
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
 }
 
 ################################################
 # Create Openshift qmgr
 #################################################
 function create_oc_qmgr () {
-  sc_spaces_counter=$((sc_spaces_counter+$sc_spaces_incr))
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
   decho "F:IN :create_oc_qmgr"
-
-  local lf_in_applyflag=$1
-
+  
   local lf_tmpl_file="${TMPLYAMLDIR}qmgr_tmpl.yaml"
   local lf_gen_file="${sc_generatedyamldir}qmgr.yaml"
-  
-  envsubst < ${lf_tmpl_file}  > ${lf_gen_file}
+  local lf_srv_crt="${sc_srv_crtdir}qmgr-crt.pem"
+  local lf_srv_key="${sc_srv_crtdir}qmgr-key.pem"
+  local lf_ca_crt="${sc_ca_crtdir}ca-crt.pem"	
+
+  export B64_CA_CRT=$(encode_b64_file $lf_ca_crt)  
+  export B64_QMGR_CRT=$(encode_b64_file $lf_srv_crt)
+  export B64_QMGR_KEY=$(encode_b64_file $lf_srv_key)
+
+  cat  ${lf_tmpl_file} | envsubst > ${lf_gen_file}
  
   ##-- Creating MQ instances
   mylog "info" "Creating   : ${QMGR}/QueueManager"
@@ -135,91 +202,80 @@ function create_oc_qmgr () {
   lf_ocstate="Running"
   lf_ocpath=".status.phase"
   lf_msg="$lf_octype $QMGR $lf_ocpath is $lf_ocstate"
-  lf_command="oc get ${lf_octype} ${QMGR} -n ${OC_PROJECT} --output json|jq -r ${lf_ocpath}"
+  lf_command="oc get ${lf_octype} ${QMGR} -n ${MY_OC_PROJECT} --output json|jq -r ${lf_ocpath}"
   
   decho "lf_octype=$lf_octype|lf_ocstate=$lf_ocstate|lf_ocpath=$lf_ocpath|lf_msg=$lf_msg|lf_command=$lf_command"
   
   wait_for_state "${lf_msg}" "${lf_ocstate}" "${lf_command}"
-   # Generate ccdt file
-  mylog "info" "Creating   : ccdt file to use with MQCCDTURL env variabe. Located here : $MQCCDTURL"
-  export ROOTURL=$(oc get route -n $OC_PROJECT "${QMGR}-ibm-mq-qm" -o jsonpath='{.spec.host}')
-  decho "ROOTURL=$ROOTURL"
-
-  create_ccdt
 
   decho "F:OUT:create_oc_qmgr"
-  sc_spaces_counter=$((sc_spaces_counter-$sc_spaces_incr))
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
 }
 
 ################################################
 # Create Openshift CCDT file
 ################################################
 function create_ccdt () {
-  sc_spaces_counter=$((sc_spaces_counter+$sc_spaces_incr))
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
   decho "F:INT:create_ccdt"
  
   # check for the existence of all needed files 
+
+  # Generate ccdt file
+  mylog "info" "Creating   : ccdt file to use with MQCCDTURL env variabe. Located here : $MQCCDTURL"
+  export ROOTURL=$(oc get route -n $MY_OC_PROJECT "${QMGR}-ibm-mq-qm" -o jsonpath='{.spec.host}')
+  decho "ROOTURL=$ROOTURL"
+
   check_file_exist $sc_ccdt_tmpl_file
-  envsubst < ${sc_ccdt_tmpl_file}  > ${MQCCDTURL}
+  cat ${sc_ccdt_tmpl_file} | envsubst > ${MQCCDTURL}
 
   decho "F:OUT:create_ccdt"
-  sc_spaces_counter=$((sc_spaces_counter-$sc_spaces_incr))
-}
-
-################################################
-# Delete Openshift Custom Resource
-################################################
-function delete_oc_qmgr () {
-  sc_spaces_counter=$((sc_spaces_counter+$sc_spaces_incr))
-  decho "F:IN :delete_oc_qmgr"
-
-  # SB]20221125 prévoir aussi la suppression des pvc en cas de storage persistent  
-
-  local lf_gen_file="${sc_generatedyamldir}qmgr.yaml"
-
-  oc -n ${OC_PROJECT} delete -f ${lf_gen_file}
-
-  decho "F:OUT:delete_oc_qmgr"
-  sc_spaces_counter=$((sc_spaces_counter-$sc_spaces_incr))
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
 }
 
 ################################################################################################
 # Start of the script main entry
-################################################################################################
+# main
+
+starting=$(date);
+
+# Creation d'un Queue Manager
+SECONDS=0
 
 # end with / on purpose
-#MAINSCRIPTDIR="${PWD}/"
-OPENSSLDIR="${MAINSCRIPTDIR}openssl/"
-#PRIVATEDIR="${MAINSCRIPTDIR}private/"
-#VERSIONSDIR="${MAINSCRIPTDIR}versions/"
-TMPLJSONDIR="${MAINSCRIPTDIR}tmpl/json/"
-TMPLSCRIPTDIR="${MAINSCRIPTDIR}tmpl/script/"
-TMPLYAMLDIR="${MAINSCRIPTDIR}tmpl/yaml/"
+#SCRIPTDIR=$(dirname "$0")/
+SCRIPTDIR="${MQ_SCRIPTDIR}scripts/"
+CONFIGDIR="${SCRIPTDIR}../config/"
+
+MAINSCRIPTDIR="${SCRIPTDIR}../../../"
+
+# Template directories
+TMPLJSONDIR="${SCRIPTDIR}tmpl/json/"
+TMPLYAMLDIR="${SCRIPTDIR}tmpl/yaml/"
+TMPLTLSDIR="${SCRIPTDIR}tmpl/tls/"
+OPENSSLDIR="${SCRIPTDIR}openssl/"
+
 
 # SB]20240404 Global Index sequence for incremental output for each function call
-sc_spaces_counter=0
-sc_spaces_incr=3
-
-sc_script=$0
-
-## load helper functions
-. ${MAINSCRIPTDIR}lib.sh
+SC_SPACES_COUNTER=0
+SC_SPACES_INCR=3
 
 # parameters
-QMGR="${MY_MQ_INSTANCE_NAME}"
 sc_clnt="clnt1"
-sc_config_file="${MAINSCRIPTDIR}cp4i.properties"
+
+# load helper functions
+. "${MAINSCRIPTDIR}"lib.sh
 
 # I have to get first the qmgr name because it's used in the following configfile
-export QMGR=$(echo "${sc_srv}"| tr '[:upper:]' '[:lower:]')
+export QMGR=$(echo "${MY_MQ_INSTANCE_NAME}"| tr '[:upper:]' '[:lower:]')
 export QMGR_UC=$(echo $QMGR | tr '[:lower:]' '[:upper:]')
 export CLNT1="${sc_clnt}"
 
-##-- check existence of configfile and versionfile
-check_config_and_version_files $sc_config_file $sc_versions_file
+# load config file
+read_config_file "${CONFIGDIR}mq.properties"
 
-check_directory_exist_create  "${MAINSCRIPTDIR}generated/${QMGR}"
-sc_generateddir="${MAINSCRIPTDIR}generated/${QMGR}/"
+check_directory_exist_create  "${SCRIPTDIR}generated/${QMGR}"
+sc_generateddir="${SCRIPTDIR}generated/${QMGR}/"
 
 check_directory_exist_create  "${sc_generateddir}json"
 sc_generatedjsondir="${sc_generateddir}json/"
@@ -236,59 +292,25 @@ sc_clnt_crtdir="${sc_generateddir}tls/${sc_clnt}/"
 check_directory_exist_create  "${sc_generateddir}tls/qmgr"
 sc_srv_crtdir="${sc_generateddir}tls/qmgr/"
 
-check_directory_exist_create  "${sc_generateddir}script"
-sc_generatedscriptdir="${sc_generateddir}script/"
-
 # CCDT tmpl file
 sc_ccdt_tmpl_file="${TMPLJSONDIR}ccdt_tmpl.json";
 MQCCDTURL="${sc_generatedjsondir}ccdt.json"
 
-case $sc_option in
-  -d) mylog "info" "Clean part"
-      if [ $sc_nbargs -ne 5 ]; then
-        print_help
-        exit 1
-      fi
+: <<'END_COMMENT'
+END_COMMENT
+# Create PKI resources for qmgr and client
+create_pki_cr
 
-      delete_oc_qmgr
-      ;;
+# Create openshift resources for qmgr (secrets, cm, qmgr, route, ....)
+create_oc_qmgr
 
-  -i) mylog "info" "Installation part"
-      decho "sc_nbargs=$sc_nbargs"
-      if [ $sc_nbargs -ne 5 ]; then
-        print_help
-        exit 1
-      fi
+# Create CCDT file
+create_ccdt
 
-      # Create PKI resources for qmgr and client
-      create_pki_cr
+#check_create_oc_yaml "QueueManager" "QM1" "${configdir}QM1.yaml" $mq_project
+#check_resource_availability "QueueManager" "${mq_instance_name}-qm1" $mq_project
+#wait_for_state QueueManager "${mq_instance_name}-qm1" "Running" '.status.phase' $mq_project
 
-      # Create openshift resources for qmgr (secrets, cm, qmgr, route, ....)
-      create_oc_qmgr
-      ;;  
-esac
-################################################################################################
-# Start of the script main entry
-# main
-
-starting=$(date);
-
-# end with / on purpose (if var not defined, uses CWD - Current Working Directory)
-scriptdir=$(dirname "$0")/
-configdir="${scriptdir}../config/"
-MAINSCRIPTDIR="${scriptdir}../../../"
-
-# load helper functions
-. "${MAINSCRIPTDIR}"lib.sh
-
-read_config_file "${MAINSCRIPTDIR}cp4i.properties"
-read_config_file "${configdir}mq.properties"
-
-# Creation d'un Queue Manager
-SECONDS=0
-check_create_oc_yaml "QueueManager" "QM1" "${configdir}QM1.yaml" $mq_project
-check_resource_availability "QueueManager" "${mq_instance_name}-qm1" $mq_project
-wait_for_state QueueManager "${mq_instance_name}-qm1" "Running" '.status.phase' $mq_project
 duration=$SECONDS
 mylog info "Creation of the Queue Manager took $duration seconds to execute." 1>&2
 

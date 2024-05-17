@@ -23,8 +23,8 @@ spec:
   replicas: 1
   authentication:
     integrationKeycloak:
-      enabled: true
+      enabled: false
   authorization:
     integrationKeycloak:
-      enabled: true
+      enabled: false
   version: $MY_ACE_VERSION
