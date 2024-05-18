@@ -217,7 +217,7 @@ function create_oc_qmgr () {
 ################################################
 function create_ccdt () {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho "F:INT:create_ccdt"
+  decho "F:IN :create_ccdt"
  
   # check for the existence of all needed files 
 

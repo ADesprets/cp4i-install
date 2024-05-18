@@ -161,39 +161,6 @@ function launch_customization() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
-##SB]20230215 load bar files in nexus repository
-################################################
-# Load bar files into nexus repository
-function load_ace_bars() {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :load_ace_bars"
-
-  # the input parameters :
-  # - the directory containing the bar files to be loaded
-
-  local ns=$1
-  local directory=$2
-
-  export my_nexus_url=$(oc -n $ns get route $MY_NEXUS_ROUTE_NAME -o jsonpath='{.spec.host}')
-
-  i=1
-  for barfile in ${directory}*.bar; do
-    artifactid=$(basename $barfile .bar)
-    curl --user "admin:bvn4KHQ*nep*zeb!qrp" \
-      -F "maven2.generate-pom=true" \
-      -F "maven2.groupId=$MY_MAVEN2_GROUPID" \
-      -F "maven2.artifactId=$artifactid" \
-      -F "maven2.packaging=bar" \
-      -F "version=$MY_MAVEN2_ASSET_VERSION" \
-      -F "maven2.asset${i}=@${barfile};type=$MY_MAVEN2_TYPE" \
-      -F "maven2.asset${i}.extension=bar" "http://${my_nexus_url}/service/rest/v1/components?repository=$MY_NEXUS_REPO"
-    i=i+1
-  done
-
-  decho "F:OUT:load_ace_bars"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
-}
-
 ################################################
 # Configure ACE IS
 function configure_ace_is() {
@@ -494,12 +461,6 @@ function display_access_info() {
   if $MY_LIC_SRV; then
     licensing_service_url=$(oc -n ${MY_LICENSE_SERVER_NAMESPACE} get Route -o=jsonpath='{.items[?(@.metadata.name=="ibm-licensing-service-instance")].spec.host}')
     mylog info "Licensing service endpoint: ${licensing_service_url}"
-  fi
-
-  if $MY_NEXUS; then
-    nexus_url=$(oc -n ${MY_OC_PROJECT} get Route ${MY_NEXUS_ROUTE_NAME} -o jsonpath='{.spec.host}')
-    mylog info "Nexus accessible at http://${nexus_url}"
-    mylog info "Nexus credentials are admin/admin123 (https://github.com/m88i/nexus-operator)"
   fi
 
   decho "F:OUT:display_access_info"
@@ -1543,49 +1504,6 @@ function install_instana() {
   fi
 
   decho "F:OUT:install_instana"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
-}
-
-################################################
-# Install Nexus
-function install_nexus() {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :install_nexus"
-
-  # Nexus
-  #SB]20230130 Ajout du repository Nexus
-  # Creating Nexus operator subscription
-  if $MY_NEXUS; then
-    mylog info "==== Adding Nexus." 1>&2
-    lf_operator_name="nxrm-operator-certified"
-    lf_current_chl=$MY_NEXUS_CHL
-    lf_catalog_source_name="certified-operators"
-    lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-    lf_strategy="Automatic"
-    lf_wait_for_state=1
-    lf_startingcsv=$MY_NEXUS_OPERATOR_STARTINGCSV
-    create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_startingcsv}"
-
-    ## Creating Nexus Repository instance (An open source repository for build artifacts)
-    lf_file="${OPERANDSDIR}Nexus-Capability.yaml"
-    lf_ns="${MY_OC_PROJECT}"
-    lf_path="{.status.conditions[1].type}"
-    lf_resource="$MY_NEXUS_INSTANCE_NAME"
-    lf_state="Deployed"
-    lf_type="NexusRepo"
-    lf_wait_for_state=0
-    create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
-
-    # add route to access Nexus from outside cluster
-    lf_type="Route"
-    lf_cr_name=$MY_NEXUS_ROUTE_NAME
-    lf_yaml_file="${OPERANDSDIR}Nexus-Route.yaml"
-    lf_namespace=$MY_OC_PROJECT
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
-    mylog info "Creation of Route (Nexus) took $SECONDS seconds to execute." 1>&2
-  fi
-
-  decho "F:OUT:install_nexus"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 

@@ -1,0 +1,9 @@
+apiVersion: appconnect.ibm.com/v1beta1
+kind: Configuration
+metadata:
+  name: ace-serverconf
+  namespace: ${MY_OC_PROJECT}
+spec:
+  contents: ${MY_ACE_SERVER_CONF_YAML}
+  version: ${MY_ACE_VERSION}
+  type: serverconf
