@@ -30,5 +30,5 @@ spec:
   replicas: 1
   logFormat: basic
   configurations: 
-    - ace-serverconf
-    - ace-barauth
+    - ${MY_ACE_SERVERCONF_NAME}
+    - ${MY_ACE_BARAUTH_NAME}

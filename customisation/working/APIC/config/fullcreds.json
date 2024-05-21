@@ -1,23 +1,23 @@
 {
-    "cloud_id": "02d8de1a-c2a2-4bdb-84c4-9e5612cfc8bd",
+    "cloud_id": "468baa53-eaac-4feb-a461-a77e9226cb78",
     "toolkit": {
         "endpoint": "https://cp4i-apic-mgmt-platform-api-cp4i.apps.6639020e8a817e001e4315f3.cloud.techzone.ibm.com/api",
-        "client_id": "a21b6310-9804-46d3-aa70-df9c2bb3e89d",
-        "client_secret": "a5ce1e44-2d2a-4319-b9ee-9e91b68f6673"
+        "client_id": "4326bd25-32cd-4e90-a658-2614159b286b",
+        "client_secret": "17390a5d-07a4-45ca-9611-eeb73314c22b"
     },
     "consumer_toolkit": {
         "endpoint": "https://cp4i-apic-mgmt-consumer-api-cp4i.apps.6639020e8a817e001e4315f3.cloud.techzone.ibm.com/consumer-api",
-        "client_id": "ab502e44-141c-48df-aae2-6f818f1ffecf",
-        "client_secret": "f8e5c11e-5b0e-49b6-b27c-4f49384ddef0"
+        "client_id": "2807a1ea-9cff-4977-badf-c1102f65e354",
+        "client_secret": "bc05d9f9-c636-443f-8254-731b29323194"
     },
     "governance": {
         "endpoint": "https://cp4i-apic-mgmt-platform-api-cp4i.apps.6639020e8a817e001e4315f3.cloud.techzone.ibm.com/governance",
-        "client_id": "2db5e90c-4c65-48ac-8445-5ef73738895a",
-        "client_secret": "c25a45b5-9ea7-4e7f-9ced-72c5ea01e94c"
+        "client_id": "28eca954-0303-4f56-99f3-b1f02f96f924",
+        "client_secret": "2549c23b-8a01-4d1a-a726-1d01bf5b1532"
     },
     "discovery": {
         "endpoint": "https://cp4i-apic-mgmt-platform-api-cp4i.apps.6639020e8a817e001e4315f3.cloud.techzone.ibm.com/discovery",
-        "client_id": "aaa65dc4-801e-4603-bb65-797f1aee7c16",
-        "client_secret": "929899ac-3740-42f7-93bf-027bbb3e18c8"
+        "client_id": "8d8ee301-b136-4391-9161-65249973e3c1",
+        "client_secret": "e3264890-3c8d-4a17-9f26-7e799ca6bbbb"
     }
 }
