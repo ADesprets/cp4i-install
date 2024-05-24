@@ -274,8 +274,8 @@ export CLNT1="${sc_clnt}"
 # load config file
 read_config_file "${CONFIGDIR}mq.properties"
 
-check_directory_exist_create  "${SCRIPTDIR}generated/${QMGR}"
-sc_generateddir="${SCRIPTDIR}generated/${QMGR}/"
+check_directory_exist_create  "${MQ_GEN_CUSTOMDIR}generated/${QMGR}"
+sc_generateddir="${MQ_GEN_CUSTOMDIR}generated/${QMGR}/"
 
 check_directory_exist_create  "${sc_generateddir}json"
 sc_generatedjsondir="${sc_generateddir}json/"

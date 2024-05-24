@@ -1,0 +1,39 @@
+apiVersion: appconnect.ibm.com/v1beta1
+kind: IntegrationRuntime
+metadata:
+  labels:
+    backup.appconnect.ibm.com/component: integrationruntime
+  name: ${MY_ACE_INTEGRATIONRUNTIME_NAME}
+  namespace: ${MY_OC_PROJECT}
+spec:
+  license:
+    accept: true
+    license: ${MY_ACE_LIC}
+    use: ${MY_ACE_LIC_USAGE}
+  flowType:
+    toolkitFlow: true
+    designerAPIFlow: true
+    designerEventFlow: true
+  routes:
+    disabled: false
+  service:
+    type: NodePort
+  template:
+    spec:
+      containers:
+      - name: runtime
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 500m
+            memory: 512Mi
+  barURL: 
+    - ${MY_ACE_BAR_URL}
+  version: ${MY_ACE_VERSION}
+  replicas: 1
+  logFormat: basic
+  configurations: 
+    - ${MY_ACE_SERVERCONF_NAME}
+    - ${MY_ACE_BARAUTH_NAME}

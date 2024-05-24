@@ -1,4 +1,3 @@
-
 apiVersion: appconnect.ibm.com/v1beta1
 kind: Dashboard
 metadata:

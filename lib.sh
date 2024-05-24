@@ -23,34 +23,23 @@ function mylog() {
   # suffix
   local s=
   case $1 in
-  info) c=2 ;; #green
-  error)
-    c=1
-    p='ERROR: '
-    ;;         #red
-  warn) c=3 ;; #yellow
-  debug)
-    c=8
-    p='CMD: '
-    ;; #yellow
-  wait)
-    c=4
-    p="$(date) "
-    ;; #blue
-  check)
-    c=6
-    w=-n
-    s=...
-    ;; #cyan
-  ok)
-    c=2
-    p=OK
-    ;; #green
-  no)
-    c=3
-    p=NO
-    ;;            #yellow
-  default) c=9 ;; #default
+  info)    c=2;;          #green
+  error)   c=1            #red
+           p='ERROR: ';;
+  warn)    c=3;;          #yellow
+  debug)   c=8            #grey
+           p='CMD: ';; 
+  wait)    c=4            #purple
+           p="$(date) ";;
+  check)   c=6            #cyan
+           w=-n
+           s=...;; 
+  ok)      c=2            #green
+           p=OK;;
+  no)      c=3            #yellow
+           p=NO;;  
+  default) c=9            #default
+           p='';;
   esac
   shift
   echo $w "$(tput setaf $c)$lf_spaces$p$@$s$(tput setaf 9)"
@@ -158,8 +147,8 @@ function save_certificate() {
 # avec jsonpath=$.[?(@.name=='ibm-licensing' && @.version=='4.2.1')]
 # Pour tester une variable null : https://stackoverflow.com/questions/48261038/shell-script-how-to-check-if-variable-is-null-or-no
 function is_case_downloaded() {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :is_case_downloaded"
+#  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+#  decho "F:IN :is_case_downloaded"
   local lf_in_case=$1
   local lf_in_version_varid=$2
 
@@ -206,8 +195,8 @@ function is_case_downloaded() {
     fi
   fi
 
-  decho "F:OUT:is_case_downloaded"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+#  decho "F:OUT:is_case_downloaded"
+#  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
   return $lf_res
 }
 
@@ -220,8 +209,8 @@ function is_case_downloaded() {
 #  - the namespace
 #  Returns 1 (if the cr is newer than the file) otherwise 0
 function is_cr_newer() {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :is_cr_newer"
+#  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+#  decho "F:IN :is_cr_newer"
   local lf_in_type=$1
   local lf_in_customresource=$2
   local lf_in_file=$3
@@ -243,16 +232,16 @@ function is_cr_newer() {
     lf_res=0
   fi
 
-  decho "F:OUT:is_cr_newer"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+#  decho "F:OUT:is_cr_newer"
+#  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
   return $lf_res
 }
 
 ################################################
 # Check that all required executables are installed
 function check_command_exist() {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :check_command_exist"
+#  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+#  decho "F:IN :check_command_exist"
 
   local command=$1
 
@@ -261,16 +250,16 @@ function check_command_exist() {
     exit 1
   fi
 
-  decho "F:OUT:check_command_exist"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+#  decho "F:OUT:check_command_exist"
+#  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
 ######################################################
 # checks if the file exist, if no print a msg and exit
 #
 function check_file_exist() {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :check_file_exist"
+#  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+#  decho "F:IN :check_file_exist"
 
   local file=$1
   if [ ! -e "$file" ]; then
@@ -278,16 +267,16 @@ function check_file_exist() {
     exit 1
   fi
 
-  decho "F:OUT:check_file_exist"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+#  decho "F:OUT:check_file_exist"
+#  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
 ######################################################
 # checks if the directory exist, if no print a msg and exit
 #
 function check_directory_exist() {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :check_directory_exist"
+#  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+#  decho "F:IN :check_directory_exist"
 
   local directory=$1
   if [ ! -d $directory ]; then
@@ -295,8 +284,8 @@ function check_directory_exist() {
     exit 1
   fi
 
-  decho "F:OUT:check_directory_exist"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+#  decho "F:OUT:check_directory_exist"
+#  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
 ######################################################
@@ -313,22 +302,22 @@ function check_directory_contains_files() {
 # checks if the directory exist, otherwise create it
 #
 function check_directory_exist_create() {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :check_directory_exist_create"
+#  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+#  decho "F:IN :check_directory_exist_create"
 
   local directory=$1
   if [ ! -d $directory ]; then
     mkdir -p $directory
   fi
 
-  decho "F:OUT:check_directory_exist_create"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+#  decho "F:OUT:check_directory_exist_create"
+#  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
 ################################################
 function read_config_file() {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN  :read_config_file"
+#  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+#  decho "F:IN  :read_config_file"
 
   local lf_config_file
   if test -n "$PC_CONFIG"; then
@@ -340,8 +329,8 @@ function read_config_file() {
     mylog error "Usage: $0 <config file>" 1>&2
     mylog info "Example: $0 ${MAINSCRIPTDIR}cp4i.conf"
 
-    decho "F:OUT:read_config_file"
-    SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+#    decho "F:OUT:read_config_file"
+#    SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
     exit 1
   fi
 
@@ -352,15 +341,15 @@ function read_config_file() {
   . "${lf_config_file}"
   set +a
 
-  decho "F:OUT:read_config_file"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+#  decho "F:OUT:read_config_file"
+#  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
 ################################################
 # Check that all required executables are installed
 function check_exec_prereqs() {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :check_exec_prereqs"
+#  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+#  decho "F:IN :check_exec_prereqs"
 
   check_command_exist awk
   check_command_exist curl
@@ -371,8 +360,8 @@ function check_exec_prereqs() {
   check_command_exist oc
   check_command_exist openssl
 
-  decho "F:OUT:check_exec_prereqs"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+#  decho "F:OUT:check_exec_prereqs"
+#  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
 ################################################
@@ -416,6 +405,10 @@ function wait_for_state() {
   local what=$1
   local value=$2
   local command=$3
+  local start_time=$(date +%s)
+  local current_time elapsed_time
+  local bullets=('|' '/' '-' '\\')
+
   mylog check "Checking $what"
   #mylog check "Checking $what status until reaches value $value with command $command"
   last_state=''
@@ -433,7 +426,20 @@ function wait_for_state() {
       mylog wait "$current_state"
       last_state=$current_state
     fi
-    sleep 5
+
+    for bullet in "${bullets[@]}"; do
+      # Use echo with -ne to print without newline and with escape sequences
+      current_time=$(date +%s)
+  
+      # Calculate the elapsed time
+      elapsed_time=$((current_time - start_time))
+  
+      # Display the elapsed time on the same line
+      echo -ne "\rElapsed time: ${elapsed_time} seconds$bullet"      
+      #echo -ne "\r$bullet Timer: $seconds seconds | Waiting...\033[0K\r"
+      # Sleep for a short interval to control the speed of the animation
+      sleep 0.1
+    done 
   done
   decho "F:OUT:wait_for_state"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
@@ -467,8 +473,7 @@ function check_create_oc_yaml() {
     is_cr_newer $lf_in_octype $lf_in_cr_name $lf_in_yaml_file $lf_in_ns
     newer=$?
     if [ $newer -eq 1 ]; then
-      mylog ok
-      mylog info "Custom Resource $lf_in_cr_name is newer than file $lf_in_yaml_file"
+      mylog info "OK: Custom Resource $lf_in_cr_name is newer than file $lf_in_yaml_file"
     else
       envsubst <"${lf_in_yaml_file}" | oc -n ${lf_in_ns} apply -f - || exit 1
     fi
@@ -600,8 +605,8 @@ function is_service_exposed() {
 #===========================================
 # Function to add entry if it doesn't exist
 function add_entry_if_not_exists() {
-  decho "F:IN :add_entry_if_not_exists"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho "F:IN :add_entry_if_not_exists"
 
   local lf_in_ldap_server="$1"
   local lf_in_admin_dn="$2"
@@ -614,12 +619,14 @@ function add_entry_if_not_exists() {
   local lf_in_search_result
   lf_in_search_result=$(ldapsearch -x -H $lf_in_ldap_server -D "$lf_in_admin_dn" -w $lf_in_admin_password -b "$lf_in_entry_dn" -s base "(objectClass=*)")
   # Check if the entry already exists
-  if echo "$lf_in_search_result" | grep -q "dn: $lf_in_entry_dn"; then
-    echo "Entry $lf_in_entry_dn already exists. Skipping."
-  else
-    echo "Entry $lf_in_entry_dn does not exist. Adding entry."
-    echo "$lf_in_entry_content" > $lf_in_tmp_ldif_file
-    ldapadd -x -H $lf_in_ldap_server -D "$lf_in_admin_dn" -w $lf_in_admin_password -f $lf_in_tmp_ldif_file
+  if [ -n "$lf_in_search_result" ]; then
+    if echo "$lf_in_search_result" | grep -q "dn: $lf_in_entry_dn"; then
+      echo "Entry $lf_in_entry_dn already exists. Skipping."
+    else
+      echo "Entry $lf_in_entry_dn does not exist. Adding entry."
+      echo "$lf_in_entry_content" > $lf_in_tmp_ldif_file
+      ldapadd -x -H $lf_in_ldap_server -D "$lf_in_admin_dn" -w $lf_in_admin_password -f $lf_in_tmp_ldif_file
+    fi
   fi
 
   decho "F:OUT:add_entry_if_not_exists"
@@ -629,8 +636,8 @@ function add_entry_if_not_exists() {
 #========================================================
 # Function to add ldif file entries if each doesn't exist
 function add_ldif_file () {
-  decho "F:IN :add_ldif_file"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho "F:IN :add_ldif_file"
 
   local lf_in_ldif_file="$1"
   local lf_in_ldap_server="$2"
@@ -647,9 +654,9 @@ function add_ldif_file () {
       # Empty line indicates end of an entry
       if [[ -n "$lf_entry_dn" && -n "$lf_entry_content" ]]; then
         add_entry_if_not_exists "$lf_in_ldap_server" "$lf_in_admin_dn" "$lf_in_admin_password" "$lf_entry_dn" "$lf_entry_content" "$lf_tmp_ldif"
+        lf_entry_dn=""
+        lf_entry_content=""
       fi
-      lf_entry_dn=""
-      lf_entry_content=""
     else
       # Accumulate the DN and content of the entry
       if [[ "$lf_line" =~ ^dn:\ (.*) ]]; then
@@ -661,11 +668,11 @@ function add_ldif_file () {
   
   # Process the last entry if the file doesn't end with a new line
   if [[ -n "$lf_entry_dn" && -n "$lf_entry_content" ]]; then
-    add_entry_if_not_exists "$lf_entry_dn" "$lf_entry_content"
+    add_entry_if_not_exists "$lf_in_ldap_server" "$lf_in_admin_dn" "$lf_in_admin_password" "$lf_entry_dn" "$lf_entry_content" "$lf_tmp_ldif"
   fi
   
   # Clean up temporary file
-  rm -f $lf_tmp_ldif
+  #rm -f $lf_tmp_ldif
 
   decho "F:OUT:add_ldif_file"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
@@ -705,7 +712,7 @@ function expose_service_openldap() {
   lf_hostname=$(oc -n ${lf_in_namespace} get route openldap-external -o jsonpath='{.spec.host}')
 
   # load users and groups into LDAP
-  envsubst <"${YAMLDIR}ldap/ldap-users.ldif" >"${WORKINGDIR}ldap-users.ldif"
+  #envsubst <"${YAMLDIR}ldap/ldap-users.ldif" >"${WORKINGDIR}ldap-users.ldif"
   mylog info "Adding LDAP entries with following command: "
   mylog info "$LDAP_COMMAND -H ldap://${lf_hostname}:${lf_port0} -x -D \"$ldap_admin_dn\" -w \"$ldap_admin_password\" -f ${WORKINGDIR}ldap-users.ldif"
   add_ldif_file ${WORKINGDIR}ldap-users.ldif "ldap://${lf_hostname}:${lf_port0}" "${ldap_admin_dn}" "${ldap_admin_password}"
@@ -840,75 +847,17 @@ function check_add_cs_ibm_pak() {
 
 ################################################
 ##SB]20231201 create operator subscription
-function create_operator_subscription_old() {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :create_operator_subscription"
-
-  # export are important because they are used to replace the variable in the subscription.yaml (envsubst command)
-  export MY_OPERATOR_NAME=$1
-  export MY_CURRENT_CHL=$2
-  export MY_CATALOG_SOURCE_NAME=$3
-  export MY_OPERATOR_NAMESPACE=$4
-  export MY_STRATEGY=$5
-  local lf_in_wait=$6
-  export MY_STARTING_CSV=$7 # Optional
-
-  local file path resource state type
-  check_directory_exist ${OPERATORSDIR}
-
-  SECONDS=0
-
-  file="${OPERATORSDIR}subscription.yaml"
-  type="Subscription"
-  check_create_oc_yaml "${type}" "${MY_OPERATOR_NAME}" "${file}" "${MY_OPERATOR_NAMESPACE}"
-
-  if [ ! -z $MY_STARTING_CSV ]; then
-    type="ClusterServiceVersion"
-    path="{.status.phase}"
-    state="Succeeded"
-    startingcsv=$MY_STARTING_CSV
-    decho "wait_for_state $type $startingcsv $path is $state | $state | oc -n $MY_OPERATOR_NAMESPACE get $type $startingcsv -o jsonpath=$path"
-    if [ $lf_in_wait ]; then
-      wait_for_state "$type $startingcsv $path is $state" "$state" "oc -n $MY_OPERATOR_NAMESPACE get $type $startingcsv -o jsonpath='$path'"
-    fi
-  else
-    #decho "check_resource_availability clusterserviceversion $MY_OPERATOR_NAME $MY_OPERATOR_NAMESPACE"
-    #check_resource_availability "subscription" $MY_OPERATOR_NAME $MY_OPERATOR_NAMESPACE
-    #decho "MY_RESOURCE=$MY_RESOURCE"
-    type="clusterserviceversion"
-    path="{.status.phase}"
-    state="Succeeded"
-    #decho "oc -n $MY_OPERATOR_NAMESPACE get $type -o json | jq -r --arg my_resource \"$MY_RESOURCE\" '.items[].metadata | select (.name | contains ($my_resource)).name'"
-    decho "oc -n $MY_OPERATOR_NAMESPACE get $type -o json | jq -r --arg my_resource \"$MY_OPERATOR_NAME\" '.items[].metadata | select (.name | contains ($my_resource)).name'"
-    resource=$(oc -n $MY_OPERATOR_NAMESPACE get $type -o json | jq -r  --arg my_resource "$MY_OPERATOR_NAME" '.items[].metadata | select (.name | contains ($my_resource)).name')
-    decho "resource=$resource"
-    #lf_result=$(echo $lf_result | jq -r --arg case "$lf_in_case" '[.[] | select (.name == $case )]')
-    #oc -n $MY_OPERATOR_NAMESPACE get $type -o json | jq -r  --arg my_resource $MY_RESOURCE '.items[].metadata | select (.name | contains ("$my_resource")).name'
-    #oc -n openshift-operators get csv -o json | jq -r '.items[].metadata | select(.name | contains("openshift-gitops-operator")).name'
-    if [ $lf_in_wait ]; then
-      wait_for_state "$type $resource $path is $state" "$state" "oc -n $MY_OPERATOR_NAMESPACE get $type $resource -o jsonpath='$path'"
-    fi
-  fi
-  mylog info "Creation of $MY_OPERATOR_NAME operator took $SECONDS seconds to execute." 1>&2
-
-  decho "F:OUT:create_operator_subscription"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
-}
-
-################################################
-##SB]20231201 create operator subscription
 function create_operator_subscription() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho "F:IN :create_operator_subscription"
 
   # export are important because they are used to replace the variable in the subscription.yaml (envsubst command)
   export MY_OPERATOR_NAME=$1
-  export MY_CURRENT_CHL=$2
-  export MY_CATALOG_SOURCE_NAME=$3
-  export MY_OPERATOR_NAMESPACE=$4
-  export MY_STRATEGY=$5
-  local lf_in_wait=$6
-  local lf_in_csv_name=$7
+  export MY_CATALOG_SOURCE_NAME=$2
+  export MY_OPERATOR_NAMESPACE=$3
+  export MY_STRATEGY=$4
+  local lf_in_wait=$5
+  local lf_in_csv_name=$6
 
   local file path resource state type
   check_directory_exist ${OPERATORSDIR}
@@ -924,9 +873,12 @@ function create_operator_subscription() {
   state="Succeeded"
   decho "oc -n $MY_OPERATOR_NAMESPACE get $type -o json | jq -r --arg my_resource \"$lf_in_csv_name\" '.items[].metadata | select (.name | contains ($my_resource)).name'"
 
+  seconds=0
   while [ -z "$resource" ]; do
+    echo -ne "Timer: $seconds seconds | Creating csv...\033[0K\r"
     sleep 1
     resource=$(oc -n $MY_OPERATOR_NAMESPACE get $type -o json | jq -r --arg my_resource "$lf_in_csv_name" '.items[].metadata | select (.name | contains ($my_resource)).name')
+    seconds=$((seconds + 1))
   done
 
   #resource=$(oc -n $MY_OPERATOR_NAMESPACE get $type -o json | jq -r  --arg my_resource "$lf_in_csv_name" '.items[].metadata | select (.name | contains ($my_resource)).name')

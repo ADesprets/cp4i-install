@@ -544,14 +544,13 @@ function install_gitops() {
   #check_create_oc_yaml "${ls_type}" "${ls_cr_name}" "${ls_yaml_file}" "${ls_namespace}"
 
   lf_operator_name="$MY_GITOPS_OPERATORGROUP"
-  lf_current_chl=$MY_GITOPS_CHL
   lf_catalog_source_name="redhat-operators"
   lf_operator_namespace=$MY_OPERATORS_NAMESPACE
   lf_strategy="Automatic"
   lf_wait_for_state=1
   lf_csv_name=$MY_GITOPS_CSV_NAME
-  decho "create_operator_subscription \"${lf_operator_name}\" \"${lf_current_chl}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
-  create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
+  decho "create_operator_subscription \"${lf_operator_name}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
+  create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
   decho "F:OUT:install_gitops"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
@@ -575,14 +574,13 @@ function install_cert_manager() {
 
   # SB]20231215 Pour obtenir le template de l'operateur cert-manager de Redhat, je l'ai installé avec la console, j'ai récupéré le Yaml puis désinstallé.
   lf_operator_name="openshift-cert-manager-operator"
-  lf_current_chl=$MY_CERT_MANAGER_CHL
   lf_catalog_source_name="redhat-operators"
   lf_operator_namespace=$MY_CERT_MANAGER_NAMESPACE
   lf_strategy="Automatic"
   lf_wait_for_state=1
   lf_csv_name=$MY_CERT_MANAGER_CSV_NAME
-  decho "create_operator_subscription \"${lf_operator_name}\" \"${lf_current_chl}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
-  create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
+  decho "create_operator_subscription \"${lf_operator_name}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
+  create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
   decho "F:OUT:install_cert_manager"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
@@ -611,14 +609,13 @@ function install_lic_srv() {
 
     # ATTENTION : pour le licensing server ajouter dans la partie spec.startingCSV: ibm-licensing-operator.v4.2.1 (sinon erreur).
     lf_operator_name="ibm-licensing-operator-app"
-    lf_current_chl=$MY_LIC_SRV_CHL
     lf_catalog_source_name="ibm-licensing-catalog"
     lf_operator_namespace=$MY_LICENSE_SERVER_NAMESPACE
     lf_strategy="Automatic"
     lf_wait_for_state=1
     lf_csv_name=$MY_LIC_SRV_CSV_NAME
-    decho "create_operator_subscription \"${lf_operator_name}\" \"${lf_current_chl}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
+    decho "create_operator_subscription \"${lf_operator_name}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
+    create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
   fi
 
   decho "F:OUT:install_lic_srv"
@@ -656,15 +653,14 @@ function install_fs() {
 
   #create_operator_subscription "ibm-common-service-operator" $MY_COMMONSERVICES_CHL "opencloud-operators" $MY_COMMON_SERVICES_NAMESPACE "Automatic" $MY_STARTING_CSV
   lf_operator_name="ibm-common-service-operator"
-  lf_current_chl=$MY_COMMONSERVICES_CHL
   lf_catalog_source_name="opencloud-operators"
   #lf_operator_namespace=$MY_COMMON_SERVICES_NAMESPACE
   lf_operator_namespace=$MY_OPERATORS_NAMESPACE
   lf_strategy="Automatic"
   lf_wait_for_state=1
   lf_csv_name=$MY_COMMONSERVICES_CSV_NAME
-  decho "create_operator_subscription \"${lf_operator_name}\" \"${lf_current_chl}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
-  create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
+  decho "create_operator_subscription \"${lf_operator_name}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
+  create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
   ## Setting hardware  Accept the license to use foundational services by adding spec.license.accept: true in the spec section.
   #accept_license_fs $MY_OPERATORS_NAMESPACE
@@ -698,13 +694,12 @@ function install_navigator() {
 
     # Creating Navigator operator subscription
     lf_operator_name="ibm-integration-platform-navigator"
-    lf_current_chl=$MY_NAVIGATOR_CHL
     lf_catalog_source_name="ibm-integration-platform-navigator-catalog"
     lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     lf_strategy="Automatic"
     lf_wait_for_state=1
     lf_csv_name=$MY_NAVIGATOR_CSV_NAME
-    create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
+    create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
   fi
 
   if $MY_NAVIGATOR_INSTANCE; then
@@ -759,13 +754,12 @@ function install_assetrepo() {
 
     # Creating Asset Repository operator subscription
     lf_operator_name="ibm-integration-asset-repository"
-    lf_current_chl=$MY_ASSETREPO_CHL
     lf_catalog_source_name="ibm-integration-asset-repository-catalog"
     lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     lf_strategy="Automatic"
     lf_wait_for_state=1
     lf_csv_name=$MY_ASSETREPO_CSV_NAME
-    create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
+    create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
     # Creating Asset Repository instance
     lf_file="${OPERANDSDIR}AR-Capability.yaml"
@@ -797,14 +791,13 @@ function install_ace() {
 
     # Creating ACE operator subscription
     lf_operator_name="ibm-appconnect"
-    lf_current_chl=$MY_ACE_CHL
     lf_catalog_source_name="appconnect-operator-catalogsource"
     lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     lf_strategy="Automatic"
     lf_csv_name=$MY_ACE_CSV_NAME
     lf_wait_for_state=1
-    decho "create_operator_subscription \"${lf_operator_name}\" \"${lf_current_chl}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
+    decho "create_operator_subscription \"${lf_operator_name}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
+    create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
     # Creating ACE Dashboard instance
     lf_file="${OPERANDSDIR}ACE-Dashboard-Capability.yaml"
@@ -831,20 +824,9 @@ function install_ace() {
   # Takes all the templates associated with the capabilities and generate the files from the context variables
   # The files are generated into ./customisation/working/<capability>/config
   if $MY_ACE_CUSTOM; then
-    # generate the differents properties files
-    # SB]20231109 some generated files (yaml) are based on other generated files (properties), so :
-    # - in template custom dirs, separate the files to two categories : scripts (*.properties) and config (*.yaml)
-    # - generate first the *.properties files to be sourced then generate the *.yaml files
-    if [ ! -d ${ACE_GEN_CUSTOMDIR}scripts ]; then
-      mkdir -p ${ACE_GEN_CUSTOMDIR}scripts
-    fi
-    if [ ! -d ${ACE_GEN_CUSTOMDIR}config ]; then
-      mkdir -p ${ACE_GEN_CUSTOMDIR}config
-    fi
-    generate_files $ACE_TMPL_CUSTOMDIR $ACE_GEN_CUSTOMDIR true
-
-    # launch custo scripts
+    # launch custom script
     mylog info "Customise ACE"
+    . ${ACE_SCRIPTDIR}scripts/ace.config.sh
   fi
 
   decho "F:OUT:install_ace"
@@ -865,13 +847,12 @@ function install_apic() {
 
     # Creating APIC operator subscription
     lf_operator_name="ibm-apiconnect"
-    lf_current_chl=$MY_APIC_CHL
     lf_catalog_source_name="ibm-apiconnect-catalog"
     lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     lf_strategy="Automatic"
     lf_wait_for_state=1
     lf_csv_name=$MY_APIC_CSV_NAME
-    create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
+    create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
     # Creating APIC instance
     lf_file="${OPERANDSDIR}APIC-Capability.yaml"
@@ -987,13 +968,12 @@ function install_openliberty() {
     # kubectl -n ${MY_BACKEND_NAMESPACE} describe olapps/mysystem
 
     # lf_operator_name="ibm-apiconnect"
-    # lf_current_chl=$MY_APIC_CHL
     # lf_catalog_source_name="ibm-apiconnect-catalog"
     # lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     # lf_strategy="Automatic"
     # lf_wait_for_state=1
     # lf_csv_name=$MY_APIC_CSV_NAME
-    # create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
+    # create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
     # # Creating APIC instance
     # lf_file="${OPERANDSDIR}APIC-Capability.yaml"
@@ -1033,13 +1013,12 @@ function install_dpgw() {
     check_add_cs_ibm_pak ibm-datapower-operator MY_DPGW_CASE amd64
 
     lf_operator_name="datapower-operator"
-    lf_current_chl=$MY_DPGW_CHL
     lf_catalog_source_name="ibm-datapower-operator-catalog"
     lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     lf_strategy="Automatic"
     lf_wait_for_state=1
     lf_csv_name=$MY_DPGW_CSV_NAME
-    create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
+    create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
   fi
 
   decho "F:OUT:install_dpgw"
@@ -1065,13 +1044,12 @@ function install_eem() {
 
     # Creating Event Endpoint Management operator subscription
     lf_operator_name="ibm-eventendpointmanagement"
-    lf_current_chl=$MY_EEM_CHL
     lf_catalog_source_name="ibm-eventendpointmanagement-catalog"
     lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     lf_strategy="Automatic"
     lf_wait_for_state=1
     lf_csv_name=$MY_EEM_CSV_NAME
-    create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
+    create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
     # Creating EventEndpointManager instance (Event Processing)
     lf_file="${OPERANDSDIR}EEM-Capability.yaml"
@@ -1152,13 +1130,12 @@ function install_ep() {
 
     ## Creating Event processing operator subscription
     lf_operator_name="ibm-eventprocessing"
-    lf_current_chl=$MY_EP_CHL
     lf_catalog_source_name="ibm-eventprocessing-catalog"
     lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     lf_strategy="Automatic"
     lf_wait_for_state=1
     lf_csv_name=$MY_EP_CSV_NAME
-    create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
+    create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
     ## SB]20231023 to check the status of Event processing : https://ibm.github.io/event-automation/ep/installing/post-installation/
     ## The Status column displays the current state of the EventProcessing custom resource.
@@ -1215,13 +1192,12 @@ function install_es() {
 
     # Creating EventStreams operator subscription
     lf_operator_name="ibm-eventstreams"
-    lf_current_chl=$MY_ES_CHL
     lf_catalog_source_name="ibm-eventstreams"
     lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     lf_strategy="Automatic"
     lf_wait_for_state=1
     lf_csv_name=$MY_ES_CSV_NAME
-    create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
+    create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
     # Creating Event Streams instance
     lf_file="${OPERANDSDIR}ES-Capability.yaml"
@@ -1304,13 +1280,12 @@ function install_flink() {
     ## Creating Eventautomation Flink operator subscription
     ## Creating Event processing operator subscription
     lf_operator_name="ibm-eventautomation-flink"
-    lf_current_chl=$MY_FLINK_CHL
     lf_catalog_source_name="ibm-eventautomation-flink-catalog"
     lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     lf_strategy="Automatic"
     lf_wait_for_state=1
     lf_csv_name=$MY_FLINK_CSV_NAME
-    create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
+    create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
     ## Creation of Event automation Flink PVC and instance
     # Even if it's a pvc we use the same generic function
@@ -1356,13 +1331,12 @@ function install_hsts() {
 
     # Creating Aspera HSTS operator subscription
     lf_operator_name="aspera-hsts-operator"
-    lf_current_chl=$MY_HSTS_CHL
     lf_catalog_source_name="aspera-operators"
     lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     lf_strategy="Automatic"
     lf_wait_for_state=1
     lf_csv_name=$MY_HSTS_CSV_NAME
-    create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
+    create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
     # Creating Aspera HSTS instance
     #oc apply -f "${OPERANDSDIR}AsperaCM-cp4i-hsts-prometheus-lock.yaml"
@@ -1397,13 +1371,12 @@ function install_mq() {
 
     # Creating MQ operator subscription
     lf_operator_name="ibm-mq"
-    lf_current_chl=$MY_MQ_CHL
     lf_catalog_source_name="ibmmq-operator-catalogsource"
     lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     lf_strategy="Automatic"
     lf_wait_for_state=1
     lf_csv_name=$MY_MQ_CSV_NAME
-    create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
+    create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
     # Creating MQ instance
     #lf_file="${OPERANDSDIR}MQ-Capability.yaml"
@@ -1443,7 +1416,6 @@ function install_instana() {
     mylog info "==== Adding Instana." 1>&2
     # Create namespace for Instana agent. The instana agent must be istalled in instana-agent namespace.
     lf_operator_name="instana-agent-operator"
-    lf_current_chl=$MY_INSTANA_CHL
     lf_catalog_source_name="certified-operators"
     lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     lf_strategy="Automatic"
@@ -1451,7 +1423,7 @@ function install_instana() {
     lf_wait_for_state=1
     create_namespace $MY_INSTANA_AGENT_NAMESPACE
     oc -n $MY_INSTANA_AGENT_NAMESPACE adm policy add-scc-to-user privileged -z instana-agent
-    create_operator_subscription "${lf_operator_name}" "${lf_current_chl}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
+    create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
     # Creating Instana agent
     lf_file="${OPERANDSDIR}Instana-Agent-CloudIBM-Capability.yaml"
@@ -1515,10 +1487,13 @@ read_config_file "$sc_versions_file"
 my_user_file="${PRIVATEDIR}user.properties"
 read_config_file "$my_user_file"
 
-: <<'END_COMMENT'
 # check the differents pre requisites
 check_exec_prereqs
 
+: <<'END_COMMENT'
+END_COMMENT
+install_ace
+exit 0
 # Log to IBM Cloud
 #login_2_ibm_cloud
 
@@ -1583,12 +1558,9 @@ install_cert_manager
 install_lic_srv
 install_fs
 install_mailhog
-END_COMMENT
 
 # Add OpenLdap app to openshift
 install_openldap
-exit 0
-
 
 # For each capability install : case, operator, operand
 install_navigator
@@ -1600,7 +1572,7 @@ install_intassembly
 install_assetrepo
 
 # For each capability install : case, operator, operand
-install_ace
+#install_ace
 
 # For each capability install : case, operator, operand
 # install_openliberty

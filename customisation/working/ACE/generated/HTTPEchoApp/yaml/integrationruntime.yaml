@@ -1,0 +1,39 @@
+apiVersion: appconnect.ibm.com/v1beta1
+kind: IntegrationRuntime
+metadata:
+  labels:
+    backup.appconnect.ibm.com/component: integrationruntime
+  name: httpechoapp-integrationruntime
+  namespace: cp4i
+spec:
+  license:
+    accept: true
+    license: L-QECF-MBXVLU
+    use: CloudPakForIntegrationNonProduction
+  flowType:
+    toolkitFlow: true
+    designerAPIFlow: true
+    designerEventFlow: true
+  routes:
+    disabled: false
+  service:
+    type: NodePort
+  template:
+    spec:
+      containers:
+      - name: runtime
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 500m
+            memory: 512Mi
+  barURL: 
+    - https://raw.githubusercontent.com/saadbenachi/my_bar_files/main/HTTPEchoApp.bar
+  version: 12.0.12.0-r2
+  replicas: 1
+  logFormat: basic
+  configurations: 
+    - httpechoapp-serverconf
+    - httpechoapp-barauth
