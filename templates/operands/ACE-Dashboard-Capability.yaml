@@ -26,13 +26,14 @@ spec:
           requests:
             cpu: 50m
             memory: 125Mi
-  #useCommonServices: false         
-  authentication:
-    integrationKeycloak:
-      enabled: false
-  authorization:
-    integrationKeycloak:
-      enabled: false
+  #useCommonServices: false   
+#      enabled: false        
+#  authentication:
+#    integrationKeycloak:
+#      enabled: false
+#  authorization:
+#    integrationKeycloak:
+#      enabled: false
   version: $MY_ACE_VERSION
   storage:
     size: 5Gi

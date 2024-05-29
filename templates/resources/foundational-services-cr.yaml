@@ -2,7 +2,7 @@ apiVersion: operator.ibm.com/v3
 kind: CommonService
 metadata:
   name: ${MY_COMMONSERVICES_INSTANCE_NAME}
-  namespace: ${MY_COMMON_SERVICES_NAMESPACE}
+  namespace: ${MY_OPERATORS_NAMESPACE}
 spec:
   operatorNamespace: ${MY_OPERATORS_NAMESPACE}
   servicesNamespace: ${MY_COMMON_SERVICES_NAMESPACE}

@@ -21,10 +21,10 @@ spec:
     enabled: true
   designerFlowsOperationMode: local
   replicas: 1
-  authentication:
-    integrationKeycloak:
-      enabled: true
-  authorization:
-    integrationKeycloak:
-      enabled: true
+#  authentication:
+#    integrationKeycloak:
+#      enabled: false
+#  authorization:
+#    integrationKeycloak:
+#      enabled: false
   version: $MY_ACE_VERSION

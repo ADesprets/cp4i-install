@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: ${QMGR}-secret
-  namespace: $OC_PROJECT
+  namespace: $MY_OC_PROJECT
 data:
   tls.crt: $B64_QMGR_CRT
   tls.key: $B64_QMGR_KEY
@@ -13,7 +13,7 @@ apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
   name: ${QMGR}-route
-  namespace: $OC_PROJECT
+  namespace: $MY_OC_PROJECT
 spec:
   host: ${CHL}.chl.mq.ibm.com
   to:
@@ -28,7 +28,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: ${QMGR}-mqsc-cm
-  namespace: $OC_PROJECT
+  namespace: $MY_OC_PROJECT
 data:
   ${QMGR}.mqsc: |
     DEFINE QLOCAL('Q1') REPLACE DEFPSIST(YES) 
@@ -39,7 +39,7 @@ apiVersion: mq.ibm.com/v1beta1
 kind: QueueManager
 metadata:
   name: $QMGR
-  namespace: $OC_PROJECT
+  namespace: $MY_OC_PROJECT
 spec:
   license:
     accept: true

@@ -10,9 +10,6 @@ spec:
     storage:
       enabled: true
       type: shared
-  endpointTypes:
-    - APIs
-    - Events
   imagePullSecrets:
     - ibm-entitlement-key
   imageRegistry: cp.icr.io/cp/apic
