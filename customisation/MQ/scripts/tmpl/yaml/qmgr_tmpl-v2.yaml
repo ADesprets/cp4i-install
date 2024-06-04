@@ -9,6 +9,14 @@ data:
   ca.crt: $B64_CA_CRT
 type: kubernetes.io/tls
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ${QMGR}-mywebconfig
+  namespace: $MY_OC_PROJECT
+data:
+  mqwebuser.xml: "<server><featureManager><feature>appSecurity-2.0</feature></featureManager><basicRegistry id="basic" realm="defaultRealm"><user name="mqadmin" password="Passw0rd!"/><user name="mqwebuser" password="Passw0rd!"/><group name="mqadmins"><member name="mqadmin"/></group></basicRegistry><enterpriseApplication id="com.ibm.mq.console"><application-bnd><security-role name="MQWebAdmin"><user name="mqadmin" realm="defaultRealm"/></security-role><security-role name="MQWebUser "><user name="mqwebuser" realm="defaultRealm"/></security-role></application-bnd></enterpriseApplication></server>"
+---
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
@@ -80,4 +88,12 @@ spec:
           name: qmgr
   version: $MY_MQ_VERSION
   web:
+    console:
+      authentication:
+        provider: manual
+      authorization:
+        provider: manual
+    manualConfig:
+      configMap: 
+        name: ${QMGR}-mywebconfig
     enabled: true

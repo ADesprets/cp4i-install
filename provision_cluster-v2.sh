@@ -882,7 +882,7 @@ function install_apic() {
 }
 
 ################################################
-# Install APIC
+# Install Open Liberty
 function install_openliberty() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho "F:IN :install_openliberty"
@@ -898,13 +898,14 @@ function install_openliberty() {
 
     export OPEN_LIBERTY_OPERATOR_NAMESPACE=$MY_BACKEND_NAMESPACE
     export OPEN_LIBERTY_OPERATOR_WATCH_NAMESPACE=$MY_BACKEND_NAMESPACE
+
     # TODO Check that is this value
     export WATCH_NAMESPACE='""'
     adapt_file ${OPENLIBERTY_TMPL_CUSTOMDIR}config/ ${OPENLIBERTY_GEN_CUSTOMDIR}config/ openliberty-app-rbac-watch-all.yaml
     adapt_file ${OPENLIBERTY_TMPL_CUSTOMDIR}config/ ${OPENLIBERTY_GEN_CUSTOMDIR}config/ openliberty-app-crd.yaml
     adapt_file ${OPENLIBERTY_TMPL_CUSTOMDIR}config/ ${OPENLIBERTY_GEN_CUSTOMDIR}config/ openliberty-app-operator.yaml
 
-    # Creating APIC operator subscription (Check arbitrarely one resource, the deployment of the operator)
+    # Creating Open Liberty operator subscription (Check arbitrarely one resource, the deployment of the operator)
     local lf_octype='deployment'
     local lf_name='olo-controller-manager'
 
@@ -1002,11 +1003,54 @@ function install_openliberty() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
+
+################################################
+# Install WebSphere Liberty
+function install_wasliberty() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho "F:IN :install_wasliberty"
+
+  if $MY_WASLIBERTY; then
+
+    # add catalog sources using ibm_pak plugin
+    check_add_cs_ibm_pak ibm-websphere-liberty MY_WL_CASE amd64
+
+    # Creating WebSphere Liberty operator subscription
+    lf_operator_name="ibm-websphere-liberty"
+    lf_catalog_source_name="ibm-websphere-liberty-catalog"
+    lf_operator_namespace=$MY_OPERATORS_NAMESPACE
+    lf_strategy="Automatic"
+    lf_wait_for_state=1
+    lf_csv_name=$MY_WL_CSV_NAME
+    create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
+
+: <<'END_COMMENT'
+END_COMMENT
+
+  fi
+
+  decho "F:OUT:install_wasliberty"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
 ################################################
 # Install DataPower Gateway
 function install_dpgw() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho "F:IN :install_dpgw"
+
+  # add catalog sources using ibm_pak plugin
+  check_add_cs_ibm_pak ibm-websphere-liberty MY_WL_CASE amd64
+
+  # Creating MQ operator subscription
+  lf_operator_name="ibm-websphere-liberty"
+  lf_catalog_source_name="ibmmq-operator-catalogsource"
+  lf_operator_namespace=$MY_OPERATORS_NAMESPACE
+  lf_strategy="Automatic"
+  lf_wait_for_state=1
+  lf_csv_name=$MY_MQ_CSV_NAME
+  create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
+
 
   # Creating DP Gateway operator subscription
   if $MY_DPGW; then
@@ -1560,6 +1604,11 @@ install_mailhog
 # Add OpenLdap app to openshift
 install_openldap
 
+END_COMMENT
+
+install_openliberty
+# install_wasliberty
+
 # For each capability install : case, operator, operand
 install_navigator
 
@@ -1573,7 +1622,7 @@ install_assetrepo
 #install_ace
 
 # For each capability install : case, operator, operand
-# install_openliberty
+
 install_apic
 
 # For each capability install : case, operator, operand
@@ -1581,8 +1630,6 @@ install_eem $MY_CATALOGSOURCES_NAMESPACE
 
 # For each capability install : case, operator, operand
 install_egw
-
-END_COMMENT
 
 # For each capability install : case, operator, operand
 install_ep $MY_CATALOGSOURCES_NAMESPACE

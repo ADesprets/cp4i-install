@@ -88,3 +88,6 @@ spec:
         provider: manual
       authorization:
         provider: manual
+      manualConfig:
+        secret:
+          name: cp4imq-web-secret

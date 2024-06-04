@@ -234,6 +234,29 @@ function create_ccdt () {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
 }
 
+################################################
+# Create helper scripts, put, browse and get messages in a queue
+################################################
+function create_helper_scripts () {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
+  decho "F:IN :create_helper_scripts"
+ 
+  # Generate herlper scripts files
+  mylog "info" "Helper scripts in ${sc_generatedshdir} directory"
+
+  export MQ_GEN_CCDT_DIR=${sc_generatedjsondir}
+  export MQ_GEN_KDB=${sc_clnt_crtdir}${sc_clnt}-keystore.kdb
+
+  adapt_file ${MQ_TMPLSHDIR} ${sc_generatedshdir} run-qm-client-put.sh
+  adapt_file ${MQ_TMPLSHDIR} ${sc_generatedshdir} run-qm-client-browse.sh
+  adapt_file ${MQ_TMPLSHDIR} ${sc_generatedshdir} run-qm-client-get.sh
+
+  chmod a+x  ${sc_generatedshdir}*.sh
+
+  decho "F:OUT:create_helper_scripts"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
+}
+
 ################################################################################################
 # Start of the script main entry
 # main
@@ -252,10 +275,10 @@ MAINSCRIPTDIR="${SCRIPTDIR}../../../"
 
 # Template directories
 TMPLJSONDIR="${SCRIPTDIR}tmpl/json/"
+MQ_TMPLSHDIR="${SCRIPTDIR}tmpl/sh/"
 TMPLYAMLDIR="${SCRIPTDIR}tmpl/yaml/"
 TMPLTLSDIR="${SCRIPTDIR}tmpl/tls/"
 OPENSSLDIR="${SCRIPTDIR}openssl/"
-
 
 # SB]20240404 Global Index sequence for incremental output for each function call
 SC_SPACES_COUNTER=0
@@ -282,6 +305,9 @@ sc_generateddir="${MQ_GEN_CUSTOMDIR}generated/${QMGR}/"
 check_directory_exist_create  "${sc_generateddir}json"
 sc_generatedjsondir="${sc_generateddir}json/"
 
+check_directory_exist_create  "${sc_generateddir}sh"
+sc_generatedshdir="${sc_generateddir}sh/"
+
 check_directory_exist_create  "${sc_generateddir}yaml"
 sc_generatedyamldir="${sc_generateddir}yaml/"
 
@@ -300,6 +326,7 @@ MQCCDTURL="${sc_generatedjsondir}ccdt.json"
 
 : <<'END_COMMENT'
 END_COMMENT
+
 # Create PKI resources for qmgr and client
 create_pki_cr
 
@@ -309,9 +336,8 @@ create_oc_qmgr
 # Create CCDT file
 create_ccdt
 
-#check_create_oc_yaml "QueueManager" "QM1" "${configdir}QM1.yaml" $mq_project
-#check_resource_availability "QueueManager" "${mq_instance_name}-qm1" $mq_project
-#wait_for_state QueueManager "${mq_instance_name}-qm1" "Running" '.status.phase' $mq_project
+# Create helper scripts
+create_helper_scripts
 
 duration=$SECONDS
 mylog info "Creation of the Queue Manager took $duration seconds to execute." 1>&2
