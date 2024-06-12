@@ -11,7 +11,7 @@
 # Create openshift cluster using classic infrastructure
 function create_openshift_cluster_classic() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :create_openshift_cluster_classic"
+  decho "F:IN:create_openshift_cluster_classic"
 
   SECONDS=0
   var_fail sc_cluster_name "Choose a unique name for the cluster"
@@ -69,7 +69,7 @@ function create_openshift_cluster_classic() {
 # use terraform because creation is more complex than classic
 function create_openshift_cluster_vpc() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :create_openshift_cluster_vpc"
+  decho "F:IN:create_openshift_cluster_vpc"
 
   # check vars from config file
   var_fail MY_OC_VERSION 'mylog warn "Choose one of:" 1>&2;ibmcloud ks versions -q --show-version OpenShift'
@@ -98,7 +98,7 @@ function create_openshift_cluster_vpc() {
 # @param ns namespace where secret is created
 function add_ibm_entitlement() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :add_ibm_entitlement"
+  decho "F:IN:add_ibm_entitlement"
 
   local lf_in_ns=$1
 
@@ -134,7 +134,7 @@ function add_ibm_entitlement() {
 # @param ns namespace where operands were instantiated
 function start_customization() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :start_customization"
+  decho "F:IN:start_customization"
 
   local ns=$1
   local varb64
@@ -150,9 +150,10 @@ function start_customization() {
 # Takes all the templates associated with the capabilities and generate the files from the context variables
 # The files are generated into ./customisation/working/<capability>/config
 # @param ns namespace where operands were instantiated
+# TODO Check if we nned this one
 function launch_customization() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :launch_customization"
+  decho "F:IN:launch_customization"
 
   local ns=$1
 
@@ -165,7 +166,7 @@ function launch_customization() {
 # TBC
 function create_openshift_cluster() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :create_openshift_cluster"
+  decho "F:IN:create_openshift_cluster"
 
   var_fail MY_CLUSTER_INFRA 'mylog warn "Choose one of: classic or vpc" 1>&2'
   case "${MY_CLUSTER_INFRA}" in
@@ -193,7 +194,7 @@ function create_openshift_cluster() {
 # set variable my_cluster_url
 function wait_for_cluster_availability() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :wait_for_cluster_availability"
+  decho "F:IN:wait_for_cluster_availability"
 
   SECONDS=0
   wait_for_state 'Cluster state' 'normal-All Workers Normal' "ibmcloud oc cluster get --cluster $sc_cluster_name --output json|jq -r '(.state + \"-\" + .status)'"
@@ -223,7 +224,7 @@ function wait_for_cluster_availability() {
 # wait for ingress address availability
 function wait_4_ingress_address_availability() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :wait_4_ingress_address_availability"
+  decho "F:IN:wait_4_ingress_address_availability"
 
   SECONDS=0
   local lf_ingress_address
@@ -267,7 +268,7 @@ function wait_4_ingress_address_availability() {
 # and wait for both availability of the cluster and the ingress address
 function create_openshift_cluster_wait_4_availability() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :create_openshift_cluster_wait_4_availability"
+  decho "F:IN:create_openshift_cluster_wait_4_availability"
 
   if ! ${TECHZONE}; then
     # Create openshift cluster
@@ -288,7 +289,7 @@ function create_openshift_cluster_wait_4_availability() {
 # Add OpenLdap app to openshift
 function install_openldap() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :install_openldap"
+  decho "F:IN:install_openldap"
 
   if $MY_LDAP; then
     mylog info "==== Installing OpenLdap." 1>&2
@@ -316,11 +317,28 @@ function install_openldap() {
 }
 
 ################################################
+# Customise ldap adding users and groups
+function customise_openldap() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho "F:IN:customise_openldap"
+
+  if $MY_LDAP_CUSTOM; then
+    mylog info "==== Customise ldap." 1>&2
+    read_config_file "${YAMLDIR}ldap/ldap.properties"
+    check_file_exist ${YAMLDIR}ldap/ldap-config.json
+    check_file_exist ${YAMLDIR}ldap/ldap-users.ldif
+  fi
+
+  decho "F:OUT:customise_openldap"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
 # Add mailhog app to openshift
 # Port is hard coded to 8025 and is defined by mailhog (default port)
 function install_mailhog() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :install_mailhog"
+  decho "F:IN:install_mailhog"
 
   if $MY_MAILHOG; then
     mylog info "==== Installing mailhog (server and client)." 1>&2
@@ -437,7 +455,7 @@ function display_access_info() {
 # License: Accept the license to use foundational services by adding spec.license.accept: true in the spec section.
 function accept_license_fs() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :accept_license_fs"
+  decho "F:IN:accept_license_fs"
 
   lf_in_namespace=$1
 
@@ -459,7 +477,7 @@ function accept_license_fs() {
 # Log in IBM Cloud
 function login_2_ibm_cloud() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :login_2_ibm_cloud"
+  decho "F:IN:login_2_ibm_cloud"
 
   if ! ${TECHZONE}; then
     SECONDS=0
@@ -492,7 +510,7 @@ function login_2_ibm_cloud() {
 # requires var my_cluster_url
 function login_2_openshift_cluster() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :login_2_openshift_cluster"
+  decho "F:IN:login_2_openshift_cluster"
 
   SECONDS=0
 
@@ -523,7 +541,7 @@ function login_2_openshift_cluster() {
 # Install GitOps
 function install_gitops() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :install_gitops"
+  decho "F:IN:install_gitops"
 
   # https://docs.openshift.com/gitops/1.12/installing_gitops/installing-openshift-gitops.html
 
@@ -560,7 +578,7 @@ function install_gitops() {
 # Install Cert Manager
 function install_cert_manager() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :install_cert_manager"
+  decho "F:IN:install_cert_manager"
 
   mylog info "==== Redhat Cert Manager catalog." 1>&2
   lf_catalogsource_namespace=$MY_CATALOGSOURCES_NAMESPACE
@@ -590,7 +608,7 @@ function install_cert_manager() {
 # Install Licensing Server
 function install_lic_srv() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :install_lic_srv"
+  decho "F:IN:install_lic_srv"
 
   # ibm-license-server
   if $MY_LIC_SRV; then
@@ -632,7 +650,7 @@ function install_lic_srv() {
 ############################################################################################################################################
 function install_fs() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :install_fs"
+  decho "F:IN:install_fs"
 
   mylog info "==== IBM Common Services." 1>&2
   # ibm-cp-common-services
@@ -682,7 +700,7 @@ function install_fs() {
 # Install Navigator (depending on two boolean)
 function install_navigator() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :install_navigator"
+  decho "F:IN:install_navigator"
 
   ## ibm-integration-platform-navigator
   # SB,AD]20240103 Suite au pb installation keycloak (besoin de l'operateur IBM Cloud Pak for Integration)
@@ -722,7 +740,7 @@ function install_navigator() {
 # Install Integration Assembly
 function install_intassembly() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :install_intassembly"
+  decho "F:IN:install_intassembly"
 
   # Creating Integration Assembly instance
   if $MY_INTASSEMBLY; then
@@ -745,7 +763,7 @@ function install_intassembly() {
 # Install Asset Repository
 function install_assetrepo() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :install_assetrepo"
+  decho "F:IN:install_assetrepo"
 
   if $MY_ASSETREPO; then
     mylog info "==== Installing Asset Repository." 1>&2
@@ -780,7 +798,7 @@ function install_assetrepo() {
 # Install ACE
 function install_ace() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :install_ace"
+  decho "F:IN:install_ace"
 
   # ibm-appconnect
   if $MY_ACE; then
@@ -820,16 +838,24 @@ function install_ace() {
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
   fi
 
-  # start customization
+  decho "F:OUT:install_ace"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
+# Customise ACE
+function customise_ace() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho "F:IN:customise_ace"
+
   # Takes all the templates associated with the capabilities and generate the files from the context variables
   # The files are generated into ./customisation/working/<capability>/config
   if $MY_ACE_CUSTOM; then
-    # launch custom script
-    mylog info "Customise ACE"
+    mylog info "==== Customise ACE." 1>&2
     . ${ACE_SCRIPTDIR}scripts/ace.config.sh
   fi
 
-  decho "F:OUT:install_ace"
+  decho "F:OUT:customise_ace"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -837,7 +863,7 @@ function install_ace() {
 # Install APIC
 function install_apic() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :install_apic"
+  decho "F:IN:install_apic"
 
   # ibm-apiconnect
   if $MY_APIC; then
@@ -863,18 +889,9 @@ function install_apic() {
     lf_type="APIConnectCluster"
     lf_wait_for_state=0
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
-  fi
 
-  # start customization
-  # Takes all the templates associated with the capabilities and generate the files from the context variables
-  # The files are generated into ./customisation/working/<capability>/config
-  if $MY_APIC_CUSTOM; then
     save_certificate ${MY_OC_PROJECT} cp4i-apic-ingress-ca ${WORKINGDIR}
     save_certificate ${MY_OC_PROJECT} cp4i-apic-gw-gateway ${WORKINGDIR}
-
-    # launch custom script
-    mylog info "Customise APIC"
-    . ${APIC_SCRIPTDIR}scripts/apic.config.sh
   fi
 
   decho "F:OUT:install_apic"
@@ -882,10 +899,27 @@ function install_apic() {
 }
 
 ################################################
+# Customise APIC
+function customise_apic() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho "F:IN:customise_apic"
+
+  # Takes all the templates associated with the capabilities and generate the files from the context variables
+  # The files are generated into ./customisation/working/<capability>/config
+  if $MY_APIC_CUSTOM; then
+    mylog info "==== Customise APIC." 1>&2
+    . ${APIC_SCRIPTDIR}scripts/apic.config.sh
+  fi
+
+  decho "F:OUT:customise_apic"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
 # Install Open Liberty
 function install_openliberty() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :install_openliberty"
+  decho "F:IN:install_openliberty"
 
   # backend J2EE applications
   if $MY_OPENLIBERTY; then
@@ -901,9 +935,9 @@ function install_openliberty() {
 
     # TODO Check that is this value
     export WATCH_NAMESPACE='""'
-    adapt_file ${OPENLIBERTY_TMPL_CUSTOMDIR}config/ ${OPENLIBERTY_GEN_CUSTOMDIR}config/ openliberty-app-rbac-watch-all.yaml
-    adapt_file ${OPENLIBERTY_TMPL_CUSTOMDIR}config/ ${OPENLIBERTY_GEN_CUSTOMDIR}config/ openliberty-app-crd.yaml
-    adapt_file ${OPENLIBERTY_TMPL_CUSTOMDIR}config/ ${OPENLIBERTY_GEN_CUSTOMDIR}config/ openliberty-app-operator.yaml
+    adapt_file ${OPENLIBERTY_SCRIPTDIR}config/ ${OPENLIBERTY_GEN_CUSTOMDIR}config/ openliberty-app-rbac-watch-all.yaml
+    adapt_file ${OPENLIBERTY_SCRIPTDIR}config/ ${OPENLIBERTY_GEN_CUSTOMDIR}config/ openliberty-app-crd.yaml
+    adapt_file ${OPENLIBERTY_SCRIPTDIR}config/ ${OPENLIBERTY_GEN_CUSTOMDIR}config/ openliberty-app-operator.yaml
 
     # Creating Open Liberty operator subscription (Check arbitrarely one resource, the deployment of the operator)
     local lf_octype='deployment'
@@ -919,87 +953,23 @@ function install_openliberty() {
       oc apply -n ${MY_BACKEND_NAMESPACE} -f ${OPENLIBERTY_GEN_CUSTOMDIR}config/openliberty-app-operator.yaml
     fi
 
-    # Handle private image registry
-    # I'm using a service id associated to my email, information are configured in private/users.properties (See README.dm)
-    # Creating the secret to access the images in the private registry
-    local lf_octype='secret'
-    local lf_name='my-image-registry-secret'
-
-    # check if secret already created
-    mylog check "Checking ${lf_octype} ${lf_name} in ${MY_BACKEND_NAMESPACE}"
-    if oc -n ${MY_BACKEND_NAMESPACE} get ${lf_octype} ${lf_name} >/dev/null 2>&1; then
-      mylog ok
-    else
-      kubectl -n ${MY_BACKEND_NAMESPACE} create secret docker-registry my-image-registry-secret \
-        --docker-server=${MY_IMAGE_REGISTRY} \
-        --docker-username=${MY_IMAGE_REGISTRY_USERNAME} \
-        --docker-password=${MY_IMAGE_REGISTRY_PASSWORD} \
-        --docker-email=${MY_USER_EMAIL}
-    fi
-
-    # Build and create image, then load it into registry, this is optional because images won't change very often
-    if $MY_OPENLIBERTY_CUSTOM; then
-      pushd ${OPENLIBERTY_TMPL_CUSTOMDIR}system
-      mylog info "Compile code"
-      mvn clean install
-
-      mylog info "Login to docker registry"
-      docker login -u $MY_IMAGE_REGISTRY_USERNAME -p $MY_IMAGE_REGISTRY_PASSWORD $MY_IMAGE_REGISTRY
-      ibmcloud cr login --client docker -u myappscreds -p $MY_IMAGE_REGISTRY_PASSWORD $MY_IMAGE_REGISTRY
-
-      mylog info "Build docker image oljaxrs:1.0"
-      docker build -t oljaxrs:1.0 .
-
-      mylog info "Push image to ${MY_IMAGE_REGISTRY}"
-      # olo1 is a namespace that belongs to me, in my private registry
-      docker image tag oljaxrs:1.0 ${MY_IMAGE_REGISTRY}/${MY_IMAGE_REGISTRY_NS1}/oljaxrs:1.0
-      docker push ${MY_IMAGE_REGISTRY}/${MY_IMAGE_REGISTRY_NS1}/oljaxrs:1.0
-      # Check everything is correct
-      # docker images
-      # ibmcloud cr login --client docker
-      # ibmcloud cr image-inspect de.icr.io/${MY_IMAGE_REGISTRY_NS1}/oljaxrs:1.0
-      popd
-    fi
-
-    # Deploy the image in the $MY_BACKEND_NAMESPACE namespace
-    adapt_file ${OPENLIBERTY_TMPL_CUSTOMDIR}config/ ${OPENLIBERTY_GEN_CUSTOMDIR}config/ system-appdeploy.yaml
-    kubectl -n ${MY_BACKEND_NAMESPACE} apply -f ${OPENLIBERTY_GEN_CUSTOMDIR}config/system-appdeploy.yaml
-    # kubectl run <service_name> --image=de.icr.io/olo1/oljaxrs
-    # kubectl -n ${MY_BACKEND_NAMESPACE} get OpenLibertyApplications
-    # kubectl -n ${MY_BACKEND_NAMESPACE} describe olapps/mysystem
-
-    # lf_operator_name="ibm-apiconnect"
-    # lf_catalog_source_name="ibm-apiconnect-catalog"
-    # lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-    # lf_strategy="Automatic"
-    # lf_wait_for_state=1
-    # lf_csv_name=$MY_APIC_CSV_NAME
-    # create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
-
-    # # Creating APIC instance
-    # lf_file="${OPERANDSDIR}APIC-Capability.yaml"
-    # lf_ns="${MY_OC_PROJECT}"
-    # lf_path="{.status.phase}"
-    # lf_resource="$MY_APIC_INSTANCE_NAME"
-    # lf_state="Ready"
-    # lf_type="APIConnectCluster"
-    # lf_wait_for_state=0
-    # create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
-  fi
-
-  # start customization
-  # Takes all the templates associated with the capabilities and generate the files from the context variables
-  # The files are generated into ./customisation/working/<capability>/config
-  if $MY_OPENLIBERTY_CUSTOM; then
-    save_certificate ${MY_OC_PROJECT} cp4i-apic-ingress-ca ${WORKINGDIR}
-    save_certificate ${MY_OC_PROJECT} cp4i-apic-gw-gateway ${WORKINGDIR}
-
-    # launch custom script
-    mylog info "Customise OPENLIBERTY"
-    # . ${OPENLIBERTY_SCRIPTDIR}scripts/openliberty.config.sh
   fi
 
   decho "F:OUT:install_openliberty"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
+# Customise Open Liberty
+function customise_openliberty() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho "F:IN:customise_openliberty"
+
+  if $MY_OPENLIBERTY_CUSTOM; then
+  mylog info "==== Customise Open Liberty." 1>&2
+    . ${OPENLIBERTY_SCRIPTDIR}scripts/olp.config.sh
+  fi
+  decho "F:OUT:customise_openliberty"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -1008,7 +978,7 @@ function install_openliberty() {
 # Install WebSphere Liberty
 function install_wasliberty() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :install_wasliberty"
+  decho "F:IN:install_wasliberty"
 
   if $MY_WASLIBERTY; then
 
@@ -1023,10 +993,6 @@ function install_wasliberty() {
     lf_wait_for_state=1
     lf_csv_name=$MY_WL_CSV_NAME
     create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
-
-: <<'END_COMMENT'
-END_COMMENT
-
   fi
 
   decho "F:OUT:install_wasliberty"
@@ -1034,10 +1000,26 @@ END_COMMENT
 }
 
 ################################################
+# Customise WebSphere Liberty
+function customise_wasliberty() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho "F:IN:customise_wasliberty"
+
+  if $MY_WASLIBERTY_CUSTOM; then
+  mylog info "==== Customise WAS Liberty." 1>&2
+    . ${WASLIBERTY_SCRIPTDIR}scripts/was.config.sh
+  
+  fi
+
+  decho "F:OUT:customise_wasliberty"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
 # Install DataPower Gateway
 function install_dpgw() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :install_dpgw"
+  decho "F:IN:install_dpgw"
 
   # add catalog sources using ibm_pak plugin
   check_add_cs_ibm_pak ibm-websphere-liberty MY_WL_CASE amd64
@@ -1073,7 +1055,7 @@ function install_dpgw() {
 # Install EEM
 function install_eem() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :install_eem"
+  decho "F:IN:install_eem"
 
   local lf_in_ns=$1
   local varb64
@@ -1104,39 +1086,46 @@ function install_eem() {
     lf_type="EventEndpointManagement"
     lf_wait_for_state=0
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
-  fi
 
-  # start customization
-  # Takes all the templates associated with the capabilities and generate the files from the context variables
-  # The files are generated into ./customisation/working/<capability>/config
-  ## Creating EEM users and roles
-  if $MY_EEM_CUSTOM; then
+    ## Creating EEM users and roles
     # generate properties files
-    cat $EEM_TMPL_USER_CREDENTIALS_CUSTOMFILE | envsubst >$EEM_GEN_USER_CREDENTIALS_CUSTOMFILE
-    cat $EEM_TMPL_USER_ROLES_CUSTOMFILE | envsubst >$EEM_GEN_USER_ROLES_CUSTOMFILE
+    adapt_file ${EEM_SCRIPTDIR}config/ ${EEM_GEN_CUSTOMDIR}config/ user-credentials.yaml
+    adapt_file ${EEM_SCRIPTDIR}config/ ${EEM_GEN_CUSTOMDIR}config/ user-roles.yaml
 
     # base64 generates an error ": illegal base64 data at input byte 76". Solution found here : https://bugzilla.redhat.com/show_bug.cgi?id=1809431. use base64 -w0
     # user credentials
-    varb64=$(cat "$EEM_GEN_USER_CREDENTIALS_CUSTOMFILE" | base64 -w0)
+    varb64=$(cat "${EEM_GEN_CUSTOMDIR}config/user-credentials.yaml" | base64 -w0)
     oc -n $MY_OC_PROJECT patch secret "${MY_EEM_INSTANCE_NAME}-ibm-eem-user-credentials" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-credentials.json\" ,\"value\" : \"$varb64\"}]"
-
     # user roles
-    varb64=$(cat "$EEM_GEN_USER_ROLES_CUSTOMFILE" | base64 -w0)
+    varb64=$(cat "${EEM_GEN_CUSTOMDIR}config/user-roles.yaml" | base64 -w0)
     oc -n $MY_OC_PROJECT patch secret "${MY_EEM_INSTANCE_NAME}-ibm-eem-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$varb64\"}]"
-
-    # launch custom script
-    mylog info "Customise EEM"
   fi
-
+  
   decho "F:OUT:install_eem"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
 ################################################
+# Customise EEM
+function customise_eem() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho "F:IN:customise_eem"
+
+  if $MY_EEM_CUSTOM; then
+    mylog info "==== Customise Event Endpoint Management." 1>&2
+
+    # launch custom script
+    mylog info "Customise EEM"
+  fi
+
+  decho "F:OUT:customise_eem"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+################################################
 # Install EGW
 function install_egw() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :install_egw"
+  decho "F:IN:install_egw"
 
   # Creating EventGateway instance (Event Gateway)
   if $MY_EGW; then
@@ -1158,10 +1147,26 @@ function install_egw() {
 }
 
 ################################################
+# Customise EGW
+function customise_egw() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho "F:IN:customise_egw"
+
+  # Creating EventGateway instance (Event Gateway)
+  if $MY_EGW_CUSTOM; then
+    mylog info "==== Customise Event Endpoint Gateway." 1>&2
+
+  fi
+
+  decho "F:OUT:customise_egw"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
 # Install EP
 function install_ep() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :install_ep"
+  decho "F:IN:install_ep"
 
   local lf_in_ns=$1
   local varb64
@@ -1195,27 +1200,18 @@ function install_ep() {
     lf_type="EventProcessing"
     lf_wait_for_state=0
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
-  fi
 
-  # start customization
-  # Takes all the templates associated with the capabilities and generate the files from the context variables
-  # The files are generated into ./customisation/working/<capability>/config
-  ## Creating Event Processing users and roles
-  if $MY_EP_CUSTOM; then
     # generate properties files
-    cat $EP_TMPL_USER_CREDENTIALS_CUSTOMFILE | envsubst >$EP_GEN_USER_CREDENTIALS_CUSTOMFILE
-    cat $EP_TMPL_USER_ROLE_CUSTOMFILE | envsubst >$EP_GEN_USER_ROLES_CUSTOMFILE
+    adapt_file ${EP_SCRIPTDIR}config/ ${EP_GEN_CUSTOMDIR}config/ user-credentials.yaml
+    adapt_file ${EP_SCRIPTDIR}config/ ${EP_GEN_CUSTOMDIR}config/ user-roles.yaml
 
     # user credentials
-    varb64=$(cat "$EP_GEN_USER_CREDENTIALS_CUSTOMFILE" | base64 -w0)
+    varb64=$(cat "${EP_GEN_CUSTOMDIR}config/user-credentials.yaml" | base64 -w0)
     oc -n $MY_OC_PROJECT patch secret "${MY_EP_INSTANCE_NAME}-ibm-ep-user-credentials" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-credentials.json\" ,\"value\" : \"$varb64\"}]"
 
     # user roles
-    varb64=$(cat "$EP_GEN_USER_ROLES_CUSTOMFILE" | base64 -w0)
+    varb64=$(cat "${EP_GEN_CUSTOMDIR}config/user-roles.yaml" | base64 -w0)
     oc -n $MY_OC_PROJECT patch secret "${MY_EP_INSTANCE_NAME}-ibm-ep-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$varb64\"}]"
-
-    # launch custom script
-    mylog info "Customise Event Processing"
   fi
 
   decho "F:OUT:install_ep"
@@ -1223,10 +1219,32 @@ function install_ep() {
 }
 
 ################################################
+# Customise EP
+function customise_ep() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho "F:IN:customise_ep"
+
+  local lf_in_ns=$1
+  local varb64
+
+  # Takes all the templates associated with the capabilities and generate the files from the context variables
+  # The files are generated into ./customisation/working/<capability>/config
+  ## Creating Event Processing users and roles
+  if $MY_EP_CUSTOM; then
+    mylog info "==== Customise Event Endpoint Processing." 1>&2
+    # launch custom script
+    mylog info "Customise Event Processing"
+  fi
+
+  decho "F:OUT:customise_ep"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
 # Install IBM Event streams
 function install_es() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :install_es"
+  decho "F:IN:install_es"
 
   # ibm-eventstreams
   if $MY_ES; then
@@ -1254,6 +1272,16 @@ function install_es() {
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
   fi
 
+  decho "F:OUT:install_es"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
+# Customise IBM Event streams
+function customise_es() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho "F:IN:customise_es"
+
   # start customization
   # Takes all the templates associated with the capabilities and generate the files from the context variables
   # The files are generated into ./customisation/working/<capability>/config
@@ -1271,6 +1299,8 @@ function install_es() {
   # - operands properties file,
   # - topics, ...
   if $MY_ES_CUSTOM; then
+      mylog info "==== Customise Event Streams" 1>&2
+
     # generate the differents properties files
     # SB]20231109 some generated files (yaml) are based on other generated files (properties), so :
     # - in template custom dirs, separate the files to two categories : scripts (*.properties) and config (*.yaml)
@@ -1281,7 +1311,7 @@ function install_es() {
     if [ ! -d ${ES_GEN_CUSTOMDIR}config ]; then
       mkdir -p ${ES_GEN_CUSTOMDIR}config
     fi
-    generate_files $ES_TMPL_CUSTOMDIR $ES_GEN_CUSTOMDIR false
+    generate_files $ES_SCRIPTDIR $ES_GEN_CUSTOMDIR false
 
     # SB]20231211 https://ibm.github.io/event-automation/es/installing/installing/
     # Question : Do we have to create this configmap before installing ES or even after ? Used for monitoring
@@ -1290,15 +1320,10 @@ function install_es() {
     lf_yaml_file="${RESOURCSEDIR}openshift-monitoring-cm.yaml"
     lf_namespace="openshift-monitoring"
     check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
-
-    # launch custom script
-    if $MY_ES_CUSTOM; then
-      mylog info "Customise Event Streams"
       . ${ES_SCRIPTDIR}scripts/es.config.sh
-    fi
   fi
 
-  decho "F:OUT:install_es"
+  decho "F:OUT:customise_es"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -1306,7 +1331,7 @@ function install_es() {
 # Install Flink
 function install_flink() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :install_flink"
+  decho "F:IN:install_flink"
 
   local lf_in_ns=$1
   if $MY_FLINK; then
@@ -1361,10 +1386,24 @@ function install_flink() {
 }
 
 ################################################
+# Customise Flink
+function customise_flink() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho "F:IN:customise_flink"
+
+  local lf_in_ns=$1
+  if $MY_FLINK_CUSTOM; then
+    mylog info "==== Customise Flink." 1>&2
+  fi
+
+  decho "F:OUT:customise_flink"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+################################################
 # Install Aspera HSTS
 function install_hsts() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :install_hsts"
+  decho "F:IN:install_hsts"
 
   # ibm aspera hsts
   if $MY_HSTS; then
@@ -1382,10 +1421,6 @@ function install_hsts() {
     lf_csv_name=$MY_HSTS_CSV_NAME
     create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
-    # Creating Aspera HSTS instance
-    #oc apply -f "${OPERANDSDIR}AsperaCM-cp4i-hsts-prometheus-lock.yaml"
-    #oc apply -f "${OPERANDSDIR}AsperaCM-cp4i-hsts-engine-lock.yaml"
-
     lf_file="${OPERANDSDIR}AsperaHSTS-Capability.yaml"
     lf_ns="${MY_OC_PROJECT}"
     lf_path="{.status.conditions[0].type}"
@@ -1401,10 +1436,25 @@ function install_hsts() {
 }
 
 ################################################
+# Customise Aspera HSTS
+function customise_hsts() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho "F:IN:customise_hsts"
+
+  # ibm aspera hsts
+  if $MY_HSTS_CUSTOM; then
+    mylog info "==== Customise HSTS." 1>&2
+  fi
+
+  decho "F:OUT:customise_hsts"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
 # Install MQ
 function install_mq() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :install_mq"
+  decho "F:IN:install_mq"
 
   # ibm-mq
   if $MY_MQ; then
@@ -1433,17 +1483,26 @@ function install_mq() {
     #create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
   fi
 
-  # start customization
+  decho "F:OUT:install_mq"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
+# Customise MQ
+function customise_mq() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho "F:IN:customise_mq"
+
   # Takes all the templates associated with the capabilities and generate the files from the context variables
   # The files are generated into ./customisation/working/<capability>/config
   if $MY_MQ_CUSTOM; then
     # launch custom script
-    mylog info "Customise MQ"
+    mylog info "==== Customise MQ." 1>&2
     . ${MQ_SCRIPTDIR}scripts/mq.config.sh -i ${sc_properties_file} ${sc_versions_file} ${MY_MQ_INSTANCE_NAME}
     #${MQ_SCRIPTDIR}scripts/mq.config.sh -i ${sc_properties_file} ${sc_versions_file} ${MY_MQ_INSTANCE_NAME}
   fi
 
-  decho "F:OUT:install_mq"
+  decho "F:OUT:customise_mq"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -1451,7 +1510,7 @@ function install_mq() {
 # Install Instana
 function install_instana() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :install_instana"
+  decho "F:IN:install_instana"
 
   # instana
   #SB]20230201 Ajout d'Instana
@@ -1481,6 +1540,23 @@ function install_instana() {
   fi
 
   decho "F:OUT:install_instana"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
+# Customise Instana
+function customise_instana() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho "F:IN:customise_instana"
+
+  # instana
+  #SB]20230201 Ajout d'Instana
+  # Creating Instana operator subscription
+  if $MY_INSTANA_CUSTOM; then
+    mylog info "==== Customise Instana." 1>&2
+  fi
+
+  decho "F:OUT:customise_instana"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -1594,6 +1670,10 @@ add_ibm_entitlement $MY_OPERATORS_NAMESPACE $MY_CONTAINER_ENGINE
 mylog info "==== Installing Red Hat OpenShift GitOps Operator." 1>&2
 install_gitops
 
+######################################################
+# Start installation capabilities
+######################################################
+
 #SB]20231214 Installing Foundation services
 mylog info "==== Installing foundational services (Cert Manager, Licensing Server and Common Services)." 1>&2
 install_cert_manager
@@ -1605,57 +1685,75 @@ install_mailhog
 install_openldap
 
 END_COMMENT
+# install_xxx: For each capability install : case, operator, operand
 
-install_openliberty
-# install_wasliberty
+# install_openliberty
+install_wasliberty
 
-# For each capability install : case, operator, operand
 install_navigator
 
-# For each capability install : case, operator, operand
 install_intassembly
 
-# For each capability install : case, operator, operand
 install_assetrepo
 
-# For each capability install : case, operator, operand
-#install_ace
-
-# For each capability install : case, operator, operand
+install_ace
 
 install_apic
 
-# For each capability install : case, operator, operand
 install_eem $MY_CATALOGSOURCES_NAMESPACE
 
-# For each capability install : case, operator, operand
 install_egw
 
-# For each capability install : case, operator, operand
 install_ep $MY_CATALOGSOURCES_NAMESPACE
 
-# For each capability install : case, operator, operand
 install_es
 
-# For each capability install : case, operator, operand
 install_flink $MY_CATALOGSOURCES_NAMESPACE
 
-# For each capability install : case, operator, operand
 install_hsts
 
-# For each capability install : case, operator, operand
 install_mq
 
-# Add Instana
 install_instana
 
 ######################################################
 # Start customisation
 ######################################################
 
-# customisation_apic
+customise_openldap
 
+customise_openliberty
+
+customise_wasliberty
+
+# Not needed, does not exist
+# customise_navigator 
+# customise_intassembly
+# customise_assetrepo
+
+customise_ace
+
+customise_apic
+
+customise_eem
+
+customise_egw
+
+customise_ep
+
+customise_es
+
+customise_flink
+
+customise_hsts
+
+customise_mq
+
+customise_instana
+
+######################################################
 ## Display information to access CP4I
+######################################################
 display_access_info
 
 #work in progress

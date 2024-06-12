@@ -225,7 +225,7 @@ In the subscription folder we have the definition of the operators. Since they a
 
 ## Customisation
 
-1) The source of documents are in the templates/operands-custom/<capability>/scripts (or config) folders
+1) The source of documents are in the customisation/<capability>/scripts (or config) folders
 2) The generated files are in customisation/<capability>/scripts (or config) folders
 3) We execute the customisation from customisation/<capability>/scripts
 

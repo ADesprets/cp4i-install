@@ -1,12 +1,5 @@
 #!/bin/bash
 
-# function to print message if debug is set to 1
-function decho() {
-  if [ $ADEBUG -eq 1 ]; then
-    mylog info "$@"
-  fi
-}
-
 ################################################
 # Create mail server configuration
 # @param mail_server_ip: IP of the mail server, example: 
@@ -275,7 +268,7 @@ function create_apic_resources() {
     # get the gateway route in order to provide the endpoint of the fare URL authentication api which should bepublished in production
     gtw_url=$(oc -n ${apic_project} get GatewayCluster -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].status.endpoints[?(@.name=="gateway")].uri}')
     export APIC_EP_GTW=${gtw_url}
-    adapt_file ${APIC_TMPL_CUSTOMDIR}config/ ${APIC_GEN_CUSTOMDIR}config/ AuthenticationURL_Registry_res.json
+    adapt_file ${APIC_SCRIPTDIR}config/ ${APIC_GEN_CUSTOMDIR}config/ AuthenticationURL_Registry_res.json
 
     decho "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/user-registries\" -H 'accept: application/json' -H \"authorization: Bearer cm_token\" -H 'content-type: application/json' -H \"Connection: keep-alive\" --compressed --data-binary \"@${APIC_GEN_CUSTOMDIR}config/AuthenticationURL_Registry_res.json\""
     registryURLfakeAPI=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/user-registries" \
@@ -306,7 +299,7 @@ function create_apic_resources() {
   # Add it if not already added TODO if
   if [ 2 -gt 3 ]; then
     lf_apicpath=api/catalogs/$org/$catalog/configured-api-user-registries
-    adapt_file ${APIC_TMPL_CUSTOMDIR}config/ ${APIC_GEN_CUSTOMDIR}config/ ConfiguredUserRegistry_res.json
+    adapt_file ${APIC_SCRIPTDIR}config/ ${APIC_GEN_CUSTOMDIR}config/ ConfiguredUserRegistry_res.json
     curl -sk "${PLATFORM_API_URL}${lf_apicpath}" \
       -H 'accept: application/json' \
       -H "authorization: Bearer $lf_am_token" \
@@ -327,7 +320,7 @@ function create_apic_resources() {
     admin_url=$(curl -sk "${PLATFORM_API_URL}${lf_apicpath}" -H "Authorization: Bearer $lf_cm_token" -H 'Accept: application/json' | jq -r .)
     export APIC_URL_REGISTRY_NAME=$lf_urlregistryname
     export APIC_ADMIN_URL=$admin_url
-    adapt_file ${APIC_TMPL_CUSTOMDIR}config/ ${APIC_GEN_CUSTOMDIR}config/ NativeOAuthProvider_res.json
+    adapt_file ${APIC_SCRIPTDIR}config/ ${APIC_GEN_CUSTOMDIR}config/ NativeOAuthProvider_res.json
     lf_apicpath=api/orgs/$lf_org/oauth-providers
     oauthProvider=$(curl -sk "${PLATFORM_API_URL}${lf_apicpath}" \
       -H 'accept: application/json' \
@@ -355,7 +348,7 @@ function create_apic_resources() {
     lf_org=APIC_PROVIDER_ORG
     lf_apicpath=api/catalogs/$org/$catalog/configured-oauth-providers
     export APIC_OAUTH_PROVIDER=$oauthProviderURL
-    adapt_file ${APIC_TMPL_CUSTOMDIR}config/ ${APIC_GEN_CUSTOMDIR}config/ ConfiguredOAuthProvider_res.json
+    adapt_file ${APIC_SCRIPTDIR}config/ ${APIC_GEN_CUSTOMDIR}config/ ConfiguredOAuthProvider_res.json
     curl -sk "${PLATFORM_API_URL}${lf_apicpath}" \
       -H 'accept: application/json' \
       -H "authorization: Bearer $lf_am_token" \
@@ -383,7 +376,7 @@ api_files=("ping-api_1.0.0.json" "ibm-sample-order-api_1.0.0.json" "stock_1.0.0.
 
 for index in ${!api_names[@]}
   do
-    adapt_file ${APIC_TMPL_CUSTOMDIR}config/ ${APIC_GEN_CUSTOMDIR}config/ ${api_files[$index]}
+    adapt_file ${APIC_SCRIPTDIR}config/ ${APIC_GEN_CUSTOMDIR}config/ ${api_files[$index]}
     decho "curl -sk \"${platform_api_url}api/orgs/${apic_provider_org}/drafts/draft-apis/${api_names[$index]}?fields=url\" -H \"Authorization: Bearer <token>\" -H 'Accept: application/json'"
     local api_uri_result=$(curl -sk "${platform_api_url}api/orgs/${apic_provider_org}/drafts/draft-apis/${api_names[$index]}?fields=url" -H "Authorization: Bearer $token" -H 'Accept: application/json' | jq -r .total_results)
     if [ $api_uri_result -eq 0 ]; then
@@ -577,8 +570,8 @@ decho "To configure the mail server the clusterIP is ${mail_server_cluster_ip}"
 export MY_MAIL_SERVER_HOST_IP=${mail_server_cluster_ip}
 
 # Will create both directories needed later on
-adapt_file ${APIC_TMPL_CUSTOMDIR}scripts/ ${APIC_GEN_CUSTOMDIR}scripts/ apic.properties
-adapt_file ${APIC_TMPL_CUSTOMDIR}config/ ${APIC_GEN_CUSTOMDIR}config/ web-mgmt.cfg
+adapt_file ${APIC_SCRIPTDIR}scripts/ ${APIC_GEN_CUSTOMDIR}scripts/ apic.properties
+adapt_file ${APIC_SCRIPTDIR}config/ ${APIC_GEN_CUSTOMDIR}config/ web-mgmt.cfg
 
 read_config_file "${APIC_GEN_CUSTOMDIR}scripts/apic.properties"
 

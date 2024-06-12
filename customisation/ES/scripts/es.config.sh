@@ -52,7 +52,7 @@ check_create_oc_yaml "KafkaUser" "${es_topic_name}" "${ES_GEN_CUSTOMDIR}config/k
 
 # Create KafkaConnect and KafkaConnector in $ES_APPS_PROJECT project
 mylog info "Create Kafka Connect for datagen"
-# check_create_oc_yaml "KafkaConnect" "datagen-host" "${ES_GEN_CUSTOMDIR}config/KConnect_datagen.yaml" $es_project
+check_create_oc_yaml "KafkaConnect" "datagen-host" "${ES_GEN_CUSTOMDIR}config/KConnect_datagen.yaml" $es_project
 
 # mylog info "Create Kafka Connector for datagen"
 check_create_oc_yaml "KafkaConnector" "datagen" "${ES_GEN_CUSTOMDIR}config/KConnector_datagen.yaml" $es_project

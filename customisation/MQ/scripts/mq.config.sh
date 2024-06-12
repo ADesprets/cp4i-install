@@ -11,7 +11,7 @@
 #################################################
 function create_ca_tls () {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho "F:IN :create_ca_tls"
+  decho "F:IN:create_ca_tls"
 
   local lf_openssl_cnf_file="${OPENSSLDIR}openssl.properties"
  
@@ -34,7 +34,7 @@ function create_ca_tls () {
 #####################################################
 function create_qmgr_ca_tls () {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho "F:IN :create_qmgr_ca_tls"
+  decho "F:IN:create_qmgr_ca_tls"
 
   local lf_crt_file="${sc_srv_crtdir}qmgr-crt.pem"
   local lf_csr_file="${sc_srv_crtdir}qmgr-req.pem"
@@ -56,7 +56,7 @@ function create_qmgr_ca_tls () {
 #################################################
 function create_clnt_kdb () {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho "F:IN :create_clnt_kdb"
+  decho "F:IN:create_clnt_kdb"
 
   mylog "info" "Creating   : client key database for $sc_clnt to use with MQSSLKEYR env variable."
 
@@ -77,7 +77,7 @@ function create_clnt_kdb () {
 #################################################
 function add_qmgr_crt_2_clnt_kdb () {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho "F:IN :add_qmgr_crt_2_clnt_kdb"
+  decho "F:IN:add_qmgr_crt_2_clnt_kdb"
 
   mylog "info" "Adding     : qmgr certificate to the client key database"
 
@@ -112,7 +112,7 @@ function add_qmgr_crt_2_clnt_kdb () {
 ###############################################################################################################################
 function add_ca_crt_2_clnt_kdb () {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho "F:IN :add_ca_crt_2_clnt_kdb"
+  decho "F:IN:add_ca_crt_2_clnt_kdb"
 
   local lf_ca_crt="${sc_ca_crtdir}ca-crt.pem"
 
@@ -142,7 +142,7 @@ function add_ca_crt_2_clnt_kdb () {
 #####################################################
 function create_pki_cr () {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho "F:IN :create_pki_cr"
+  decho "F:IN:create_pki_cr"
 
   ##-- Get the private/cert/ca for the Issuer cs-ca-issuer 
   #mylog "info" "Getting   : certificate and key for CA"
@@ -176,7 +176,7 @@ function create_pki_cr () {
 #################################################
 function create_oc_qmgr () {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho "F:IN :create_oc_qmgr"
+  decho "F:IN:create_oc_qmgr"
   
   local lf_tmpl_file="${TMPLYAMLDIR}qmgr_tmpl-v2.yaml"
   local lf_gen_file="${sc_generatedyamldir}qmgr.yaml"
@@ -218,7 +218,7 @@ function create_oc_qmgr () {
 ################################################
 function create_ccdt () {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho "F:IN :create_ccdt"
+  decho "F:IN:create_ccdt"
  
   # check for the existence of all needed files 
 
@@ -239,7 +239,7 @@ function create_ccdt () {
 ################################################
 function create_helper_scripts () {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho "F:IN :create_helper_scripts"
+  decho "F:IN:create_helper_scripts"
  
   # Generate herlper scripts files
   mylog "info" "Helper scripts in ${sc_generatedshdir} directory"

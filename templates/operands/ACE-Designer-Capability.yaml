@@ -4,7 +4,6 @@ metadata:
   name: $MY_ACE_DESIGNER_INSTANCE_NAME
   namespace: $MY_OC_PROJECT
 spec:
-spec:
   license:
     accept: true
     license: $MY_ACE_LIC

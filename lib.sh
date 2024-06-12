@@ -92,7 +92,7 @@ function check_openshift_version() {
 # cmp_versions v1 v2 returns 0 if v1=v2, 1 if v1 is newer than v2, 2 if v1 is older than v2
 function cmp_versions() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :cmp_versions"
+  decho "F:IN:cmp_versions"
 
   local lf_in_version1=$1
   local lf_in_version2=$2
@@ -126,7 +126,7 @@ function cmp_versions() {
 # Save a certificate in pem format
 function save_certificate() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :save_certificate"
+  decho "F:IN:save_certificate"
 
   local lf_in_ns=$1
   local lf_in_secret_name=$2
@@ -148,7 +148,7 @@ function save_certificate() {
 # Pour tester une variable null : https://stackoverflow.com/questions/48261038/shell-script-how-to-check-if-variable-is-null-or-no
 function is_case_downloaded() {
 #  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-#  decho "F:IN :is_case_downloaded"
+#  decho "F:IN:is_case_downloaded"
   local lf_in_case=$1
   local lf_in_version_varid=$2
 
@@ -160,7 +160,7 @@ function is_case_downloaded() {
   local lf_res
 
   if [ ! -d "${lf_directory}" ]; then
-    decho "F:OUT:is_case_downloaded"
+    # decho "F:OUT:is_case_downloaded"
     SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
     lf_res=0
   else
@@ -170,7 +170,7 @@ function is_case_downloaded() {
     # The -z operator returns true if the string is null or empty, and false otherwise.
     # The -n operator returns true if the string is not null or empty, and false otherwise.
     if [ -z "$lf_result" ]; then
-      decho "F:OUT:is_case_downloaded"
+      # decho "F:OUT:is_case_downloaded"
       SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
       lf_res=0
     else
@@ -210,7 +210,7 @@ function is_case_downloaded() {
 #  Returns 1 (if the cr is newer than the file) otherwise 0
 function is_cr_newer() {
 #  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-#  decho "F:IN :is_cr_newer"
+#  decho "F:IN:is_cr_newer"
   local lf_in_type=$1
   local lf_in_customresource=$2
   local lf_in_file=$3
@@ -241,7 +241,7 @@ function is_cr_newer() {
 # Check that all required executables are installed
 function check_command_exist() {
 #  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-#  decho "F:IN :check_command_exist"
+#  decho "F:IN:check_command_exist"
 
   local command=$1
 
@@ -259,7 +259,7 @@ function check_command_exist() {
 #
 function check_file_exist() {
 #  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-#  decho "F:IN :check_file_exist"
+#  decho "F:IN:check_file_exist"
 
   local file=$1
   if [ ! -e "$file" ]; then
@@ -276,7 +276,7 @@ function check_file_exist() {
 #
 function check_directory_exist() {
 #  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-#  decho "F:IN :check_directory_exist"
+#  decho "F:IN:check_directory_exist"
 
   local directory=$1
   if [ ! -d $directory ]; then
@@ -303,7 +303,7 @@ function check_directory_contains_files() {
 #
 function check_directory_exist_create() {
 #  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-#  decho "F:IN :check_directory_exist_create"
+#  decho "F:IN:check_directory_exist_create"
 
   local directory=$1
   if [ ! -d $directory ]; then
@@ -349,7 +349,7 @@ function read_config_file() {
 # Check that all required executables are installed
 function check_exec_prereqs() {
 #  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-#  decho "F:IN :check_exec_prereqs"
+#  decho "F:IN:check_exec_prereqs"
 
   check_command_exist awk
   check_command_exist curl
@@ -383,7 +383,7 @@ function waitn() {
 # @param mail_def, exemple 159.8.70.38:2525
 function send_email() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :send_email"
+  decho "F:IN:send_email"
 
   curl --url "smtp://$mail_def" \
     --mail-from cp4i-admin@ibm.com \
@@ -401,7 +401,7 @@ function send_email() {
 # @param command executed command that returns some state
 function wait_for_state() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :wait_for_state"
+  decho "F:IN:wait_for_state"
 
   local what=$1
   local value=$2
@@ -455,7 +455,7 @@ function wait_for_state() {
 # @param ns: name space where the reousrce is created, example: $MY_OPERATORS_NAMESPACE
 function check_create_oc_yaml() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :check_create_oc_yaml"
+  decho "F:IN:check_create_oc_yaml"
 
   local lf_in_octype="$1"
   local lf_in_cr_name="$2"
@@ -490,7 +490,7 @@ function check_create_oc_yaml() {
 # @param namespace
 function provision_persistence_openldap() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :provision_persistence_openldap"
+  decho "F:IN:provision_persistence_openldap"
 
   local lf_in_namespace="$1"
   # handle persitence for Openldap
@@ -514,7 +514,7 @@ function provision_persistence_openldap() {
 # See https://github.com/osixia/docker-openldap for more details especialy all the configurations possible
 function deploy_openldap() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :deploy_openldap"
+  decho "F:IN:deploy_openldap"
 
   local lf_in_octype="$1"
   local lf_in_name="$2"
@@ -557,7 +557,7 @@ function deploy_openldap() {
 # To add a user/password protection to the web UI: https://stackoverflow.com/questions/60162842/how-can-i-add-basic-authentication-to-the-mailhog-service-in-ddev-local
 function deploy_mailhog() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :deploy_mailhog"
+  decho "F:IN:deploy_mailhog"
 
   local lf_in_octype="$1"
   local lf_in_name="$2"
@@ -584,7 +584,7 @@ function deploy_mailhog() {
 # Check if the service is already exposed
 function is_service_exposed() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :is_service_exposed"
+  decho "F:IN:is_service_exposed"
 
   local lf_in_namespace="$1"
   local lf_in_service_name="$2"
@@ -607,7 +607,7 @@ function is_service_exposed() {
 # Function to add entry if it doesn't exist
 function add_entry_if_not_exists() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :add_entry_if_not_exists"
+  decho "F:IN:add_entry_if_not_exists"
 
   local lf_in_ldap_server="$1"
   local lf_in_admin_dn="$2"
@@ -638,7 +638,7 @@ function add_entry_if_not_exists() {
 # Function to add ldif file entries if each doesn't exist
 function add_ldif_file () {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :add_ldif_file"
+  decho "F:IN:add_ldif_file"
 
   local lf_in_ldif_file="$1"
   local lf_in_ldap_server="$2"
@@ -684,7 +684,7 @@ function add_ldif_file () {
 # @param namespace: the namespace to use
 function expose_service_openldap() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :expose_service_openldap"
+  decho "F:IN:expose_service_openldap"
 
   local lf_in_name="$1" 
   local lf_in_namespace="$2"
@@ -731,7 +731,7 @@ function expose_service_openldap() {
 # @param namespace: the namespace to use
 function expose_service_mailhog() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :expose_service_mailhog"
+  decho "F:IN:expose_service_mailhog"
 
   local lf_in_name="$1"
   local lf_in_namespace="$2"
@@ -757,7 +757,7 @@ function expose_service_mailhog() {
 # @param ns namespace to be created
 function create_namespace() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :create_namespace"
+  decho "F:IN:create_namespace"
 
   local lf_in_ns=$1
   var_fail MY_OC_PROJECT "Please define project name in config"
@@ -783,7 +783,7 @@ function create_namespace() {
 # TODO The var variable is initialised for another function, this is not good
 function check_resource_availability() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :check_resource_availability"
+  decho "F:IN:check_resource_availability"
 
   local lf_in_type="$1"
   local lf_in_name="$2"
@@ -808,7 +808,7 @@ function check_resource_availability() {
 # https://ibm.github.io/cloud-pak/
 function check_add_cs_ibm_pak() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :check_add_cs_ibm_pak"
+  decho "F:IN:check_add_cs_ibm_pak"
 
   local lf_in_case_name="$1"
   local lf_in_case_version_varid="$2"
@@ -850,7 +850,7 @@ function check_add_cs_ibm_pak() {
 ##SB]20231201 create operator subscription
 function create_operator_subscription() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :create_operator_subscription"
+  decho "F:IN:create_operator_subscription"
 
   # export are important because they are used to replace the variable in the subscription.yaml (envsubst command)
   export MY_OPERATOR_NAME=$1
@@ -897,7 +897,7 @@ function create_operator_subscription() {
 ##SB]20231204 create operand instance
 function create_operand_instance() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :create_operand_instance"
+  decho "F:IN:create_operand_instance"
 
   local lf_in_file=$1
   local lf_in_ns=$2
@@ -924,7 +924,7 @@ function create_operand_instance() {
 # Need to check that the resource exist.
 function get_navigator_access() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :get_navigator_access"
+  decho "F:IN:get_navigator_access"
 
   cp4i_url=$(oc -n $MY_OC_PROJECT get platformnavigator cp4i-navigator -o jsonpath='{range .status.endpoints[?(@.name=="navigator")]}{.uri}{end}')
   # cp4i_uid=$(oc -n $MY_OC_PROJECT get secret ibm-iam-bindinfo-platform-auth-idp-credentials -o jsonpath={.data.admin_username} | base64 -d)
@@ -939,10 +939,10 @@ function get_navigator_access() {
 #########################################################################################################
 ##SB]20231109 Generate properties and yaml/json files
 ## input parameter the operand custom dir (and generated dir both with config and scripts subdirectories)
+# TODO Decide if it only works with files in the directory, or with subdirectories. Today just one level no subdirectories.
 function generate_files() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :generate_files"
-
+  decho "F:IN:generate_files"
   local customdir=$1
   local gendir=$2
   local transform=$3
@@ -963,9 +963,11 @@ function generate_files() {
   nfiles=$(check_directory_contains_files $scripts_customdir)
   if [ $nfiles -gt 0 ]; then
     for file in ${scripts_customdir}*; do
-      filename=$(basename -- "$file")
-      cat $file | envsubst >"${scripts_gendir}${filename}"
-      #  . "${scripts_gendir}${filename}"
+      if [ -f $file]; then
+        filename=$(basename -- "$file")
+        cat $file | envsubst >"${scripts_gendir}${filename}"
+        #  . "${scripts_gendir}${filename}"
+      fi
     done
   fi
 
@@ -973,13 +975,15 @@ function generate_files() {
   nfiles=$(check_directory_contains_files $config_customdir)
   if [ $nfiles -gt 0 ]; then
     for file in ${config_customdir}*; do
-      filename=$(basename -- "$file")
-      if $transform; then
-        # mylog info "Transform $file file"
-        cat $file | envsubst >"${config_gendir}${filename}"
-      else
-        # mylog info "Copy $file file"
-        cat $file >"${config_gendir}${filename}"
+      if [ -f $file]; then
+        filename=$(basename -- "$file")
+        if $transform; then
+          # mylog info "Transform $file file"
+          cat $file | envsubst >"${config_gendir}${filename}"
+        else
+          # mylog info "Copy $file file"
+          cat $file >"${config_gendir}${filename}"
+        fi
       fi
     done
   fi
@@ -991,7 +995,7 @@ function generate_files() {
 #############################################################################################################################
 function create_catalogsource() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :create_catalogsource"
+  decho "F:IN:create_catalogsource"
 
   export CATALOG_SOURCE_NAMESPACE=$1
   export CATALOG_SOURCE_NAME=$2
@@ -1030,7 +1034,7 @@ function create_catalogsource() {
 ## called generate_files before
 function adapt_file() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN :adapt_file"
+  decho "F:IN:adapt_file"
 
   local sourcedir=$1
   local destdir=$2

@@ -5,7 +5,7 @@
 ################################################################
 function create_secret_for_barauth () {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho "F:IN :create_secret_for_barauth"
+  decho "F:IN:create_secret_for_barauth"
  
   local lf_in_json_file=$1
 
@@ -31,7 +31,7 @@ function create_secret_for_barauth () {
 #################################################
 function create_ace_config_barauth () {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho "F:IN :create_ace_config_barauth"
+  decho "F:IN:create_ace_config_barauth"
  
   local lf_in_file=$1
   local lf_file_bn=$(basename "${lf_in_file}")
@@ -62,7 +62,7 @@ function create_ace_config_barauth () {
 #################################################
 function create_ace_config_serverconf () {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho "F:IN :create_ace_config_serverconf"
+  decho "F:IN:create_ace_config_serverconf"
  
   local lf_in_file=$1
 
@@ -116,7 +116,6 @@ BARFILESDIR="${SCRIPTDIR}BarFiles/"
 
 #SB]20240524 Only the following variable is global for all bar files (Check if there others in which case put all them in a config file)
 MY_ACE_REPOSITORY_URL="https://raw.githubusercontent.com/saadbenachi/my_bar_files/main/"
-
 
 # SB]20240404 Global Index sequence for incremental output for each function call
 SC_SPACES_COUNTER=0
