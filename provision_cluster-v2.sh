@@ -1653,9 +1653,9 @@ my_user_file="${PRIVATEDIR}user.properties"
 read_config_file "$my_user_file"
 
 : <<'END_COMMENT'
+END_COMMENT
 # check the differents pre requisites
 check_exec_prereqs
-
 
 # Log to IBM Cloud
 login_2_ibm_cloud
@@ -1734,7 +1734,6 @@ install_openldap
 # install_openliberty
 install_wasliberty
 
-END_COMMENT
 install_navigator
 
 install_intassembly
