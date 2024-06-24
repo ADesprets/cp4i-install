@@ -112,22 +112,22 @@ function create_topology() {
   # should increase idempotence
   mylog info "Create gateway Service"
 
-  decho "Interact with Cloud Manager: curl -sk \"${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles\"  -H \"Authorization: Bearer <access_token>\"  -H 'Accept: application/json'"
+  decho 3 "Interact with Cloud Manager: curl -sk \"${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles\"  -H \"Authorization: Bearer <access_token>\"  -H 'Accept: application/json'"
   tlsServer=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles" \
    -H "Authorization: Bearer $access_token" \
    -H 'Accept: application/json' --compressed | jq .results[0].url  | sed -e s/\"//g);
-  decho "tlsServer: $tlsServer"
+  decho 3 "tlsServer: $tlsServer"
   
   tlsClientDefault=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-client-profiles" \
    -H "Authorization: Bearer $access_token" \
    -H 'Accept: application/json' --compressed | jq '.results[] | select(.name=="tls-client-profile-default")| .url' | sed -e s/\"//g);
-  decho "tlsClientDefault: $tlsClientDefault"
+  decho 3 "tlsClientDefault: $tlsClientDefault"
   
   #TODO  : use and in select : select(.integration_type=="gateway_service" --and .name=="datapower-api-gateway")| .url'
   integration_url=$(curl -sk "${PLATFORM_API_URL}api/cloud/integrations" \
    -H "Authorization: Bearer $access_token" \
    -H 'Accept: application/json' --compressed | jq -r '.results[] | select(.integration_type=="gateway_service" and .name=="datapower-api-gateway")| .url');
-  decho "integration_url: $integration_url"
+  decho 3 "integration_url: $integration_url"
   
   mylog info "{\"name\":\"apigateway-service\",\"title\":\"API Gateway Service\",\"endpoint\":\"https://$EP_GWD\",\"api_endpoint_base\":\"https://$EP_GW\",\"tls_client_profile_url\":\"$tlsClientDefault\",\"gateway_service_type\":\"$ep_gwType\",\"visibility\":{\"type\":\"public\"},\"sni\":[{\"host\":\"*\",\"tls_server_profile_url\":\"$tlsServer\"}],\"integration_url\":\"${integration_url}\"}"
 
@@ -139,7 +139,7 @@ function create_topology() {
   --data-binary "{\"name\":\"apigateway-service\",\"title\":\"API Gateway Service\",\"endpoint\":\"https://$EP_GWD\",\"api_endpoint_base\":\"https://$EP_GW\",\"tls_client_profile_url\":\"$tlsClientDefault\",\"gateway_service_type\":\"$ep_gwType\",\"visibility\":{\"type\":\"public\"},\"sni\":[{\"host\":\"*\",\"tls_server_profile_url\":\"$tlsServer\"}],\"integration_url\":\"${integration_url}\"}" \
   --compressed | jq .url | sed -e s/\"//g);
 
-  decho "dpUrl: $dpUrl"
+  decho 3 "dpUrl: $dpUrl"
 
   mylog info "Gateway service already exists, use it."
 
@@ -163,7 +163,7 @@ function create_topology() {
   --data-binary "{\"title\":\"API Analytics Service\",\"name\":\"analytics-service\",\"endpoint\":\"https://$EP_AI\"}" \
   --compressed | jq .url | sed -e s/\"//g);
 
-  decho "analytUrl: $analytUrl"
+  decho 3 "analytUrl: $analytUrl"
 
   mylog info "Associate Analytics Service with Gateway"
 
@@ -175,7 +175,7 @@ function create_topology() {
   -H 'Content-Type: application/json' \
   --data-binary "{\"analytics_service_url\":	\"$analytUrl\" }");
 
-  decho "analytGwy: $analytGwy"
+  decho 3 "analytGwy: $analytGwy"
 
   mylog info "Create Portal Service"
 
@@ -185,7 +185,7 @@ function create_topology() {
   -H "content-type: application/json"\
   --data "{\"title\":\"API Portal Service\",\"name\":\"portal-service\",\"endpoint\":\"https://$EP_PADMIN\",\"web_endpoint_base\":\"https://$EP_PORTAL\",\"visibility\":{\"group_urls\":null,\"org_urls\":null,\"type\":\"public\"}}");
 
-  decho "createPortal: $createPortal"
+  decho 3 "createPortal: $createPortal"
 }
 
 ################################################
@@ -195,14 +195,14 @@ function create_topology() {
 function create_catalog() {
   local org_name=$(echo "$1" | awk '{print tolower($0)}')
 
-# decho "url: ${PLATFORM_API_URL}api/orgs/$org_name/catalogs and token: $amToken"
+# decho 3 "url: ${PLATFORM_API_URL}api/orgs/$org_name/catalogs and token: $amToken"
 
 # Hard coded values
 catalog_title=("Prod" "UAT" "QA")
 catalog_name=("prod" "uat" "qa")
 catalog_summary=("Production" "UAT" "Quality and Acceptance")
 
-  decho "Interact with API Manager: curl -sk -X GET \"${PLATFORM_API_URL}api/orgs/$org_name/portal-services?fields=url\" -H \"Authorization: Bearer <amToken>\" -H 'accept: application/json' -H 'content-type: application/json' -H 'Connection: keep-alive'"
+  decho 3 "Interact with API Manager: curl -sk -X GET \"${PLATFORM_API_URL}api/orgs/$org_name/portal-services?fields=url\" -H \"Authorization: Bearer <amToken>\" -H 'accept: application/json' -H 'content-type: application/json' -H 'Connection: keep-alive'"
   portalServiceURL=$(curl -sk -X GET "${PLATFORM_API_URL}api/orgs/$org_name/portal-services?fields=url" \
     -H "Authorization: Bearer $amToken" \
     -H 'accept: application/json' \
@@ -217,7 +217,7 @@ for index in ${!catalog_name[@]}
         -H 'accept: application/json' \
         -H 'content-type: application/json' \
         -H 'Connection: keep-alive' | jq .url | sed -e s/\"//g)
-      # decho "Catalog url: $catURL"
+      # decho 3 "Catalog url: $catURL"
 
       if [ -z "$catURL" ] || [ "$catURL" = "null" ]; then
         mylog wait "Creating Catalog: "${catalog_name[$index]}" ("${catalog_summary[$index]}") in org $org_name";
@@ -254,9 +254,9 @@ function create_apic_resources() {
   # local org=$3
   
   # Check if already created
-  decho "curl -sk \"${PLATFORM_API_URL}api/user-registries/admin/url_registry?fields=url\" -H \"Authorization: Bearer cmtoken\" -H 'Accept: application/json'"
+  decho 3 "curl -sk \"${PLATFORM_API_URL}api/user-registries/admin/url_registry?fields=url\" -H \"Authorization: Bearer cmtoken\" -H 'Accept: application/json'"
   local registryURLfakeAPI=$(curl -sk "${PLATFORM_API_URL}api/user-registries/admin/url_registry?fields=url" -H "Authorization: Bearer $lf_cm_token" -H 'Accept: application/json')
-  decho "registryURLfakeAPI: $registryURLfakeAPI"
+  decho 3 "registryURLfakeAPI: $registryURLfakeAPI"
   if [ $(echo $registryURLfakeAPI | jq .status ) = "404" ] || [ -z "$registryURLfakeAPI" ] || [ "$registryURLfakeAPI" = "null" ]; then
     mylog info "Create URL Fake Authentication URL registry."
     # get integration url for (UserRegistry Subcollection), needed for the user registry creation
@@ -270,7 +270,7 @@ function create_apic_resources() {
     export APIC_EP_GTW=${gtw_url}
     adapt_file ${APIC_SCRIPTDIR}config/ ${APIC_GEN_CUSTOMDIR}config/ AuthenticationURL_Registry_res.json
 
-    decho "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/user-registries\" -H 'accept: application/json' -H \"authorization: Bearer cm_token\" -H 'content-type: application/json' -H \"Connection: keep-alive\" --compressed --data-binary \"@${APIC_GEN_CUSTOMDIR}config/AuthenticationURL_Registry_res.json\""
+    decho 3 "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/user-registries\" -H 'accept: application/json' -H \"authorization: Bearer cm_token\" -H 'content-type: application/json' -H \"Connection: keep-alive\" --compressed --data-binary \"@${APIC_GEN_CUSTOMDIR}config/AuthenticationURL_Registry_res.json\""
     registryURLfakeAPI=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/user-registries" \
       -H 'accept: application/json' \
       -H "authorization: Bearer $lf_cm_token" \
@@ -287,12 +287,12 @@ function create_apic_resources() {
   lf_urlregistryname=url_registry
   lf_apicpath=api/user-registries/$lf_org/$lf_urlregistryname?fields=url
   local sandboxURLRegistries=$(curl -sk "${PLATFORM_API_URL}${lf_apicpath}" -H "Authorization: Bearer $lf_am_token" -H 'Accept: application/json' | jq -r .url )
-  decho "sandboxURLRegistries: $sandboxURLRegistries"
+  decho 3 "sandboxURLRegistries: $sandboxURLRegistries"
 
   # Check if the registry has already been added
   lf_apicpath="api/catalogs/$org/$catalog/configured-api-user-registries?fields=user_registry_url"
   local sandboxCfgedRegistries=$(curl -sk "${PLATFORM_API_URL}${lf_apicpath}" -H "Authorization: Bearer $lf_am_token" -H 'Accept: application/json' | jq --arg ur "$sandboxCfgedRegistries" '.results[].user_registry_url | select(. == "$ur")')
-  decho "sandboxCfgedRegistries: $sandboxCfgedRegistries"
+  decho 3 "sandboxCfgedRegistries: $sandboxCfgedRegistries"
 
   export APIC_URL_REGISTRY=${sandboxURLRegistries}
 
@@ -329,19 +329,19 @@ function create_apic_resources() {
       -H "Connection: keep-alive" \
       --compressed \
       --data-binary "@${APIC_GEN_CUSTOMDIR}config/NativeOAuthProvider_res.json" | jq .url)
-    decho "oauthProvider: $oauthProvider"
+    decho 3 "oauthProvider: $oauthProvider"
   fi
 
   # Get the url of the oauth provider in org
   lf_org=APIC_PROVIDER_ORG
   lf_apicpath=api/orgs/$lf_org/oauth-providers/$lf_oauthprovidername?fields=url
   local oauthProviderURL=$(curl -sk "${PLATFORM_API_URL}${lf_apicpath}" -H "Authorization: Bearer $lf_am_token" -H 'Accept: application/json' | jq -r .url )
-  decho "oauthProviderURL: $oauthProviderURL"
+  decho 3 "oauthProviderURL: $oauthProviderURL"
 
   # Check if the oauth provider has already been added
   lf_apicpath="api/catalogs/$org/$catalog/configured-oauth-providers?fields=user_registry_url"
   local sandboxCfoauthProviderURL=$(curl -sk "${PLATFORM_API_URL}${lf_apicpath}" -H "Authorization: Bearer $lf_am_token" -H 'Accept: application/json' | jq --arg ur "$oauthProviderURL" '.results[].user_registry_url | select(. == "$ur")')
-  decho "sandboxCfoauthProviderURL: $sandboxCfoauthProviderURL"
+  decho 3 "sandboxCfoauthProviderURL: $sandboxCfoauthProviderURL"
 
   # Add it if not already added TODO if
   if [ 2 -gt 3 ]; then
@@ -377,7 +377,7 @@ api_files=("ping-api_1.0.0.json" "ibm-sample-order-api_1.0.0.json" "stock_1.0.0.
 for index in ${!api_names[@]}
   do
     adapt_file ${APIC_SCRIPTDIR}config/ ${APIC_GEN_CUSTOMDIR}config/ ${api_files[$index]}
-    decho "curl -sk \"${platform_api_url}api/orgs/${apic_provider_org}/drafts/draft-apis/${api_names[$index]}?fields=url\" -H \"Authorization: Bearer <token>\" -H 'Accept: application/json'"
+    decho 3 "curl -sk \"${platform_api_url}api/orgs/${apic_provider_org}/drafts/draft-apis/${api_names[$index]}?fields=url\" -H \"Authorization: Bearer <token>\" -H 'Accept: application/json'"
     local api_uri_result=$(curl -sk "${platform_api_url}api/orgs/${apic_provider_org}/drafts/draft-apis/${api_names[$index]}?fields=url" -H "Authorization: Bearer $token" -H 'Accept: application/json' | jq -r .total_results)
     if [ $api_uri_result -eq 0 ]; then
       mylog info "Load ${api_names[$index]} API as a draft"
@@ -493,7 +493,7 @@ function download_tools () {
 function create_cm_token(){
   APIC_CRED=$(oc -n "${apic_project}" get secret ${APIC_INSTANCE_NAME}-mgmt-cli-cred -o jsonpath='{.data.credential\.json}' | base64 --decode)
   APIC_APIKEY=$(curl -ks --fail -X POST "${PLATFORM_API_URL}"cloud/api-keys -H "Authorization: Bearer ${ZEN_TOKEN}" -H "Accept: application/json" -H "Content-Type: application/json" -d '{"client_type":"toolkit","description":"Tookit API key"}' | jq -r .api_key)
-  decho "APIC_APIKEY: ${APIC_APIKEY}"
+  decho 3 "APIC_APIKEY: ${APIC_APIKEY}"
   
   # The goal is to get the apikey defined in the realm provider/common-services, get the credentials for the toolkit, then use the token endpoint to get an oauth token for Cloud Manager from API Key
   TOOLKIT_CLIENT_ID=$(echo ${APIC_CRED} | jq -r .id)
@@ -506,7 +506,7 @@ function create_cm_token(){
    -H 'Accept: application/json' \
    --data-binary "@${APIC_GEN_CUSTOMDIR}config/creds.json")
   
-  # decho "cmToken: $cmToken"
+  # decho 3 "cmToken: $cmToken"
 
   if [ $(echo $cmToken | jq .status ) = "401" ] ; then
     mylog error "Error with login -> $cmToken"
@@ -522,7 +522,7 @@ function create_cm_token(){
   #        --data-binary "{\"current_password\":\"7iron-hide\",\"password\":\"$apic_admin_password\"}" 
   fi
   
-  decho "access_token: ${access_token}"
+  decho 3 "access_token: ${access_token}"
 }
 
 #######################################################
@@ -535,7 +535,7 @@ function create_am_token(){
    -H 'Accept: application/json' \
    --data-binary "{\"username\":\"$APIC_ORG1_USERNAME\",\"password\":\"$APIC_ORG1_PASSWORD\",\"realm\":\"provider/default-idp-2\",\"client_id\":\"$TOOLKIT_CLIENT_ID\",\"client_secret\":\"$TOOLKIT_CLIENT_SECRET\",\"grant_type\":\"password\"}" |  jq .access_token | sed -e s/\"//g  )
   
-  decho "amToken: $amToken"
+  decho 3 "amToken: $amToken"
   # TODO Not sure the use of $? is good, this is the result of the sed command
   retVal=$?
   if [ $retVal -ne 0 ] || [ -z "$amToken" ] || [ "$amToken" = "null" ]; then
@@ -566,7 +566,7 @@ MY_MAIL_SERVER_NAMESPACE='mail'
 # Get ClusterIP for the mail server if MailHog
 mail_server_cluster_ip=$(oc -n ${MY_MAIL_SERVER_NAMESPACE} get svc/mailhog -o jsonpath='{.spec.clusterIP}')
 # TODO check error, if not there, ...
-decho "To configure the mail server the clusterIP is ${mail_server_cluster_ip}"
+decho 3 "To configure the mail server the clusterIP is ${mail_server_cluster_ip}"
 export MY_MAIL_SERVER_HOST_IP=${mail_server_cluster_ip}
 
 # Will create both directories needed later on

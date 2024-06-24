@@ -3,7 +3,7 @@ package com.ibm.ad.demo.rest.data.generators.config;
 import java.util.List;
 
 public class DataGenConfig {
-    // TODO The idea is to use a properties file to overwrite the defaut values and
+    // TODO The idea is to use a config file to overwrite the defaut values and
     // make them available for the generators
     // In this version it is hard coded, with a property VALUE, but it should
     // disappear
@@ -22,7 +22,7 @@ public class DataGenConfig {
     public static final List<String> CONFIG_PRODUCT_MATERIALS_VALUE = List.of("Classic","Retro","Navy","Stonewashed","Acid-washed","Blue","Black","White","Khaki","Denim","Jeggings");
     public static final List<String> CONFIG_PRODUCT_STYLES_VALUE = List.of("Skinny", "Bootcut", "Flare", "Ripped", "Capri", "Jogger", "Crochet", "High-waist", "Low-rise", "Straight-leg", "Boyfriend", "Mom", "Wide-leg", "Jorts", "Cargo", "Tall");
     public static final List<String> CONFIG_PRODUCT_SIZE_VALUE = List.of("XXS", "XS", "S", "M", "L", "XL", "XXL");
-    public static final double CONFIG_PRODUCTS_MIN_PRICE_VALUE = 14.99;
+    public static final double CONFIG_PRODUCTS_MIN_PRICE_VALUE = 9.99;
     public static final double CONFIG_PRODUCTS_MAX_PRICE_VALUE = 59.99;
     public static final int CONFIG_PRODUCTS_MIN_ITEMS_VALUE = 1;
     public static final int CONFIG_PRODUCTS_MAX_ITEMS_VALUE = 5;

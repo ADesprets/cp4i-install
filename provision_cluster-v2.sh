@@ -11,7 +11,7 @@
 # Create openshift cluster using classic infrastructure
 function create_openshift_cluster_classic() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:create_openshift_cluster_classic"
+  decho 4 "F:IN :create_openshift_cluster_classic"
 
   SECONDS=0
   var_fail sc_cluster_name "Choose a unique name for the cluster"
@@ -27,12 +27,12 @@ function create_openshift_cluster_classic() {
     var_fail MY_CLUSTER_WORKERS 'Speficy number of worker nodes in cluster'
     mylog info "Getting current version for OC: $MY_OC_VERSION"
     oc_version_full=$(check_openshift_version $MY_OC_VERSION)
-    decho "oc_version_full=$oc_version_full"
+    decho 4 "oc_version_full=$oc_version_full"
 
     if [ -z "$oc_version_full" ]; then
       mylog error "Failed to find full version for ${MY_OC_VERSION}" 1>&2
       #fix_oc_version
-      decho "F:OUT:create_openshift_cluster_classic"
+      decho 4 "F:OUT:create_openshift_cluster_classic"
       SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
       exit 1
     fi
@@ -53,14 +53,14 @@ function create_openshift_cluster_classic() {
       --disable-disk-encrypt \
       $vlans; then
       mylog error "Failed to create cluster" 1>&2
-      decho "F:OUT:create_openshift_cluster_classic"
+      decho 4 "F:OUT:create_openshift_cluster_classic"
       SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
       exit 1
     fi
     mylog info "Creation of the cluster took: $SECONDS seconds." 1>&2
   fi
 
-  decho "F:OUT:create_openshift_cluster_classic"
+  decho 4 "F:OUT:create_openshift_cluster_classic"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -69,7 +69,7 @@ function create_openshift_cluster_classic() {
 # use terraform because creation is more complex than classic
 function create_openshift_cluster_vpc() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:create_openshift_cluster_vpc"
+  decho 4 "F:IN :create_openshift_cluster_vpc"
 
   # check vars from config file
   var_fail MY_OC_VERSION 'mylog warn "Choose one of:" 1>&2;ibmcloud ks versions -q --show-version OpenShift'
@@ -89,7 +89,7 @@ function create_openshift_cluster_vpc() {
   terraform apply -var-file=var_override.tfvars
   popd
 
-  decho "F:OUT:create_openshift_cluster_vpc"
+  decho 4 "F:OUT:create_openshift_cluster_vpc"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -98,7 +98,7 @@ function create_openshift_cluster_vpc() {
 # @param ns namespace where secret is created
 function add_ibm_entitlement() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:add_ibm_entitlement"
+  decho 4 "F:IN :add_ibm_entitlement"
 
   local lf_in_ns=$1
 
@@ -111,19 +111,19 @@ function add_ibm_entitlement() {
     $MY_CONTAINER_ENGINE -h >/dev/null 2>&1
     if test $? -eq 0 && ! echo $MY_ENTITLEMENT_KEY | $MY_CONTAINER_ENGINE login cp.icr.io --username cp --password-stdin; then
       mylog error "Invalid entitlement key" 1>&2
-      decho "F:OUT:add_ibm_entitlement"
+      decho 4 "F:OUT:add_ibm_entitlement"
       SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
       exit 1
     fi
     mylog info "Adding ibm-entitlement-key to $lf_in_ns"
     if ! oc -n $lf_in_ns create secret docker-registry ibm-entitlement-key --docker-username=cp --docker-password=$MY_ENTITLEMENT_KEY --docker-server=cp.icr.io; then
-      decho "F:OUT:add_ibm_entitlement"
+      decho 4 "F:OUT:add_ibm_entitlement"
       SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
       exit 1
     fi
   fi
 
-  decho "F:OUT:add_ibm_entitlement"
+  decho 4 "F:OUT:add_ibm_entitlement"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -134,14 +134,14 @@ function add_ibm_entitlement() {
 # @param ns namespace where operands were instantiated
 function start_customization() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:start_customization"
+  decho 4 "F:IN :start_customization"
 
-  local ns=$1
-  local varb64
+  local lf_in_ns=$1
+  local lf_varb64
 
   mylog info "Copy template files to the working directory"
 
-  decho "F:OUT:start_customization"
+  decho 4 "F:OUT:start_customization"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -153,12 +153,12 @@ function start_customization() {
 # TODO Check if we nned this one
 function launch_customization() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:launch_customization"
+  decho 4 "F:IN :launch_customization"
 
-  local ns=$1
+  local lf_in_ns=$1
 
   mylog info "Customisation of the capabilities"
-  decho "F:OUT:launch_customization"
+  decho 4 "F:OUT:launch_customization"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -166,7 +166,7 @@ function launch_customization() {
 # TBC
 function create_openshift_cluster() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:create_openshift_cluster"
+  decho 4 "F:IN :create_openshift_cluster"
 
   var_fail MY_CLUSTER_INFRA 'mylog warn "Choose one of: classic or vpc" 1>&2'
   case "${MY_CLUSTER_INFRA}" in
@@ -185,7 +185,7 @@ function create_openshift_cluster() {
     ;;
   esac
 
-  decho "F:OUT:create_openshift_cluster"
+  decho 4 "F:OUT:create_openshift_cluster"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -194,7 +194,7 @@ function create_openshift_cluster() {
 # set variable my_cluster_url
 function wait_for_cluster_availability() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:wait_for_cluster_availability"
+  decho 4 "F:IN :wait_for_cluster_availability"
 
   SECONDS=0
   wait_for_state 'Cluster state' 'normal-All Workers Normal' "ibmcloud oc cluster get --cluster $sc_cluster_name --output json|jq -r '(.state + \"-\" + .status)'"
@@ -210,13 +210,13 @@ function wait_for_cluster_availability() {
     ;;
   *)
     mylog error "Error getting cluster URL for $sc_cluster_name" 1>&2
-    decho "F:OUT:wait_for_cluster_availability"
+    decho 4  "F:OUT:wait_for_cluster_availability"
     SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
     exit 1
     ;;
   esac
 
-  decho "F:OUT:wait_for_cluster_availability"
+  decho 4 "F:OUT:wait_for_cluster_availability"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -224,7 +224,7 @@ function wait_for_cluster_availability() {
 # wait for ingress address availability
 function wait_4_ingress_address_availability() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:wait_4_ingress_address_availability"
+  decho 4 "F:IN :wait_4_ingress_address_availability"
 
   SECONDS=0
   local lf_ingress_address
@@ -259,7 +259,7 @@ function wait_4_ingress_address_availability() {
   done
   mylog info "Checking Ingress availability took $SECONDS seconds to execute." 1>&2
 
-  decho "F:OUT:wait_4_ingress_address_availability"
+  decho 4 "F:OUT:wait_4_ingress_address_availability"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -268,7 +268,7 @@ function wait_4_ingress_address_availability() {
 # and wait for both availability of the cluster and the ingress address
 function create_openshift_cluster_wait_4_availability() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:create_openshift_cluster_wait_4_availability"
+  decho 4 "F:IN :create_openshift_cluster_wait_4_availability"
 
   if ! ${TECHZONE}; then
     # Create openshift cluster
@@ -281,7 +281,7 @@ function create_openshift_cluster_wait_4_availability() {
     wait_4_ingress_address_availability
   fi
 
-  decho "F:OUT:create_openshift_cluster_wait_4_availability"
+  decho 4 "F:OUT:create_openshift_cluster_wait_4_availability"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -289,7 +289,7 @@ function create_openshift_cluster_wait_4_availability() {
 # Add OpenLdap app to openshift
 function install_openldap() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:install_openldap"
+  decho 4 "F:IN :install_openldap"
 
   if $MY_LDAP; then
     mylog info "==== Installing OpenLdap." 1>&2
@@ -312,7 +312,7 @@ function install_openldap() {
     expose_service_openldap ${lf_name} ${MY_LDAP_NAMESPACE}
   fi
 
-  decho "F:OUT:install_openldap"
+  decho 4 "F:OUT:install_openldap"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -320,7 +320,7 @@ function install_openldap() {
 # Customise ldap adding users and groups
 function customise_openldap() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:customise_openldap"
+  decho 3 "F:IN:customise_openldap"
 
   if $MY_LDAP_CUSTOM; then
     mylog info "==== Customise ldap." 1>&2
@@ -329,7 +329,7 @@ function customise_openldap() {
     check_file_exist ${YAMLDIR}ldap/ldap-users.ldif
   fi
 
-  decho "F:OUT:customise_openldap"
+  decho 3 "F:OUT:customise_openldap"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -338,7 +338,7 @@ function customise_openldap() {
 # Port is hard coded to 8025 and is defined by mailhog (default port)
 function install_mailhog() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:install_mailhog"
+  decho 3 "F:IN :install_mailhog"
 
   if $MY_MAILHOG; then
     mylog info "==== Installing mailhog (server and client)." 1>&2
@@ -355,7 +355,7 @@ function install_mailhog() {
     expose_service_mailhog ${lf_name} ${MY_MAIL_SERVER_NAMESPACE} '8025'
   fi
 
-  decho "F:OUT:install_mailhog"
+  decho 3 "F:OUT:install_mailhog"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -363,7 +363,7 @@ function install_mailhog() {
 # Display information to access CP4I
 function display_access_info() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN  :display_access_info"
+  decho 3 "F:IN  :display_access_info"
 
   mylog info "==== Displaying Access Info to CP4I." 1>&2
   # Temporary access with Keycloack
@@ -443,7 +443,7 @@ function display_access_info() {
     mylog info "Licensing service endpoint: ${licensing_service_url}"
   fi
 
-  decho "F:OUT:display_access_info"
+  decho 3 "F:OUT:display_access_info"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -455,21 +455,21 @@ function display_access_info() {
 # License: Accept the license to use foundational services by adding spec.license.accept: true in the spec section.
 function accept_license_fs() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:accept_license_fs"
+  decho 5 "F:IN :accept_license_fs"
 
   lf_in_namespace=$1
 
   local accept
-  decho "oc -n ${lf_in_namespace} get commonservice ${MY_COMMONSERVICES_INSTANCE_NAME} -o jsonpath='{.spec.license.accept}'"
+  decho 5 "oc -n ${lf_in_namespace} get commonservice ${MY_COMMONSERVICES_INSTANCE_NAME} -o jsonpath='{.spec.license.accept}'"
   accept=$(oc -n ${lf_in_namespace} get commonservice ${MY_COMMONSERVICES_INSTANCE_NAME} -o jsonpath='{.spec.license.accept}')
-  decho "accept=$accept"
+  decho 5 "accept=$accept"
   if [ "$accept" == "true" ]; then
     mylog info "license already accepted." 1>&2
   else
     oc -n ${lf_in_namespace} patch commonservice ${MY_COMMONSERVICES_INSTANCE_NAME} --type merge -p '{"spec": {"license": {"accept": true}}}'
   fi
 
-  decho "F:OUT:accept_license_fs"
+  decho 5 "F:OUT:accept_license_fs"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -477,7 +477,7 @@ function accept_license_fs() {
 # Log in IBM Cloud
 function login_2_ibm_cloud() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:login_2_ibm_cloud"
+  decho 5 "F:IN :login_2_ibm_cloud"
 
   if ! ${TECHZONE}; then
     SECONDS=0
@@ -490,7 +490,7 @@ function login_2_ibm_cloud() {
       mylog check "Login to IBM Cloud"
       if ! ibmcloud login -q --no-region --apikey $MY_IC_APIKEY >/dev/null; then
         mylog error "Fail to login to IBM Cloud, check API key: $MY_IC_APIKEY" 1>&2
-        decho "F:OUT:login_2_ibm_cloud"
+        decho 5 "F:OUT:login_2_ibm_cloud"
         SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
         exit 1
       else
@@ -500,7 +500,7 @@ function login_2_ibm_cloud() {
     fi
   fi
 
-  decho "F:OUT:login_2_ibm_cloud"
+  decho 5 "F:OUT:login_2_ibm_cloud"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -510,7 +510,7 @@ function login_2_ibm_cloud() {
 # requires var my_cluster_url
 function login_2_openshift_cluster() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:login_2_openshift_cluster"
+  decho 5 "F:IN :login_2_openshift_cluster"
 
   SECONDS=0
 
@@ -533,7 +533,7 @@ function login_2_openshift_cluster() {
     fi
   fi
 
-  decho "F:OUT:login_2_openshift_cluster"
+  decho 5 "F:OUT:login_2_openshift_cluster"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -541,7 +541,7 @@ function login_2_openshift_cluster() {
 # Install GitOps
 function install_gitops() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:install_gitops"
+  decho 3 "F:IN :install_gitops"
 
   # https://docs.openshift.com/gitops/1.12/installing_gitops/installing-openshift-gitops.html
 
@@ -555,22 +555,16 @@ function install_gitops() {
   # ça fonctionne parceque le ns opeshift-gitops-operator existe.
   # Après j'ai essayé de suivre dans la mesure du possible la procédure https://github.com/IBM/cloudpak-gitops/blob/main/docs/install.md
 
-  #ls_type="OperatorGroup"
-  #ls_cr_name="${MY_GITOPS_OPERATORGROUP}"
-  #ls_yaml_file="${RESOURCSEDIR}operator-group-gitops.yaml"
-  #ls_namespace=$MY_GITOPS_NAMESPACE
-  #check_create_oc_yaml "${ls_type}" "${ls_cr_name}" "${ls_yaml_file}" "${ls_namespace}"
-
   lf_operator_name="$MY_GITOPS_OPERATORGROUP"
   lf_catalog_source_name="redhat-operators"
   lf_operator_namespace=$MY_OPERATORS_NAMESPACE
   lf_strategy="Automatic"
   lf_wait_for_state=1
-  lf_csv_name=$MY_GITOPS_CSV_NAME
-  decho "create_operator_subscription \"${lf_operator_name}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
+  lf_csv_name=$MY_GITOPS_CASE
+  decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
   create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
-  decho "F:OUT:install_gitops"
+  decho 3 "F:OUT:install_gitops"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -578,7 +572,7 @@ function install_gitops() {
 # Install Cert Manager
 function install_cert_manager() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:install_cert_manager"
+  decho 3 "F:IN :install_cert_manager"
 
   mylog info "==== Redhat Cert Manager catalog." 1>&2
   lf_catalogsource_namespace=$MY_CATALOGSOURCES_NAMESPACE
@@ -587,7 +581,7 @@ function install_cert_manager() {
   lf_catalogsource_image="registry.redhat.io/redhat/redhat-operator-index:v4.12"
   lf_catalogsource_publisher="Red Hat"
   lf_catalogsource_interval="10m"
-  decho "create_catalogsource \"${lf_catalogsource_namespace}\" \"${lf_catalogsource_name}\" \"${lf_catalogsource_dspname}\" \"${lf_catalogsource_image}\" \"${lf_catalogsource_publisher}\" \"${lf_catalogsource_interval}\""
+  decho 3 "create_catalogsource \"${lf_catalogsource_namespace}\" \"${lf_catalogsource_name}\" \"${lf_catalogsource_dspname}\" \"${lf_catalogsource_image}\" \"${lf_catalogsource_publisher}\" \"${lf_catalogsource_interval}\""
   create_catalogsource "${lf_catalogsource_namespace}" "${lf_catalogsource_name}" "${lf_catalogsource_dspname}" "${lf_catalogsource_image}" "${lf_catalogsource_publisher}" "${lf_catalogsource_interval}"
 
   # SB]20231215 Pour obtenir le template de l'operateur cert-manager de Redhat, je l'ai installé avec la console, j'ai récupéré le Yaml puis désinstallé.
@@ -596,11 +590,11 @@ function install_cert_manager() {
   lf_operator_namespace=$MY_CERT_MANAGER_NAMESPACE
   lf_strategy="Automatic"
   lf_wait_for_state=1
-  lf_csv_name=$MY_CERT_MANAGER_CSV_NAME
-  decho "create_operator_subscription \"${lf_operator_name}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
+  lf_csv_name=$MY_CERTMANAGER_CASE
+  decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
   create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
-  decho "F:OUT:install_cert_manager"
+  decho 3 "F:OUT:install_cert_manager"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -608,12 +602,12 @@ function install_cert_manager() {
 # Install Licensing Server
 function install_lic_srv() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:install_lic_srv"
+  decho 3 "F:IN :install_lic_srv"
 
   # ibm-license-server
   if $MY_LIC_SRV; then
     mylog info "==== IBM License Server." 1>&2
-    check_add_cs_ibm_pak ibm-licensing MY_LIC_SRV_CASE amd64
+    check_add_cs_ibm_pak ibm-licensing amd64
 
     #mylog info "==== Adding Licensing service catalog source in ns : openshift-marketplace." 1>&2
     lf_catalogsource_namespace=$MY_CATALOGSOURCES_NAMESPACE
@@ -622,7 +616,7 @@ function install_lic_srv() {
     lf_catalogsource_image="icr.io/cpopen/ibm-licensing-catalog"
     lf_catalogsource_publisher="IBM"
     lf_catalogsource_interval="45m"
-    decho "create_catalogsource \"${lf_catalogsource_namespace}\" \"${lf_catalogsource_name}\" \"${lf_catalogsource_dspname}\" \"${lf_catalogsource_image}\" \"${lf_catalogsource_publisher}\" \"${lf_catalogsource_interval}\""
+    decho 3 "create_catalogsource \"${lf_catalogsource_namespace}\" \"${lf_catalogsource_name}\" \"${lf_catalogsource_dspname}\" \"${lf_catalogsource_image}\" \"${lf_catalogsource_publisher}\" \"${lf_catalogsource_interval}\""
     create_catalogsource "${lf_catalogsource_namespace}" "${lf_catalogsource_name}" "${lf_catalogsource_dspname}" "${lf_catalogsource_image}" "${lf_catalogsource_publisher}" "${lf_catalogsource_interval}"
 
     # ATTENTION : pour le licensing server ajouter dans la partie spec.startingCSV: ibm-licensing-operator.v4.2.1 (sinon erreur).
@@ -631,12 +625,12 @@ function install_lic_srv() {
     lf_operator_namespace=$MY_LICENSE_SERVER_NAMESPACE
     lf_strategy="Automatic"
     lf_wait_for_state=1
-    lf_csv_name=$MY_LIC_SRV_CSV_NAME
-    decho "create_operator_subscription \"${lf_operator_name}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
+    lf_csv_name=$MY_LICENCESERVER_CASE
+    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
     create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
   fi
 
-  decho "F:OUT:install_lic_srv"
+  decho 3 "F:OUT:install_lic_srv"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -650,11 +644,11 @@ function install_lic_srv() {
 ############################################################################################################################################
 function install_fs() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:install_fs"
+  decho 3 "F:IN :install_fs"
 
   mylog info "==== IBM Common Services." 1>&2
   # ibm-cp-common-services
-  check_add_cs_ibm_pak ibm-cp-common-services MY_COMMONSERVICES_CASE amd64
+  check_add_cs_ibm_pak $MY_COMMONSERVICES_CASE amd64 $MY_COMMONSERVICES_VERSION
 
   lf_catalogsource_namespace=$MY_CATALOGSOURCES_NAMESPACE
   lf_catalogsource_name="opencloud-operators"
@@ -662,7 +656,7 @@ function install_fs() {
   lf_catalogsource_image="icr.io/cpopen/ibm-common-service-catalog:4.3"
   lf_catalogsource_publisher="IBM"
   lf_catalogsource_interval="45m"
-  decho "create_catalogsource \"${lf_catalogsource_namespace}\" \"${lf_catalogsource_name}\" \"${lf_catalogsource_dspname}\" \"${lf_catalogsource_image}\" \"${lf_catalogsource_publisher}\" \"${lf_catalogsource_interval}\""
+  decho 3 "create_catalogsource \"${lf_catalogsource_namespace}\" \"${lf_catalogsource_name}\" \"${lf_catalogsource_dspname}\" \"${lf_catalogsource_image}\" \"${lf_catalogsource_publisher}\" \"${lf_catalogsource_interval}\""
   create_catalogsource "${lf_catalogsource_namespace}" "${lf_catalogsource_name}" "${lf_catalogsource_dspname}" "${lf_catalogsource_image}" "${lf_catalogsource_publisher}" "${lf_catalogsource_interval}"
 
   # Pour les operations suivantes : utiliser un seul namespace
@@ -676,8 +670,8 @@ function install_fs() {
   lf_operator_namespace=$MY_OPERATORS_NAMESPACE
   lf_strategy="Automatic"
   lf_wait_for_state=1
-  lf_csv_name=$MY_COMMONSERVICES_CSV_NAME
-  decho "create_operator_subscription \"${lf_operator_name}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
+  lf_csv_name="ibm-common-service-operator"
+  decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
   create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
   ## Setting hardware  Accept the license to use foundational services by adding spec.license.accept: true in the spec section.
@@ -689,10 +683,10 @@ function install_fs() {
   lf_type="CommonService"
   lf_cr_name=$MY_COMMONSERVICES_INSTANCE_NAME
   lf_yaml_file="${RESOURCSEDIR}foundational-services-cr.yaml"
-  decho "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_operator_namespace}\""
+  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_operator_namespace}\""
   check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_operator_namespace}"
 
-  decho "F:OUT:install_fs"
+  decho 3 "F:OUT:install_fs"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -700,7 +694,7 @@ function install_fs() {
 # Install Navigator (depending on two boolean)
 function install_navigator() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:install_navigator"
+  decho 3 "F:IN :install_navigator"
 
   ## ibm-integration-platform-navigator
   # SB,AD]20240103 Suite au pb installation keycloak (besoin de l'operateur IBM Cloud Pak for Integration)
@@ -708,19 +702,25 @@ function install_navigator() {
   if $MY_NAVIGATOR; then
     mylog info "==== Installing Navigator." 1>&2
     # add catalog sources using ibm_pak plugin
-    check_add_cs_ibm_pak ibm-integration-platform-navigator MY_NAVIGATOR_CASE amd64
+    check_add_cs_ibm_pak $MY_NAVIGATOR_CASE amd64
 
     # Creating Navigator operator subscription
-    lf_operator_name="ibm-integration-platform-navigator"
+    lf_operator_name="$MY_NAVIGATOR_CASE"
     lf_catalog_source_name="ibm-integration-platform-navigator-catalog"
     lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     lf_strategy="Automatic"
     lf_wait_for_state=1
-    lf_csv_name=$MY_NAVIGATOR_CSV_NAME
+    lf_csv_name=$MY_NAVIGATOR_CASE
     create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
   fi
 
   if $MY_NAVIGATOR_INSTANCE; then
+    #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
+    if [ -z "$MY_NAVIGATOR_VERSION" ]; then
+      export MY_NAVIGATOR_VERSION=$(oc ibm-pak list -o json | jq  --arg case "$MY_NAVIGATOR_CASE" '.[] | select (.name == $case ) | .latestAppVersion')
+      decho 3 "MY_NAVIGATOR_VERSION=$MY_NAVIGATOR_VERSION"
+    fi
+
     # Creating Navigator instance
     lf_file="${OPERANDSDIR}Navigator-Capability.yaml"
     lf_ns="${MY_OC_PROJECT}"
@@ -732,7 +732,7 @@ function install_navigator() {
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
   fi
 
-  decho "F:OUT:install_navigator"
+  decho 3 "F:OUT:install_navigator"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -740,7 +740,7 @@ function install_navigator() {
 # Install Integration Assembly
 function install_intassembly() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:install_intassembly"
+  decho 3 "F:IN :install_intassembly"
 
   # Creating Integration Assembly instance
   if $MY_INTASSEMBLY; then
@@ -755,7 +755,7 @@ function install_intassembly() {
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
   fi
 
-  decho "F:OUT:install_intassembly"
+  decho 3 "F:OUT:install_intassembly"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -763,12 +763,12 @@ function install_intassembly() {
 # Install Asset Repository
 function install_assetrepo() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:install_assetrepo"
+  decho 3 "F:IN :install_assetrepo"
 
   if $MY_ASSETREPO; then
     mylog info "==== Installing Asset Repository." 1>&2
     # add catalog sources using ibm_pak plugin
-    check_add_cs_ibm_pak ibm-integration-asset-repository MY_ASSETREPO_CASE amd64
+    check_add_cs_ibm_pak ibm-integration-asset-repository amd64
 
     # Creating Asset Repository operator subscription
     lf_operator_name="ibm-integration-asset-repository"
@@ -776,7 +776,7 @@ function install_assetrepo() {
     lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     lf_strategy="Automatic"
     lf_wait_for_state=1
-    lf_csv_name=$MY_ASSETREPO_CSV_NAME
+    lf_csv_name=$MY_ASSETREPO_CASE
     create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
     # Creating Asset Repository instance
@@ -790,7 +790,7 @@ function install_assetrepo() {
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
   fi
 
-  decho "F:OUT:install_assetrepo"
+  decho 3 "F:OUT:install_assetrepo"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -798,24 +798,39 @@ function install_assetrepo() {
 # Install ACE
 function install_ace() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:install_ace"
+  decho 3 "F:IN :install_ace"
 
   # ibm-appconnect
   if $MY_ACE; then
     mylog info "==== Installing ACE." 1>&2
 
     # add catalog sources using ibm_pak plugin
-    check_add_cs_ibm_pak ibm-appconnect MY_ACE_CASE amd64
+    check_add_cs_ibm_pak $MY_ACE_CASE amd64
 
     # Creating ACE operator subscription
-    lf_operator_name="ibm-appconnect"
+    lf_operator_name="$MY_ACE_CASE"
     lf_catalog_source_name="appconnect-operator-catalogsource"
     lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     lf_strategy="Automatic"
-    lf_csv_name=$MY_ACE_CSV_NAME
+    lf_csv_name=$MY_ACE_CASE
     lf_wait_for_state=1
-    decho "create_operator_subscription \"${lf_operator_name}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
+    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
     create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
+
+    #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
+    if [ -z "$MY_ACE_VERSION" ]; then
+      export MY_ACE_VERSION=$(oc ibm-pak list -o json | jq  --arg case "$MY_ACE_CASE" '.[] | select (.name == $case ) | .latestAppVersion')
+    fi
+
+    # Creating ACE Switch Server instance (used for callable flows)
+    lf_file="${OPERANDSDIR}ACE-SwitchServer-Capability.yaml"
+    lf_ns="${MY_OC_PROJECT}"
+    lf_path="{.status.conditions[0].type}"
+    lf_resource="$MY_ACE_SWITCHSERVER_INSTANCE_NAME"
+    lf_state="Ready"
+    lf_type="SwitchServer"
+    lf_wait_for_state=0
+    create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
 
     # Creating ACE Dashboard instance
     lf_file="${OPERANDSDIR}ACE-Dashboard-Capability.yaml"
@@ -838,7 +853,7 @@ function install_ace() {
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
   fi
 
-  decho "F:OUT:install_ace"
+  decho 3 "F:OUT:install_ace"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -846,7 +861,7 @@ function install_ace() {
 # Customise ACE
 function customise_ace() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:customise_ace"
+  decho 3 "F:IN :customise_ace"
 
   # Takes all the templates associated with the capabilities and generate the files from the context variables
   # The files are generated into ./customisation/working/<capability>/config
@@ -855,7 +870,7 @@ function customise_ace() {
     . ${ACE_SCRIPTDIR}scripts/ace.config.sh
   fi
 
-  decho "F:OUT:customise_ace"
+  decho 3 "F:OUT:customise_ace"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -863,22 +878,27 @@ function customise_ace() {
 # Install APIC
 function install_apic() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:install_apic"
+  decho 3 "F:IN :install_apic"
 
   # ibm-apiconnect
   if $MY_APIC; then
     mylog info "==== Installing APIC." 1>&2
     # add catalog sources using ibm_pak plugin
-    check_add_cs_ibm_pak ibm-apiconnect MY_APIC_CASE amd64
+    check_add_cs_ibm_pak $MY_APIC_CASE amd64
 
     # Creating APIC operator subscription
-    lf_operator_name="ibm-apiconnect"
+    lf_operator_name="$MY_APIC_CASE"
     lf_catalog_source_name="ibm-apiconnect-catalog"
     lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     lf_strategy="Automatic"
     lf_wait_for_state=1
-    lf_csv_name=$MY_APIC_CSV_NAME
+    lf_csv_name=$MY_APIC_CASE
     create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
+
+    #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
+    if [ -z "$MY_APIC_VERSION" ]; then
+      export MY_APIC_VERSION=$(oc ibm-pak list -o json | jq  --arg case "$MY_APIC_CASE" '.[] | select (.name == $case ) | .latestAppVersion')
+    fi
 
     # Creating APIC instance
     lf_file="${OPERANDSDIR}APIC-Capability.yaml"
@@ -894,7 +914,7 @@ function install_apic() {
     save_certificate ${MY_OC_PROJECT} cp4i-apic-gw-gateway ${WORKINGDIR}
   fi
 
-  decho "F:OUT:install_apic"
+  decho 3 "F:OUT:install_apic"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -902,7 +922,7 @@ function install_apic() {
 # Customise APIC
 function customise_apic() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:customise_apic"
+  decho 3 "F:IN :customise_apic"
 
   # Takes all the templates associated with the capabilities and generate the files from the context variables
   # The files are generated into ./customisation/working/<capability>/config
@@ -911,7 +931,7 @@ function customise_apic() {
     . ${APIC_SCRIPTDIR}scripts/apic.config.sh
   fi
 
-  decho "F:OUT:customise_apic"
+  decho 3 "F:OUT:customise_apic"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -919,7 +939,7 @@ function customise_apic() {
 # Install Open Liberty
 function install_openliberty() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:install_openliberty"
+  decho 3 "F:IN :install_openliberty"
 
   # backend J2EE applications
   if $MY_OPENLIBERTY; then
@@ -955,7 +975,7 @@ function install_openliberty() {
 
   fi
 
-  decho "F:OUT:install_openliberty"
+  decho 3 "F:OUT:install_openliberty"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -963,13 +983,15 @@ function install_openliberty() {
 # Customise Open Liberty
 function customise_openliberty() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:customise_openliberty"
+  decho 3 "F:IN :customise_openliberty"
 
+  # backend J2EE applications
   if $MY_OPENLIBERTY_CUSTOM; then
   mylog info "==== Customise Open Liberty." 1>&2
     . ${OPENLIBERTY_SCRIPTDIR}scripts/olp.config.sh
   fi
-  decho "F:OUT:customise_openliberty"
+
+  decho 3 "F:OUT:customise_openliberty"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -978,7 +1000,7 @@ function customise_openliberty() {
 # Install WebSphere Liberty
 function install_wasliberty() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:install_wasliberty"
+  decho 3 "F:IN :install_wasliberty"
 
   if $MY_WASLIBERTY; then
 
@@ -993,9 +1015,13 @@ function install_wasliberty() {
     lf_wait_for_state=1
     lf_csv_name=$MY_WL_CSV_NAME
     create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
+
+: <<'END_COMMENT'
+END_COMMENT
+
   fi
 
-  decho "F:OUT:install_wasliberty"
+  decho 3 "F:OUT:install_wasliberty"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -1003,7 +1029,7 @@ function install_wasliberty() {
 # Customise WebSphere Liberty
 function customise_wasliberty() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:customise_wasliberty"
+  decho 3 "F:IN:customise_wasliberty"
 
   if $MY_WASLIBERTY_CUSTOM; then
   mylog info "==== Customise WAS Liberty." 1>&2
@@ -1011,7 +1037,7 @@ function customise_wasliberty() {
   
   fi
 
-  decho "F:OUT:customise_wasliberty"
+  decho 3 "F:OUT:customise_wasliberty"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -1019,35 +1045,27 @@ function customise_wasliberty() {
 # Install DataPower Gateway
 function install_dpgw() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:install_dpgw"
-
-  # add catalog sources using ibm_pak plugin
-  check_add_cs_ibm_pak ibm-websphere-liberty MY_WL_CASE amd64
-
-  # Creating MQ operator subscription
-  lf_operator_name="ibm-websphere-liberty"
-  lf_catalog_source_name="ibmmq-operator-catalogsource"
-  lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-  lf_strategy="Automatic"
-  lf_wait_for_state=1
-  lf_csv_name=$MY_MQ_CSV_NAME
-  create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
-
+  decho 3 "F:IN :install_dpgw"
 
   # Creating DP Gateway operator subscription
   if $MY_DPGW; then
-    check_add_cs_ibm_pak ibm-datapower-operator MY_DPGW_CASE amd64
+    check_add_cs_ibm_pak $lf_case_name amd64
+
+    #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
+    if [ -z "$MY_DPGW_VERSION" ]; then
+      export MY_DPGW_VERSION=$(oc ibm-pak list -o json | jq  --arg case "$MY_DPGW_CASE" '.[] | select (.name == $case ) | .latestAppVersion')
+    fi
 
     lf_operator_name="datapower-operator"
     lf_catalog_source_name="ibm-datapower-operator-catalog"
     lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     lf_strategy="Automatic"
     lf_wait_for_state=1
-    lf_csv_name=$MY_DPGW_CSV_NAME
+    lf_csv_name=$MY_DPGW_CASE
     create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
   fi
 
-  decho "F:OUT:install_dpgw"
+  decho 3 "F:OUT:install_dpgw"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -1055,7 +1073,7 @@ function install_dpgw() {
 # Install EEM
 function install_eem() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:install_eem"
+  decho 3 "F:IN :install_eem"
 
   local lf_in_ns=$1
   local varb64
@@ -1065,8 +1083,8 @@ function install_eem() {
     ## event endpoint management
     ## to get the name of the pak to use : oc ibm-pak list
     ## https://ibm.github.io/event-automation/eem/installing/installing/, chapter : Install the operator by using the CLI (oc ibm-pak)
-    check_add_cs_ibm_pak ibm-eventendpointmanagement MY_EEM_CASE amd64
-    #oc -n $lf_in_ns ibm-pak launch ibm-eventendpointmanagement --version $MY_EEM_CASE --inventory eemOperatorSetup --action installCatalog
+    check_add_cs_ibm_pak $MY_EEM_CASE amd64
+
 
     # Creating Event Endpoint Management operator subscription
     lf_operator_name="ibm-eventendpointmanagement"
@@ -1074,8 +1092,13 @@ function install_eem() {
     lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     lf_strategy="Automatic"
     lf_wait_for_state=1
-    lf_csv_name=$MY_EEM_CSV_NAME
+    lf_csv_name=$MY_EEM_CASE
     create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
+
+    #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
+    if [ -z "$MY_EEM_VERSION" ]; then
+      export MY_EEM_VERSION=$(oc ibm-pak list -o json | jq  --arg case "$MY_EEM_CASE" '.[] | select (.name == $case ) | .latestAppVersion')
+    fi
 
     # Creating EventEndpointManager instance (Event Processing)
     lf_file="${OPERANDSDIR}EEM-Capability.yaml"
@@ -1101,7 +1124,7 @@ function install_eem() {
     oc -n $MY_OC_PROJECT patch secret "${MY_EEM_INSTANCE_NAME}-ibm-eem-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$varb64\"}]"
   fi
   
-  decho "F:OUT:install_eem"
+  decho 3 "F:OUT:install_eem"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -1109,7 +1132,7 @@ function install_eem() {
 # Customise EEM
 function customise_eem() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:customise_eem"
+  decho 3 "F:IN :customise_eem"
 
   if $MY_EEM_CUSTOM; then
     mylog info "==== Customise Event Endpoint Management." 1>&2
@@ -1118,14 +1141,15 @@ function customise_eem() {
     mylog info "Customise EEM"
   fi
 
-  decho "F:OUT:customise_eem"
+  decho 3 "F:OUT:customise_eem"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
+
 ################################################
 # Install EGW
 function install_egw() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:install_egw"
+  decho 3 "F:IN :install_egw"
 
   # Creating EventGateway instance (Event Gateway)
   if $MY_EGW; then
@@ -1142,7 +1166,7 @@ function install_egw() {
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
   fi
 
-  decho "F:OUT:install_egw"
+  decho 3 "F:OUT:install_egw"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -1150,7 +1174,7 @@ function install_egw() {
 # Customise EGW
 function customise_egw() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:customise_egw"
+  decho 3 "F:IN :customise_egw"
 
   # Creating EventGateway instance (Event Gateway)
   if $MY_EGW_CUSTOM; then
@@ -1158,7 +1182,7 @@ function customise_egw() {
 
   fi
 
-  decho "F:OUT:customise_egw"
+  decho 3 "F:OUT:customise_egw"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -1166,7 +1190,7 @@ function customise_egw() {
 # Install EP
 function install_ep() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:install_ep"
+  decho 3 "F:IN :install_ep"
 
   local lf_in_ns=$1
   local varb64
@@ -1174,17 +1198,22 @@ function install_ep() {
   if $MY_EP; then
     mylog info "==== Installing Event Processing." 1>&2
     # add catalog sources using ibm_pak plugin
-    check_add_cs_ibm_pak ibm-eventprocessing MY_EP_CASE amd64
+    check_add_cs_ibm_pak $MY_EP_CASE amd64
     #oc -n  $lf_in_ns ibm-pak launch ibm-eventprocessing --version $MY_EP_CASE --inventory epOperatorSetup --action installCatalog
 
     ## Creating Event processing operator subscription
-    lf_operator_name="ibm-eventprocessing"
+    lf_operator_name="$MY_EP_CASE"
     lf_catalog_source_name="ibm-eventprocessing-catalog"
     lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     lf_strategy="Automatic"
     lf_wait_for_state=1
-    lf_csv_name=$MY_EP_CSV_NAME
+    lf_csv_name=$MY_EP_CASE
     create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
+
+    #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
+    if [ -z "$MY_EP_VERSION" ]; then
+      export MY_EP_VERSION=$(oc ibm-pak list -o json | jq  --arg case "$MY_EP_CASE" '.[] | select (.name == $case ) | .latestAppVersion')
+    fi
 
     ## SB]20231023 to check the status of Event processing : https://ibm.github.io/event-automation/ep/installing/post-installation/
     ## The Status column displays the current state of the EventProcessing custom resource.
@@ -1214,7 +1243,7 @@ function install_ep() {
     oc -n $MY_OC_PROJECT patch secret "${MY_EP_INSTANCE_NAME}-ibm-ep-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$varb64\"}]"
   fi
 
-  decho "F:OUT:install_ep"
+  decho 3 "F:OUT:install_ep"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -1222,7 +1251,7 @@ function install_ep() {
 # Customise EP
 function customise_ep() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:customise_ep"
+  decho 3 "F:IN :customise_ep"
 
   local lf_in_ns=$1
   local varb64
@@ -1236,7 +1265,7 @@ function customise_ep() {
     mylog info "Customise Event Processing"
   fi
 
-  decho "F:OUT:customise_ep"
+  decho 3 "F:OUT:customise_ep"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -1244,22 +1273,27 @@ function customise_ep() {
 # Install IBM Event streams
 function install_es() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:install_es"
+  decho 3 "F:IN :install_es"
 
   # ibm-eventstreams
   if $MY_ES; then
     mylog info "==== Installing Event Streams." 1>&2
     # add catalog sources using ibm_pak plugin
-    check_add_cs_ibm_pak ibm-eventstreams MY_ES_CASE amd64
+    check_add_cs_ibm_pak $MY_ES_CASE amd64
 
     # Creating EventStreams operator subscription
-    lf_operator_name="ibm-eventstreams"
+    lf_operator_name="$MY_ES_CASE"
     lf_catalog_source_name="ibm-eventstreams"
     lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     lf_strategy="Automatic"
     lf_wait_for_state=1
-    lf_csv_name=$MY_ES_CSV_NAME
+    lf_csv_name=$MY_ES_CASE
     create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
+
+    #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
+    if [ -z "$MY_ES_VERSION" ]; then
+      export MY_ES_VERSION=$(oc ibm-pak list -o json | jq  --arg case "$MY_ES_CASE" '.[] | select (.name == $case ) | .latestAppVersion')
+    fi
 
     # Creating Event Streams instance
     lf_file="${OPERANDSDIR}ES-Capability.yaml"
@@ -1272,7 +1306,7 @@ function install_es() {
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
   fi
 
-  decho "F:OUT:install_es"
+  decho 3  "F:OUT:install_es"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -1280,7 +1314,7 @@ function install_es() {
 # Customise IBM Event streams
 function customise_es() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:customise_es"
+  decho 3 "F:IN :customise_es"
 
   # start customization
   # Takes all the templates associated with the capabilities and generate the files from the context variables
@@ -1323,7 +1357,7 @@ function customise_es() {
       . ${ES_SCRIPTDIR}scripts/es.config.sh
   fi
 
-  decho "F:OUT:customise_es"
+  decho 3 "F:OUT:customise_es"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -1331,7 +1365,7 @@ function customise_es() {
 # Install Flink
 function install_flink() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:install_flink"
+  decho 3 "F:IN :install_flink"
 
   local lf_in_ns=$1
   if $MY_FLINK; then
@@ -1340,20 +1374,19 @@ function install_flink() {
     ## SB]20231020 For Flink and Event processing first you have to apply the catalog source to your cluster :
     ## https://ibm.github.io/event-automation/ep/installing/installing/, Chapter Applying catalog sources to your cluster
     # event flink
-    check_add_cs_ibm_pak ibm-eventautomation-flink MY_FLINK_CASE amd64
-    #oc -n $lf_in_ns ibm-pak launch ibm-eventautomation-flink --version $MY_FLINK_CASE --inventory flinkKubernetesOperatorSetup --action installCatalog
+    check_add_cs_ibm_pak $MY_FLINK_CASE amd64
 
     ## SB]20231020 For Flink and Event processing install the operator with the following command :
     ## https://ibm.github.io/event-automation/ep/installing/installing/, Chapter : Install the operator by using the CLI (oc ibm-pak)
     ## event flink
     ## Creating Eventautomation Flink operator subscription
     ## Creating Event processing operator subscription
-    lf_operator_name="ibm-eventautomation-flink"
+    lf_operator_name="$MY_FLINK_CASE"
     lf_catalog_source_name="ibm-eventautomation-flink-catalog"
     lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     lf_strategy="Automatic"
     lf_wait_for_state=1
-    lf_csv_name=$MY_FLINK_CSV_NAME
+    lf_csv_name=$MY_FLINK_CASE
     create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
     ## Creation of Event automation Flink PVC and instance
@@ -1366,6 +1399,11 @@ function install_flink() {
     lf_type="PersistentVolumeClaim"
     lf_wait_for_state=0
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
+
+    #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
+    if [ -z "$MY_FLINK_VERSION" ]; then
+      export MY_FLINK_VERSION=$(oc ibm-pak list -o json | jq  --arg case "$MY_FLINK_CASE" '.[] | select (.name == $case ) | .latestAppVersion')
+    fi
 
     ## SB]20231023 to check the status of created Flink instance : https://ibm.github.io/event-automation/ep/installing/post-installation/
     ## The status field displays the current state of the FlinkDeployment custom resource.
@@ -1381,7 +1419,7 @@ function install_flink() {
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
   fi
 
-  decho "F:OUT:install_flink"
+  decho 3 "F:OUT:install_flink"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -1389,28 +1427,28 @@ function install_flink() {
 # Customise Flink
 function customise_flink() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:customise_flink"
+  decho 3 "F:IN :customise_flink"
 
   local lf_in_ns=$1
   if $MY_FLINK_CUSTOM; then
     mylog info "==== Customise Flink." 1>&2
   fi
 
-  decho "F:OUT:customise_flink"
+  decho 3 "F:OUT:customise_flink"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 ################################################
 # Install Aspera HSTS
 function install_hsts() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:install_hsts"
+  decho 3 "F:IN :install_hsts"
 
   # ibm aspera hsts
   if $MY_HSTS; then
     mylog info "==== Installing HSTS." 1>&2
 
     # add catalog sources using ibm_pak plugin
-    check_add_cs_ibm_pak ibm-aspera-hsts-operator MY_HSTS_CASE amd64
+    check_add_cs_ibm_pak $MY_HSTS_CASE amd64
 
     # Creating Aspera HSTS operator subscription
     lf_operator_name="aspera-hsts-operator"
@@ -1418,7 +1456,7 @@ function install_hsts() {
     lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     lf_strategy="Automatic"
     lf_wait_for_state=1
-    lf_csv_name=$MY_HSTS_CSV_NAME
+    lf_csv_name=$MY_HSTS_CASE
     create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
     lf_file="${OPERANDSDIR}AsperaHSTS-Capability.yaml"
@@ -1431,7 +1469,7 @@ function install_hsts() {
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
   fi
 
-  decho "F:OUT:install_hsts"
+  decho 3 "F:OUT:install_hsts"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -1439,14 +1477,14 @@ function install_hsts() {
 # Customise Aspera HSTS
 function customise_hsts() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:customise_hsts"
+  decho 3 "F:IN :customise_hsts"
 
   # ibm aspera hsts
   if $MY_HSTS_CUSTOM; then
     mylog info "==== Customise HSTS." 1>&2
   fi
 
-  decho "F:OUT:customise_hsts"
+  decho 3 "F:OUT:customise_hsts"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -1454,22 +1492,22 @@ function customise_hsts() {
 # Install MQ
 function install_mq() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:install_mq"
+  decho 3 "F:IN :install_mq"
 
   # ibm-mq
   if $MY_MQ; then
     mylog info "==== Installing MQ." 1>&2
 
     # add catalog sources using ibm_pak plugin
-    check_add_cs_ibm_pak ibm-mq MY_MQ_CASE amd64
+    check_add_cs_ibm_pak $MY_MQ_CASE amd64
 
     # Creating MQ operator subscription
-    lf_operator_name="ibm-mq"
+    lf_operator_name="$MY_MQ_CASE"
     lf_catalog_source_name="ibmmq-operator-catalogsource"
     lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     lf_strategy="Automatic"
     lf_wait_for_state=1
-    lf_csv_name=$MY_MQ_CSV_NAME
+    lf_csv_name=$MY_MQ_CASE
     create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
     # Creating MQ instance
@@ -1483,7 +1521,7 @@ function install_mq() {
     #create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
   fi
 
-  decho "F:OUT:install_mq"
+  decho 3 "F:OUT:install_mq"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -1491,18 +1529,24 @@ function install_mq() {
 # Customise MQ
 function customise_mq() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:customise_mq"
+  decho 3 "F:IN :customise_mq"
 
   # Takes all the templates associated with the capabilities and generate the files from the context variables
   # The files are generated into ./customisation/working/<capability>/config
   if $MY_MQ_CUSTOM; then
+ 
+    #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
+    if [ -z "$MY_MQ_VERSION" ]; then
+      export MY_MQ_VERSION=$(oc ibm-pak list -o json | jq  --arg case "$MY_MQ_CASE" '.[] | select (.name == $case ) | .latestAppVersion')
+    fi
+
     # launch custom script
-    mylog info "==== Customise MQ." 1>&2
-    . ${MQ_SCRIPTDIR}scripts/mq.config.sh -i ${sc_properties_file} ${sc_versions_file} ${MY_MQ_INSTANCE_NAME}
+    mylog info "Customise MQ"
+    . ${MQ_SCRIPTDIR}scripts/mq.config-v2.sh -i ${sc_properties_file} ${sc_versions_file} ${MY_MQ_INSTANCE_NAME}
     #${MQ_SCRIPTDIR}scripts/mq.config.sh -i ${sc_properties_file} ${sc_versions_file} ${MY_MQ_INSTANCE_NAME}
   fi
 
-  decho "F:OUT:customise_mq"
+  decho 3 "F:OUT:customise_mq"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -1510,7 +1554,7 @@ function customise_mq() {
 # Install Instana
 function install_instana() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:install_instana"
+  decho 3 "F:IN :install_instana"
 
   # instana
   #SB]20230201 Ajout d'Instana
@@ -1539,7 +1583,7 @@ function install_instana() {
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
   fi
 
-  decho "F:OUT:install_instana"
+  decho 3 "F:OUT:install_instana"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -1547,7 +1591,7 @@ function install_instana() {
 # Customise Instana
 function customise_instana() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho "F:IN:customise_instana"
+  decho 3 "F:IN :customise_instana"
 
   # instana
   #SB]20230201 Ajout d'Instana
@@ -1556,7 +1600,7 @@ function customise_instana() {
     mylog info "==== Customise Instana." 1>&2
   fi
 
-  decho "F:OUT:customise_instana"
+  decho 3 "F:OUT:customise_instana"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -1577,6 +1621,7 @@ sc_cluster_name=$4
 #
 export ADEBUG=1
 export TECHZONE=true
+export TRACELEVEL=5
 
 # SB]20240404 Global Index sequence for incremental output for each function call
 export SC_SPACES_COUNTER=0
@@ -1607,19 +1652,19 @@ read_config_file "$sc_versions_file"
 my_user_file="${PRIVATEDIR}user.properties"
 read_config_file "$my_user_file"
 
+: <<'END_COMMENT'
 # check the differents pre requisites
 check_exec_prereqs
 
-: <<'END_COMMENT'
 
 # Log to IBM Cloud
-#login_2_ibm_cloud
+login_2_ibm_cloud
 
 # Create Openshift cluster
-#create_openshift_cluster_wait_4_availability
+create_openshift_cluster_wait_4_availability
 
 # Log to openshift cluster
-#login_2_openshift_cluster
+login_2_openshift_cluster
 
 
 # Create project namespace.
@@ -1684,12 +1729,12 @@ install_mailhog
 # Add OpenLdap app to openshift
 install_openldap
 
-END_COMMENT
 # install_xxx: For each capability install : case, operator, operand
 
 # install_openliberty
 install_wasliberty
 
+END_COMMENT
 install_navigator
 
 install_intassembly

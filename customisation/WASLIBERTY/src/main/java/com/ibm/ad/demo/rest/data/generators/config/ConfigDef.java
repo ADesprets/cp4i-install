@@ -1,7 +1,5 @@
 package com.ibm.ad.demo.rest.data.generators.config;
 
-import java.util.HashMap;
-
 // See https://www.jsonschema2pojo.org/
 
 //{
@@ -130,15 +128,8 @@ import java.util.HashMap;
 //    }
 //}
 public class ConfigDef {
-    private final static HashMap config = new HashMap();
 
     public ConfigDef() {
-        config.put(DataGenConfig.CONFIG_FORMATS_TIMESTAMPS, DataGenConfig.CONFIG_FORMATS_TIMESTAMPS_VALUE);
-        config.put(DataGenConfig.CONFIG_FORMATS_TIMESTAMPS_LTZ, DataGenConfig.CONFIG_FORMATS_TIMESTAMPS_LTZ_VALUE);
-        config.put(DataGenConfig.CONFIG_LOCATIONS_REGIONS, DataGenConfig.CONFIG_LOCATIONS_REGIONS_VALUE);
-        config.put(DataGenConfig.CONFIG_PRODUCTS_MIN_PRICE, DataGenConfig.CONFIG_PRODUCTS_MIN_PRICE_VALUE);
-        config.put(DataGenConfig.CONFIG_PRODUCTS_MAX_PRICE, DataGenConfig.CONFIG_PRODUCTS_MAX_PRICE_VALUE);
-        config.put(DataGenConfig.CONFIG_DELAYS_ORDERS, DataGenConfig.CONFIG_DELAYS_ORDERS_VALUE);
     }
 
 }

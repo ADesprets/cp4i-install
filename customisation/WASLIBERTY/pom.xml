@@ -8,7 +8,7 @@
     <artifactId>demo</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>war</packaging>
-    <!-- To insall a wlp, you can use maven liberty:package and unzip in the directoy you want -->
+    <!-- To install a wlp, you can use maven liberty:package and unzip in the directory you want -->
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>

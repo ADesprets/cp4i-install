@@ -51,7 +51,7 @@ function was_build_image() {
 function get_login_token() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
   decho "F:IN:get_login_token"
-
+  mylog info "For now, you need to be logged in to the image registry before running the script"
   decho "F:OUT:get_login_token"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
 }

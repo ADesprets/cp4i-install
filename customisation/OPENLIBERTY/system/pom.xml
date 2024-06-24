@@ -19,6 +19,7 @@
         <!-- Liberty configuration -->
         <liberty.var.default.http.port>9080</liberty.var.default.http.port>
         <liberty.var.default.https.port>9443</liberty.var.default.https.port>
+        <mywlp.install.directory>D:\CurrentProjects\CP4I\Installation\cp4i-install\tmp\wlp</mywlp.install.directory>
     </properties>
 
     <dependencies>
@@ -69,7 +70,10 @@
             <plugin>
                 <groupId>io.openliberty.tools</groupId>
                 <artifactId>liberty-maven-plugin</artifactId>
-                <version>3.10</version>
+                <version>3.10.3</version>
+                <configuration>
+                    <installDirectory>${mywlp.install.directory}</installDirectory>
+                </configuration>
             </plugin>
             <!-- Plugin to run unit tests -->
             <plugin>

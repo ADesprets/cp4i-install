@@ -12,11 +12,14 @@
 package io.openliberty.guides.system.health;
 
 import java.lang.management.ManagementFactory;
-import com.sun.management.OperatingSystemMXBean;
-import jakarta.enterprise.context.ApplicationScoped;
-import org.eclipse.microprofile.health.Startup;
+
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
+import org.eclipse.microprofile.health.Startup;
+
+import com.sun.management.OperatingSystemMXBean;
+
+import jakarta.enterprise.context.ApplicationScoped;
 
 @Startup
 @ApplicationScoped
@@ -24,12 +27,12 @@ public class SystemStartupCheck implements HealthCheck {
 
     @Override
     public HealthCheckResponse call() {
-        OperatingSystemMXBean bean = (com.sun.management.OperatingSystemMXBean)
-        ManagementFactory.getOperatingSystemMXBean();
+        OperatingSystemMXBean bean = (com.sun.management.OperatingSystemMXBean) ManagementFactory
+                .getOperatingSystemMXBean();
         double cpuUsed = bean.getSystemCpuLoad();
-        String cpuUsage = String.valueOf(cpuUsed);
+        // String cpuUsage = String.valueOf(cpuUsed);
         return HealthCheckResponse.named(this.getClass().getSimpleName())
-                                  .status(cpuUsed < 0.95)
-                                  .build();
+                .status(cpuUsed < 0.95)
+                .build();
     }
 }
