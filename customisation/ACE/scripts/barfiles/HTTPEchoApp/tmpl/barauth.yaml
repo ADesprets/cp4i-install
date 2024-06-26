@@ -1,0 +1,11 @@
+apiVersion: appconnect.ibm.com/v1beta1
+kind: Configuration
+metadata:
+  labels:
+    backup.appconnect.ibm.com/component: configuration
+  name: ${MY_ACE_BARAUTH_NAME}
+  namespace: ${MY_OC_PROJECT}
+spec:
+  secretName: ${MY_ACE_BARAUTH_SECRET_NAME}
+  version: ${MY_ACE_VERSION}
+  type: barauth
