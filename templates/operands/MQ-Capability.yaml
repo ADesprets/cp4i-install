@@ -85,7 +85,9 @@ spec:
   web:
     console:
       authentication:
-        provider: integration-keycloak
+        provider: manual
       authorization:
-        provider: integration-keycloak
-    enabled: true
+        provider: manual
+      manualConfig:
+        secret:
+          name: cp4imq-web-secret

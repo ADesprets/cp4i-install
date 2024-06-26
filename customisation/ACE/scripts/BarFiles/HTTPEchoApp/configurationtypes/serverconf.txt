@@ -1,7 +1,0 @@
-Statistics: 
-  Snapshot: 
-    accountingOrigin: 'basic' 
-    nodeDataLevel: 'advanced' 
-    outputFormat: 'json' 
-    publicationOn: 'active' 
-    threadDataLevel: 'basic'

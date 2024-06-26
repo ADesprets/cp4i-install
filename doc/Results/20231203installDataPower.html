@@ -1,0 +1,646 @@
+<pre>./provision_cluster-v2.sh ./cp4i.properties ./versions/cp4i-2023.2.properties cp4i cp4iad2023
+<font color="#26A269">The provided arguments are: ./cp4i.properties ./versions/cp4i-2023.2.properties cp4i cp4iad2023</font>
+<font color="#26A269">==== Adding catalog sources using ibm pak plugin.</font>
+<font color="#F66151">CASE repository: IBM Cloud-Pak Github Repo (https://github.com/IBM/cloud-pak/raw/master/repo/case/)</font>
+<font color="#F66151">Downloading and extracting the CASE ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Retrieving CASE version ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Validating the CASE ...</font>
+<font color="#F66151">Validating the signature for the ibm-integration-platform-navigator CASE...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Creating inventory ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Finding inventory items</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Resolving inventory items ...</font>
+<font color="#F66151">Parsing inventory items</font>
+<font color="#F66151">Validating the signature for the ibm-cp-common-services CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-auditlogging CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-cert-manager CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-cs-commonui CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-crossplane-bundle CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-events-operator CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-cs-healthcheck CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-cs-iam CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-cpp CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-zen CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-licensing CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-management-ingress CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-cs-mongodb CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-cs-monitoring CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-platform-api-operator CASE...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Download of CASE: ibm-integration-platform-navigator, version: 7.1.3 is complete</font>
+
+<font color="#F66151">Generating ComponentSetConfig of CASE: ibm-integration-platform-navigator, version: 7.1.3 to /home/desprets/.ibm-pak/data/cases/ibm-integration-platform-navigator/7.1.3/component-set-config.yaml is complete</font>
+<font color="#F66151">ibm-zen-2.14.9  done</font>
+<font color="#F66151">ibm-cs-monitoring-1.19.9  done</font>
+<font color="#F66151">ibm-platform-api-operator-1.19.9  done</font>
+<font color="#F66151">ibm-integration-platform-navigator-7.1.3  done</font>
+<font color="#F66151">ibm-cs-healthcheck-1.19.9  done</font>
+<font color="#F66151">ibm-cpp-1.10.6  done</font>
+<font color="#F66151">ibm-cert-manager-1.19.9  done</font>
+<font color="#F66151">ibm-crossplane-bundle-1.12.9  done</font>
+<font color="#F66151">ibm-licensing-1.20.9  done</font>
+<font color="#F66151">ibm-cs-iam-1.19.10  done</font>
+<font color="#F66151">ibm-management-ingress-1.19.9  done</font>
+<font color="#F66151">ibm-cp-common-services-1.19.10  done</font>
+<font color="#F66151">ibm-events-operator-4.9.0  done</font>
+<font color="#F66151">ibm-auditlogging-1.20.9  done</font>
+<font color="#F66151">ibm-cs-mongodb-1.18.9  done</font>
+<font color="#F66151">ibm-cs-commonui-1.21.10  done</font>
+<font color="#F66151">Generating mirror manifests of CASE: ibm-integration-platform-navigator, version: 7.1.3 is complete</font>
+
+
+
+<font color="#F66151">Next steps</font>
+
+<font color="#F66151">- To mirror the images:</font>
+
+<font color="#F66151"> oc image mirror -f /home/desprets/.ibm-pak/data/mirror/ibm-integration-platform-navigator/7.1.3/images-mapping.txt --filter-by-os &apos;.*&apos; -a $REGISTRY_AUTH_FILE --insecure --skip-multiple-scopes --max-per-registry=1</font>
+
+<font color="#F66151">catalogsource.operators.coreos.com/ibm-integration-platform-navigator-catalog unchanged</font>
+<font color="#F66151">catalogsource.operators.coreos.com/opencloud-operators unchanged</font>
+<font color="#F66151">error: the path &quot;/home/desprets/.ibm-pak/data/mirror/ibm-integration-platform-navigator/7.1.3/catalog-sources-linux-amd64.yaml&quot; does not exist</font>
+<font color="#26A269">Adding case ibm-integration-platform-navigator took 21 seconds to execute.</font>
+<font color="#F66151">CASE repository: IBM Cloud-Pak Github Repo (https://github.com/IBM/cloud-pak/raw/master/repo/case/)</font>
+<font color="#F66151">Downloading and extracting the CASE ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Retrieving CASE version ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Validating the CASE ...</font>
+<font color="#F66151">Validating the signature for the ibm-integration-asset-repository CASE...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Creating inventory ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Finding inventory items</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Resolving inventory items ...</font>
+<font color="#F66151">Parsing inventory items</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Download of CASE: ibm-integration-asset-repository, version: 1.5.14 is complete</font>
+
+<font color="#F66151">Generating ComponentSetConfig of CASE: ibm-integration-asset-repository, version: 1.5.14 to /home/desprets/.ibm-pak/data/cases/ibm-integration-asset-repository/1.5.14/component-set-config.yaml is complete</font>
+<font color="#F66151">ibm-integration-asset-repository-1.5.14  done</font>
+<font color="#F66151">Generating mirror manifests of CASE: ibm-integration-asset-repository, version: 1.5.14 is complete</font>
+
+
+
+<font color="#F66151">Next steps</font>
+
+<font color="#F66151">- To mirror the images:</font>
+
+<font color="#F66151"> oc image mirror -f /home/desprets/.ibm-pak/data/mirror/ibm-integration-asset-repository/1.5.14/images-mapping.txt --filter-by-os &apos;.*&apos; -a $REGISTRY_AUTH_FILE --insecure --skip-multiple-scopes --max-per-registry=1</font>
+
+<font color="#F66151">error: the path &quot;/home/desprets/.ibm-pak/data/mirror/ibm-integration-asset-repository/1.5.14/catalog-sources.yaml&quot; does not exist</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ibm-integration-asset-repository-catalog unchanged</font>
+<font color="#26A269">Adding case ibm-integration-asset-repository took 4 seconds to execute.</font>
+<font color="#F66151">CASE repository: IBM Cloud-Pak Github Repo (https://github.com/IBM/cloud-pak/raw/master/repo/case/)</font>
+<font color="#F66151">Downloading and extracting the CASE ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Retrieving CASE version ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Validating the CASE ...</font>
+<font color="#F66151">Validating the signature for the ibm-apiconnect CASE...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Creating inventory ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Finding inventory items</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Resolving inventory items ...</font>
+<font color="#F66151">Parsing inventory items</font>
+<font color="#F66151">Validating the signature for the ibm-datapower-operator CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-cloud-native-postgresql CASE...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Download of CASE: ibm-apiconnect, version: 5.0.0 is complete</font>
+
+<font color="#F66151">Generating ComponentSetConfig of CASE: ibm-apiconnect, version: 5.0.0 to /home/desprets/.ibm-pak/data/cases/ibm-apiconnect/5.0.0/component-set-config.yaml is complete</font>
+<font color="#F66151">ibm-apiconnect-5.0.0  done</font>
+<font color="#F66151">ibm-cloud-native-postgresql-4.8.0+20221102.113620  done</font>
+<font color="#F66151">ibm-datapower-operator-1.7.1  done</font>
+<font color="#F66151">Generating mirror manifests of CASE: ibm-apiconnect, version: 5.0.0 is complete</font>
+
+
+
+<font color="#F66151">Next steps</font>
+
+<font color="#F66151">- To mirror the images:</font>
+
+<font color="#F66151"> oc image mirror -f /home/desprets/.ibm-pak/data/mirror/ibm-apiconnect/5.0.0/images-mapping.txt --filter-by-os &apos;.*&apos; -a $REGISTRY_AUTH_FILE --insecure --skip-multiple-scopes --max-per-registry=1</font>
+
+<font color="#F66151">catalogsource.operators.coreos.com/cloud-native-postgresql-catalog unchanged</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ibm-apiconnect-catalog unchanged</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ibm-datapower-operator-catalog configured</font>
+<font color="#26A269">Adding case ibm-apiconnect took 7 seconds to execute.</font>
+<font color="#F66151">CASE repository: IBM Cloud-Pak Github Repo (https://github.com/IBM/cloud-pak/raw/master/repo/case/)</font>
+<font color="#F66151">Downloading and extracting the CASE ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Retrieving CASE version ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Validating the CASE ...</font>
+<font color="#F66151">Validating the signature for the ibm-datapower-operator CASE...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Creating inventory ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Finding inventory items</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Resolving inventory items ...</font>
+<font color="#F66151">Parsing inventory items</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Download of CASE: ibm-datapower-operator, version: 1.8.1 is complete</font>
+
+<font color="#F66151">Generating ComponentSetConfig of CASE: ibm-datapower-operator, version: 1.8.1 to /home/desprets/.ibm-pak/data/cases/ibm-datapower-operator/1.8.1/component-set-config.yaml is complete</font>
+<font color="#F66151">ibm-datapower-operator-1.8.1  done</font>
+<font color="#F66151">Generating mirror manifests of CASE: ibm-datapower-operator, version: 1.8.1 is complete</font>
+
+
+
+<font color="#F66151">Next steps</font>
+
+<font color="#F66151">- To mirror the images:</font>
+
+<font color="#F66151"> oc image mirror -f /home/desprets/.ibm-pak/data/mirror/ibm-datapower-operator/1.8.1/images-mapping.txt --filter-by-os &apos;.*&apos; -a $REGISTRY_AUTH_FILE --insecure --skip-multiple-scopes --max-per-registry=1</font>
+
+<font color="#F66151">error: the path &quot;/home/desprets/.ibm-pak/data/mirror/ibm-datapower-operator/1.8.1/catalog-sources.yaml&quot; does not exist</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ibm-datapower-operator-catalog configured</font>
+<font color="#26A269">Adding case ibm-datapower-operator took 3 seconds to execute.</font>
+<font color="#F66151">CASE repository: IBM Cloud-Pak Github Repo (https://github.com/IBM/cloud-pak/raw/master/repo/case/)</font>
+<font color="#F66151">Downloading and extracting the CASE ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Retrieving CASE version ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Validating the CASE ...</font>
+<font color="#F66151">Validating the signature for the ibm-appconnect CASE...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Creating inventory ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Finding inventory items</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Resolving inventory items ...</font>
+<font color="#F66151">Parsing inventory items</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Download of CASE: ibm-appconnect, version: 10.1.1 is complete</font>
+
+<font color="#F66151">Generating ComponentSetConfig of CASE: ibm-appconnect, version: 10.1.1 to /home/desprets/.ibm-pak/data/cases/ibm-appconnect/10.1.1/component-set-config.yaml is complete</font>
+<font color="#F66151">ibm-appconnect-10.1.1  done</font>
+<font color="#F66151">Generating mirror manifests of CASE: ibm-appconnect, version: 10.1.1 is complete</font>
+
+
+
+<font color="#F66151">Next steps</font>
+
+<font color="#F66151">- To mirror the images:</font>
+
+<font color="#F66151"> oc image mirror -f /home/desprets/.ibm-pak/data/mirror/ibm-appconnect/10.1.1/images-mapping.txt --filter-by-os &apos;.*&apos; -a $REGISTRY_AUTH_FILE --insecure --skip-multiple-scopes --max-per-registry=1</font>
+
+<font color="#F66151">catalogsource.operators.coreos.com/appconnect-operator-catalogsource unchanged</font>
+<font color="#F66151">error: the path &quot;/home/desprets/.ibm-pak/data/mirror/ibm-appconnect/10.1.1/catalog-sources-linux-amd64.yaml&quot; does not exist</font>
+<font color="#26A269">Adding case ibm-appconnect took 4 seconds to execute.</font>
+<font color="#F66151">CASE repository: IBM Cloud-Pak Github Repo (https://github.com/IBM/cloud-pak/raw/master/repo/case/)</font>
+<font color="#F66151">Downloading and extracting the CASE ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Retrieving CASE version ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Validating the CASE ...</font>
+<font color="#F66151">Validating the signature for the ibm-mq CASE...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Creating inventory ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Finding inventory items</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Resolving inventory items ...</font>
+<font color="#F66151">Parsing inventory items</font>
+<font color="#F66151">Validating the signature for the ibm-cp-common-services CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-auditlogging CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-cert-manager CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-cs-commonui CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-crossplane-bundle CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-events-operator CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-cs-healthcheck CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-cs-iam CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-cpp CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-zen CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-licensing CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-management-ingress CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-cs-mongodb CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-cs-monitoring CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-platform-api-operator CASE...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Download of CASE: ibm-mq, version: 2.4.5 is complete</font>
+
+<font color="#F66151">Generating ComponentSetConfig of CASE: ibm-mq, version: 2.4.5 to /home/desprets/.ibm-pak/data/cases/ibm-mq/2.4.5/component-set-config.yaml is complete</font>
+<font color="#F66151">ibm-management-ingress-1.19.9  done</font>
+<font color="#F66151">ibm-zen-2.14.9  done</font>
+<font color="#F66151">ibm-cs-healthcheck-1.19.9  done</font>
+<font color="#F66151">ibm-cpp-1.10.6  done</font>
+<font color="#F66151">ibm-cs-monitoring-1.19.9  done</font>
+<font color="#F66151">ibm-licensing-1.20.9  done</font>
+<font color="#F66151">ibm-cs-mongodb-1.18.9  done</font>
+<font color="#F66151">ibm-mq-2.4.5  done</font>
+<font color="#F66151">ibm-cp-common-services-1.19.10  done</font>
+<font color="#F66151">ibm-cs-commonui-1.21.10  done</font>
+<font color="#F66151">ibm-cert-manager-1.19.9  done</font>
+<font color="#F66151">ibm-events-operator-4.9.0  done</font>
+<font color="#F66151">ibm-auditlogging-1.20.9  done</font>
+<font color="#F66151">ibm-crossplane-bundle-1.12.9  done</font>
+<font color="#F66151">ibm-cs-iam-1.19.10  done</font>
+<font color="#F66151">ibm-platform-api-operator-1.19.9  done</font>
+<font color="#F66151">Generating mirror manifests of CASE: ibm-mq, version: 2.4.5 is complete</font>
+
+
+
+<font color="#F66151">Next steps</font>
+
+<font color="#F66151">- To mirror the images:</font>
+
+<font color="#F66151"> oc image mirror -f /home/desprets/.ibm-pak/data/mirror/ibm-mq/2.4.5/images-mapping.txt --filter-by-os &apos;.*&apos; -a $REGISTRY_AUTH_FILE --insecure --skip-multiple-scopes --max-per-registry=1</font>
+
+<font color="#F66151">catalogsource.operators.coreos.com/ibmmq-operator-catalogsource unchanged</font>
+<font color="#F66151">catalogsource.operators.coreos.com/opencloud-operators unchanged</font>
+<font color="#F66151">error: the path &quot;/home/desprets/.ibm-pak/data/mirror/ibm-mq/2.4.5/catalog-sources-linux-amd64.yaml&quot; does not exist</font>
+<font color="#26A269">Adding case ibm-mq took 10 seconds to execute.</font>
+<font color="#F66151">CASE repository: IBM Cloud-Pak Github Repo (https://github.com/IBM/cloud-pak/raw/master/repo/case/)</font>
+<font color="#F66151">Downloading and extracting the CASE ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Retrieving CASE version ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Validating the CASE ...</font>
+<font color="#F66151">Validating the signature for the ibm-eventstreams CASE...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Creating inventory ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Finding inventory items</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Resolving inventory items ...</font>
+<font color="#F66151">Parsing inventory items</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Download of CASE: ibm-eventstreams, version: 3.2.5 is complete</font>
+
+<font color="#F66151">Generating ComponentSetConfig of CASE: ibm-eventstreams, version: 3.2.5 to /home/desprets/.ibm-pak/data/cases/ibm-eventstreams/3.2.5/component-set-config.yaml is complete</font>
+<font color="#F66151">ibm-eventstreams-3.2.5  done</font>
+<font color="#F66151">Generating mirror manifests of CASE: ibm-eventstreams, version: 3.2.5 is complete</font>
+
+
+
+<font color="#F66151">Next steps</font>
+
+<font color="#F66151">- To mirror the images:</font>
+
+<font color="#F66151"> oc image mirror -f /home/desprets/.ibm-pak/data/mirror/ibm-eventstreams/3.2.5/images-mapping.txt --filter-by-os &apos;.*&apos; -a $REGISTRY_AUTH_FILE --insecure --skip-multiple-scopes --max-per-registry=1</font>
+
+<font color="#F66151">catalogsource.operators.coreos.com/ibm-eventstreams unchanged</font>
+<font color="#F66151">error: the path &quot;/home/desprets/.ibm-pak/data/mirror/ibm-eventstreams/3.2.5/catalog-sources-linux-amd64.yaml&quot; does not exist</font>
+<font color="#26A269">Adding case ibm-eventstreams took 5 seconds to execute.</font>
+<font color="#F66151">CASE repository: IBM Cloud-Pak Github Repo (https://github.com/IBM/cloud-pak/raw/master/repo/case/)</font>
+<font color="#F66151">Downloading and extracting the CASE ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Retrieving CASE version ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Validating the CASE ...</font>
+<font color="#F66151">Validating the signature for the ibm-datapower-operator CASE...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Creating inventory ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Finding inventory items</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Resolving inventory items ...</font>
+<font color="#F66151">Parsing inventory items</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Download of CASE: ibm-datapower-operator, version: 1.8.1 is complete</font>
+
+<font color="#F66151">Generating ComponentSetConfig of CASE: ibm-datapower-operator, version: 1.8.1 to /home/desprets/.ibm-pak/data/cases/ibm-datapower-operator/1.8.1/component-set-config.yaml is complete</font>
+<font color="#F66151">ibm-datapower-operator-1.8.1  done</font>
+<font color="#F66151">Generating mirror manifests of CASE: ibm-datapower-operator, version: 1.8.1 is complete</font>
+
+
+
+<font color="#F66151">Next steps</font>
+
+<font color="#F66151">- To mirror the images:</font>
+
+<font color="#F66151"> oc image mirror -f /home/desprets/.ibm-pak/data/mirror/ibm-datapower-operator/1.8.1/images-mapping.txt --filter-by-os &apos;.*&apos; -a $REGISTRY_AUTH_FILE --insecure --skip-multiple-scopes --max-per-registry=1</font>
+
+<font color="#F66151">error: the path &quot;/home/desprets/.ibm-pak/data/mirror/ibm-datapower-operator/1.8.1/catalog-sources.yaml&quot; does not exist</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ibm-datapower-operator-catalog unchanged</font>
+<font color="#26A269">Adding case ibm-datapower-operator took 3 seconds to execute.</font>
+<font color="#F66151">CASE repository: IBM Cloud-Pak Github Repo (https://github.com/IBM/cloud-pak/raw/master/repo/case/)</font>
+<font color="#F66151">Downloading and extracting the CASE ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Retrieving CASE version ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Validating the CASE ...</font>
+<font color="#F66151">Validating the signature for the ibm-aspera-hsts-operator CASE...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Creating inventory ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Finding inventory items</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Resolving inventory items ...</font>
+<font color="#F66151">Parsing inventory items</font>
+<font color="#F66151">Validating the signature for the ibm-cloud-databases-redis CASE...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Download of CASE: ibm-aspera-hsts-operator, version: 1.5.12 is complete</font>
+
+<font color="#F66151">Generating ComponentSetConfig of CASE: ibm-aspera-hsts-operator, version: 1.5.12 to /home/desprets/.ibm-pak/data/cases/ibm-aspera-hsts-operator/1.5.12/component-set-config.yaml is complete</font>
+<font color="#F66151">ibm-cloud-databases-redis-1.6.11  done</font>
+<font color="#F66151">ibm-aspera-hsts-operator-1.5.12  done</font>
+<font color="#F66151">Generating mirror manifests of CASE: ibm-aspera-hsts-operator, version: 1.5.12 is complete</font>
+
+
+
+<font color="#F66151">Next steps</font>
+
+<font color="#F66151">- To mirror the images:</font>
+
+<font color="#F66151"> oc image mirror -f /home/desprets/.ibm-pak/data/mirror/ibm-aspera-hsts-operator/1.5.12/images-mapping.txt --filter-by-os &apos;.*&apos; -a $REGISTRY_AUTH_FILE --insecure --skip-multiple-scopes --max-per-registry=1</font>
+
+<font color="#F66151">catalogsource.operators.coreos.com/aspera-operators unchanged</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ibm-cloud-databases-redis-operator-catalog unchanged</font>
+<font color="#F66151">error: the path &quot;/home/desprets/.ibm-pak/data/mirror/ibm-aspera-hsts-operator/1.5.12/catalog-sources-linux-amd64.yaml&quot; does not exist</font>
+<font color="#26A269">Adding case ibm-aspera-hsts-operator took 5 seconds to execute.</font>
+<font color="#F66151">CASE repository: IBM Cloud-Pak Github Repo (https://github.com/IBM/cloud-pak/raw/master/repo/case/)</font>
+<font color="#F66151">Downloading and extracting the CASE ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Retrieving CASE version ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Validating the CASE ...</font>
+<font color="#F66151">Validating the signature for the ibm-cp-common-services CASE...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Creating inventory ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Finding inventory items</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Resolving inventory items ...</font>
+<font color="#F66151">Parsing inventory items</font>
+<font color="#F66151">Validating the signature for the ibm-auditlogging CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-cert-manager CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-cs-commonui CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-crossplane-bundle CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-events-operator CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-cs-healthcheck CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-cs-iam CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-cpp CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-zen CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-licensing CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-management-ingress CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-cs-mongodb CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-cs-monitoring CASE...</font>
+<font color="#F66151">Validating the signature for the ibm-platform-api-operator CASE...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Download of CASE: ibm-cp-common-services, version: 1.19.10 is complete</font>
+
+<font color="#F66151">Generating ComponentSetConfig of CASE: ibm-cp-common-services, version: 1.19.10 to /home/desprets/.ibm-pak/data/cases/ibm-cp-common-services/1.19.10/component-set-config.yaml is complete</font>
+<font color="#F66151">ibm-cpp-1.10.6  done</font>
+<font color="#F66151">ibm-cs-commonui-1.21.10  done</font>
+<font color="#F66151">ibm-cp-common-services-1.19.10  done</font>
+<font color="#F66151">ibm-cs-iam-1.19.10  done</font>
+<font color="#F66151">ibm-cs-monitoring-1.19.9  done</font>
+<font color="#F66151">ibm-platform-api-operator-1.19.9  done</font>
+<font color="#F66151">ibm-auditlogging-1.20.9  done</font>
+<font color="#F66151">ibm-crossplane-bundle-1.12.9  done</font>
+<font color="#F66151">ibm-licensing-1.20.9  done</font>
+<font color="#F66151">ibm-events-operator-4.9.0  done</font>
+<font color="#F66151">ibm-cs-healthcheck-1.19.9  done</font>
+<font color="#F66151">ibm-management-ingress-1.19.9  done</font>
+<font color="#F66151">ibm-cert-manager-1.19.9  done</font>
+<font color="#F66151">ibm-cs-mongodb-1.18.9  done</font>
+<font color="#F66151">ibm-zen-2.14.9  done</font>
+<font color="#F66151">Generating mirror manifests of CASE: ibm-cp-common-services, version: 1.19.10 is complete</font>
+
+
+
+<font color="#F66151">Next steps</font>
+
+<font color="#F66151">- To mirror the images:</font>
+
+<font color="#F66151"> oc image mirror -f /home/desprets/.ibm-pak/data/mirror/ibm-cp-common-services/1.19.10/images-mapping.txt --filter-by-os &apos;.*&apos; -a $REGISTRY_AUTH_FILE --insecure --skip-multiple-scopes --max-per-registry=1</font>
+
+<font color="#F66151">catalogsource.operators.coreos.com/opencloud-operators unchanged</font>
+<font color="#F66151">error: the path &quot;/home/desprets/.ibm-pak/data/mirror/ibm-cp-common-services/1.19.10/catalog-sources-linux-amd64.yaml&quot; does not exist</font>
+<font color="#26A269">Adding case ibm-cp-common-services took 8 seconds to execute.</font>
+<font color="#F66151">CASE repository: IBM Cloud-Pak Github Repo (https://github.com/IBM/cloud-pak/raw/master/repo/case/)</font>
+<font color="#F66151">Downloading and extracting the CASE ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Retrieving CASE version ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Validating the CASE ...</font>
+<font color="#F66151">Validating the signature for the ibm-eventendpointmanagement CASE...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Creating inventory ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Finding inventory items</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Resolving inventory items ...</font>
+<font color="#F66151">Parsing inventory items</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Download of CASE: ibm-eventendpointmanagement, version: 11.0.6 is complete</font>
+
+<font color="#F66151">Generating ComponentSetConfig of CASE: ibm-eventendpointmanagement, version: 11.0.6 to /home/desprets/.ibm-pak/data/cases/ibm-eventendpointmanagement/11.0.6/component-set-config.yaml is complete</font>
+<font color="#F66151">ibm-eventendpointmanagement-11.0.6  done</font>
+<font color="#F66151">Generating mirror manifests of CASE: ibm-eventendpointmanagement, version: 11.0.6 is complete</font>
+
+
+
+<font color="#F66151">Next steps</font>
+
+<font color="#F66151">- To mirror the images:</font>
+
+<font color="#F66151"> oc image mirror -f /home/desprets/.ibm-pak/data/mirror/ibm-eventendpointmanagement/11.0.6/images-mapping.txt --filter-by-os &apos;.*&apos; -a $REGISTRY_AUTH_FILE --insecure --skip-multiple-scopes --max-per-registry=1</font>
+
+<font color="#F66151">error: the path &quot;/home/desprets/.ibm-pak/data/mirror/ibm-eventendpointmanagement/11.0.6/catalog-sources.yaml&quot; does not exist</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ibm-eventendpointmanagement-catalog unchanged</font>
+<font color="#26A269">Adding case ibm-eventendpointmanagement took 5 seconds to execute.</font>
+<font color="#F66151">Welcome to the CASE launcher</font>
+<font color="#F66151">Attempting to retrieve and extract the CASE from the specified location</font>
+<font color="#F66151">[✓] CASE has been retrieved and extracted</font>
+<font color="#F66151">Attempting to validate the CASE</font>
+<font color="#F66151">[✓] CASE has been successfully validated</font>
+<font color="#F66151">Attempting to locate the launch inventory item, script, and action in the specified CASE</font>
+<font color="#F66151">[✓] Found the specified launch inventory item, action, and script for the CASE</font>
+<font color="#F66151">Attempting to check the cluster and machine for required prerequisites for launching the item</font>
+<font color="#F66151">Checking for required prereqs...</font>
+<font color="#F66151">                                                         </font>
+<font color="#F66151">Prerequisite                                                        Result</font>
+<font color="#F66151">Cluster has at least one amd64                                      true</font>
+<font color="#F66151">OpenShift Container Platform Kubernetes version is 1.23 or greater  true</font>
+<font color="#F66151">Client has oc version 4.3.0 or greater                              true</font>
+
+<font color="#F66151">Required prereqs result: OK</font>
+<font color="#F66151">Checking user permissions...</font>
+<font color="#F66151">No user rules specified.</font>
+<font color="#F66151">[✓] Cluster and Client Prerequisites have been met for the CASE</font>
+<font color="#F66151">Running the CASE eemOperatorSetup launch script with the following action context: installCatalog</font>
+<font color="#F66151">oc: Client Version: 4.12.0-202305301015.p0.g97c75d0.assembly.stream-97c75d0</font>
+<font color="#F66151">Kustomize Version: v4.5.7</font>
+<font color="#F66151">Server Version: 4.12.40</font>
+<font color="#F66151">Kubernetes Version: v1.25.14+20cda61</font>
+<font color="#F66151">Executing inventory item eemOperatorSetup, action installCatalog : launch.sh</font>
+<font color="#F66151">Checking arguments for install catalog action</font>
+<font color="#F66151">-------------Installing catalog source-------------</font>
+<font color="#F66151">apiVersion: operators.coreos.com/v1alpha1</font>
+<font color="#F66151">kind: CatalogSource</font>
+<font color="#F66151">metadata:</font>
+<font color="#F66151">  name: eem-operator-catalog</font>
+<font color="#F66151">  namespace: openshift-marketplace</font>
+<font color="#F66151">spec:</font>
+<font color="#F66151">  displayName: IBM Event Endpoint Management</font>
+<font color="#F66151">  image: icr.io/cpopen/ibm-eventendpointmanagement-operator-catalog@sha256:e2089a48f76967ee9f9488a1bd33156460ceeef9bbda45bbffa96e7766908977</font>
+<font color="#F66151">  publisher: IBM</font>
+<font color="#F66151">  sourceType: grpcdone</font>
+<font color="#F66151">catalogsource.operators.coreos.com/eem-operator-catalog unchanged</font>
+<font color="#F66151">[✓] CASE launch script completed successfully</font>
+<font color="#F66151">CASE repository: IBM Cloud-Pak Github Repo (https://github.com/IBM/cloud-pak/raw/master/repo/case/)</font>
+<font color="#F66151">Downloading and extracting the CASE ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Retrieving CASE version ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Validating the CASE ...</font>
+<font color="#F66151">Validating the signature for the ibm-eventautomation-flink CASE...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Creating inventory ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Finding inventory items</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Resolving inventory items ...</font>
+<font color="#F66151">Parsing inventory items</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Download of CASE: ibm-eventautomation-flink, version: 1.0.4 is complete</font>
+
+<font color="#F66151">Generating ComponentSetConfig of CASE: ibm-eventautomation-flink, version: 1.0.4 to /home/desprets/.ibm-pak/data/cases/ibm-eventautomation-flink/1.0.4/component-set-config.yaml is complete</font>
+<font color="#F66151">ibm-eventautomation-flink-1.0.4  done</font>
+<font color="#F66151">Generating mirror manifests of CASE: ibm-eventautomation-flink, version: 1.0.4 is complete</font>
+
+
+
+<font color="#F66151">Next steps</font>
+
+<font color="#F66151">- To mirror the images:</font>
+
+<font color="#F66151"> oc image mirror -f /home/desprets/.ibm-pak/data/mirror/ibm-eventautomation-flink/1.0.4/images-mapping.txt --filter-by-os &apos;.*&apos; -a $REGISTRY_AUTH_FILE --insecure --skip-multiple-scopes --max-per-registry=1</font>
+
+<font color="#F66151">error: the path &quot;/home/desprets/.ibm-pak/data/mirror/ibm-eventautomation-flink/1.0.4/catalog-sources.yaml&quot; does not exist</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ibm-eventautomation-flink-catalog unchanged</font>
+<font color="#26A269">Adding case ibm-eventautomation-flink took 4 seconds to execute.</font>
+<font color="#F66151">Welcome to the CASE launcher</font>
+<font color="#F66151">Attempting to retrieve and extract the CASE from the specified location</font>
+<font color="#F66151">[✓] CASE has been retrieved and extracted</font>
+<font color="#F66151">Attempting to validate the CASE</font>
+<font color="#F66151">[✓] CASE has been successfully validated</font>
+<font color="#F66151">Attempting to locate the launch inventory item, script, and action in the specified CASE</font>
+<font color="#F66151">[✓] Found the specified launch inventory item, action, and script for the CASE</font>
+<font color="#F66151">Attempting to check the cluster and machine for required prerequisites for launching the item</font>
+<font color="#F66151">Checking for required prereqs...</font>
+<font color="#F66151">                                                         </font>
+<font color="#F66151">Prerequisite                                                        Result</font>
+<font color="#F66151">Cluster has at least one amd64                                      true</font>
+<font color="#F66151">OpenShift Container Platform Kubernetes version is 1.23 or greater  true</font>
+<font color="#F66151">Client has oc version 4.3.0 or greater                              true</font>
+
+<font color="#F66151">Required prereqs result: OK</font>
+<font color="#F66151">Checking user permissions...</font>
+<font color="#F66151">No user rules specified.</font>
+<font color="#F66151">[✓] Cluster and Client Prerequisites have been met for the CASE</font>
+<font color="#F66151">Running the CASE flinkKubernetesOperatorSetup launch script with the following action context: installCatalog</font>
+<font color="#F66151">oc: Client Version: 4.12.0-202305301015.p0.g97c75d0.assembly.stream-97c75d0</font>
+<font color="#F66151">Kustomize Version: v4.5.7</font>
+<font color="#F66151">Server Version: 4.12.40</font>
+<font color="#F66151">Kubernetes Version: v1.25.14+20cda61</font>
+<font color="#F66151">Executing inventory item flinkKubernetesOperatorSetup, action installCatalog : launch.sh</font>
+<font color="#F66151">Checking arguments for install catalog action</font>
+<font color="#F66151">-------------Installing catalog source-------------</font>
+<font color="#F66151">apiVersion: operators.coreos.com/v1alpha1</font>
+<font color="#F66151">kind: CatalogSource</font>
+<font color="#F66151">metadata:</font>
+<font color="#F66151">  name: ea-flink-operator-catalog</font>
+<font color="#F66151">  namespace: openshift-marketplace</font>
+<font color="#F66151">spec:</font>
+<font color="#F66151">  displayName: IBM Operator for Apache Flink</font>
+<font color="#F66151">  image: icr.io/cpopen/ibm-eventautomation-flink-operator-catalog@sha256:3ffb5af7ab8b8512e21548e1dcfd83e8bafd477eb286ebab643cf6582ede5344</font>
+<font color="#F66151">  publisher: IBM</font>
+<font color="#F66151">  sourceType: grpcdone</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ea-flink-operator-catalog unchanged</font>
+<font color="#F66151">[✓] CASE launch script completed successfully</font>
+<font color="#F66151">CASE repository: IBM Cloud-Pak Github Repo (https://github.com/IBM/cloud-pak/raw/master/repo/case/)</font>
+<font color="#F66151">Downloading and extracting the CASE ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Retrieving CASE version ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Validating the CASE ...</font>
+<font color="#F66151">Validating the signature for the ibm-eventprocessing CASE...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Creating inventory ...</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Finding inventory items</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Resolving inventory items ...</font>
+<font color="#F66151">Parsing inventory items</font>
+<font color="#F66151">- Success</font>
+<font color="#F66151">Download of CASE: ibm-eventprocessing, version: 1.0.5 is complete</font>
+
+<font color="#F66151">Generating ComponentSetConfig of CASE: ibm-eventprocessing, version: 1.0.5 to /home/desprets/.ibm-pak/data/cases/ibm-eventprocessing/1.0.5/component-set-config.yaml is complete</font>
+<font color="#F66151">ibm-eventprocessing-1.0.5  done</font>
+<font color="#F66151">Generating mirror manifests of CASE: ibm-eventprocessing, version: 1.0.5 is complete</font>
+
+
+
+<font color="#F66151">Next steps</font>
+
+<font color="#F66151">- To mirror the images:</font>
+
+<font color="#F66151"> oc image mirror -f /home/desprets/.ibm-pak/data/mirror/ibm-eventprocessing/1.0.5/images-mapping.txt --filter-by-os &apos;.*&apos; -a $REGISTRY_AUTH_FILE --insecure --skip-multiple-scopes --max-per-registry=1</font>
+
+<font color="#F66151">error: the path &quot;/home/desprets/.ibm-pak/data/mirror/ibm-eventprocessing/1.0.5/catalog-sources.yaml&quot; does not exist</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ibm-eventprocessing-catalog unchanged</font>
+<font color="#26A269">Adding case ibm-eventprocessing took 5 seconds to execute.</font>
+<font color="#F66151">Welcome to the CASE launcher</font>
+<font color="#F66151">Attempting to retrieve and extract the CASE from the specified location</font>
+<font color="#F66151">[✓] CASE has been retrieved and extracted</font>
+<font color="#F66151">Attempting to validate the CASE</font>
+<font color="#F66151">[✓] CASE has been successfully validated</font>
+<font color="#F66151">Attempting to locate the launch inventory item, script, and action in the specified CASE</font>
+<font color="#F66151">[✓] Found the specified launch inventory item, action, and script for the CASE</font>
+<font color="#F66151">Attempting to check the cluster and machine for required prerequisites for launching the item</font>
+<font color="#F66151">Checking for required prereqs...</font>
+<font color="#F66151">                                                         </font>
+<font color="#F66151">Prerequisite                                                        Result</font>
+<font color="#F66151">Cluster has at least one amd64                                      true</font>
+<font color="#F66151">OpenShift Container Platform Kubernetes version is 1.23 or greater  true</font>
+<font color="#F66151">Client has oc version 4.3.0 or greater                              true</font>
+
+<font color="#F66151">Required prereqs result: OK</font>
+<font color="#F66151">Checking user permissions...</font>
+<font color="#F66151">No user rules specified.</font>
+<font color="#F66151">[✓] Cluster and Client Prerequisites have been met for the CASE</font>
+<font color="#F66151">Running the CASE epOperatorSetup launch script with the following action context: installCatalog</font>
+<font color="#F66151">oc: Client Version: 4.12.0-202305301015.p0.g97c75d0.assembly.stream-97c75d0</font>
+<font color="#F66151">Kustomize Version: v4.5.7</font>
+<font color="#F66151">Server Version: 4.12.40</font>
+<font color="#F66151">Kubernetes Version: v1.25.14+20cda61</font>
+<font color="#F66151">Executing inventory item epOperatorSetup, action installCatalog : launch.sh</font>
+<font color="#F66151">Checking arguments for install catalog action</font>
+<font color="#F66151">-------------Installing catalog source-------------</font>
+<font color="#F66151">apiVersion: operators.coreos.com/v1alpha1</font>
+<font color="#F66151">kind: CatalogSource</font>
+<font color="#F66151">metadata:</font>
+<font color="#F66151">  name: ea-sp-operator-catalog</font>
+<font color="#F66151">  namespace: openshift-marketplace</font>
+<font color="#F66151">spec:</font>
+<font color="#F66151">  displayName: IBM Event Processing</font>
+<font color="#F66151">  image: icr.io/cpopen/ibm-eventprocessing-operator-catalog@sha256:d5aa5e203c101fe148b9944e7978507d65a1f8b09fe6c4bab41e4d6ea063f63c</font>
+<font color="#F66151">  publisher: IBM</font>
+<font color="#F66151">  sourceType: grpcdone</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ea-sp-operator-catalog unchanged</font>
+<font color="#F66151">[✓] CASE launch script completed successfully</font>
+<font color="#26A269">==== Installation of operators.</font>
+<font color="#2AA1B3">Checking subscription ibm-apiconnect in openshift-operators project...</font><font color="#26A269">OK</font>
+<font color="#2AA1B3">Checking clusterserviceversion ibm-apiconnect.v5.0.0 .status.phase is Succeeded...</font><font color="#26A269">OK, Succeeded</font>
+<font color="#26A269">Creation of ibm-apiconnect operator took 1 seconds to execute.</font>
+<font color="#2AA1B3">Checking subscription datapower-operator-v1.8.1-ibm-datapower-operator-catalog-openshift-marketplace in openshift-operators project...</font><font color="#F66151">subscription.operators.coreos.com/datapower-operator unchanged</font>
+<font color="#2AA1B3">Checking clusterserviceversion datapower-operator.v1.7.2 .status.phase is Succeeded...</font><font color="#26A269">OK, Succeeded</font>
+<font color="#26A269">Creation of datapower-operator operator took 2 seconds to execute.</font>
+<font color="#26A269">==== Installation of operands.</font>
+<font color="#2AA1B3">Checking APIConnectCluster cp4i-apic in cp4i project...</font><font color="#26A269">OK</font>
+<font color="#2AA1B3">Checking APIConnectCluster cp4i-apic .status.phase is Ready...</font><font color="#26A269">OK, Ready</font>
+<font color="#26A269">Creation of APIConnectCluster instance took 0 seconds to execute.</font>
+<font color="#2AA1B3">Checking DataPowerService cp4i-dp in cp4i project...</font><font color="#F66151">Error from server (InternalError): error when creating &quot;STDIN&quot;: Internal error occurred: failed calling webhook &quot;datapowerservices.defaulter.datapower.ibm.com&quot;: failed to call webhook: Post &quot;https://datapower-operator.openshift-operators.svc:443/default-datapower-ibm-com-v1beta3-datapowerservice?timeout=2s&quot;: EOF</font></pre>

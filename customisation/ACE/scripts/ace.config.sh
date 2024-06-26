@@ -5,7 +5,7 @@
 ################################################################
 function create_secret_for_barauth () {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho "F:IN :create_secret_for_barauth"
+  decho 3 "F:IN :create_secret_for_barauth"
  
   local lf_in_json_file=$1
 
@@ -22,7 +22,7 @@ function create_secret_for_barauth () {
     oc -n=${MY_OC_PROJECT} create secret generic ${MY_ACE_BARAUTH_SECRET_NAME} --from-file=configuration=${lf_in_json_file} 
   fi
 
-  decho "F:OUT:create_secret_for_barauth"
+  decho 3 "F:OUT:create_secret_for_barauth"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))    
 }
 
@@ -31,13 +31,13 @@ function create_secret_for_barauth () {
 #################################################
 function create_ace_config_barauth () {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho "F:IN :create_ace_config_barauth"
+  decho 3 "F:IN :create_ace_config_barauth"
  
   local lf_in_file=$1
   local lf_file_bn=$(basename "${lf_in_file}")
   local lf_gen_file=${sc_generatedyamldir}${lf_file_bn}
 
-  decho "lf_in_file: ${lf_in_file}|lf_gen_file:${lf_gen_file}"
+  decho 3 "lf_in_file: ${lf_in_file}|lf_gen_file:${lf_gen_file}"
 
   # check for the existence of all needed files 
   check_file_exist $lf_in_file
@@ -53,7 +53,7 @@ function create_ace_config_barauth () {
     oc -n ${MY_OC_PROJECT} apply -f ${lf_gen_file}
   fi
 
-  decho "F:OUT:create_ace_config_barauth"
+  decho 3 "F:OUT:create_ace_config_barauth"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))    
 }
 
@@ -62,15 +62,15 @@ function create_ace_config_barauth () {
 #################################################
 function create_ace_config_serverconf () {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho "F:IN :create_ace_config_serverconf"
+  decho 3 "F:IN :create_ace_config_serverconf"
  
   local lf_in_file=$1
 
+  # Get the basename and filename without extension
+  # https://stackoverflow.com/questions/965053/extract-filename-and-extension-in-bash
   local lf_file_bn=$(basename "${lf_in_file}")
-
-  # Get the filename without extension
   local lf_file_bn_wo_ext="${lf_file_bn%.*}"
-  decho "lf_in_file: ${lf_in_file}|lf_file_bn:${lf_file_bn}|lf_file_bn_wo_ext:${lf_file_bn_wo_ext}"
+  decho 3 "lf_in_file: ${lf_in_file}|lf_file_bn:${lf_file_bn}|lf_file_bn_wo_ext:${lf_file_bn_wo_ext}"
 
   local lf_yaml_file="${TMPLYAMLDIR}${lf_file_bn_wo_ext}.yaml"
   local lf_gen_file="${sc_generatedyamldir}${lf_file_bn_wo_ext}.yaml"
@@ -92,7 +92,7 @@ function create_ace_config_serverconf () {
     oc -n ${MY_OC_PROJECT} apply -f ${lf_gen_file}
   fi
 
-  decho "F:OUT:create_ace_config_serverconf"
+  decho 3 "F:OUT:create_ace_config_serverconf"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))    
 }
 
@@ -117,7 +117,6 @@ BARFILESDIR="${SCRIPTDIR}BarFiles/"
 #SB]20240524 Only the following variable is global for all bar files (Check if there others in which case put all them in a config file)
 MY_ACE_REPOSITORY_URL="https://raw.githubusercontent.com/saadbenachi/my_bar_files/main/"
 
-
 # SB]20240404 Global Index sequence for incremental output for each function call
 SC_SPACES_COUNTER=0
 SC_SPACES_INCR=3
@@ -128,7 +127,7 @@ END_COMMENT
 # Loop through files in the barfiles directory 
 for sc_barfiledir in "${BARFILESDIR}"*; do
 
-  decho "sc_barfiledir: ${sc_barfiledir}"
+  decho 3 "sc_barfiledir: ${sc_barfiledir}"
 
   export MY_ACE_BAR_NAME=$(basename "${sc_barfiledir}")
 
@@ -156,9 +155,9 @@ for sc_barfiledir in "${BARFILESDIR}"*; do
     # Get the file basename then the filename without extension
     sc_configfile_bn=$(basename "${sc_configfile}")
     sc_configtype="${sc_configfile_bn%.*}"
-    decho "sc_configfile: ${sc_configfile}|sc_configfile_bn=$sc_configfile_bn|sc_configtype:${sc_configtype}"
+    decho 3 "sc_configfile: ${sc_configfile}|sc_configfile_bn=$sc_configfile_bn|sc_configtype:${sc_configtype}"
 
-    decho "sc_configtype: ${sc_configtype}"
+    decho 3 "sc_configtype: ${sc_configtype}"
     # SB]20240524 Process the different ACE configuration types
     # https://www.ibm.com/docs/en/app-connect/containers_cd?topic=resources-configuration-reference
     # https://www.ibm.com/docs/en/app-connect/containers_cd?topic=resources-configuration-reference
