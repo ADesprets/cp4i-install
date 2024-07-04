@@ -625,7 +625,7 @@ function install_lic_srv() {
     lf_operator_namespace=$MY_LICENSE_SERVER_NAMESPACE
     lf_strategy="Automatic"
     lf_wait_for_state=1
-    lf_csv_name=$MY_LICENCESERVER_CASE
+    lf_csv_name=$MY_LICENSE_SERVER_CASE
     decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
     create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
   fi
@@ -778,6 +778,14 @@ function install_assetrepo() {
     lf_wait_for_state=1
     lf_csv_name=$MY_ASSETREPO_CASE
     create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
+  fi
+
+  if $MY_ASSETREPO_INSTANCE; then
+    #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
+    if [ -z "$MY_ASSETREPO_VERSION" ]; then
+      export MY_ASSETREPO_VERSION=$(oc ibm-pak list -o json | jq  --arg case "$MY_ASSETREPO_CASE" '.[] | select (.name == $case ) | .latestAppVersion')
+      decho 3 "MY_ASSETREPO_VERSION=$MY_ASSETREPO_VERSION"
+    fi
 
     # Creating Asset Repository instance
     lf_file="${OPERANDSDIR}AR-Capability.yaml"
@@ -1003,17 +1011,29 @@ function install_wasliberty() {
   decho 3 "F:IN :install_wasliberty"
 
   if $MY_WASLIBERTY; then
+    create_namespace $MY_BACKEND_NAMESPACE
+
+    # mylog info "==== Adding IBM Operator catalog source in ns : openshift-marketplace." 1>&2
+    lf_catalogsource_namespace=$MY_CATALOGSOURCES_NAMESPACE
+    lf_catalogsource_name="ibm-operator-catalog"
+    lf_catalogsource_dspname="IBM Operator Catalog"
+    lf_catalogsource_image="icr.io/cpopen/ibm-operator-catalog"
+    lf_catalogsource_publisher="IBM"
+    lf_catalogsource_interval="45m"
+    decho 3 "create_catalogsource \"${lf_catalogsource_namespace}\" \"${lf_catalogsource_name}\" \"${lf_catalogsource_dspname}\" \"${lf_catalogsource_image}\" \"${lf_catalogsource_publisher}\" \"${lf_catalogsource_interval}\""
+    create_catalogsource "${lf_catalogsource_namespace}" "${lf_catalogsource_name}" "${lf_catalogsource_dspname}" "${lf_catalogsource_image}" "${lf_catalogsource_publisher}" "${lf_catalogsource_interval}"
 
     # add catalog sources using ibm_pak plugin
-    check_add_cs_ibm_pak ibm-websphere-liberty MY_WL_CASE amd64
+    check_add_cs_ibm_pak $MY_WL_CASE amd64
 
     # Creating WebSphere Liberty operator subscription
+    # toto
     lf_operator_name="ibm-websphere-liberty"
-    lf_catalog_source_name="ibm-websphere-liberty-catalog"
-    lf_operator_namespace=$MY_OPERATORS_NAMESPACE
+    lf_catalog_source_name="ibm-operator-catalog"
+    lf_operator_namespace=$MY_BACKEND_NAMESPACE
     lf_strategy="Automatic"
     lf_wait_for_state=1
-    lf_csv_name=$MY_WL_CSV_NAME
+    lf_csv_name=$MY_WL_CASE
     create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
 : <<'END_COMMENT'
@@ -1578,7 +1598,7 @@ function install_instana() {
     lf_path="{.status.numberReady}"
     lf_resource="$MY_INSTANA_INSTANCE_NAME"
     lf_state="$MY_CLUSTER_WORKERS"
-    lf_type="InstanaAgent"
+    lf_type="daemonset"
     lf_wait_for_state=0
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
   fi
@@ -1611,8 +1631,8 @@ function customise_instana() {
 # @param MY_OC_PROJECT: namespace where to create the operators and capabilities
 # @param sc_cluster_name: name of the cluster
 # example of invocation: ./provision_cluster-v2.sh private/my-cp4i.properties sbtest cp4i-sb-cluster
-# other example: ./provision_cluster-v2.sh cp4i.properties ./versions/cp4i-2023.4.properties cp4i sb20240102
-# other example: ./provision_cluster-v2.sh cp4i.properties ./versions/cp4i-2023.4.properties cp4i ad202341
+# other example: ./provision_cluster-v2.sh cp4i.properties ./versions/cp4i-16.1.0.properties cp4i sb20240102
+# other example: ./provision_cluster-v2.sh cp4i.properties ./versions/cp4i-16.1.0.properties cp4i ad202341
 sc_properties_file=$1
 sc_versions_file=$2
 export MY_OC_PROJECT=$3
@@ -1621,7 +1641,7 @@ sc_cluster_name=$4
 #
 export ADEBUG=1
 export TECHZONE=true
-export TRACELEVEL=5
+export TRACELEVEL=4
 
 # SB]20240404 Global Index sequence for incremental output for each function call
 export SC_SPACES_COUNTER=0
@@ -1638,9 +1658,13 @@ else
   echo "The provided arguments are: $@"
 fi
 
-#trap 'display_access_info' EXIT
+trap 'display_access_info' EXIT
 # load helper functions
 . "${MAINSCRIPTDIR}"lib.sh
+
+# Read user file properties
+my_user_file="${MAINSCRIPTDIR}/private/user.properties"
+read_config_file "$my_user_file"
 
 # Read all the properties
 read_config_file "$sc_properties_file"
@@ -1648,12 +1672,6 @@ read_config_file "$sc_properties_file"
 # Read versions properties
 read_config_file "$sc_versions_file"
 
-# Read user file properties
-my_user_file="${PRIVATEDIR}user.properties"
-read_config_file "$my_user_file"
-
-: <<'END_COMMENT'
-END_COMMENT
 # check the differents pre requisites
 check_exec_prereqs
 
@@ -1665,7 +1683,6 @@ create_openshift_cluster_wait_4_availability
 
 # Log to openshift cluster
 login_2_openshift_cluster
-
 
 # Create project namespace.
 # SB]20231213 erreur obtenue juste après la création du cluster openshift : Error from server (Forbidden): You may not request a new project via this API.
@@ -1682,11 +1699,14 @@ if ! ${TECHZONE};then
   oc adm policy add-cluster-role-to-user self-provisioner $MY_USER_ID -n $MY_OC_PROJECT
 fi
 
+: <<'END_COMMENT'
+END_COMMENT
 
 # https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.4?topic=operators-installing-by-using-cli
 # (Only if your preferred installation mode is a specific namespace on the cluster) Create an OperatorGroup
 # We decided to install in openshift-operators so no need to OperatorGroup !
 # TODO # nommer correctement les operatorgroup
+
 create_namespace $MY_OC_PROJECT
 create_namespace $MY_COMMON_SERVICES_NAMESPACE
 
@@ -1732,6 +1752,7 @@ install_openldap
 # install_xxx: For each capability install : case, operator, operand
 
 # install_openliberty
+
 install_wasliberty
 
 install_navigator
@@ -1759,6 +1780,8 @@ install_hsts
 install_mq
 
 install_instana
+
+END_COMMENT
 
 ######################################################
 # Start customisation

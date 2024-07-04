@@ -3,6 +3,8 @@ kind: AssetRepository
 metadata:
   name: $MY_ASSETREPO_INSTANCE_NAME
   namespace: $MY_OC_PROJECT
+  labels:
+    backup.integration.ibm.com/component: assetrepository   
 spec:
   license:
     accept: true

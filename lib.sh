@@ -735,7 +735,7 @@ function expose_service_openldap() {
   lf_hostname=$(oc -n ${lf_in_namespace} get route openldap-external -o jsonpath='{.spec.host}')
 
   # load users and groups into LDAP
-  #envsubst <"${YAMLDIR}ldap/ldap-users.ldif" >"${WORKINGDIR}ldap-users.ldif"
+  envsubst <"${YAMLDIR}ldap/ldap-users.ldif" >"${WORKINGDIR}ldap-users.ldif"
   mylog info "Adding LDAP entries with following command: "
   mylog info "$LDAP_COMMAND -H ldap://${lf_hostname}:${lf_port0} -x -D \"$ldap_admin_dn\" -w \"$ldap_admin_password\" -f ${WORKINGDIR}ldap-users.ldif"
   add_ldif_file ${WORKINGDIR}ldap-users.ldif "ldap://${lf_hostname}:${lf_port0}" "${ldap_admin_dn}" "${ldap_admin_password}"
@@ -781,12 +781,12 @@ function create_namespace() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 4 "F:IN :create_namespace"
 
-  local lf_in_ns=$1
-  var_fail MY_OC_PROJECT "Please define project name in config"
-  mylog check "Checking project $lf_in_ns"
-  if oc get project $lf_in_ns >/dev/null 2>&1; then mylog ok; else
-    mylog info "Creating project $lf_in_ns"
-    if ! oc new-project $lf_in_ns; then
+  sc_in_ns=$1
+  var_fail sc_in_ns "Please define project name in config"
+  mylog check "Checking project $sc_in_ns"
+  if oc get project $sc_in_ns >/dev/null 2>&1; then mylog ok; else
+    mylog info "Creating project $sc_in_ns"
+    if ! oc new-project $sc_in_ns; then
       decho 4 "F:OUT:create_namespace"
       SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
       exit 1
@@ -887,32 +887,32 @@ function create_operator_subscription() {
   local lf_in_wait=$5
   local lf_in_csv_name=$6
 
-  local file path resource state type
+  local lf_file lf_path lf_resource lf_state lf_type
   check_directory_exist ${OPERATORSDIR}
 
   SECONDS=0
 
-  file="${OPERATORSDIR}subscription.yaml"
-  type="Subscription"
-  check_create_oc_yaml "${type}" "${MY_OPERATOR_NAME}" "${file}" "${MY_OPERATOR_NAMESPACE}"
+  lf_file="${OPERATORSDIR}subscription.yaml"
+  lf_type="Subscription"
+  check_create_oc_yaml "${lf_type}" "${MY_OPERATOR_NAME}" "${lf_file}" "${MY_OPERATOR_NAMESPACE}"
 
-  type="clusterserviceversion"
-  path="{.status.phase}"
-  state="Succeeded"
-  decho 3 "oc -n $MY_OPERATOR_NAMESPACE get $type -o json | jq -r --arg my_resource \"$lf_in_csv_name\" '.items[].metadata | select (.name | contains ($my_resource)).name'"
+  lf_type="clusterserviceversion"
+  lf_path="{.status.phase}"
+  lf_state="Succeeded"
+  decho 3 "oc -n $MY_OPERATOR_NAMESPACE get $lf_type -o json | jq -r --arg my_resource \"$lf_in_csv_name\" '.items[].metadata | select (.name | contains ($my_resource)).name'"
 
   seconds=0
-  while [ -z "$resource" ]; do
+  while [ -z "$lf_resource" ]; do
     echo -ne "Timer: $seconds seconds | Creating csv...\033[0K\r"
     sleep 1
-    resource=$(oc -n $MY_OPERATOR_NAMESPACE get $type -o json | jq -r --arg my_resource "$lf_in_csv_name" '.items[].metadata | select (.name | contains ($my_resource)).name')
+    lf_resource=$(oc -n $MY_OPERATOR_NAMESPACE get $lf_type -o json | jq -r --arg my_resource "$lf_in_csv_name" '.items[].metadata | select (.name | contains ($my_resource)).name')
     seconds=$((seconds + 1))
   done
 
-  #resource=$(oc -n $MY_OPERATOR_NAMESPACE get $type -o json | jq -r  --arg my_resource "$lf_in_csv_name" '.items[].metadata | select (.name | contains ($my_resource)).name')
-  decho 3 "resource=$resource|lf_in_csv_name=$lf_in_csv_name"
+  #lf_resource=$(oc -n $MY_OPERATOR_NAMESPACE get $lf_type -o json | jq -r  --arg my_resource "$lf_in_csv_name" '.items[].metadata | select (.name | contains ($my_resource)).name')
+  decho 3 "lf_resource=$lf_resource|lf_in_csv_name=$lf_in_csv_name"
   if [ $lf_in_wait ]; then
-    wait_for_state "$type $resource $path is $state" "$state" "oc -n $MY_OPERATOR_NAMESPACE get $type $resource -o jsonpath='$path'"
+    wait_for_state "$lf_type $lf_resource $lf_path is $lf_state" "$lf_state" "oc -n $MY_OPERATOR_NAMESPACE get $lf_type $lf_resource -o jsonpath='$lf_path'"
   fi
   mylog info "Creation of $MY_OPERATOR_NAME operator took $SECONDS seconds to execute." 1>&2
 

@@ -8,7 +8,7 @@ spec:
     accept: true
     license: $MY_EEM_LIC
     metric: VIRTUAL_PROCESSOR_CORE
-    use: EventAutomationNonProduction
+    use: $MY_EEM_LIC_USAGE
   manager:
     authConfig:
       authType: LOCAL
