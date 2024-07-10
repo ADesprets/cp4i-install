@@ -1,5 +1,0 @@
-/home/desprets/openlibertoperator/guide-openliberty-operator-intro/start/system/src/main/java/io/openliberty/guides/system/SystemResource.java
-/home/desprets/openlibertoperator/guide-openliberty-operator-intro/start/system/src/main/java/io/openliberty/guides/system/health/SystemLivenessCheck.java
-/home/desprets/openlibertoperator/guide-openliberty-operator-intro/start/system/src/main/java/io/openliberty/guides/system/SystemApplication.java
-/home/desprets/openlibertoperator/guide-openliberty-operator-intro/start/system/src/main/java/io/openliberty/guides/system/health/SystemStartupCheck.java
-/home/desprets/openlibertoperator/guide-openliberty-operator-intro/start/system/src/main/java/io/openliberty/guides/system/health/SystemReadinessCheck.java

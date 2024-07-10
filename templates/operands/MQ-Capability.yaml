@@ -1,3 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "${MY_MQ_INSTANCE_NAME}-mqsc-cm"
+  namespace: $MY_OC_PROJECT
+data:
+  ${QMGR}.mqsc: |
+    DEFINE QLOCAL('Q1') REPLACE DEFPSIST(YES) 
+    DEFINE CHANNEL('${MY_MQ_INSTANCE_NAME_UC}CHL') CHLTYPE(SVRCONN) REPLACE TRPTYPE(TCP) SSLCAUTH(OPTIONAL) SSLCIPH('ANY_TLS12_OR_HIGHER')
+    SET CHLAUTH('${MY_MQ_INSTANCE_NAME_UC}CHL') TYPE(BLOCKUSER) USERLIST(NOBODY) ACTION(ADD)
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: "${MY_MQ_INSTANCE_NAME}_ROUTE"
+  namespace: $MY_OC_PROJECT
+spec:
+  host: "${MY_MQ_INSTANCE_NAME}chl.chl.mq.ibm.com"
+  to:
+    kind: Service
+    name: ${MY_MQ_INSTANCE_NAME}-ibm-mq
+  port:
+    targetPort: 1414
+  tls:
+    termination: passthrough
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: "${MY_MQ_INSTANCE_NAME}_SECRET"
+  namespace: $MY_OC_PROJECT
+data:
+  tls.crt: $B64_QMGR_CRT
+  tls.key: $B64_QMGR_KEY
+  ca.crt: $B64_CA_CRT
+type: kubernetes.io/tls
+---
 apiVersion: mq.ibm.com/v1beta1
 kind: QueueManager
 metadata:
@@ -8,21 +45,49 @@ spec:
     accept: true
     license: $MY_MQ_LIC
     use: NonProduction
-  web:
-    console:
-      authentication:
-        provider: integration-keycloak
-      authorization:
-        provider: integration-keycloak
-    enabled: true
+  pki:
+    keys:
+      - name: $MY_MQ_INSTANCE_NAME
+        secret:
+          secretName: "${MY_MQ_INSTANCE_NAME}_SECRET"
+          items:
+            - tls.key
+            - tls.crt
+            - ca.crt
   queueManager:
+    name: $MY_MQ_INSTANCE_NAME_UC
     availability:
       type: SingleInstance
+    mqsc:
+      - configMap:
+          name: "${MY_MQ_INSTANCE_NAME}-mqsc-cm"
+          items:
+            - "${MY_MQ_INSTANCE_NAME}.mqsc"
+    resources:
+      limits:
+        cpu: 500m
+      requests:
+        cpu: 500m
     storage:
       queueManager:
         type: persistent-claim
         class: $MY_BLOCK_STORAGE_CLASS
         size: 2Gi
       defaultClass: $MY_BLOCK_STORAGE_CLASS
-    name: $MY_MQ_INSTANCE_NAME
+  template:
+    pod:
+      containers:
+        - env:
+            - name: MQSNOAUT
+              value: 'yes'
+          name: qmgr
   version: $MY_MQ_VERSION
+  web:
+    console:
+      authentication:
+        provider: manual
+      authorization:
+        provider: manual
+      manualConfig:
+        secret:
+          name: cp4imq-web-secret

@@ -3,6 +3,8 @@ kind: OperatorGroup
 metadata:
   name: operatorgroup
   namespace: $MY_NAMESPACE
+  labels:
+    backup.integration.ibm.com/component: operatorgroup  
 spec:
   targetNamespaces:
   - $MY_NAMESPACE

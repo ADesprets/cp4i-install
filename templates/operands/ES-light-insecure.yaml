@@ -2,8 +2,6 @@ apiVersion: eventstreams.ibm.com/v1beta2
 kind: EventStreams
 metadata:
   name: light-insecure
-  annotations:
-    eventstreams.ibm.com/apicurio-registry-version: '>=2.4'
   namespace: cp4i
 spec:
   security:

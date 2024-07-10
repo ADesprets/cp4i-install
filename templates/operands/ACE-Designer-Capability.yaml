@@ -4,7 +4,6 @@ metadata:
   name: $MY_ACE_DESIGNER_INSTANCE_NAME
   namespace: $MY_OC_PROJECT
 spec:
-spec:
   license:
     accept: true
     license: $MY_ACE_LIC
@@ -16,15 +15,21 @@ spec:
       class: $MY_BLOCK_STORAGE_CLASS
     replicas: 1
   designerMappingAssist:
+    enabled: true
     incrementalLearning:
       schedule: Every 15 days
-    enabled: true
+      storage:
+        type: persistent-claim
+        class: $MY_FILE_STORAGE_CLASS
+      useIncrementalLearning: true
   designerFlowsOperationMode: local
-  replicas: 1
-  authentication:
-    integrationKeycloak:
-      enabled: true
-  authorization:
-    integrationKeycloak:
-      enabled: true
+  switchServer:
+    name: $MY_ACE_SWITCHSERVER_INSTANCE_NAME
+#  authentication:
+#    integrationKeycloak:
+#      enabled: false
+#  authorization:
+#    integrationKeycloak:
+#      enabled: false
   version: $MY_ACE_VERSION
+  replicas: 2

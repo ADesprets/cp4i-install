@@ -180,7 +180,7 @@ function CreateTopology() {
 function CreateCatalog() {
   local org_name=$(echo "$1" | awk '{print tolower($0)}')
 
-# decho "url: ${PLATFORM_API_URL}api/orgs/$org_name/catalogs and token: $amToken"
+# decho 3 "url: ${PLATFORM_API_URL}api/orgs/$org_name/catalogs and token: $amToken"
 
 # Hard coded values
 catalog_title=("Prod" "UAT" "QA")
@@ -201,7 +201,7 @@ for index in ${!catalog_name[@]}
         -H 'accept: application/json' \
         -H 'content-type: application/json' \
         -H 'Connection: keep-alive' | jq .url | sed -e s/\"//g)
-      # decho "Catalog url: $catURL"
+      # decho 3 "Catalog url: $catURL"
 
       if [ -z "$catURL" ] || [ "$catURL" = "null" ]; then
         mylog wait "Creating Catalog: "${catalog_name[$index]}" ("${catalog_summary[$index]}") in org $org_name";
@@ -243,7 +243,7 @@ function LoadAPI () {
   echo "pingAPI: $pingAPI"
   if [ -z "$pingAPI" ] || [ "$pingAPI" = "null" ]; then
   # if ! curl -sk "${platform_api_url}api/orgs/$apic_provider_org/drafts/draft-apis/$api_name?fields=url" -H "Authorization: Bearer $amToken" -H 'Accept: application/json' > /dev/null 2>&1; then
-    # draftAPICLEAR=$(curl -sk --request DELETE "${platform_api_url}api/orgs/$apic_provider_org/drafts/draft-apis/pingapi?confirm=$APIC_PROVIDER_ORG1" -H "Accept: application/json" -H "authorization: Bearer $amToken");
+    # draftAPICLEAR=$(curl -sk --request DELETE "${platform_api_url}api/orgs/$apic_provider_org/drafts/draft-apis/pingapi?confirm=$APIC_PROVIDER_ORG" -H "Accept: application/json" -H "authorization: Bearer $amToken");
     mylog info "Load test API (Ping API) as a draft"
     api=`cat ${configdir}apis/ping-api_1.0.0.json`;
     draftAPI=$(curl -sk "${platform_api_url}api/orgs/${apic_provider_org}/drafts/draft-apis?api_type=rest"\
@@ -348,7 +348,7 @@ function Get_APIC_Infos() {
   mylog info "APIC Credentials. APIC_CRED: ${APIC_CRED}"
   
   APIC_APIKEY=$(curl -ks --fail -X POST "${PLATFORM_API_URL}"cloud/api-keys -H "Authorization: Bearer ${ZEN_TOKEN}" -H "Accept: application/json" -H "Content-Type: application/json" -d '{"client_type":"toolkit","description":"Tookit API key"}' | jq -r .api_key)
-  decho "APIC Key. APIC_APIKEY: ${APIC_APIKEY}"
+  decho 3 "APIC Key. APIC_APIKEY: ${APIC_APIKEY}"
   
   APIM_ENDPOINT=$(oc -n "${apic_project}" get mgmt "${APIC_INSTANCE_NAME}-mgmt" -o jsonpath='{.status.zenRoute}')
   mylog info "APIC Management Endpoint. APIM_ENDPOINT: ${APIM_ENDPOINT}"
@@ -376,7 +376,7 @@ function Get_APIC_Infos() {
    --data-binary "@${WORKINGDIR}creds.json")
   
   # mylog info "cmToken: ${cmToken}"
-  # decho "cmToken: $cmToken"
+  # decho 3 "cmToken: $cmToken"
 
   if [ $(echo $cmToken | jq .status ) = "401" ] ; then
     mylog error "Error with login -> $cmToken"
@@ -517,7 +517,7 @@ APIC_CRED=$(oc -n "${apic_project}" get secret ${APIC_INSTANCE_NAME}-mgmt-cli-cr
 mylog info "APIC_CRED: ${APIC_CRED}"
 
 APIC_APIKEY=$(curl -ks --fail -X POST "${PLATFORM_API_URL}"cloud/api-keys -H "Authorization: Bearer ${ZEN_TOKEN}" -H "Accept: application/json" -H "Content-Type: application/json" -d '{"client_type":"toolkit","description":"Tookit API key"}' | jq -r .api_key)
-decho "APIC_APIKEY: ${APIC_APIKEY}"
+decho 3 "APIC_APIKEY: ${APIC_APIKEY}"
 
 # The goal is to get the apikey defined in the realm provider/common-services, get the credentials for the toolkit, then use the token endpoint to get an oauth token for Cloud Manager from API Key
 # TOOLKIT_CLIENT_ID=$(grep "^toolkit_client_id:" ~/.apiconnect/config-apim | cut -d ':' -f2- | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
@@ -540,7 +540,7 @@ cmToken=$(curl -ks -X POST "${PLATFORM_API_URL}api/token" \
  --data-binary "@${WORKINGDIR}creds.json")
 
 # mylog info "cmToken: ${cmToken}"
-# decho "cmToken: $cmToken"
+# decho 3 "cmToken: $cmToken"
 
 if [ $(echo $cmToken | jq .status ) = "401" ] ; then
   mylog error "Error with login -> $cmToken"
@@ -590,7 +590,7 @@ gateway_service="datapower-api-gateway"
 
 CreateTopology
 
-CreateOrg "${APIC_PROVIDER_ORG1}" "${APIC_ORG1_USERNAME}" "${APIC_ORG1_PASSWORD}" "${APIC_ORG1_USER_EMAIL}"
+CreateOrg "${APIC_PROVIDER_ORG}" "${APIC_ORG1_USERNAME}" "${APIC_ORG1_PASSWORD}" "${APIC_ORG1_USER_EMAIL}"
 
 # get token for the API Manager for 
 amToken=$(curl -sk --fail -X POST "${PLATFORM_API_URL}api/token" \
@@ -598,7 +598,7 @@ amToken=$(curl -sk --fail -X POST "${PLATFORM_API_URL}api/token" \
  -H 'Accept: application/json' \
  --data-binary "{\"username\":\"$APIC_ORG1_USERNAME\",\"password\":\"$APIC_ORG1_PASSWORD\",\"realm\":\"provider/default-idp-2\",\"client_id\":\"$TOOLKIT_CLIENT_ID\",\"client_secret\":\"$TOOLKIT_CLIENT_SECRET\",\"grant_type\":\"password\"}" |  jq .access_token | sed -e s/\"//g  )
 
-# decho "amToken: $amToken"
+# decho 3 "amToken: $amToken"
 # TODO Not sure the use of $? is good, this is the result of the sed command
 retVal=$?
 if [ $retVal -ne 0 ] || [ -z "$amToken" ] || [ "$amToken" = "null" ]; then
@@ -606,10 +606,10 @@ if [ $retVal -ne 0 ] || [ -z "$amToken" ] || [ "$amToken" = "null" ]; then
   exit 1
 fi
 
-CreateCatalog "${APIC_PROVIDER_ORG1}"
+CreateCatalog "${APIC_PROVIDER_ORG}"
 
 # Push API into draft
-apic_provider_org1_lower=$(echo "$APIC_PROVIDER_ORG1" | awk '{print tolower($0)}')
+apic_provider_org1_lower=$(echo "$APIC_PROVIDER_ORG" | awk '{print tolower($0)}')
 api_name=ping-api
 # TODO Make it a function, to load any API
 # LoadAPI $PLATFORM_API_URL $apic_provider_org1_lower $api_name $amToken
@@ -618,7 +618,7 @@ pingAPI=$(curl -sk "${PLATFORM_API_URL}api/orgs/$apic_provider_org1_lower/drafts
 # mylog info "pingAPI: $pingAPI"
 if [ -z "$pingAPI" ] || [ "$pingAPI" = "null" ]; then
 # if ! curl -sk "${PLATFORM_API_URL}api/orgs/$apic_provider_org1_lower/drafts/draft-apis/$api_name?fields=url" -H "Authorization: Bearer $amToken" -H 'Accept: application/json' > /dev/null 2>&1; then
-  # draftAPICLEAR=$(curl -sk --request DELETE "${PLATFORM_API_URL}api/orgs/$APIC_PROVIDER_ORG1/drafts/draft-apis/pingapi?confirm=$APIC_PROVIDER_ORG1" -H "Accept: application/json" -H "authorization: Bearer $amToken");
+  # draftAPICLEAR=$(curl -sk --request DELETE "${PLATFORM_API_URL}api/orgs/$APIC_PROVIDER_ORG/drafts/draft-apis/pingapi?confirm=$APIC_PROVIDER_ORG" -H "Accept: application/json" -H "authorization: Bearer $amToken");
   mylog info "Load test API (Ping API) as a draft"
   api=`cat ${configdir}apis/ping-api_1.0.0.json`;
 

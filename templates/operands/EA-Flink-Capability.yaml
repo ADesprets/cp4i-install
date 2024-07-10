@@ -5,7 +5,7 @@ metadata:
   name: $MY_FLINK_INSTANCE_NAME
 spec:
   flinkConfiguration:
-    license.use: EventAutomationNonProduction
+    license.use: $MY_FLINK_LIC_USAGE
     license.license: $MY_FLINK_LIC
     license.accept: 'true'
     execution.checkpointing.interval: '5000'

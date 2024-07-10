@@ -1,66 +1,86 @@
 --- TODO 1 --- Manque DP capabilities
+--- TODO 1 --- Manque DP capabilities
 --- TODO 2 --- Improve README  ---
 --- TODO 3 --- Improve code documentation  ---
 --- TODO 4 --- E2E Initial Customisation ---
 	ES:
 		TOPICs
-	MQ:
-		MQ Queue Managers
-		Create native HA cluster
-	APIC: 
+	APIC:
 		Manage 404 if not present
-		Add a route to DataPower Gateway console
+High priority: 	Add a route to DataPower Gateway console
 		Load Taxi Locator/... (call-back-end-simulator_1.0.0.yaml, flightlandings_1.0.0.yaml, passenger_1.0.0.zip, passenger_airshopping-v02.wsdl_1.0.0.zip, taxi-locator_1.0.0.yaml, taxi-messaging_1.0.0.yaml)
-		Create OAuth
-		Create LDAP user registry
-		Create Fake Authentication API, publish it in prod, create a corg, create an app and create a subscription to the fake authentication API.
-		Create users from LDAP entries
-		Check why analytics is not working
-	ACE:
-
+		OK: Create OAuth
+		L'adapter pour petstore.
+		Create LDAP user registry : Voir globalement avec Keycloak.
+		Presque terminé (à finir): Create Fake Authentication API, publish it in prod, create a corg, create an app and create a subscription to the fake authentication API.
+		Securite topic (à voir) : Create users from LDAP entries
 	LDAP:
 		Review list of users, merge Saad entries
-		Display ldapsearch command
-
-	Load simulator application for taxi test
+	ACE: scenariis : HTTP 2 Kafka, Kafka Producer 2  file (à adapter à partir du tutorial existant), REST API Filtrage et Mapping
+High priority:         License Server : rajouter les access + token + un exemple d'utilisation.
+	Low priority: Load simulator application for taxi test
 		Box note: https://ibm.ent.box.com/notes/953089231688
 		Container eem-demo-rest-apis, quay.io/dale-lane/eem-demo-apis
---- TODO 5 --- Create/Extract all certificates for Web UI ---
-		Need a few certificate to get it including gateway, login, cdp, ... Attention the nginx is passthrough
+à compléter: --- TODO 5 --- Create/Extract all certificates for Web UI ---
+		 Need a few certificate to get it including gateway, login, cdp, ... Attention the nginx is passthrough
 --- TODO 6 --- Harmoniser les commandes soit en oc only soit oc + jq (avoid strings manipulation) ---
---- TODO 7 --- Vérifier l'idempotence ---
---- TODO 8 --- Check Daffy (wget http://get.daffy-installer.com/download-scripts/daffy-init.sh; chmod 777 daffy-init.sh;./daffy-init.sh ) and also https://production-gitops.dev/ and https://ibm.github.io/cloud-pak-deployer/
---- TODO 9 --- Test TerraForm
---- TODO 10 --- VPC versus Classic Infrastructure
---- TODO 11 --- Envoie email (voir Joel Gomez)
-
+Low priority (Gitops/Argocd/Ansible/...): --- TODO 8 --- Check Daffy (wget http://get.daffy-installer.com/download-scripts/daffy-init.sh; chmod 777 daffy-init.sh;./daffy-init.sh ) and also https://production-gitops.dev/ and https://ibm.github.io/cloud-pak-deployer/
+Low priority : --- TODO 9 --- Test TerraForm
+Low priority : --- TODO 10 --- VPC versus Classic Infrastructure
+Low priority : --- TODO 11 --- Envoie email (voir Joel Gomez)
 	ibmcloud https://cloud.ibm.com/docs/cli?topic=cli-getting-started
 	ibmcloud plugin install container-service vpc-infrastructure
 	oc https://docs.openshift.com/container-platform/4.11/cli_reference/openshift_cli/getting-started-cli.html
 	brew install openshift-cli
---- TODO 12 --- Check if reuse from https://github.ibm.com/kskhong/terraform-cp4i
---- TODO 13 --- Variabiliser le stockage pour les capabilities
+Low priority : --- TODO 12 --- Check if reuse from https://github.ibm.com/kskhong/terraform-cp4i
 --- TODO 14 --- Security TODOs
-	Certificates: Check if we need to create the secret before maybe using the cert manager and provide it to the CR
-	Login car on passe par CP4I pour accéder à APIC à enlever ????
-		En principe, le provisionning a du laisser dans le repertoire d’install un fichier kubeconfig. Ce fichier contient tout ce qu’il faut.
-		Si tu le trouves, tu peux
-			- soit le référencer dans tes commandes oc
-			- soit créer une variable d’environnement KUBECONFIG qui pointe dessus
-			- soit le copier dans $HOME/.kube/config de ton compte
-		Tu peux alors lancer n’importe quelle commande sans avoir utiliser de oc login préalable
-		on le créée avec une commande ibmcloud oc cluster create classic du coup il faut peut être aller le chercher là bas!!!
-		https://cloud.ibm.com/docs/containers?topic=containers-kubernetes-service-cli#cs_cluster_config
-
-		Attention, si tu tentes un oc login, la commande, il tentera de le modifier et ca ne fonctionnera plus par la suite
---- TODO 15 --- Enable web-mgmt access to apic gateway
+Low priority : 	Certificates: Check if we need to create the secret before maybe using the cert manager and provide it to the CR
+High priority : Vérifier dépendances versions EP/Flink/EEM ?, Automatiser EEM/EP/ES : acces, CR,
+High priority: 	Automatiser WAS Liberty : Que fait on des targets qui sont générés dans les build? 1 GB...
+	1 solution on efface à la fin (on garde que le war) A implémenter
+	2 le target ailleurs dans un fichier tmp dans le projet
+	3 le code est carrément dans un autre projet ou dans une approche gitops (attention au air gap)
+	Documentation des scénarios
+Low priority:	Revoir nos scripts en fonction des bonnes pratiques
+		"CP4I Architecture and Deployment 2023.4.PPTX"
+High priority: 	Display access webconsoe/user MQ, MQ MQSC dynamique : https://github.com/ibm-messaging/mq-gitops-samples/tree/main/ccdt-deployment
+	
+High priority: revoir utilisation des la notion de service versus endpoint
+High priority: créer une fonction pour vérifier que les capabilites principales sont installées ET l'utiliser dans display_access.
+High priority : Dans decho un niveau de trace 1 actuel 2 F:IN/F:OU 3 le reste les F:IN et F:OUT optionnels entre autres
+	rationaliser l'utilisation de envsubst versus la fonction adapt_file (lib.sh)
+Important: Génération de certificats: comment éviter de la faire trop de fois pour éviter les impacts?
+idempotence:
+	KafkaUser
+	KafkaTopic (prendre significatifs pas tous)
+	Voir sur les configuration qui sont faites qu'une seule fois, genre internal registry
 Add following before or after # REST Management enabled\nrest-mgmt
     key: >-
 $my_aspera_license_text
-ou 
+ou
 cat file dans variable
-kubectl -n cp4i create configmap example-config --from-file=auto-startup.cfg auto-startup.cfg
-	Remove wait to login to openshift console la première fois
 Backup/restore
-
-
+customisation pour chaque capability
+	dans chaque customisation, vérifier que la capabilité est installée (sous forme de fonction pour que ce soit très efficace), il faut pas prendre le fichier de propriété (true/false). (Il y aura des conventions de nommages)
+			CSV ou operator, regarder si le plus important des CRD existe dans le namespace où on travaille
+	Elle vérifie si capabilité présente
+	Elle fait la custo sur le flag customisation?
+	Configuration
+		
+Comment gérer les inter-dépendances entre chaque capability
+Stucture
+	ACE
+		en dessous d'un bar
+			D:\CurrentProjects\CP4I\Installation\cp4i-install\customisation\ACE\config
+			D:\CurrentProjects\CP4I\Installation\cp4i-install\customisation\ACE\scripts
+			D:\CurrentProjects\CP4I\Installation\cp4i-install\customisation\ACE\config\ace.properties
+			D:\CurrentProjects\CP4I\Installation\cp4i-install\customisation\ACE\scripts\ace.config.sh
+			D:\CurrentProjects\CP4I\Installation\cp4i-install\customisation\ACE\scripts\barfiles
+			D:\CurrentProjects\CP4I\Installation\cp4i-install\customisation\ACE\scripts\barfiles\HTTPEchoApp
+			D:\CurrentProjects\CP4I\Installation\cp4i-install\customisation\ACE\scripts\barfiles\HTTPEchoApp\configurationtypes
+			D:\CurrentProjects\CP4I\Installation\cp4i-install\customisation\ACE\scripts\barfiles\HTTPEchoApp\tmpl
+			D:\CurrentProjects\CP4I\Installation\cp4i-install\customisation\ACE\scripts\barfiles\HTTPEchoApp\configurationtypes\barauth.json
+			D:\CurrentProjects\CP4I\Installation\cp4i-install\customisation\ACE\scripts\barfiles\HTTPEchoApp\configurationtypes\serverconf.txt
+			D:\CurrentProjects\CP4I\Installation\cp4i-install\customisation\ACE\scripts\barfiles\HTTPEchoApp\tmpl\barauth.yaml
+			D:\CurrentProjects\CP4I\Installation\cp4i-install\customisation\ACE\scripts\barfiles\HTTPEchoApp\tmpl\integrationruntime.yaml
+			D:\CurrentProjects\CP4I\Installation\cp4i-install\customisation\ACE\scripts\barfiles\HTTPEchoApp\tmpl\serverconf.yaml

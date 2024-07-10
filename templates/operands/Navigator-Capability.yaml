@@ -3,6 +3,8 @@ kind: PlatformNavigator
 metadata:
   name: $MY_NAVIGATOR_INSTANCE_NAME
   namespace: $MY_OC_PROJECT
+  labels:
+    backup.integration.ibm.com/component: platformnavigator    
 spec:
   license:
     accept: true
