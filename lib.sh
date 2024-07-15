@@ -264,7 +264,7 @@ function check_command_exist() {
 #
 function check_file_exist() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho  4 "F:IN :check_file_exist"
+  decho 5 "F:IN :check_file_exist"
 
   local file=$1
   if [ ! -e "$file" ]; then
@@ -272,7 +272,7 @@ function check_file_exist() {
     exit 1
   fi
 
-  decho 4 "F:OUT:check_file_exist"
+  decho 5 "F:OUT:check_file_exist"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -702,6 +702,7 @@ function expose_service_openldap() {
 
   local lf_in_name="$1" 
   local lf_in_namespace="$2"
+  local lf_hostname
 
   decho 4 "lf_in_name=$lf_in_name|lf_in_namespace=$lf_in_namespace"
 
@@ -937,7 +938,7 @@ function create_operand_instance() {
   SECONDS=0
   check_create_oc_yaml $lf_in_type $lf_in_resource $lf_in_file $lf_in_ns
   decho 3 "wait_for_state | $lf_in_type $lf_in_resource $lf_in_path is $lf_in_state | $lf_in_state | oc -n $lf_in_ns get $lf_in_type $lf_in_resource -o jsonpath=$lf_in_path"
-  if [ $lf_in_wait ]; then
+  if $lf_in_wait; then
     wait_for_state "$lf_in_type $lf_in_resource $lf_in_path is $lf_in_state" "$lf_in_state" "oc -n $lf_in_ns get $lf_in_type $lf_in_resource -o jsonpath='$lf_in_path'"
   fi
   mylog info "Creation of $lf_in_type instance took $SECONDS seconds to execute." 1>&2
@@ -950,8 +951,7 @@ function create_operand_instance() {
 # Get useful information to start using the stack
 # Need to check that the resource exist.
 function get_navigator_access() {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :get_navigator_access"
+  decho 5 "F:IN :get_navigator_access"
 
   cp4i_url=$(oc -n $MY_OC_PROJECT get platformnavigator cp4i-navigator -o jsonpath='{range .status.endpoints[?(@.name=="navigator")]}{.uri}{end}')
   # cp4i_uid=$(oc -n $MY_OC_PROJECT get secret ibm-iam-bindinfo-platform-auth-idp-credentials -o jsonpath={.data.admin_username} | base64 -d)
@@ -959,8 +959,7 @@ function get_navigator_access() {
   # mylog info "CP4I admin user: " $cp4i_uid
   # mylog info "CP4I admin password: " $cp4i_pwd
 
-  decho 4 "F:OUT:get_navigator_access"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+  decho 5 "F:OUT:get_navigator_access"
 }
 
 #########################################################################################################
@@ -970,6 +969,7 @@ function get_navigator_access() {
 function generate_files() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 4 "F:IN :generate_files"
+  decho 5 "$1 $2 $3"
 
   local lf_in_customdir=$1
   local lf_in_gendir=$2
@@ -1071,8 +1071,8 @@ function adapt_file() {
   if [ ! -d ${lf_in_destdir} ]; then
     mkdir -p ${lf_in_destdir}
   fi
-  if [ -e "${lf_in_sourcedir}$lf_in_filename" ]; then
-    cat "${lf_in_sourcedir}$lf_in_filename" | envsubst >"${lf_in_destdir}${lf_in_filename}"
+  if [ -e "${lf_in_sourcedir}${lf_in_filename}" ]; then
+    envsubst < "${lf_in_sourcedir}${lf_in_filename}" > "${lf_in_destdir}${lf_in_filename}"
   fi
 
   decho 4 "F:OUT:adapt_file"

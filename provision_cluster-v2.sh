@@ -367,80 +367,100 @@ function display_access_info() {
 
   mylog info "==== Displaying Access Info to CP4I." 1>&2
   # Temporary access with Keycloack
-  temp_integration_admin_pwd=$(oc -n $MY_COMMON_SERVICES_NAMESPACE get secret integration-admin-initial-temporary-credentials -o jsonpath={.data.password} | base64 -d)
-  mylog info "Integration admin password: ${temp_integration_admin_pwd}"
 
-  mailhog_hostname=$(oc -n ${MY_MAIL_SERVER_NAMESPACE} get route mailhog -o jsonpath='{.spec.host}')
-  mylog info "MailHog accessible at http://${mailhog_hostname}"
+  local lf_temp_integration_admin_pwd
+  lf_temp_integration_admin_pwd=$(oc -n $MY_COMMON_SERVICES_NAMESPACE get secret integration-admin-initial-temporary-credentials -o jsonpath={.data.password} | base64 -d)
+  mylog info "Integration admin password: ${lf_temp_integration_admin_pwd}"
+
+  local lf_mailhog_hostname
+  lf_mailhog_hostname=$(oc -n ${MY_MAIL_SERVER_NAMESPACE} get route mailhog -o jsonpath='{.spec.host}')
+  mylog info "MailHog accessible at http://${lf_mailhog_hostname}"
 
   if $MY_NAVIGATOR_INSTANCE; then
     get_navigator_access
   fi
 
+  local lf_ace_ui_db_url lf_ace_ui_dg_url
   if $MY_ACE; then
-    ace_ui_db_url=$(oc -n $MY_OC_PROJECT get Dashboard -o=jsonpath='{.items[?(@.kind=="Dashboard")].status.endpoints[?(@.name=="ui")].uri}')
-    mylog info "ACE Dahsboard UI endpoint: " $ace_ui_db_url
-    ace_ui_dg_url=$(oc -n $MY_OC_PROJECT get DesignerAuthoring -o=jsonpath='{.items[?(@.kind=="DesignerAuthoring")].status.endpoints[?(@.name=="ui")].uri}')
-    mylog info "ACE Designer UI endpoint: " $ace_ui_dg_url
+    lf_ace_ui_db_url=$(oc -n $MY_OC_PROJECT get Dashboard -o=jsonpath='{.items[?(@.kind=="Dashboard")].status.endpoints[?(@.name=="ui")].uri}')
+    mylog info "ACE Dahsboard UI endpoint: " $lf_ace_ui_db_url
+    lf_ace_ui_dg_url=$(oc -n $MY_OC_PROJECT get DesignerAuthoring -o=jsonpath='{.items[?(@.kind=="DesignerAuthoring")].status.endpoints[?(@.name=="ui")].uri}')
+    mylog info "ACE Designer UI endpoint: " $lf_ace_ui_dg_url
   fi
 
+  local lf_gtw_url lf_apic_gtw_admin_pwd_secret_name lf_cm_admin_pwd lf_cm_url lf_cm_admin_pwd_secret_name lf_cm_admin_pwd lf_mgr_url lf_ptl_url
   if $MY_APIC; then
-    gtw_url=$(oc -n $MY_OC_PROJECT get GatewayCluster -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].status.endpoints[?(@.name=="gateway")].uri}')
-    mylog info "APIC Gateway endpoint: ${gtw_url}"
-    apic_gtw_admin_pwd_secret_name=$(oc -n $MY_OC_PROJECT get GatewayCluster -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].spec.adminUser.secretName}')
-    cm_admin_pwd=$(oc -n $MY_OC_PROJECT get secret ${apic_gtw_admin_pwd_secret_name} -o jsonpath={.data.password} | base64 -d)
-    mylog info "APIC Gateway admin password: ${cm_admin_pwd}"
-    cm_url=$(oc -n $MY_OC_PROJECT get APIConnectCluster -o=jsonpath='{.items[?(@.kind=="APIConnectCluster")].status.endpoints[?(@.name=="admin")].uri}')
-    mylog info "APIC Cloud Manager endpoint: ${cm_url}"
-    cm_admin_pwd_secret_name=$(oc -n $MY_OC_PROJECT get ManagementCluster -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].spec.adminUser.secretName}')
-    cm_admin_pwd=$(oc -n $MY_OC_PROJECT get secret ${cm_admin_pwd_secret_name} -o jsonpath='{.data.password}' | base64 -d)
-    mylog info "APIC Cloud Manager admin password: ${cm_admin_pwd}"
-    mgr_url=$(oc -n $MY_OC_PROJECT get APIConnectCluster -o=jsonpath='{.items[?(@.kind=="APIConnectCluster")].status.endpoints[?(@.name=="ui")].uri}')
-    mylog info "APIC API Manager endpoint: ${mgr_url}"
-    ptl_url=$(oc -n $MY_OC_PROJECT get PortalCluster -o=jsonpath='{.items[?(@.kind=="PortalCluster")].status.endpoints[?(@.name=="portalWeb")].uri}')
-    mylog info "APIC Web Portal root endpoint: ${ptl_url}"
+    lf_gtw_url=$(oc -n $MY_OC_PROJECT get GatewayCluster -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].status.endpoints[?(@.name=="gateway")].uri}')
+    mylog info "APIC Gateway endpoint: ${lf_gtw_url}"
+    lf_apic_gtw_admin_pwd_secret_name=$(oc -n $MY_OC_PROJECT get GatewayCluster -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].spec.adminUser.secretName}')
+    lf_cm_admin_pwd=$(oc -n $MY_OC_PROJECT get secret ${lf_apic_gtw_admin_pwd_secret_name} -o jsonpath={.data.password} | base64 -d)
+    mylog info "APIC Gateway admin password: ${lf_cm_admin_pwd}"
+    lf_cm_url=$(oc -n $MY_OC_PROJECT get APIConnectCluster -o=jsonpath='{.items[?(@.kind=="APIConnectCluster")].status.endpoints[?(@.name=="admin")].uri}')
+    mylog info "APIC Cloud Manager endpoint: ${lf_cm_url}"
+    lf_cm_admin_pwd_secret_name=$(oc -n $MY_OC_PROJECT get ManagementCluster -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].spec.adminUser.secretName}')
+    lf_cm_admin_pwd=$(oc -n $MY_OC_PROJECT get secret ${lf_cm_admin_pwd_secret_name} -o jsonpath='{.data.password}' | base64 -d)
+    mylog info "APIC Cloud Manager admin password: ${lf_cm_admin_pwd}"
+    lf_mgr_url=$(oc -n $MY_OC_PROJECT get APIConnectCluster -o=jsonpath='{.items[?(@.kind=="APIConnectCluster")].status.endpoints[?(@.name=="ui")].uri}')
+    mylog info "APIC API Manager endpoint: ${lf_mgr_url}"
+    lf_ptl_url=$(oc -n $MY_OC_PROJECT get PortalCluster -o=jsonpath='{.items[?(@.kind=="PortalCluster")].status.endpoints[?(@.name=="portalWeb")].uri}')
+    mylog info "APIC Web Portal root endpoint: ${lf_ptl_url}"
   fi
 
+  local lf_eem_ui_url lf_eem_lf_gtw_url
   if $MY_EEM; then
-    eem_ui_url=$(oc -n $MY_OC_PROJECT get EventEndpointManagement -o=jsonpath='{.items[?(@.kind=="EventEndpointManagement")].status.endpoints[?(@.name=="ui")].uri}')
-    mylog info "Event Endpoint Management UI endpoint: ${eem_ui_url}"
-    eem_gtw_url=$(oc -n $MY_OC_PROJECT get EventEndpointManagement -o=jsonpath='{.items[?(@.kind=="EventEndpointManagement")].status.endpoints[?(@.name=="gateway")].uri}')
-    mylog info "Event Endpoint Management Gateway endpoint: ${eem_gtw_url}"
+    lf_eem_ui_url=$(oc -n $MY_OC_PROJECT get EventEndpointManagement -o=jsonpath='{.items[?(@.kind=="EventEndpointManagement")].status.endpoints[?(@.name=="ui")].uri}')
+    mylog info "Event Endpoint Management UI endpoint: ${lf_eem_ui_url}"
+    lf_eem_lf_gtw_url=$(oc -n $MY_OC_PROJECT get EventEndpointManagement -o=jsonpath='{.items[?(@.kind=="EventEndpointManagement")].status.endpoints[?(@.name=="gateway")].uri}')
+    mylog info "Event Endpoint Management Gateway endpoint: ${lf_eem_lf_gtw_url}"
     mylog info "The credentials are defined in the file ./customisation/EP/config/user-credentials.yaml"
   fi
 
+  local lf_es_ui_url lf_es_admin_url lf_es_apicurioregistry_url lf_es_restproducer_url lf_es_bootstrap_urls
   if $MY_ES; then
-    es_ui_url=$(oc -n $MY_OC_PROJECT get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="ui")].uri}')
-    mylog info "Event Streams Management UI endpoint: ${es_ui_url}"
-    es_admin_url=$(oc -n $MY_OC_PROJECT get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="admin")].uri}')
-    mylog info "Event Streams Management admin endpoint: ${es_admin_url}"
-    es_apicurioregistry_url=$(oc -n $MY_OC_PROJECT get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="apicurioregistry")].uri}')
-    mylog info "Event Streams Management apicurio registry endpoint: ${es_apicurioregistry_url}"
-    es_restproducer_url=$(oc -n $MY_OC_PROJECT get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="restproducer")].uri}')
-    mylog info "Event Streams Management REST Producer endpoint: ${es_restproducer_url}"
-    es_bootstrap_urls=$(oc -n $MY_OC_PROJECT get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.kafkaListeners[*].bootstrapServers}')
-    mylog info "Event Streams Bootstraps servers endpoints: ${es_bootstrap_urls}"
+    lf_es_ui_url=$(oc -n $MY_OC_PROJECT get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="ui")].uri}')
+    mylog info "Event Streams Management UI endpoint: ${lf_es_ui_url}"
+    lf_es_admin_url=$(oc -n $MY_OC_PROJECT get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="admin")].uri}')
+    mylog info "Event Streams Management admin endpoint: ${lf_es_admin_url}"
+    lf_es_apicurioregistry_url=$(oc -n $MY_OC_PROJECT get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="apicurioregistry")].uri}')
+    mylog info "Event Streams Management apicurio registry endpoint: ${lf_es_apicurioregistry_url}"
+    lf_es_restproducer_url=$(oc -n $MY_OC_PROJECT get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="restproducer")].uri}')
+    mylog info "Event Streams Management REST Producer endpoint: ${lf_es_restproducer_url}"
+    lf_es_bootstrap_urls=$(oc -n $MY_OC_PROJECT get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.kafkaListeners[*].bootstrapServers}')
+    mylog info "Event Streams Bootstraps servers endpoints: ${lf_es_bootstrap_urls}"
   fi
 
+  local lf_ldap_hostname lf_ldap_port
   if $MY_LDAP; then
-    mylog info "LDAP info"
+    read_config_file "${YAMLDIR}ldap/ldap.properties"
+    lf_ldap_hostname=$(oc -n ${MY_LDAP_NAMESPACE} get route openldap-external -o jsonpath='{.spec.host}')
+    lf_ldap_port=$(oc -n ${MY_LDAP_NAMESPACE} get route openldap-external -o jsonpath='{.spec.port.targetPort}')
+    mylog info "LDAP hostname:port: ${lf_ldap_hostname}:${lf_ldap_port}"
+    mylog info "LDAP admin dn/password: ${ldap_admin_dn}/${ldap_admin_password}"
   fi
 
+  local lf_ar_ui_url
   if $MY_ASSETREPO; then
-    mylog info "AR info"
+    lf_ar_ui_url=$(oc -n $MY_OC_PROJECT get AssetRepository -o=jsonpath='{.items[?(@.kind=="AssetRepository")].status.endpoints[?(@.name=="ui")].uri}')
+    mylog info "Asset Repository UI endpoint: ${lf_ar_ui_url}"
   fi
 
   if $MY_DPGW; then
-    mylog info "DataPower info"
+    mylog info "Datapower Gateway UI endpoint/admin password are the same as : APIC Gateway endpoint/APIC Gateway admin password"
   fi
 
+  local lf_mq_admin_url
   if $MY_MQ; then
-    mylog info "MQ info"
+    lf_mq_admin_url=$(oc -n $MY_OC_PROJECT get QueueManager $MY_MSGSRV_INSTANCE_NAME -o jsonpath='{.status.adminUiUrl}')
+    mylog info "MQ Management Console : ${lf_mq_admin_url}"
   fi
 
+  local lf_licensing_service_url lf_licensing_secret_token
   if $MY_LIC_SRV; then
-    licensing_service_url=$(oc -n ${MY_LICENSE_SERVER_NAMESPACE} get Route -o=jsonpath='{.items[?(@.metadata.name=="ibm-licensing-service-instance")].spec.host}')
-    mylog info "Licensing service endpoint: ${licensing_service_url}"
+    lf_licensing_service_url=$(oc -n ${MY_LICENSE_SERVER_NAMESPACE} get Route -o=jsonpath='{.items[?(@.metadata.name=="ibm-licensing-service-instance")].spec.host}')
+    mylog info "Licensing service endpoint: https://${lf_licensing_service_url}"
+
+    lf_licensing_secret_token=$(oc get secret ibm-licensing-token -n ibm-licensing -o jsonpath='{.data.token}' | base64 -d)
+    mylog info "Licensing service token: ${lf_licensing_secret_token}"
   fi
 
   decho 3 "F:OUT:display_access_info"
@@ -728,7 +748,7 @@ function install_navigator() {
     lf_resource="$MY_NAVIGATOR_INSTANCE_NAME"
     lf_state="Ready"
     lf_type="PlatformNavigator"
-    lf_wait_for_state=0
+    lf_wait_for_state=true
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
   fi
 
@@ -751,7 +771,7 @@ function install_intassembly() {
     lf_resource="$MY_INTASSEMBLY_INSTANCE_NAME"
     lf_state="Ready"
     lf_type="IntegrationAssembly"
-    lf_wait_for_state=0
+    lf_wait_for_state=true
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
   fi
 
@@ -794,7 +814,7 @@ function install_assetrepo() {
     lf_resource="$MY_ASSETREPO_INSTANCE_NAME"
     lf_state="Ready"
     lf_type="AssetRepository"
-    lf_wait_for_state=0
+    lf_wait_for_state=true
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
   fi
 
@@ -837,7 +857,7 @@ function install_ace() {
     lf_resource="$MY_ACE_SWITCHSERVER_INSTANCE_NAME"
     lf_state="Ready"
     lf_type="SwitchServer"
-    lf_wait_for_state=0
+    lf_wait_for_state=true
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
 
     # Creating ACE Dashboard instance
@@ -847,7 +867,7 @@ function install_ace() {
     lf_resource="$MY_ACE_DASHBOARD_INSTANCE_NAME"
     lf_state="Ready"
     lf_type="Dashboard"
-    lf_wait_for_state=0
+    lf_wait_for_state=true
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
 
     # Creating ACE Designer instance
@@ -857,7 +877,7 @@ function install_ace() {
     lf_resource="$MY_ACE_DESIGNER_INSTANCE_NAME"
     lf_state="Ready"
     lf_type="DesignerAuthoring"
-    lf_wait_for_state=0
+    lf_wait_for_state=true
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
   fi
 
@@ -915,8 +935,12 @@ function install_apic() {
     lf_resource="$MY_APIC_INSTANCE_NAME"
     lf_state="Ready"
     lf_type="APIConnectCluster"
-    lf_wait_for_state=0
+    lf_wait_for_state=true
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
+
+    #AD/SB]20240703 enable the Gateway Cluster webGui Management and add webgui-port to set it accessible
+    oc -n "${MY_OC_PROJECT}" patch GatewayCluster "${MY_APIC_INSTANCE_NAME}-gw" --type merge -p '{"spec": {"webGUIManagementEnabled": true}}'
+    oc -n "${MY_OC_PROJECT}" patch Route "${MY_APIC_INSTANCE_NAME}-gw-gateway" --type merge -p '{"spec": {"port": {"targetPort": 9090}}}'
 
     save_certificate ${MY_OC_PROJECT} cp4i-apic-ingress-ca ${WORKINGDIR}
     save_certificate ${MY_OC_PROJECT} cp4i-apic-gw-gateway ${WORKINGDIR}
@@ -1054,8 +1078,7 @@ function customise_wasliberty() {
   if $MY_WASLIBERTY_CUSTOM; then
   mylog info "==== Customise WAS Liberty." 1>&2
     . ${WASLIBERTY_SCRIPTDIR}scripts/was.config.sh
-  
-  fi
+    fi
 
   decho 3 "F:OUT:customise_wasliberty"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
@@ -1127,7 +1150,7 @@ function install_eem() {
     lf_resource="$MY_EEM_INSTANCE_NAME"
     lf_state="Ready"
     lf_type="EventEndpointManagement"
-    lf_wait_for_state=0
+    lf_wait_for_state=true
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
 
     ## Creating EEM users and roles
@@ -1182,7 +1205,7 @@ function install_egw() {
     lf_resource="$MY_EGW_INSTANCE_NAME"
     lf_state="Ready"
     lf_type="EventGateway"
-    lf_wait_for_state=0
+    lf_wait_for_state=true
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
   fi
 
@@ -1247,7 +1270,7 @@ function install_ep() {
     lf_resource="$MY_EP_INSTANCE_NAME"
     lf_state="Running"
     lf_type="EventProcessing"
-    lf_wait_for_state=0
+    lf_wait_for_state=true
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
 
     # generate properties files
@@ -1322,7 +1345,7 @@ function install_es() {
     lf_resource="$MY_ES_INSTANCE_NAME"
     lf_state="Ready"
     lf_type="EventStreams"
-    lf_wait_for_state=0
+    lf_wait_for_state=true
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
   fi
 
@@ -1417,7 +1440,7 @@ function install_flink() {
     lf_resource="ibm-flink-pvc"
     lf_state="Bound"
     lf_type="PersistentVolumeClaim"
-    lf_wait_for_state=0
+    lf_wait_for_state=true
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
 
     #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
@@ -1435,7 +1458,7 @@ function install_flink() {
     lf_resource="$MY_FLINK_INSTANCE_NAME"
     lf_state="STABLE-READY"
     lf_type="FlinkDeployment"
-    lf_wait_for_state=0
+    lf_wait_for_state=true
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
   fi
 
@@ -1485,7 +1508,7 @@ function install_hsts() {
     lf_resource="$MY_HSTS_INSTANCE_NAME"
     lf_state="Ready"
     lf_type="IbmAsperaHsts"
-    lf_wait_for_state=0
+    lf_wait_for_state=true
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
   fi
 
@@ -1537,8 +1560,22 @@ function install_mq() {
     #lf_resource="$MY_MQ_INSTANCE_NAME"
     #lf_state="Running"
     #lf_type="QueueManager"
-    #lf_wait_for_state=0
+    #lf_wait_for_state=true
     #create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
+ 
+    # Use the new CRD MessagingServer(availabe since CP4I 16.1.0-SC2) 
+    if $MY_MESSAGINGSERVER; then
+      # Creating MQ MessagingServer instance
+      lf_file="${OPERANDSDIR}MessagingServer-Capability.yaml"
+      lf_ns="${MY_OC_PROJECT}"
+      lf_path="{.status.conditions[0].type}"
+      lf_resource="$MY_MSGSRV_INSTANCE_NAME"
+      lf_state="Ready"
+      lf_type="MessagingServer"
+      lf_wait_for_state=0
+      create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
+    fi
+
   fi
 
   decho 3 "F:OUT:install_mq"
@@ -1599,7 +1636,7 @@ function install_instana() {
     lf_resource="$MY_INSTANA_INSTANCE_NAME"
     lf_state="$MY_CLUSTER_WORKERS"
     lf_type="daemonset"
-    lf_wait_for_state=0
+    lf_wait_for_state=true
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
   fi
 
@@ -1641,7 +1678,7 @@ sc_cluster_name=$4
 #
 export ADEBUG=1
 export TECHZONE=true
-export TRACELEVEL=4
+export TRACELEVEL=5
 
 # SB]20240404 Global Index sequence for incremental output for each function call
 export SC_SPACES_COUNTER=0
@@ -1658,7 +1695,7 @@ else
   echo "The provided arguments are: $@"
 fi
 
-trap 'display_access_info' EXIT
+trap 'display_access_info' 2 3
 # load helper functions
 . "${MAINSCRIPTDIR}"lib.sh
 
@@ -1674,6 +1711,9 @@ read_config_file "$sc_versions_file"
 
 # check the differents pre requisites
 check_exec_prereqs
+
+: <<'END_COMMENT'
+END_COMMENT
 
 # Log to IBM Cloud
 login_2_ibm_cloud
@@ -1698,9 +1738,6 @@ if ! ${TECHZONE};then
   oc create clusterrolebinding myname-cluster-binding --clusterrole=admin --user=$MY_USER_ID > /dev/null 2>&1
   oc adm policy add-cluster-role-to-user self-provisioner $MY_USER_ID -n $MY_OC_PROJECT
 fi
-
-: <<'END_COMMENT'
-END_COMMENT
 
 # https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.4?topic=operators-installing-by-using-cli
 # (Only if your preferred installation mode is a specific namespace on the cluster) Create an OperatorGroup
@@ -1780,8 +1817,6 @@ install_hsts
 install_mq
 
 install_instana
-
-END_COMMENT
 
 ######################################################
 # Start customisation
