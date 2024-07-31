@@ -97,11 +97,11 @@ function check_openshift_version() {
 # cmp_versions v1 v2 returns 0 if v1=v2, 1 if v1 is older than v2, 2 if v1 is newer than v2
 function cmp_versions() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho  3 "F:IN :cmp_versions"
+  decho 3 "F:IN :cmp_versions"
 
   local lf_in_version1=$1
   local lf_in_version2=$2
-  decho  3 "lf_in_version1=$lf_in_version1|lf_in_version2=$lf_in_version2"
+  decho 3 "lf_in_version1=$lf_in_version1|lf_in_version2=$lf_in_version2"
 
   IFS='.' read -ra v1_components <<<"$lf_in_version1"
   IFS='.' read -ra v2_components <<<"$lf_in_version2"
@@ -135,7 +135,7 @@ function cmp_versions() {
 # Save a certificate in pem format
 function save_certificate() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho  3 "F:IN :save_certificate"
+  decho 3 "F:IN :save_certificate"
 
   local lf_in_ns=$1
   local lf_in_secret_name=$2
@@ -145,7 +145,7 @@ function save_certificate() {
   cert=$(oc -n cp4i get secret ${lf_in_secret_name} -o jsonpath='{.data.ca\.crt}')
   echo $cert | base64 --decode >"${lf_in_destination_path}${lf_in_secret_name}.pem"
 
-  decho  3 "F:OUT:save_certificate"
+  decho 3 "F:OUT:save_certificate"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 
 }
@@ -157,14 +157,14 @@ function save_certificate() {
 # Pour tester une variable null : https://stackoverflow.com/questions/48261038/shell-script-how-to-check-if-variable-is-null-or-no
 function is_case_downloaded() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho  3 "F:IN :is_case_downloaded"
+  decho 3 "F:IN :is_case_downloaded"
   local lf_in_case=$1
   local lf_in_version=$2
 
   decho 3 "lf_in_case=$lf_in_case|lf_in_version=$lf_in_version"
 
   local lf_result lf_latestversion lf_cmp lf_res
-  local lf_directory="${IBMPAKDIR}${lf_in_case}/${lf_in_version}"
+  local lf_directory="${MY_IBMPAKDIR}${lf_in_case}/${lf_in_version}"
 
   if [ ! -d "${lf_directory}" ]; then
     lf_res=0
@@ -200,7 +200,7 @@ function is_case_downloaded() {
     fi
   fi
 
-  decho  3 "F:OUT:is_case_downloaded"
+  decho 3 "F:OUT:is_case_downloaded"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
   return $lf_res
 }
@@ -246,7 +246,7 @@ function is_cr_newer() {
 # Check that all required executables are installed
 function check_command_exist() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho  3 "F:IN :check_command_exist"
+  decho 5 "F:IN :check_command_exist"
 
   local command=$1
 
@@ -255,7 +255,7 @@ function check_command_exist() {
     exit 1
   fi
 
-  decho 3 "F:OUT:check_command_exist"
+  decho 5 "F:OUT:check_command_exist"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -264,7 +264,7 @@ function check_command_exist() {
 #
 function check_file_exist() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho  4 "F:IN :check_file_exist"
+  decho 5 "F:IN :check_file_exist"
 
   local file=$1
   if [ ! -e "$file" ]; then
@@ -272,7 +272,7 @@ function check_file_exist() {
     exit 1
   fi
 
-  decho 4 "F:OUT:check_file_exist"
+  decho 5 "F:OUT:check_file_exist"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -297,18 +297,18 @@ function check_directory_exist() {
 # checks if the directory contains files, if no print a msg and exit
 #
 function check_directory_contains_files() {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :check_directory_contains_files"
+  # SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  # decho 4 "F:IN :check_directory_contains_files"
 
   local lf_in_directory=$1
   local lf_files
   shopt -s nullglob dotglob # To include hidden files
-  lf_files=($lf_in_directory/*)
+  lf_files=$(find . -maxdepth 1 -type f | wc -l)
 
-  decho 4 "F:OUT:check_directory_contains_files"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+    # decho 4 "F:OUT:check_directory_contains_files"
+  # SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 
-  return ${#lf_files[@]}
+  return $lf_files
 }
 
 ######################################################
@@ -316,21 +316,21 @@ function check_directory_contains_files() {
 #
 function check_directory_exist_create() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho  4 "F:IN :check_directory_exist_create"
+  decho 5 "F:IN :check_directory_exist_create"
 
   local directory=$1
   if [ ! -d $directory ]; then
     mkdir -p $directory
   fi
 
-  decho 4 "F:OUT:check_directory_exist_create"
+  decho 5 "F:OUT:check_directory_exist_create"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
 ################################################
 function read_config_file() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN  :read_config_file"
+  decho 4 "F:IN :read_config_file"
 
   local lf_config_file
   if test -n "$PC_CONFIG"; then
@@ -372,7 +372,9 @@ function check_exec_prereqs() {
   check_command_exist keytool
   check_command_exist oc
   check_command_exist openssl
-  check_command_exist runmqakm
+  if $MY_MQ_CUSTOM; then
+    check_command_exist runmqakm
+  fi
 
   decho 4 "F:OUT:check_exec_prereqs"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
@@ -505,11 +507,12 @@ function provision_persistence_openldap() {
   local lf_in_namespace="$1"
   # handle persitence for Openldap
   # only check one, assume that if one is created the other one is also created (short cut to optimize time)
+  mylog check "Checking persistant volume claim for LDAP in ${lf_in_namespace}"
   if oc -n ${lf_in_namespace} get "PersistentVolumeClaim" "pvc-ldap-main" >/dev/null 2>&1; then mylog ok; else
-    envsubst <"${YAMLDIR}ldap/ldap-pvc.main.yaml" >"${WORKINGDIR}ldap-pvc.main.yaml"
-    envsubst <"${YAMLDIR}ldap/ldap-pvc.config.yaml" >"${WORKINGDIR}ldap-pvc.config.yaml"
-    oc -n ${lf_in_namespace} create -f ${WORKINGDIR}ldap-pvc.main.yaml
-    oc -n ${lf_in_namespace} create -f ${WORKINGDIR}ldap-pvc.config.yaml
+    envsubst <"${MY_YAMLDIR}ldap/ldap-pvc.main.yaml" >"${MY_WORKINGDIR}ldap-pvc.main.yaml"
+    envsubst <"${MY_YAMLDIR}ldap/ldap-pvc.config.yaml" >"${MY_WORKINGDIR}ldap-pvc.config.yaml"
+    oc -n ${lf_in_namespace} create -f ${MY_WORKINGDIR}ldap-pvc.main.yaml
+    oc -n ${lf_in_namespace} create -f ${MY_WORKINGDIR}ldap-pvc.config.yaml
     wait_for_state "pvc pvc-ldap-config status.phase is Bound" "Bound" "oc -n ${lf_in_namespace} get pvc pvc-ldap-config -o jsonpath='{.status.phase}'"
     wait_for_state "pvc pvc-ldap-main status.phase is Bound" "Bound" "oc -n ${lf_in_namespace} get pvc pvc-ldap-main -o jsonpath='{.status.phase}'"
   fi
@@ -548,11 +551,11 @@ function deploy_openldap() {
       #oc -n ${lf_in_namespace} new-app ibmcom/verify-access-openldap:latest
       #oc -n ${lf_in_namespace} new-app isva/verify-access-openldap
       oc -n ${lf_in_namespace} new-app osixia/${lf_in_name}
-      oc -n ${lf_in_namespace} get deployment.apps/openldap -o json | jq '. | del(."status")' >${WORKINGDIR}openldap.json
-      envsubst <"${YAMLDIR}ldap/ldap-config.json" >"${WORKINGDIR}ldap-config.json"
-      oc -n ${lf_in_namespace} patch deployment.apps/openldap --patch-file ${WORKINGDIR}ldap-config.json
+      oc -n ${lf_in_namespace} get deployment.apps/openldap -o json | jq '. | del(."status")' >${MY_WORKINGDIR}openldap.json
+      envsubst <"${MY_YAMLDIR}ldap/ldap-config.json" >"${MY_WORKINGDIR}ldap-config.json"
+      oc -n ${lf_in_namespace} patch deployment.apps/openldap --patch-file ${MY_WORKINGDIR}ldap-config.json
       oc -n ${lf_in_namespace} patch service ${lf_in_name} -p='{"spec": {"type": "NodePort"}}'
-      oc -n ${lf_in_namespace} patch service/${lf_in_name} --patch-file ${WORKINGDIR}openldap-service.json
+      oc -n ${lf_in_namespace} patch service/${lf_in_name} --patch-file ${MY_WORKINGDIR}openldap-service.json
     fi
   fi
 
@@ -634,10 +637,10 @@ function add_entry_if_not_exists() {
   # Check if the entry already exists
   if [ -n "$lf_in_search_result" ]; then
     if echo "$lf_in_search_result" | grep -q "dn: $lf_in_entry_dn"; then
-      echo "Entry $lf_in_entry_dn already exists. Skipping."
+      mylog info "Entry $lf_in_entry_dn already exists. Skipping."
     else
-      echo "Entry $lf_in_entry_dn does not exist. Adding entry."
-      echo "$lf_in_entry_content" > $lf_in_tmp_ldif_file
+      decho 4 "Entry $lf_in_entry_dn does not exist. Adding entry."
+      mylog info "$lf_in_entry_content" > $lf_in_tmp_ldif_file
       ldapadd -x -H $lf_in_ldap_server -D "$lf_in_admin_dn" -w $lf_in_admin_password -f $lf_in_tmp_ldif_file
     fi
   fi
@@ -657,7 +660,7 @@ function add_ldif_file () {
   local lf_in_admin_dn="$3"
   local lf_in_admin_password="$4"
 
-  local lf_tmp_ldif="${WORKINGDIR}temp_entry.ldif"
+  local lf_tmp_ldif="${MY_WORKINGDIR}temp_entry.ldif"
   local lf_line lf_entry_dn lf_entry_content
 
   # Read the LDIF file and process each entry
@@ -700,11 +703,12 @@ function expose_service_openldap() {
 
   local lf_in_name="$1" 
   local lf_in_namespace="$2"
+  local lf_hostname
 
   decho 4 "lf_in_name=$lf_in_name|lf_in_namespace=$lf_in_namespace"
 
   # expose service externaly and get host and port
-  oc -n ${lf_in_namespace} get service ${lf_in_name} -o json | jq '.spec.ports |= map(if .name == "389-tcp" then . + { "nodePort": 30389 } else . end)' | jq '.spec.ports |= map(if .name == "636-tcp" then . + { "nodePort": 30686 } else . end)' >${WORKINGDIR}openldap-service.json
+  oc -n ${lf_in_namespace} get service ${lf_in_name} -o json | jq '.spec.ports |= map(if .name == "389-tcp" then . + { "nodePort": 30389 } else . end)' | jq '.spec.ports |= map(if .name == "636-tcp" then . + { "nodePort": 30686 } else . end)' >${MY_WORKINGDIR}openldap-service.json
   lf_port0=$(oc -n ${lf_in_namespace} get service ${lf_in_name} -o jsonpath='{.spec.ports[0].nodePort}')
   lf_port1=$(oc -n ${lf_in_namespace} get service ${lf_in_name} -o jsonpath='{.spec.ports[1].nodePort}')
 
@@ -733,14 +737,14 @@ function expose_service_openldap() {
   lf_hostname=$(oc -n ${lf_in_namespace} get route openldap-external -o jsonpath='{.spec.host}')
 
   # load users and groups into LDAP
-  #envsubst <"${YAMLDIR}ldap/ldap-users.ldif" >"${WORKINGDIR}ldap-users.ldif"
+  envsubst <"${MY_YAMLDIR}ldap/ldap-users.ldif" >"${MY_WORKINGDIR}ldap-users.ldif"
   mylog info "Adding LDAP entries with following command: "
-  mylog info "$LDAP_COMMAND -H ldap://${lf_hostname}:${lf_port0} -x -D \"$ldap_admin_dn\" -w \"$ldap_admin_password\" -f ${WORKINGDIR}ldap-users.ldif"
-  add_ldif_file ${WORKINGDIR}ldap-users.ldif "ldap://${lf_hostname}:${lf_port0}" "${ldap_admin_dn}" "${ldap_admin_password}"
-  #$LDAP_COMMAND -H ldap://${lf_hostname}:${lf_port0} -D "${ldap_admin_dn}" -w "${ldap_admin_password}" -c -f ${WORKINGDIR}ldap-users.ldif
+  mylog info "$MY_LDAP_COMMAND -H ldap://${lf_hostname}:${lf_port0} -x -D \"$ldap_admin_dn\" -w \"$ldap_admin_password\" -f ${MY_WORKINGDIR}ldap-users.ldif"
+  add_ldif_file ${MY_WORKINGDIR}ldap-users.ldif "ldap://${lf_hostname}:${lf_port0}" "${ldap_admin_dn}" "${ldap_admin_password}"
+  #$MY_LDAP_COMMAND -H ldap://${lf_hostname}:${lf_port0} -D "${ldap_admin_dn}" -w "${ldap_admin_password}" -c -f ${MY_WORKINGDIR}ldap-users.ldif
 
   mylog info "You can search entries with the following command: "
-  # ldapmodify -H ldap://$lf_hostname:$lf_port0 -D "$ldap_admin_dn" -w admin -f ${LDAPDIR}Import.ldiff
+  # ldapmodify -H ldap://$lf_hostname:$lf_port0 -D "$ldap_admin_dn" -w admin -f ${MY_LDAPDIR}Import.ldiff
   mylog info "ldapsearch -H ldap://${lf_hostname}:${lf_port0} -x -D \"$ldap_admin_dn\" -w \"$ldap_admin_password\" -b \"$ldap_base_dn\" -s sub -a always -z 1000 \"(objectClass=*)\""
 
   decho 4 "F:OUT:expose_service_openldap"
@@ -779,12 +783,12 @@ function create_namespace() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 4 "F:IN :create_namespace"
 
-  local lf_in_ns=$1
-  var_fail MY_OC_PROJECT "Please define project name in config"
-  mylog check "Checking project $lf_in_ns"
-  if oc get project $lf_in_ns >/dev/null 2>&1; then mylog ok; else
-    mylog info "Creating project $lf_in_ns"
-    if ! oc new-project $lf_in_ns; then
+  sc_in_ns=$1
+  var_fail sc_in_ns "Please define project name in config"
+  mylog check "Checking project $sc_in_ns"
+  if oc get project $sc_in_ns >/dev/null 2>&1; then mylog ok; else
+    mylog info "Creating project $sc_in_ns"
+    if ! oc new-project $sc_in_ns; then
       decho 4 "F:OUT:create_namespace"
       SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
       exit 1
@@ -879,38 +883,39 @@ function create_operator_subscription() {
 
   # export are important because they are used to replace the variable in the subscription.yaml (envsubst command)
   export MY_OPERATOR_NAME=$1
-  export MY_CATALOG_SOURCE_NAME=$2
-  export MY_OPERATOR_NAMESPACE=$3
+  export MY_OPERATOR_NAMESPACE=$2
+  export MY_CURRENT_CHL=$3
   export MY_STRATEGY=$4
-  local lf_in_wait=$5
-  local lf_in_csv_name=$6
+  export MY_CATALOG_SOURCE_NAME=$5
+  local lf_in_wait=$6
+  local lf_in_csv_name=$7
 
-  local file path resource state type
-  check_directory_exist ${OPERATORSDIR}
+  local lf_file lf_path lf_resource lf_state lf_type
+  check_directory_exist ${MY_OPERATORSDIR}
 
   SECONDS=0
 
-  file="${OPERATORSDIR}subscription.yaml"
-  type="Subscription"
-  check_create_oc_yaml "${type}" "${MY_OPERATOR_NAME}" "${file}" "${MY_OPERATOR_NAMESPACE}"
+  lf_file="${MY_OPERATORSDIR}subscription.yaml"
+  lf_type="Subscription"
+  check_create_oc_yaml "${lf_type}" "${MY_OPERATOR_NAME}" "${lf_file}" "${MY_OPERATOR_NAMESPACE}"
 
-  type="clusterserviceversion"
-  path="{.status.phase}"
-  state="Succeeded"
-  decho 3 "oc -n $MY_OPERATOR_NAMESPACE get $type -o json | jq -r --arg my_resource \"$lf_in_csv_name\" '.items[].metadata | select (.name | contains ($my_resource)).name'"
+  lf_type="clusterserviceversion"
+  lf_path="{.status.phase}"
+  lf_state="Succeeded"
+  decho 3 "oc -n $MY_OPERATOR_NAMESPACE get $lf_type -o json | jq -r --arg my_resource \"$lf_in_csv_name\" '.items[].metadata | select (.name | contains ($my_resource)).name'"
 
   seconds=0
-  while [ -z "$resource" ]; do
+  while [ -z "$lf_resource" ]; do
     echo -ne "Timer: $seconds seconds | Creating csv...\033[0K\r"
     sleep 1
-    resource=$(oc -n $MY_OPERATOR_NAMESPACE get $type -o json | jq -r --arg my_resource "$lf_in_csv_name" '.items[].metadata | select (.name | contains ($my_resource)).name')
+    lf_resource=$(oc -n $MY_OPERATOR_NAMESPACE get $lf_type -o json | jq -r --arg my_resource "$lf_in_csv_name" '.items[].metadata | select (.name | contains ($my_resource)).name')
     seconds=$((seconds + 1))
   done
 
-  #resource=$(oc -n $MY_OPERATOR_NAMESPACE get $type -o json | jq -r  --arg my_resource "$lf_in_csv_name" '.items[].metadata | select (.name | contains ($my_resource)).name')
-  decho 3 "resource=$resource|lf_in_csv_name=$lf_in_csv_name"
+  #lf_resource=$(oc -n $MY_OPERATOR_NAMESPACE get $lf_type -o json | jq -r  --arg my_resource "$lf_in_csv_name" '.items[].metadata | select (.name | contains ($my_resource)).name')
+  decho 3 "lf_resource=$lf_resource|lf_in_csv_name=$lf_in_csv_name"
   if [ $lf_in_wait ]; then
-    wait_for_state "$type $resource $path is $state" "$state" "oc -n $MY_OPERATOR_NAMESPACE get $type $resource -o jsonpath='$path'"
+    wait_for_state "$lf_type $lf_resource $lf_path is $lf_state" "$lf_state" "oc -n $MY_OPERATOR_NAMESPACE get $lf_type $lf_resource -o jsonpath='$lf_path'"
   fi
   mylog info "Creation of $MY_OPERATOR_NAME operator took $SECONDS seconds to execute." 1>&2
 
@@ -935,29 +940,12 @@ function create_operand_instance() {
   SECONDS=0
   check_create_oc_yaml $lf_in_type $lf_in_resource $lf_in_file $lf_in_ns
   decho 3 "wait_for_state | $lf_in_type $lf_in_resource $lf_in_path is $lf_in_state | $lf_in_state | oc -n $lf_in_ns get $lf_in_type $lf_in_resource -o jsonpath=$lf_in_path"
-  if [ $lf_in_wait ]; then
+  if $lf_in_wait; then
     wait_for_state "$lf_in_type $lf_in_resource $lf_in_path is $lf_in_state" "$lf_in_state" "oc -n $lf_in_ns get $lf_in_type $lf_in_resource -o jsonpath='$lf_in_path'"
   fi
   mylog info "Creation of $lf_in_type instance took $SECONDS seconds to execute." 1>&2
 
   decho 3 "F:OUT:create_operand_instance"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
-}
-
-################################################
-# Get useful information to start using the stack
-# Need to check that the resource exist.
-function get_navigator_access() {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :get_navigator_access"
-
-  cp4i_url=$(oc -n $MY_OC_PROJECT get platformnavigator cp4i-navigator -o jsonpath='{range .status.endpoints[?(@.name=="navigator")]}{.uri}{end}')
-  # cp4i_uid=$(oc -n $MY_OC_PROJECT get secret ibm-iam-bindinfo-platform-auth-idp-credentials -o jsonpath={.data.admin_username} | base64 -d)
-  mylog info "CP4I Platform UI URL: " $cp4i_url
-  # mylog info "CP4I admin user: " $cp4i_uid
-  # mylog info "CP4I admin password: " $cp4i_pwd
-
-  decho 4 "F:OUT:get_navigator_access"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -968,6 +956,7 @@ function get_navigator_access() {
 function generate_files() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 4 "F:IN :generate_files"
+  decho 5 "$1 $2 $3"
 
   local lf_in_customdir=$1
   local lf_in_gendir=$2
@@ -984,12 +973,17 @@ function generate_files() {
   lf_config_gendir="${lf_in_gendir}config/"
   lf_scripts_gendir="${lf_in_gendir}scripts/"
 
+  decho 3 "lf_config_customdir: $lf_config_customdir"
+  decho 3 "lf_scripts_customdir: $lf_scripts_customdir"
+  decho 3 "lf_config_gendir: $lf_config_gendir"
+  decho 3 "lf_scripts_gendir: $lf_scripts_gendir"
+
   # set -a
-  # Start with *.properties files
-  lf_nfiles=$(check_directory_contains_files $lf_scripts_customdir)
+  check_directory_contains_files $lf_scripts_customdir
+  lf_nfiles=$?
   if [ $lf_nfiles -gt 0 ]; then
     for lf_file in ${lf_scripts_customdir}*; do
-      if [ -f $lf_file]; then
+      if [ -f $lf_file ]; then
         filename=$(basename -- "$lf_file")
         cat $lf_file | envsubst >"${lf_scripts_gendir}${filename}"
         #  . "${lf_scripts_gendir}${filename}"
@@ -997,11 +991,11 @@ function generate_files() {
     done
   fi
 
-  # Continue *.yaml files
-  lf_nfiles=$(check_directory_contains_files $lf_config_customdir)
+  check_directory_contains_files $lf_scripts_customdir
+  lf_nfiles=$?
   if [ $lf_nfiles -gt 0 ]; then
     for lf_file in ${lf_config_customdir}*; do
-      if [ -f $lf_file]; then
+      if [ -f $lf_file ]; then
         filename=$(basename -- "$lf_file")
         if $lf_in_transform; then
           # mylog info "lf_in_transform $lf_file lf_file"
@@ -1031,7 +1025,7 @@ function create_catalogsource() {
   export CATALOG_SOURCE_INTERVAL=$6
 
   local lf_type="CatalogSource"
-  local lf_file="${RESOURCSEDIR}catalog_source.yaml"
+  local lf_file="${MY_RESOURCESDIR}catalog_source.yaml"
   local lf_path="{.status.connectionState.lastObservedState}"
   local lf_state="READY"
   local lf_result
@@ -1069,8 +1063,8 @@ function adapt_file() {
   if [ ! -d ${lf_in_destdir} ]; then
     mkdir -p ${lf_in_destdir}
   fi
-  if [ -e "${lf_in_sourcedir}$lf_in_filename" ]; then
-    cat "${lf_in_sourcedir}$lf_in_filename" | envsubst >"${lf_in_destdir}${lf_in_filename}"
+  if [ -e "${lf_in_sourcedir}${lf_in_filename}" ]; then
+    envsubst < "${lf_in_sourcedir}${lf_in_filename}" > "${lf_in_destdir}${lf_in_filename}"
   fi
 
   decho 4 "F:OUT:adapt_file"

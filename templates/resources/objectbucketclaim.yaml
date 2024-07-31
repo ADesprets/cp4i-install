@@ -1,0 +1,8 @@
+  apiVersion: objectbucket.io/v1alpha1
+  kind: ObjectBucketClaim
+  metadata:
+    name: $MY_LOKI_BUCKET_INSTANCE_NAME
+    namespace: $MY_LOGGING_NAMESPACE
+  spec:
+    generateBucketName: $MY_LOKI_BUCKET_INSTANCE_NAME
+    storageClassName: openshift-storage.noobaa.io

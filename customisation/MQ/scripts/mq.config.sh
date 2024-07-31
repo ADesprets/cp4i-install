@@ -268,7 +268,7 @@ SECONDS=0
 
 # end with / on purpose
 #SCRIPTDIR=$(dirname "$0")/
-SCRIPTDIR="${MQ_SCRIPTDIR}scripts/"
+SCRIPTDIR="${MY_MQ_SCRIPTDIR}scripts/"
 CONFIGDIR="${SCRIPTDIR}../config/"
 
 MAINSCRIPTDIR="${SCRIPTDIR}../../../"
@@ -299,8 +299,8 @@ export CLNT1="${sc_clnt}"
 # load config file
 read_config_file "${CONFIGDIR}mq.properties"
 
-check_directory_exist_create  "${MQ_GEN_CUSTOMDIR}generated/${QMGR}"
-sc_generateddir="${MQ_GEN_CUSTOMDIR}generated/${QMGR}/"
+check_directory_exist_create  "${MY_MQ_GEN_CUSTOMDIR}generated/${QMGR}"
+sc_generateddir="${MY_MQ_GEN_CUSTOMDIR}generated/${QMGR}/"
 
 check_directory_exist_create  "${sc_generateddir}json"
 sc_generatedjsondir="${sc_generateddir}json/"

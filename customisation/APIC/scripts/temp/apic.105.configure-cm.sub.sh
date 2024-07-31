@@ -368,12 +368,12 @@ function Get_APIC_Infos() {
   #  -H "X-Ibm-Client-Secret: $TOOLKIT_CLIENT_SECRET" \
   #  --data-binary  "{\"api_key\":\"$APIC_APIKEY\",\"client_id\":\"$TOOLKIT_CLIENT_ID\",\"client_secret\":\"$TOOLKIT_CLIENT_SECRET\",\"grant_type\":\"api_key\"}")
   
-  echo "{\"username\": \"admin\", \"password\": \"$APIC_CM_ADMIN_PASSWORD\", \"realm\": \"admin/default-idp-1\", \"client_id\": \"$TOOLKIT_CLIENT_ID\", \"client_secret\": \"$TOOLKIT_CLIENT_SECRET\", \"grant_type\": \"password\"}" > "${WORKINGDIR}creds.json"
+  echo "{\"username\": \"admin\", \"password\": \"$APIC_CM_ADMIN_PASSWORD\", \"realm\": \"admin/default-idp-1\", \"client_id\": \"$TOOLKIT_CLIENT_ID\", \"client_secret\": \"$TOOLKIT_CLIENT_SECRET\", \"grant_type\": \"password\"}" > "${MY_WORKINGDIR}creds.json"
   
   cmToken=$(curl -ks -X POST "${PLATFORM_API_URL}api/token" \
    -H 'Content-Type: application/json' \
    -H 'Accept: application/json' \
-   --data-binary "@${WORKINGDIR}creds.json")
+   --data-binary "@${MY_WORKINGDIR}creds.json")
   
   # mylog info "cmToken: ${cmToken}"
   # decho 3 "cmToken: $cmToken"
@@ -439,7 +439,7 @@ starting=$(date);
 scriptdir=$(dirname "$0")/
 configdir="${scriptdir}../config/"
 libdir="${scriptdir}../../../"
-WORKINGDIR="${scriptdir}../../../working/"
+MY_WORKINGDIR="${scriptdir}../../../working/"
 
 # load helper functions
 . "${libdir}"lib.sh
@@ -532,12 +532,12 @@ TOOLKIT_CLIENT_SECRET=$(echo ${APIC_CRED} | jq -r .secret)
 #  -H "X-Ibm-Client-Secret: $TOOLKIT_CLIENT_SECRET" \
 #  --data-binary  "{\"api_key\":\"$APIC_APIKEY\",\"client_id\":\"$TOOLKIT_CLIENT_ID\",\"client_secret\":\"$TOOLKIT_CLIENT_SECRET\",\"grant_type\":\"api_key\"}")
 
-echo "{\"username\": \"admin\", \"password\": \"$APIC_CM_ADMIN_PASSWORD\", \"realm\": \"admin/default-idp-1\", \"client_id\": \"$TOOLKIT_CLIENT_ID\", \"client_secret\": \"$TOOLKIT_CLIENT_SECRET\", \"grant_type\": \"password\"}" > "${WORKINGDIR}creds.json"
+echo "{\"username\": \"admin\", \"password\": \"$APIC_CM_ADMIN_PASSWORD\", \"realm\": \"admin/default-idp-1\", \"client_id\": \"$TOOLKIT_CLIENT_ID\", \"client_secret\": \"$TOOLKIT_CLIENT_SECRET\", \"grant_type\": \"password\"}" > "${MY_WORKINGDIR}creds.json"
 
 cmToken=$(curl -ks -X POST "${PLATFORM_API_URL}api/token" \
  -H 'Content-Type: application/json' \
  -H 'Accept: application/json' \
- --data-binary "@${WORKINGDIR}creds.json")
+ --data-binary "@${MY_WORKINGDIR}creds.json")
 
 # mylog info "cmToken: ${cmToken}"
 # decho 3 "cmToken: $cmToken"

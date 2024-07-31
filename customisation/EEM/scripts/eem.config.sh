@@ -13,7 +13,7 @@ scriptdir=${PWD}/
 #assumptions on the name of the file
 read_config_file "${scriptdir}cp4i.properties"
 
-read_config_file "${EEM_GEN_CUSTOMDIR}scripts/eem.properties"
+read_config_file "${MY_EEM_GEN_CUSTOMDIR}scripts/eem.properties"
 
 SECONDS=0
 

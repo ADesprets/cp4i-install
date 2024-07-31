@@ -3,13 +3,13 @@ kind: IntegrationRuntime
 metadata:
   labels:
     backup.appconnect.ibm.com/component: integrationruntime
-  name: ${MY_ACE_INTEGRATIONRUNTIME_NAME}
-  namespace: ${MY_OC_PROJECT}
+  name: httpechoapp-integrationruntime
+  namespace: cp4i
 spec:
   license:
     accept: true
-    license: ${MY_ACE_LIC}
-    use: ${MY_ACE_LIC_USAGE}
+    license: L-XRNH-47FJAW
+    use: CloudPakForIntegrationNonProduction
   flowType:
     toolkitFlow: true
     designerAPIFlow: true
@@ -30,10 +30,10 @@ spec:
             cpu: 500m
             memory: 512Mi
   barURL: 
-    - ${MY_ACE_BAR_URL}
-  version: ${MY_ACE_VERSION}
+    - https://raw.githubusercontent.com/saadbenachi/my_bar_files/main/HTTPEchoApp.bar
+  version: 12.0.12.3-r1
   replicas: 1
   logFormat: basic
   configurations: 
-    - ${MY_ACE_SERVERCONF_NAME}
-    - ${MY_ACE_BARAUTH_NAME}
+    - httpechoapp-serverconf
+    - httpechoapp-barauth

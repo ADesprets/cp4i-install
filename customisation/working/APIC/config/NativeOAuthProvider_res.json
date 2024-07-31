@@ -1,0 +1,159 @@
+{
+    "gateway_version": "6000",
+    "grants": [
+        "access_code",
+        "implicit",
+        "application",
+        "password"
+    ],
+    "name": "nativeprovider",
+    "native_provider": {
+        "api": {
+            "info": {
+                "description": "nativeprovider"
+            },
+            "x-ibm-configuration": {
+                "assembly": {
+                    "execute": [
+                        {
+                            "oauth": {
+                                "description": "Cette stratégie OAuth effectue toutes les étapes du protocole OAuth/OpenID Connect nécessaires pour la validation OAuth par défaut. Les entrées et sorties de chaque étape reposent sur des variables de contexte documentées. Ajoutez ou supprimez les composants OAuth pris en charge selon les besoins.",
+                                "oauth-provider-settings-ref": {
+                                    "default": "nativeprovider"
+                                },
+                                "supported-oauth-components": [
+                                    "OAuthValidateRequest"
+                                ],
+                                "title": "oauth-auto-generated-1",
+                                "version": "2.0.0"
+                            }
+                        },
+                        {
+                            "switch": {
+                                "case": [
+                                    {
+                                        "condition": "(() = '/oauth2/token')",
+                                        "execute": [
+                                            {
+                                                "user-security": {
+                                                    "au-stop-on-error": false,
+                                                    "auth-response-header-credential": "X-API-Authenticated-Credential",
+                                                    "auth-response-headers-pattern": "(?i)x-api*",
+                                                    "az-stop-on-error": true,
+                                                    "description": "",
+                                                    "ei-stop-on-error": false,
+                                                    "extract-identity-method": "context-var",
+                                                    "factor-id": "default",
+                                                    "pass-context-var": "request.parameters.password.values",
+                                                    "title": "user-security-auto-generated-password",
+                                                    "user-auth-method": "user-registry",
+                                                    "user-az-method": "authenticated",
+                                                    "user-context-var": "request.parameters.username.values",
+                                                    "user-registry": "url_registry",
+                                                    "version": "2.1.0"
+                                                }
+                                            },
+                                            {
+                                                "oauth": {
+                                                    "description": "Cette stratégie OAuth effectue toutes les étapes du protocole OAuth/OpenID Connect nécessaires pour le chemin de jeton par défaut. Les entrées et sorties de chaque étape reposent sur des variables de contexte documentées. Ajoutez ou supprimez les composants OAuth pris en charge selon les besoins.",
+                                                    "oauth-provider-settings-ref": {
+                                                        "default": "nativeprovider"
+                                                    },
+                                                    "supported-oauth-components": [
+                                                        "OAuthGenerateAccessToken",
+                                                        "OAuthVerifyAZCode",
+                                                        "OAuthVerifyRefreshToken",
+                                                        "OAuthCollectMetadata"
+                                                    ],
+                                                    "title": "oauth-auto-generated-3",
+                                                    "version": "2.0.0"
+                                                }
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "condition": "(() = '/oauth2/authorize')",
+                                        "execute": [
+                                            {
+                                                "user-security": {
+                                                    "au-stop-on-error": true,
+                                                    "auth-response-header-credential": "X-API-Authenticated-Credential",
+                                                    "auth-response-headers-pattern": "(?i)x-api*",
+                                                    "az-stop-on-error": true,
+                                                    "description": "Cette stratégie de sécurité utilisateur effectue des contrôles EI(de base) et AU(URL auto) de l'assemblage OAuth. Changez de méthode de contrôle de sécurité si besoin.",
+                                                    "ei-stop-on-error": true,
+                                                    "extract-identity-method": "basic",
+                                                    "factor-id": "default",
+                                                    "title": "user-security-auto-generated",
+                                                    "user-auth-method": "user-registry",
+                                                    "user-az-method": "authenticated",
+                                                    "user-registry": "url_registry",
+                                                    "version": "2.1.0"
+                                                }
+                                            },
+                                            {
+                                                "oauth": {
+                                                    "description": "Cette stratégie OAuth effectue toutes les étapes du protocole OAuth/OpenID Connect nécessaires pour le chemin de code az par défaut. Les entrées et sorties de chaque étape reposent sur des variables de contexte documentées. Ajoutez ou supprimez les composants OAuth pris en charge selon les besoins.",
+                                                    "oauth-provider-settings-ref": {
+                                                        "default": "nativeprovider"
+                                                    },
+                                                    "supported-oauth-components": [
+                                                        "OAuthGenerateAZCode",
+                                                        "OAuthGenerateAccessToken",
+                                                        "OAuthVerifyAZCode",
+                                                        "OAuthCollectMetadata"
+                                                    ],
+                                                    "title": "oauth-auto-generated-2",
+                                                    "version": "2.0.0"
+                                                }
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "otherwise": [
+                                            {
+                                                "oauth": {
+                                                    "description": "Cette stratégie OAuth effectue toutes les étapes du protocole OAuth/OpenID Connect nécessaires pour tous les autres chemins par défaut. Les entrées et sorties de chaque étape reposent sur des variables de contexte documentées. Ajoutez ou supprimez les composants OAuth pris en charge selon les besoins.",
+                                                    "oauth-provider-settings-ref": {
+                                                        "default": "nativeprovider"
+                                                    },
+                                                    "supported-oauth-components": [
+                                                        "OAuthIntrospectToken",
+                                                        "OAuthRevokeToken"
+                                                    ],
+                                                    "title": "oauth-auto-generated-4",
+                                                    "version": "2.0.0"
+                                                }
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "title": "oauth-auto-generated-switch",
+                                "version": "2.0.0"
+                            }
+                        }
+                    ]
+                },
+                "gateway": "datapower-api-gateway"
+            }
+        },
+        "authorize_path": "/oauth2/authorize",
+        "clients": [
+            "confidential",
+            "public"
+        ],
+        "native_provider_5000": {
+        },
+        "pkce": {
+            "allow_plain": false,
+            "enabled": true,
+            "required": false
+        },
+        "token_path": "/oauth2/token"
+    },
+    "provider_type": "native",
+    "scopes": {
+        "read": "read sample"
+    },
+    "title": "nativeprovider"
+}

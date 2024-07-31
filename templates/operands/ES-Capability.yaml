@@ -1,8 +1,6 @@
 apiVersion: eventstreams.ibm.com/v1beta2
 kind: EventStreams
 metadata:
-  annotations:
-    eventstreams.ibm.com/apicurio-registry-version: '>=2.4'
   name: $MY_ES_INSTANCE_NAME
   namespace: $MY_OC_PROJECT
   labels:

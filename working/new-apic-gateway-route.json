@@ -1,0 +1,44 @@
+{
+  "apiVersion": "route.openshift.io/v1",
+  "kind": "Route",
+  "metadata": {
+    "annotations": {
+      "apiconnect-operator/hash": "57d48dd39353caf9955ab875c41c550e2c8dfa2681fbb3d0a0e75e63814dd5fb",
+      "cert-manager.io/issuer": "cp4i-apic-ingress-issuer",
+      "haproxy.router.openshift.io/balance": "roundrobin"
+    },
+    "labels": {
+      "app.kubernetes.io/instance": "cp4i-apic-gw",
+      "app.kubernetes.io/managed-by": "ibm-apiconnect",
+      "app.kubernetes.io/name": "gateway",
+      "app.kubernetes.io/part-of": "cp4i-apic"
+    },
+    "name": "cp4i-apic-gw-gateway-new",
+    "namespace": "cp4i",
+    "ownerReferences": [
+      {
+        "apiVersion": "gateway.apiconnect.ibm.com/v1beta1",
+        "blockOwnerDeletion": true,
+        "controller": true,
+        "kind": "GatewayCluster",
+        "name": "cp4i-apic-gw",
+        "uid": "2644ace8-fb07-45f6-a5cc-607f3ce795d0"
+      }
+    ]
+  },
+  "spec": {
+    "host": "cp4i-apic-gw-gateway-new-cp4i.apps.6667544d69bf5d001e5501d5.cloud.techzone.ibm.com",
+    "port": {
+      "targetPort": "9090"
+    },
+    "tls": {
+      "termination": "passthrough"
+    },
+    "to": {
+      "kind": "Service",
+      "name": "cp4i-apic-gw-datapower",
+      "weight": 100
+    },
+    "wildcardPolicy": "None"
+  }
+}

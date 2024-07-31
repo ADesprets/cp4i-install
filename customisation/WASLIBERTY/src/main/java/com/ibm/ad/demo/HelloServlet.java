@@ -31,6 +31,7 @@ public class HelloServlet extends HttpServlet {
      * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
      */
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        response.addHeader("Content-type", "text/plain");
         response.getWriter().append("Happy Birthday, Mr. President?");
     }
 
