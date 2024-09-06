@@ -18,7 +18,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * Servlet implementation class GenericBackEnd
  * Sample call: curl -u "admin:admin" -H "accept: application/json" -H "content-type: application/json" -d "{\"b1\":\"v1\"}" http://localhost:9080/demo/be
  */
-@WebServlet("/be")
+@WebServlet(name = "GenericBackendServlet", description = "Servlet that returns information from the sender", urlPatterns = "/be")
 public class GenericBackEnd extends HttpServlet {
     private static final long serialVersionUID = 1L;
 

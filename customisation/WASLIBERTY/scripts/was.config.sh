@@ -82,7 +82,7 @@ function create_application() {
   decho 3 "F:IN:create_application"
     mylog info "Application:version ${MY_WLA_APP_NAME_VERSION}"
     # Creating APIC instance
-    lf_file="${OPERANDSDIR}WAS-WLApp.yaml"
+    lf_file="${MY_OPERANDSDIR}WAS-WLApp.yaml"
     lf_ns="${MY_BACKEND_NAMESPACE}"
     lf_path="{.status.phase}"
     lf_resource="$MY_WLA_APP_NAME"
@@ -107,7 +107,7 @@ starting=$(date);
 # end with / on purpose (if var not defined, uses CWD - Current Working Directory)
 # scriptdir=$(dirname "$0")/
 scriptdir=${PWD}/
-lf_was_config_dir=${WASLIBERTY_SCRIPTDIR}config/
+lf_was_config_dir=${MY_WASLIBERTY_SCRIPTDIR}config/
 decho 5 "WAS configuration directory: ${lf_was_config_dir}"
 
 # load helper functions
@@ -122,7 +122,7 @@ decho 5 "WAS configuration directory: ${lf_was_config_dir}"
     prepare_internal_registry
     # Build the image
     if $MY_WASLIBERTY_CUSTOM_BUILD; then
-      pushd ${WASLIBERTY_SCRIPTDIR} > /dev/null 2>&1
+      pushd ${MY_WASLIBERTY_SCRIPTDIR} > /dev/null 2>&1
       mylog info "==== Compile code and build docker image." 1>&2
       compile_code
       was_build_image

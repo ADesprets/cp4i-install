@@ -229,6 +229,10 @@ The main script does the following:
 To be moved
 In the subscription folder we have the definition of the operators. Since they are all equivalent we do not have one for each component, and use variables that are set at deployment.
 
+## Troubleshooting
+
+If you have a timeout error with oc ibm-pak command, you can increase the timeout using the variable IBMPAK_HTTP_TIMEOUT. it is explained at https://github.com/IBM/ibm-pak/blob/main/docs/command-help.md.
+
 ## Customisation
 
 1) The source of documents are in the customisation/<capability>/scripts (or config) folders

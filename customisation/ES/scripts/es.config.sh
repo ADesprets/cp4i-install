@@ -10,10 +10,12 @@ scriptdir=${PWD}/
 # load helper functions
 . "${scriptdir}"lib.sh
 
+mylog info "Customise Event Streams (es.config.sh)"
+
 #assumptions on the name of the file
 read_config_file "${scriptdir}cp4i.properties"
 
-read_config_file "${ES_GEN_CUSTOMDIR}scripts/es.properties"
+read_config_file "${MY_ES_GEN_CUSTOMDIR}config/es.properties"
 
 # Creation of the Topics used for taxi demo
 SECONDS=0
@@ -25,23 +27,23 @@ topic_replicas=(3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 1 1 3 1)
 for index in ${!topic_names[@]}
 do
     mylog info "topic name: ${topic_names[$index]}, topic spec name: ${topic_spec_names[$index]}, partitions: ${topic_partitions[$index]}, replicas: ${topic_replicas[$index]}, es_instance: ${es_instance}"
-    # need to make those variables visible to the envsubst command used in lib.sh
+    # Need to make those variables visible to the envsubst command used in lib.sh
     export es_topic_name=${topic_names[$index]}
     export es_spec_topic_name=${topic_spec_names[$index]}
     export es_spec_topic_partition=${topic_partitions[$index]}
     export es_spec_topic_replica=${topic_replicas[$index]}
 
     # CRD described at https://ibm.github.io/event-automation/es/reference/api-reference-es/
-#    check_create_oc_yaml "KafkaTopic" "${es_topic_name}" "${ES_GEN_CUSTOMDIR}config/topic.yaml" $es_project
+    # check_create_oc_yaml "KafkaTopic" "${es_topic_name}" "${MY_ES_GEN_CUSTOMDIR}config/topic.yaml" $es_project
     # check_resource_availability "KafkaTopic" "${es_topic_name}" $es_project
     # wait_for_state KafkaTopic "${es_topic_name}" "Ready" '.status.phase' $es_project
 done
 
 # Creation of a Kafka user
-check_create_oc_yaml "KafkaUser" "${es_topic_name}" "${ES_GEN_CUSTOMDIR}config/es-admin-user.yaml" $es_project
-check_create_oc_yaml "KafkaUser" "${es_topic_name}" "${ES_GEN_CUSTOMDIR}config/es-all-access-user.yaml" $es_project
-check_create_oc_yaml "KafkaUser" "${es_topic_name}" "${ES_GEN_CUSTOMDIR}config/kafka-connect-credentials.yaml" $es_project
-check_create_oc_yaml "KafkaUser" "${es_topic_name}" "${ES_GEN_CUSTOMDIR}config/kafka-user1.yaml" $es_project
+check_create_oc_yaml "KafkaUser" "${es_topic_name}" "${MY_ES_GEN_CUSTOMDIR}config/es-admin-user.yaml" $es_project
+check_create_oc_yaml "KafkaUser" "${es_topic_name}" "${MY_ES_GEN_CUSTOMDIR}config/es-all-access-user.yaml" $es_project
+check_create_oc_yaml "KafkaUser" "${es_topic_name}" "${MY_ES_GEN_CUSTOMDIR}config/kafka-connect-credentials.yaml" $es_project
+check_create_oc_yaml "KafkaUser" "${es_topic_name}" "${MY_ES_GEN_CUSTOMDIR}config/kafka-user1.yaml" $es_project
 
 # TODO Wanted to separate things for best practice, but not done yet
 # https://github.com/IBM/kafka-connect-loosehangerjeans-source/tree/main
@@ -52,10 +54,10 @@ check_create_oc_yaml "KafkaUser" "${es_topic_name}" "${ES_GEN_CUSTOMDIR}config/k
 
 # Create KafkaConnect and KafkaConnector in $ES_APPS_PROJECT project
 mylog info "Create Kafka Connect for datagen"
-check_create_oc_yaml "KafkaConnect" "datagen-host" "${ES_GEN_CUSTOMDIR}config/KConnect_datagen.yaml" $es_project
+check_create_oc_yaml "KafkaConnect" "datagen-host" "${MY_ES_GEN_CUSTOMDIR}config/KConnect_datagen.yaml" $es_project
 
 # mylog info "Create Kafka Connector for datagen"
-check_create_oc_yaml "KafkaConnector" "datagen" "${ES_GEN_CUSTOMDIR}config/KConnector_datagen.yaml" $es_project
+check_create_oc_yaml "KafkaConnector" "datagen" "${MY_ES_GEN_CUSTOMDIR}config/KConnector_datagen.yaml" $es_project
 
 duration=$SECONDS
 mylog info "Configuration for EventStreams took $duration seconds to execute." 1>&2

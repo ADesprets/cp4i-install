@@ -108,7 +108,7 @@ if $MY_OPENLIBERTY_CUSTOM; then
 
   # Build and create image, then load it into registry, this is optional because images won't change very often
   if $MY_OPENLIBERTY_CUSTOM; then
-    pushd ${OPENLIBERTY_SCRIPTDIR}system
+    pushd ${MY_OPENLIBERTY_SCRIPTDIR}system
 
     # Build the image
     if $MY_OPENLIBERTY_CUSTOM_BUILD; then
@@ -140,8 +140,8 @@ if $MY_OPENLIBERTY_CUSTOM; then
 
   # Deploy the image in the $MY_BACKEND_NAMESPACE namespace 
   ## create_application
-  adapt_file ${OPENLIBERTY_SCRIPTDIR}config/ ${OPENLIBERTY_GEN_CUSTOMDIR}config/ system-appdeploy.yaml
-  kubectl -n ${MY_BACKEND_NAMESPACE} apply -f ${OPENLIBERTY_GEN_CUSTOMDIR}config/system-appdeploy.yaml
+  adapt_file ${MY_OPENLIBERTY_SCRIPTDIR}config/ ${MY_OPENLIBERTY_GEN_CUSTOMDIR}config/ system-appdeploy.yaml
+  kubectl -n ${MY_BACKEND_NAMESPACE} apply -f ${MY_OPENLIBERTY_GEN_CUSTOMDIR}config/system-appdeploy.yaml
   # kubectl run <service_name> --image=de.icr.io/olo1/oljaxrs
   # kubectl -n ${MY_BACKEND_NAMESPACE} get OpenLibertyApplications
   # kubectl -n ${MY_BACKEND_NAMESPACE} describe olapps/mysystem

@@ -27,9 +27,9 @@ SECONDS=0
 		# check that deployment of openldap was not done
 		if oc -n ${ns} get "deployment" "openldap" > /dev/null 2>&1; then mylog ok;else
 			oc -n ${ns} new-app osixia/${name}
-			oc -n ${ns} get deployment.apps/openldap -o json | jq '. | del(."status")' > ${WORKINGDIR}openldap.json
-			jq -s '.[0] * .[1] ' ${WORKINGDIR}openldap.json ${YAMLDIR}kube_resources/ldap-config.json > ${WORKINGDIR}openldap.new.json
-			oc -n ldap apply -f ${WORKINGDIR}openldap.new.json
+			oc -n ${ns} get deployment.apps/openldap -o json | jq '. | del(."status")' > ${MY_WORKINGDIR}openldap.json
+			jq -s '.[0] * .[1] ' ${MY_WORKINGDIR}openldap.json ${MY_YAMLDIR}kube_resources/ldap-config.json > ${MY_WORKINGDIR}openldap.new.json
+			oc -n ldap apply -f ${MY_WORKINGDIR}openldap.new.json
 
 			# expose service externaly and get host and port
 			oc -n ${ns} expose service/${name} --target-port=389 --name=openldap-external
@@ -39,11 +39,11 @@ SECONDS=0
 			hostname=`oc -n ${ns} get route openldap-external -o jsonpath='{.spec.host}'`
 
 			# load users and groups into LDAP
-			envsubst < "${YAMLDIR}config/Import.tmpl" > "${YAMLDIR}config/Import.ldiff"
-			$LDAP_COMMAND -H ldap://$hostname:$port -D "$ldap_admin_dn" -w "$ldap_admin_password" -f ${YAMLDIR}kube_resources/ldap-users.ldif
+			envsubst < "${MY_YAMLDIR}config/Import.tmpl" > "${MY_YAMLDIR}config/Import.ldiff"
+			$MY_LDAP_COMMAND -H ldap://$hostname:$port -D "$ldap_admin_dn" -w "$ldap_admin_password" -f ${MY_YAMLDIR}kube_resources/ldap-users.ldif
 
 			mylog info "You can search entries with the following command: "
-			# ldapmodify -H ldap://$hostname:$port -D "$ldap_admin_dn" -w admin -f ${LDAPDIR}Import.ldiff
+			# ldapmodify -H ldap://$hostname:$port -D "$ldap_admin_dn" -w admin -f ${MY_LDAPDIR}Import.ldiff
 			# ldapsearch -H ldap://${host}:${port} -x -D "$ldap_admin_dn" -w "$ldap_admin_password" -b "$ldap_base_dn" -s sub -a always -z 1000 "(objectClass=*)"
 		fi
 	fi

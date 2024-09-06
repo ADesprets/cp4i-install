@@ -106,7 +106,7 @@ SECONDS=0
 
 # end with / on purpose
 #SCRIPTDIR=$(dirname "$0")/
-SCRIPTDIR="${ACE_SCRIPTDIR}scripts/"
+SCRIPTDIR="${MY_ACE_SCRIPTDIR}scripts/"
 CONFIGDIR="${SCRIPTDIR}../config/"
 
 MAINSCRIPTDIR="${SCRIPTDIR}../../../"
@@ -124,8 +124,8 @@ SC_SPACES_INCR=3
 : <<'END_COMMENT'
 END_COMMENT
 
-# Loop through files in the barfiles directory 
-for sc_barfiledir in "${BARFILESDIR}"*; do
+# Loop through files in the barfiles directory
+for sc_barfiledir in ${BARFILESDIR}*; do
 
   decho 3 "sc_barfiledir: ${sc_barfiledir}"
 
@@ -144,8 +144,8 @@ for sc_barfiledir in "${BARFILESDIR}"*; do
   # load config file here in the loop because it depends on the name of the bar file
   read_config_file "${CONFIGDIR}ace.properties"
 
-  check_directory_exist_create  "${ACE_GEN_CUSTOMDIR}generated/${MY_ACE_BAR_NAME}"
-  sc_generateddir="${ACE_GEN_CUSTOMDIR}generated/${MY_ACE_BAR_NAME}/"
+  check_directory_exist_create  "${MY_ACE_GEN_CUSTOMDIR}generated/${MY_ACE_BAR_NAME}"
+  sc_generateddir="${MY_ACE_GEN_CUSTOMDIR}generated/${MY_ACE_BAR_NAME}/"
 
   check_directory_exist_create  "${sc_generateddir}yaml"
   sc_generatedyamldir="${sc_generateddir}yaml/"

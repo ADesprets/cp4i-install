@@ -4,22 +4,25 @@ metadata:
   name: datagen-host
   annotations:
     eventstreams.ibm.com/use-connector-resources: 'true'
+  labels:
+    backup.eventstreams.ibm.com/component: kafkaconnect
+  namespace: ${MY_OC_PROJECT}    
 spec:
   config:
-    group.id: connect-group
-    client.id: connect-client
-    config.storage.topic: connect-configs
-    offset.storage.topic: connect-offsets
-    status.storage.topic: connect-status
+    group.id: connect-cluster
+    offset.storage.topic: connect-cluster-offsets
+    config.storage.topic: connect-cluster-configs
+    status.storage.topic: connect-cluster-status
+    client.id: connect-cluster-client
     config.providers: file
     config.providers.file.class: org.apache.kafka.common.config.provider.DirectoryConfigProvider
   bootstrapServers: '${MY_ES_INSTANCE_NAME}-kafka-bootstrap.${es_project}.svc:9093'
   resources:
-    limits:
-      cpu: 2048m
-      memory: 2Gi
     requests:
-      cpu: 2048m
+      cpu: 1000m
+      memory: 2Gi
+    limits:
+      cpu: 2000m
       memory: 2Gi
   authentication:
     certificateAndKey:
@@ -43,15 +46,26 @@ spec:
       imagePullSecrets: []
       metadata:
         annotations:
-          cloudpakId: c8b82d189e7545f0892db9ef2731b90d
-          productVersion: 11.3.1
-          productID: 2a79e49111f44ec3acd89608e56138f5
-          cloudpakName: IBM Cloud Pak for Integration
-          productChargedContainers: datagen-host-connect
-          productCloudpakRatio: '2:1'
-          productName: IBM Event Streams for Non Production
           eventstreams.production.type: CloudPakForIntegrationNonProduction
+          productID: 2a79e49111f44ec3acd89608e56138f5
+          productName: IBM Event Streams for Non Production
+          productVersion: 11.4.0
           productMetric: VIRTUAL_PROCESSOR_CORE
+          productChargedContainers: datagen-host-connect
+          cloudpakId: c8b82d189e7545f0892db9ef2731b90d
+          cloudpakName: IBM Cloud Pak for Integration
+          productCloudpakRatio: '2:1'
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+                      - s390x
+                      - ppc64le      
   tls:
     trustedCertificates:
       - certificate: ca.crt
