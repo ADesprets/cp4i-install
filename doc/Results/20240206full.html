@@ -1,0 +1,879 @@
+<pre>./provision_cluster-v2.sh cp4i.properties ./versions/cp4i-2023.4.properties cp4i ad202341
+The provided arguments are: cp4i.properties ./versions/cp4i-2023.4.properties cp4i ad202341
+<font color="#26A269">user already logged to IBM Cloud.</font>
+<font color="#2AA1B3">Checking OpenShift: ad202341...</font><font color="#A2734C">, cluster does not exist</font>
+<font color="#26A269">Getting current version for OC: 4.14</font>
+<font color="#5E5C64">CMD: oc_version_full={ &quot;major&quot;: 4, &quot;minor&quot;: 14, &quot;patch&quot;: 8, &quot;default&quot;: false, &quot;end_of_service&quot;: &quot;&quot; }</font>
+<font color="#26A269">Found: 4.14.8_openshift</font>
+<font color="#26A269">Creating OpenShift cluster: ad202341</font>
+<font color="#F66151">Creating cluster...</font>
+<font color="#26A269"><b>OK</b></font>
+Cluster created with ID <font color="#2AA1B3"><b>cn0siqbf0s3j0sjqakqg</b></font>
+<font color="#26A269">Creation of the cluster took: 16 seconds.</font>
+<font color="#2AA1B3">Checking Cluster state...</font><font color="#A2734C">NO</font>
+<font color="#12488B">mar. 06 févr. 2024 06:53:49 CET deploying-</font>
+<font color="#12488B">mar. 06 févr. 2024 07:37:55 CET deployed-</font>
+<font color="#12488B">mar. 06 févr. 2024 07:40:16 CET pending-The worker nodes are being provisioned and are not available in the cluster</font>
+<font color="#12488B">mar. 06 févr. 2024 07:44:17 CET critical-All Workers Critical</font>
+<font color="#26A269">OK, normal-All Workers Normal</font>
+<font color="#26A269">Checking Cluster state took: 3035 seconds.</font>
+<font color="#2AA1B3">Checking Cluster URL...</font><font color="#26A269">OK -&gt; https://c101-e.eu-de.containers.cloud.ibm.com:31392</font>
+<font color="#26A269">Checking Cluster availability took: 2 seconds.</font>
+<font color="#2AA1B3">Checking Ingress address...</font><font color="#A2734C">not ready</font>
+<font color="#12488B">mar. 06 févr. 2024 07:44:27 CET waiting for ingress address</font>
+<font color="#12488B">mar. 06 févr. 2024 07:45:58 CET waiting for ingress address</font>
+<font color="#12488B">mar. 06 févr. 2024 07:47:31 CET waiting for ingress address</font>
+<font color="#12488B">mar. 06 févr. 2024 07:49:02 CET waiting for ingress address</font>
+<font color="#12488B">mar. 06 févr. 2024 07:50:34 CET waiting for ingress address</font>
+<font color="#12488B">mar. 06 févr. 2024 07:52:06 CET waiting for ingress address</font>
+<font color="#12488B">mar. 06 févr. 2024 07:53:37 CET waiting for ingress address</font>
+<font color="#12488B">mar. 06 févr. 2024 07:55:09 CET waiting for ingress address</font>
+<font color="#26A269">OK, ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud</font>
+<font color="#26A269">Checking Ingress availability took 736 seconds to execute.</font>
+<font color="#26A269"><b>OK</b></font>
+The configuration for <font color="#2AA1B3"><b>ad202341</b></font> was downloaded successfully.
+
+Added context for <font color="#2AA1B3"><b>ad202341</b></font> to the current kubeconfig file.
+You can now execute &apos;<font color="#A2734C"><b>kubectl</b></font>&apos; commands against your cluster. For example, run &apos;<font color="#A2734C"><b>kubectl get nodes</b></font>&apos;.
+<font color="#26A269">OK</font>
+<font color="#26A269">Logging to Cluster took: 10 seconds.</font>
+<font color="#F66151">Warning: User &apos;IAM#arnauld.desprets@fr.ibm.com&apos; not found</font>
+<font color="#F66151">clusterrole.rbac.authorization.k8s.io/self-provisioner added: &quot;IAM#arnauld.desprets@fr.ibm.com&quot;</font>
+<font color="#2AA1B3">Checking project cp4i...</font><font color="#26A269">Creating project cp4i</font>
+<font color="#F66151">Now using project &quot;cp4i&quot; on server &quot;https://c101-e.eu-de.containers.cloud.ibm.com:31392&quot;.</font>
+
+<font color="#F66151">You can add applications to this project with the &apos;new-app&apos; command. For example, try:</font>
+
+<font color="#F66151">    oc new-app rails-postgresql-example</font>
+
+<font color="#F66151">to build a new example application in Ruby. Or use kubectl to deploy a simple Kubernetes application:</font>
+
+<font color="#F66151">    kubectl create deployment hello-node --image=registry.k8s.io/e2e-test-images/agnhost:2.43 -- /agnhost serve-hostname</font>
+
+<font color="#2AA1B3">Checking project ibm-common-services...</font><font color="#26A269">Creating project ibm-common-services</font>
+<font color="#F66151">Now using project &quot;ibm-common-services&quot; on server &quot;https://c101-e.eu-de.containers.cloud.ibm.com:31392&quot;.</font>
+
+<font color="#F66151">You can add applications to this project with the &apos;new-app&apos; command. For example, try:</font>
+
+<font color="#F66151">    oc new-app rails-postgresql-example</font>
+
+<font color="#F66151">to build a new example application in Ruby. Or use kubectl to deploy a simple Kubernetes application:</font>
+
+<font color="#F66151">    kubectl create deployment hello-node --image=registry.k8s.io/e2e-test-images/agnhost:2.43 -- /agnhost serve-hostname</font>
+
+<font color="#2AA1B3">Checking project cert-manager-operator...</font><font color="#26A269">Creating project cert-manager-operator</font>
+<font color="#F66151">Now using project &quot;cert-manager-operator&quot; on server &quot;https://c101-e.eu-de.containers.cloud.ibm.com:31392&quot;.</font>
+
+<font color="#F66151">You can add applications to this project with the &apos;new-app&apos; command. For example, try:</font>
+
+<font color="#F66151">    oc new-app rails-postgresql-example</font>
+
+<font color="#F66151">to build a new example application in Ruby. Or use kubectl to deploy a simple Kubernetes application:</font>
+
+<font color="#F66151">    kubectl create deployment hello-node --image=registry.k8s.io/e2e-test-images/agnhost:2.43 -- /agnhost serve-hostname</font>
+
+<font color="#2AA1B3">Checking OperatorGroup cert-manager-operatorgroup in cert-manager-operator project...</font><font color="#5E5C64">CMD: oc -n cert-manager-operator get OperatorGroup cert-manager-operatorgroup</font>
+<font color="#F66151">operatorgroup.operators.coreos.com/operatorgroup created</font>
+<font color="#2AA1B3">Checking project ibm-licensing...</font><font color="#26A269">Creating project ibm-licensing</font>
+<font color="#F66151">Now using project &quot;ibm-licensing&quot; on server &quot;https://c101-e.eu-de.containers.cloud.ibm.com:31392&quot;.</font>
+
+<font color="#F66151">You can add applications to this project with the &apos;new-app&apos; command. For example, try:</font>
+
+<font color="#F66151">    oc new-app rails-postgresql-example</font>
+
+<font color="#F66151">to build a new example application in Ruby. Or use kubectl to deploy a simple Kubernetes application:</font>
+
+<font color="#F66151">    kubectl create deployment hello-node --image=registry.k8s.io/e2e-test-images/agnhost:2.43 -- /agnhost serve-hostname</font>
+
+<font color="#2AA1B3">Checking OperatorGroup license-server-operatorgroup in ibm-licensing project...</font><font color="#5E5C64">CMD: oc -n ibm-licensing get OperatorGroup license-server-operatorgroup</font>
+<font color="#F66151">operatorgroup.operators.coreos.com/operatorgroup created</font>
+<font color="#2AA1B3">Checking ibm-entitlement-key in cp4i...</font><font color="#26A269">Checking ibm-entitlement-key validity</font>
+<font color="#F66151">Login Succeeded!</font>
+<font color="#26A269">Adding ibm-entitlement-key to cp4i</font>
+<font color="#F66151">secret/ibm-entitlement-key created</font>
+<font color="#2AA1B3">Checking ibm-entitlement-key in openshift-operators...</font><font color="#26A269">Checking ibm-entitlement-key validity</font>
+<font color="#F66151">Login Succeeded!</font>
+<font color="#26A269">Adding ibm-entitlement-key to openshift-operators</font>
+<font color="#F66151">secret/ibm-entitlement-key created</font>
+<font color="#26A269">==== Installing foundational services (Cert Manager, Licensing Server and Common Services).</font>
+<font color="#26A269">==== Redhat Cert Manager catalog.</font>
+<font color="#5E5C64">CMD: create_catalogsource &quot;openshift-marketplace&quot; &quot;redhat-operators&quot; &quot;Red Hat Operators&quot; &quot;registry.redhat.io/redhat/redhat-operator-index:v4.12&quot; &quot;Red Hat&quot; &quot;10m&quot;</font>
+<font color="#26A269">Custom Resource redhat-operators exists in ns openshift-marketplace and is newer than file /home/desprets/installcp4i/templates/resources/catalog_source.yaml</font>
+<font color="#5E5C64">CMD: create_operator_subscription &quot;openshift-cert-manager-operator&quot; &quot;stable-v1.12&quot; &quot;redhat-operators&quot; &quot;cert-manager-operator&quot; &quot;Automatic&quot; &quot;1&quot; &quot;cert-manager-operator.v1.12.1&quot;</font>
+<font color="#2AA1B3">Checking Subscription openshift-cert-manager-operator in cert-manager-operator project...</font><font color="#5E5C64">CMD: oc -n cert-manager-operator get Subscription openshift-cert-manager-operator</font>
+<font color="#F66151">subscription.operators.coreos.com/openshift-cert-manager-operator created</font>
+<font color="#5E5C64">CMD: wait_for_state ClusterServiceVersion cert-manager-operator.v1.12.1 {.status.phase} is Succeeded | Succeeded | oc -n cert-manager-operator get ClusterServiceVersion cert-manager-operator.v1.12.1 -o jsonpath={.status.phase}</font>
+<font color="#2AA1B3">Checking ClusterServiceVersion cert-manager-operator.v1.12.1 {.status.phase} is Succeeded...</font><font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;cert-manager-operator.v1.12.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;cert-manager-operator.v1.12.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;cert-manager-operator.v1.12.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;cert-manager-operator.v1.12.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;cert-manager-operator.v1.12.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;cert-manager-operator.v1.12.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#12488B">mar. 06 févr. 2024 07:57:48 CET Installing</font>
+<font color="#26A269">OK, Succeeded</font>
+<font color="#26A269">Creation of openshift-cert-manager-operator operator took 52 seconds to execute.</font>
+<font color="#26A269">==== IBM License Server.</font>
+<font color="#26A269">case ibm-licensing 4.2.2 already downloaded</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ibm-licensing-catalog created</font>
+<font color="#26A269">Adding case ibm-licensing took 6 seconds to execute.</font>
+<font color="#5E5C64">CMD: create_catalogsource &quot;openshift-marketplace&quot; &quot;ibm-licensing-catalog&quot; &quot;ibm-licensing&quot; &quot;icr.io/cpopen/ibm-licensing-catalog&quot; &quot;IBM&quot; &quot;45m&quot;</font>
+<font color="#26A269">Custom Resource ibm-licensing-catalog exists in ns openshift-marketplace and is newer than file /home/desprets/installcp4i/templates/resources/catalog_source.yaml</font>
+<font color="#5E5C64">CMD: create_operator_subscription &quot;ibm-licensing-operator-app&quot; &quot;v4.2&quot; &quot;ibm-licensing-catalog&quot; &quot;ibm-licensing&quot; &quot;Automatic&quot; &quot;1&quot; &quot;ibm-licensing-operator.v4.2.2&quot;</font>
+<font color="#2AA1B3">Checking Subscription ibm-licensing-operator-app in ibm-licensing project...</font><font color="#5E5C64">CMD: oc -n ibm-licensing get Subscription ibm-licensing-operator-app</font>
+<font color="#F66151">subscription.operators.coreos.com/ibm-licensing-operator-app created</font>
+<font color="#5E5C64">CMD: wait_for_state ClusterServiceVersion ibm-licensing-operator.v4.2.2 {.status.phase} is Succeeded | Succeeded | oc -n ibm-licensing get ClusterServiceVersion ibm-licensing-operator.v4.2.2 -o jsonpath={.status.phase}</font>
+<font color="#2AA1B3">Checking ClusterServiceVersion ibm-licensing-operator.v4.2.2 {.status.phase} is Succeeded...</font><font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-licensing-operator.v4.2.2&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-licensing-operator.v4.2.2&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-licensing-operator.v4.2.2&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-licensing-operator.v4.2.2&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-licensing-operator.v4.2.2&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-licensing-operator.v4.2.2&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#12488B">mar. 06 févr. 2024 07:58:49 CET Pending</font>
+<font color="#12488B">mar. 06 févr. 2024 07:58:54 CET Installing</font>
+<font color="#26A269">OK, Succeeded</font>
+<font color="#26A269">Creation of ibm-licensing-operator-app operator took 69 seconds to execute.</font>
+<font color="#26A269">==== IBM Common Services.</font>
+<font color="#26A269">newer version of case ibm-cp-common-services is available. Current version=4.3.1. Latest version=4.4.0</font>
+<font color="#26A269">case ibm-cp-common-services 4.3.1 already downloaded</font>
+<font color="#F66151">catalogsource.operators.coreos.com/cloud-native-postgresql-catalog created</font>
+<font color="#F66151">catalogsource.operators.coreos.com/opencloud-operators created</font>
+<font color="#26A269">Adding case ibm-cp-common-services took 3 seconds to execute.</font>
+<font color="#5E5C64">CMD: create_catalogsource &quot;openshift-marketplace&quot; &quot;opencloud-operators&quot; &quot;IBMCS Operators&quot; &quot;icr.io/cpopen/ibm-common-service-catalog:4.3&quot; &quot;IBM&quot; &quot;45m&quot;</font>
+<font color="#26A269">Custom Resource opencloud-operators exists in ns openshift-marketplace and is newer than file /home/desprets/installcp4i/templates/resources/catalog_source.yaml</font>
+<font color="#5E5C64">CMD: create_operator_subscription &quot;ibm-common-service-operator&quot; &quot;v4.3&quot; &quot;opencloud-operators&quot; &quot;openshift-operators&quot; &quot;Automatic&quot; &quot;1&quot; &quot;ibm-common-service-operator.v4.3.1&quot;</font>
+<font color="#2AA1B3">Checking Subscription ibm-common-service-operator in openshift-operators project...</font><font color="#5E5C64">CMD: oc -n openshift-operators get Subscription ibm-common-service-operator</font>
+<font color="#F66151">subscription.operators.coreos.com/ibm-common-service-operator created</font>
+<font color="#5E5C64">CMD: wait_for_state ClusterServiceVersion ibm-common-service-operator.v4.3.1 {.status.phase} is Succeeded | Succeeded | oc -n openshift-operators get ClusterServiceVersion ibm-common-service-operator.v4.3.1 -o jsonpath={.status.phase}</font>
+<font color="#2AA1B3">Checking ClusterServiceVersion ibm-common-service-operator.v4.3.1 {.status.phase} is Succeeded...</font><font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-common-service-operator.v4.3.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-common-service-operator.v4.3.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-common-service-operator.v4.3.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-common-service-operator.v4.3.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-common-service-operator.v4.3.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-common-service-operator.v4.3.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#12488B">mar. 06 févr. 2024 08:00:01 CET Pending</font>
+<font color="#12488B">mar. 06 févr. 2024 08:00:07 CET Installing</font>
+<font color="#26A269">OK, Succeeded</font>
+<font color="#26A269">Creation of ibm-common-service-operator operator took 63 seconds to execute.</font>
+<font color="#5E5C64">CMD: oc -n openshift-operators get commonservice common-service -o jsonpath=&apos;{.spec.license.accept}&apos;</font>
+<font color="#F66151">Error from server (NotFound): commonservices.operator.ibm.com &quot;common-service&quot; not found</font>
+<font color="#5E5C64">CMD: accept=</font>
+<font color="#F66151">Error from server (NotFound): commonservices.operator.ibm.com &quot;common-service&quot; not found</font>
+<font color="#5E5C64">CMD: check_create_oc_yaml &quot;CommonService&quot; &quot;common-service&quot; &quot;/home/desprets/installcp4i/templates/resources/foundational-services-cr.yaml&quot; &quot;openshift-operators&quot;</font>
+<font color="#2AA1B3">Checking CommonService common-service in openshift-operators project...</font><font color="#5E5C64">CMD: oc -n openshift-operators get CommonService common-service</font>
+<font color="#F66151">commonservice.operator.ibm.com/common-service created</font>
+<font color="#26A269">==== Installing Navigator.</font>
+<font color="#26A269">case ibm-integration-platform-navigator 7.2.1 already downloaded</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ibm-integration-platform-navigator-catalog created</font>
+<font color="#26A269">Adding case ibm-integration-platform-navigator took 3 seconds to execute.</font>
+<font color="#2AA1B3">Checking Subscription ibm-integration-platform-navigator in openshift-operators project...</font><font color="#5E5C64">CMD: oc -n openshift-operators get Subscription ibm-integration-platform-navigator</font>
+<font color="#F66151">subscription.operators.coreos.com/ibm-integration-platform-navigator created</font>
+<font color="#5E5C64">CMD: wait_for_state ClusterServiceVersion ibm-integration-platform-navigator.v7.2.1 {.status.phase} is Succeeded | Succeeded | oc -n openshift-operators get ClusterServiceVersion ibm-integration-platform-navigator.v7.2.1 -o jsonpath={.status.phase}</font>
+<font color="#2AA1B3">Checking ClusterServiceVersion ibm-integration-platform-navigator.v7.2.1 {.status.phase} is Succeeded...</font><font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-integration-platform-navigator.v7.2.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-integration-platform-navigator.v7.2.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-integration-platform-navigator.v7.2.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-integration-platform-navigator.v7.2.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-integration-platform-navigator.v7.2.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-integration-platform-navigator.v7.2.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-integration-platform-navigator.v7.2.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-integration-platform-navigator.v7.2.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#12488B">mar. 06 févr. 2024 08:01:20 CET Pending</font>
+<font color="#12488B">mar. 06 févr. 2024 08:01:25 CET Installing</font>
+<font color="#26A269">OK, Succeeded</font>
+<font color="#26A269">Creation of ibm-integration-platform-navigator operator took 77 seconds to execute.</font>
+<font color="#2AA1B3">Checking PlatformNavigator cp4i-navigator in cp4i project...</font><font color="#5E5C64">CMD: oc -n cp4i get PlatformNavigator cp4i-navigator</font>
+<font color="#F66151">platformnavigator.integration.ibm.com/cp4i-navigator created</font>
+<font color="#5E5C64">CMD: wait_for_state | PlatformNavigator cp4i-navigator {.status.conditions[0].type} is Ready | Ready | oc -n cp4i get PlatformNavigator cp4i-navigator -o jsonpath={.status.conditions[0].type}</font>
+<font color="#2AA1B3">Checking PlatformNavigator cp4i-navigator {.status.conditions[0].type} is Ready...</font><font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#12488B">mar. 06 févr. 2024 08:02:13 CET Pending</font>
+<font color="#12488B">mar. 06 févr. 2024 08:04:39 CET Error</font>
+<font color="#12488B">mar. 06 févr. 2024 08:05:43 CET Pending</font>
+<font color="#12488B">mar. 06 févr. 2024 08:08:12 CET Error</font>
+<font color="#12488B">mar. 06 févr. 2024 08:08:44 CET Pending</font>
+<font color="#12488B">mar. 06 févr. 2024 08:14:12 CET Error</font>
+<font color="#12488B">mar. 06 févr. 2024 08:14:45 CET Pending</font>
+<font color="#26A269">OK, Ready</font>
+<font color="#26A269">Creation of PlatformNavigator instance took 951 seconds to execute.</font>
+<font color="#26A269">==== Installing Asset Repository.</font>
+<font color="#26A269">case ibm-integration-asset-repository 1.6.1 already downloaded</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ibm-integration-asset-repository-catalog created</font>
+<font color="#26A269">Adding case ibm-integration-asset-repository took 2 seconds to execute.</font>
+<font color="#2AA1B3">Checking Subscription ibm-integration-asset-repository in openshift-operators project...</font><font color="#5E5C64">CMD: oc -n openshift-operators get Subscription ibm-integration-asset-repository</font>
+<font color="#F66151">subscription.operators.coreos.com/ibm-integration-asset-repository created</font>
+<font color="#5E5C64">CMD: wait_for_state ClusterServiceVersion ibm-integration-asset-repository.v1.6.1 {.status.phase} is Succeeded | Succeeded | oc -n openshift-operators get ClusterServiceVersion ibm-integration-asset-repository.v1.6.1 -o jsonpath={.status.phase}</font>
+<font color="#2AA1B3">Checking ClusterServiceVersion ibm-integration-asset-repository.v1.6.1 {.status.phase} is Succeeded...</font><font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-integration-asset-repository.v1.6.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-integration-asset-repository.v1.6.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-integration-asset-repository.v1.6.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-integration-asset-repository.v1.6.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-integration-asset-repository.v1.6.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-integration-asset-repository.v1.6.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-integration-asset-repository.v1.6.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#12488B">mar. 06 févr. 2024 08:18:30 CET Installing</font>
+<font color="#26A269">OK, Succeeded</font>
+<font color="#26A269">Creation of ibm-integration-asset-repository operator took 67 seconds to execute.</font>
+<font color="#2AA1B3">Checking AssetRepository cp4i-ar in cp4i project...</font><font color="#5E5C64">CMD: oc -n cp4i get AssetRepository cp4i-ar</font>
+<font color="#F66151">assetrepository.integration.ibm.com/cp4i-ar created</font>
+<font color="#5E5C64">CMD: wait_for_state | AssetRepository cp4i-ar {.status.phase} is Ready | Ready | oc -n cp4i get AssetRepository cp4i-ar -o jsonpath={.status.phase}</font>
+<font color="#2AA1B3">Checking AssetRepository cp4i-ar {.status.phase} is Ready...</font><font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#12488B">mar. 06 févr. 2024 08:19:02 CET Pending</font>
+<font color="#12488B">mar. 06 févr. 2024 08:19:34 CET Failed</font>
+<font color="#12488B">mar. 06 févr. 2024 08:19:50 CET Pending</font>
+<font color="#26A269">OK, Ready</font>
+<font color="#26A269">Creation of AssetRepository instance took 203 seconds to execute.</font>
+<font color="#26A269">==== Installing ACE.</font>
+<font color="#26A269">case ibm-appconnect 11.2.0 already downloaded</font>
+<font color="#F66151">catalogsource.operators.coreos.com/appconnect-operator-catalogsource created</font>
+<font color="#26A269">Adding case ibm-appconnect took 4 seconds to execute.</font>
+<font color="#5E5C64">CMD: create_operator_subscription &quot;ibm-appconnect&quot; &quot;v11.2&quot; &quot;appconnect-operator-catalogsource&quot; &quot;openshift-operators&quot; &quot;Automatic&quot; &quot;1&quot; &quot;ibm-appconnect.v11.2.0&quot;</font>
+<font color="#2AA1B3">Checking Subscription ibm-appconnect in openshift-operators project...</font><font color="#5E5C64">CMD: oc -n openshift-operators get Subscription ibm-appconnect</font>
+<font color="#F66151">subscription.operators.coreos.com/ibm-appconnect created</font>
+<font color="#5E5C64">CMD: wait_for_state ClusterServiceVersion ibm-appconnect.v11.2.0 {.status.phase} is Succeeded | Succeeded | oc -n openshift-operators get ClusterServiceVersion ibm-appconnect.v11.2.0 -o jsonpath={.status.phase}</font>
+<font color="#2AA1B3">Checking ClusterServiceVersion ibm-appconnect.v11.2.0 {.status.phase} is Succeeded...</font><font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-appconnect.v11.2.0&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-appconnect.v11.2.0&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-appconnect.v11.2.0&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-appconnect.v11.2.0&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-appconnect.v11.2.0&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-appconnect.v11.2.0&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-appconnect.v11.2.0&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#12488B">mar. 06 févr. 2024 08:23:05 CET Installing</font>
+<font color="#26A269">OK, Succeeded</font>
+<font color="#26A269">Creation of ibm-appconnect operator took 57 seconds to execute.</font>
+<font color="#2AA1B3">Checking Dashboard cp4i-ace-db in cp4i project...</font><font color="#5E5C64">CMD: oc -n cp4i get Dashboard cp4i-ace-db</font>
+<font color="#F66151">dashboard.appconnect.ibm.com/cp4i-ace-db created</font>
+<font color="#5E5C64">CMD: wait_for_state | Dashboard cp4i-ace-db {.status.conditions[0].type} is Ready | Ready | oc -n cp4i get Dashboard cp4i-ace-db -o jsonpath={.status.conditions[0].type}</font>
+<font color="#2AA1B3">Checking Dashboard cp4i-ace-db {.status.conditions[0].type} is Ready...</font><font color="#A2734C">NO</font>
+<font color="#12488B">mar. 06 févr. 2024 08:23:20 CET Pending</font>
+<font color="#26A269">OK, Ready</font>
+<font color="#26A269">Creation of Dashboard instance took 118 seconds to execute.</font>
+<font color="#2AA1B3">Checking DesignerAuthoring cp4i-ace-dg in cp4i project...</font><font color="#5E5C64">CMD: oc -n cp4i get DesignerAuthoring cp4i-ace-dg</font>
+<font color="#F66151">designerauthoring.appconnect.ibm.com/cp4i-ace-dg created</font>
+<font color="#5E5C64">CMD: wait_for_state | DesignerAuthoring cp4i-ace-dg {.status.conditions[0].type} is Ready | Ready | oc -n cp4i get DesignerAuthoring cp4i-ace-dg -o jsonpath={.status.conditions[0].type}</font>
+<font color="#2AA1B3">Checking DesignerAuthoring cp4i-ace-dg {.status.conditions[0].type} is Ready...</font><font color="#A2734C">NO</font>
+<font color="#12488B">mar. 06 févr. 2024 08:25:16 CET Pending</font>
+<font color="#26A269">OK, Ready</font>
+<font color="#26A269">Creation of DesignerAuthoring instance took 354 seconds to execute.</font>
+<font color="#26A269">==== Installing APIC.</font>
+<font color="#26A269">case ibm-apiconnect 5.1.0 already downloaded</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ibm-apiconnect-catalog created</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ibm-datapower-operator-catalog created</font>
+<font color="#26A269">Adding case ibm-apiconnect took 4 seconds to execute.</font>
+<font color="#2AA1B3">Checking Subscription ibm-apiconnect in openshift-operators project...</font><font color="#5E5C64">CMD: oc -n openshift-operators get Subscription ibm-apiconnect</font>
+<font color="#F66151">subscription.operators.coreos.com/ibm-apiconnect created</font>
+<font color="#5E5C64">CMD: wait_for_state ClusterServiceVersion ibm-apiconnect.v5.1.0 {.status.phase} is Succeeded | Succeeded | oc -n openshift-operators get ClusterServiceVersion ibm-apiconnect.v5.1.0 -o jsonpath={.status.phase}</font>
+<font color="#2AA1B3">Checking ClusterServiceVersion ibm-apiconnect.v5.1.0 {.status.phase} is Succeeded...</font><font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-apiconnect.v5.1.0&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-apiconnect.v5.1.0&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-apiconnect.v5.1.0&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-apiconnect.v5.1.0&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-apiconnect.v5.1.0&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-apiconnect.v5.1.0&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#12488B">mar. 06 févr. 2024 08:31:47 CET Pending</font>
+<font color="#12488B">mar. 06 févr. 2024 08:31:53 CET InstallReady</font>
+<font color="#12488B">mar. 06 févr. 2024 08:31:59 CET Installing</font>
+<font color="#26A269">OK, Succeeded</font>
+<font color="#26A269">Creation of ibm-apiconnect operator took 64 seconds to execute.</font>
+<font color="#2AA1B3">Checking APIConnectCluster cp4i-apic in cp4i project...</font><font color="#5E5C64">CMD: oc -n cp4i get APIConnectCluster cp4i-apic</font>
+<font color="#F66151">apiconnectcluster.apiconnect.ibm.com/cp4i-apic created</font>
+<font color="#5E5C64">CMD: wait_for_state | APIConnectCluster cp4i-apic {.status.phase} is Ready | Ready | oc -n cp4i get APIConnectCluster cp4i-apic -o jsonpath={.status.phase}</font>
+<font color="#2AA1B3">Checking APIConnectCluster cp4i-apic {.status.phase} is Ready...</font><font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#12488B">mar. 06 févr. 2024 08:32:26 CET Pending</font>
+<font color="#26A269">OK, Ready</font>
+<font color="#26A269">Creation of APIConnectCluster instance took 1478 seconds to execute.</font>
+<font color="#26A269">Save certificate cp4i-apic-ingress-ca to /home/desprets/installcp4i/working/cp4i-apic-ingress-ca.pem</font>
+<font color="#26A269">Save certificate cp4i-apic-gw-gateway to /home/desprets/installcp4i/working/cp4i-apic-gw-gateway.pem</font>
+<font color="#26A269">Customise APIC</font>
+<font color="#26A269">Start customisation API Connect</font>
+<font color="#5E5C64">CMD: APIC_APIKEY: </font>
+<font color="#5E5C64">CMD: access_token: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjU2QzQ4M0Q2ODgxNTYwNkEzQzM5MzI0RTRDODgwQTNEQkJFMjdENUIifQ.eyJqdGkiOiI0ZDEzNmU1Yy02MWQxLTRkMGItOGFhYS01ZjYwODA1OWI3ODkiLCJuYW1lc3BhY2UiOiI0NzRjZTIwMi1mNjI0LTRlMzctOTE4OS05MzBiMDJlOTY5ZDM6NGE5MWI5ODEtOWViYi00YWJhLTlhNTYtMDY3ZjhlNWM3NDVhOjVkNGM3N2Y4LTAzZjEtNDc4NS1iYTA5LWMyM2FiZTVmZjNlZCIsImF1ZCI6Ii9hcGkvY2xvdWQvcmVnaXN0cmF0aW9ucy9lNTEyMzYzYy03ZWExLTQ5MjAtYjI2NC02MGYyMjBmOGMyYzYiLCJzdWIiOiIvYXBpL3VzZXItcmVnaXN0cmllcy80NzRjZTIwMi1mNjI0LTRlMzctOTE4OS05MzBiMDJlOTY5ZDMvNGE5MWI5ODEtOWViYi00YWJhLTlhNTYtMDY3ZjhlNWM3NDVhL3VzZXJzLzVkNGM3N2Y4LTAzZjEtNDc4NS1iYTA5LWMyM2FiZTVmZjNlZCIsImlzcyI6IklCTSBBUEkgQ29ubmVjdCIsImV4cCI6MTcwNzIzNTAyMiwiaWF0IjoxNzA3MjA2MjIyLCJncmFudF90eXBlIjoicGFzc3dvcmQiLCJyZWZyZXNoX3Rva2VuIjoiNGZhZWViNzMtNGI5MS00MjNiLTk1MTQtYzNlMjAyMWMxY2RlIiwidXNlcl9yZWdpc3RyeV91cmwiOiIvYXBpL3VzZXItcmVnaXN0cmllcy80NzRjZTIwMi1mNjI0LTRlMzctOTE4OS05MzBiMDJlOTY5ZDMvNGE5MWI5ODEtOWViYi00YWJhLTlhNTYtMDY3ZjhlNWM3NDVhIiwicmVhbG0iOiJhZG1pbi9kZWZhdWx0LWlkcC0xIiwidXNlcm5hbWUiOiJhZG1pbiIsImlkX3Rva2VuIjoiZXlKaGJHY2lPaUpTVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0lzSW10cFpDSTZJamhHTjBVMFFrWTVOalF4TnpsRU5rSkJORFV4TnpRNU1qQXdPVUUwUmpnd1F6YzBOMFUzUmtRaWZRLmV5Sm1hWEp6ZEY5dVlXMWxJam9pUTJ4dmRXUWlMQ0pzWVhOMFgyNWhiV1VpT2lKUGQyNWxjaUlzSW5WelpYSnVZVzFsSWpvaVlXUnRhVzRpTENKbGJXRnBiQ0k2SW1Ga2JXbHVRR0Z3YVdOdmJtNWxZM1F1Ym1WMElpd2lhV0YwSWpveE56QTNNakEyTWpJeWZRLlpYMW1OaUJ2Y3NVMWNaSk1fNHU2aE9ZdkFVUzcxZXktdHVmYUVYbmVRTEp1TkZxNVhwZ2FGQzNQNVNuNU8tajU1WGtXb1IxMjlXQUd0YjBFSzdXcHV1VU1kOHhFTDNtMUVLY2twbkhOQ0FpYzdiazBZeW43UWliRGR1c0dHN2ZQekQ1WTFybENZU2hacldNVVp4U2hxekRETnJ0dG54eC1XZlA0clVydXpOU0FvN2hhUXFrUDIyWG1kN2Y0NTl1U3hqbHJPTjFnc2VOYjVsRjBxblBITGdoeHFETmNQYnZXbTFUUnhtUnphck9QMTlSN0pKSGM4Q0hja2NzLV95MVF5Rzk2aW9yaXNVcUN4NV90WFN0MTRpMDByMzZfejRxMHY0OUZjUU1EcEN1T0o3cUVhSkxsdkZOUDhfRzdPdm5IdzdOdFVnQjN2TUY2a0QtT3p0SnNXQSIsInNjb3BlcyI6WyJjbG91ZDp2aWV3IiwiY2xvdWQ6bWFuYWdlIiwicHJvdmlkZXItb3JnOnZpZXciLCJwcm92aWRlci1vcmc6bWFuYWdlIiwib3JnOnZpZXciLCJvcmc6bWFuYWdlIiwicHJvZHVjdC1kcmFmdHM6dmlldyIsInByb2R1Y3QtZHJhZnRzOmVkaXQiLCJhcGktZHJhZnRzOnZpZXciLCJhcGktZHJhZnRzOmVkaXQiLCJjaGlsZDp2aWV3IiwiY2hpbGQ6Y3JlYXRlIiwiY2hpbGQ6bWFuYWdlIiwicHJvZHVjdDp2aWV3IiwicHJvZHVjdDpzdGFnZSIsInByb2R1Y3Q6bWFuYWdlIiwiYXBwcm92YWw6dmlldyIsImFwcHJvdmFsOm1hbmFnZSIsImFwaS1hbmFseXRpY3M6dmlldyIsImFwaS1hbmFseXRpY3M6bWFuYWdlIiwiY29uc3VtZXItb3JnOnZpZXciLCJjb25zdW1lci1vcmc6bWFuYWdlIiwiYXBwOnZpZXc6YWxsIiwiYXBwOm1hbmFnZTphbGwiLCJteTp2aWV3IiwibXk6bWFuYWdlIiwid2ViaG9vazp2aWV3Il19.y4lhT49JIhKyePCldYeDM071NHNxg7QL2attqLGHP9GuB0cUFzNnj8Tu8VIHWEQO_FOFKfPPMhadu3lsN3hicwc6zf4e5sj_VQvpikk0RrVExq7EgGn1ZeOn9U88rJSV1EPt8izuxzXE2Hl6OYfFNEVGi36n0oFVmMH8qJ0D77CxJbIh-VWNzZUw5rmEuR8HWFE2nA9lTFZ95h4N7xYH6MpQhaaJoAFkPsikYfj-6pYM-3VgIY54RfRZwz2H8KzuEQp_j0kU0qM3tHz6wij4jEG8WOC-ZUt-E1F0t--pS4NP8krikDy0dEADfAeiRa-jV78O1AHlUd00xS0T6nlFXA</font>
+<font color="#26A269">Downloading apic config json file</font>
+<font color="#F66151">cp4i-apic-mgmt-platform-api-cp4i.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud: creds.json</font>
+<font color="#5E5C64">CMD: Interact with Cloud Manager: curl -sk &quot;https://cp4i-apic-mgmt-platform-api-cp4i.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/api/orgs/admin/tls-server-profiles&quot;  -H &quot;Authorization: Bearer &lt;access_token&gt;&quot;  -H &apos;Accept: application/json&apos;</font>
+<font color="#26A269">Creating org1owner owner of the Org1 organisation</font>
+<font color="#12488B">mar. 06 févr. 2024 08:57:05 CET Creating Org1 organisation</font>
+<font color="#5E5C64">CMD: amToken: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjU2QzQ4M0Q2ODgxNTYwNkEzQzM5MzI0RTRDODgwQTNEQkJFMjdENUIifQ.eyJqdGkiOiJmZGJkMDk2OC03MTVhLTQyMzQtOGU2Zi1hMzc3NmFkZWIyNjMiLCJuYW1lc3BhY2UiOiI0NzRjZTIwMi1mNjI0LTRlMzctOTE4OS05MzBiMDJlOTY5ZDM6ODc2ZjU1ZjUtNjhhOS00Yjc1LWE1NmItYTY0ZWUyZWZkYTAyOjkxMjNiNDQzLWYxYTktNDAxMi04ODkwLTE3YzMwMDIxNTM1NCIsImF1ZCI6Ii9hcGkvY2xvdWQvcmVnaXN0cmF0aW9ucy9lNTEyMzYzYy03ZWExLTQ5MjAtYjI2NC02MGYyMjBmOGMyYzYiLCJzdWIiOiIvYXBpL3VzZXItcmVnaXN0cmllcy80NzRjZTIwMi1mNjI0LTRlMzctOTE4OS05MzBiMDJlOTY5ZDMvODc2ZjU1ZjUtNjhhOS00Yjc1LWE1NmItYTY0ZWUyZWZkYTAyL3VzZXJzLzkxMjNiNDQzLWYxYTktNDAxMi04ODkwLTE3YzMwMDIxNTM1NCIsImlzcyI6IklCTSBBUEkgQ29ubmVjdCIsImV4cCI6MTcwNzIzNTAzMSwiaWF0IjoxNzA3MjA2MjMxLCJncmFudF90eXBlIjoicGFzc3dvcmQiLCJyZWZyZXNoX3Rva2VuIjoiMDQxYzBkYTQtNmUyMS00NGE2LThlMzAtOGQxNjc2MTJjNGY4IiwidXNlcl9yZWdpc3RyeV91cmwiOiIvYXBpL3VzZXItcmVnaXN0cmllcy80NzRjZTIwMi1mNjI0LTRlMzctOTE4OS05MzBiMDJlOTY5ZDMvODc2ZjU1ZjUtNjhhOS00Yjc1LWE1NmItYTY0ZWUyZWZkYTAyIiwicmVhbG0iOiJwcm92aWRlci9kZWZhdWx0LWlkcC0yIiwidXNlcm5hbWUiOiJvcmcxb3duZXIiLCJpZF90b2tlbiI6ImV5SmhiR2NpT2lKU1V6STFOaUlzSW5SNWNDSTZJa3BYVkNJc0ltdHBaQ0k2SWpoR04wVTBRa1k1TmpReE56bEVOa0pCTkRVeE56UTVNakF3T1VFMFJqZ3dRemMwTjBVM1JrUWlmUS5leUptYVhKemRGOXVZVzFsSWpvaWIzSm5NVzkzYm1WeUlpd2liR0Z6ZEY5dVlXMWxJam9pYjNKbk1XOTNibVZ5SWl3aWRYTmxjbTVoYldVaU9pSnZjbWN4YjNkdVpYSWlMQ0psYldGcGJDSTZJbTl5WnpGdmQyNWxja0JtY2k1cFltMHVZMjl0SWl3aWFXRjBJam94TnpBM01qQTJNak14ZlEuRVNsQ1hKcUhXUEhqeWJWd3lzbzNiYkM4M2lybEU2ZlFrUGprYkVmQVNtWTlnV0tROU9zdkNzYUUxRHFZSnBHN1N2dDhuZWtvUWNJb3VhUEZVZFBjMDhFeERWTU5GbHhsUFd2M1Jxa2l0MVFYb1hqemRtODBkelhJa3lNc1VLdHhhSW1oU2RtakctaU05aUItUktNbmZFek1RcU1tX2dBdzU0aVlHTXRpT0ZvT1laRmNWcFM4V2xyanFiUUVQbkcxcnUwbWo1TTdwLWctRFFBcmNkeVNiLXZ2NElpYVpKSW9rampNYk9RZ1lIaE13dmdrZ3lkMkwyNjZJZDlrbk1sdllsOHBJNk55M3YzSUE4X3UwUGlMNEZlTVpwZFRqZnE4WTRkLVFORHBpamFfTkQ0M25rWjBRNzB2YVZoVkRtdFdQa3Jua1Z5YnhKd0E0NG1TR3NCd1VBIiwic2NvcGVzIjpbImNsb3VkOnZpZXciLCJjbG91ZDptYW5hZ2UiLCJwcm92aWRlci1vcmc6dmlldyIsInByb3ZpZGVyLW9yZzptYW5hZ2UiLCJvcmc6dmlldyIsIm9yZzptYW5hZ2UiLCJwcm9kdWN0LWRyYWZ0czp2aWV3IiwicHJvZHVjdC1kcmFmdHM6ZWRpdCIsImFwaS1kcmFmdHM6dmlldyIsImFwaS1kcmFmdHM6ZWRpdCIsImNoaWxkOnZpZXciLCJjaGlsZDpjcmVhdGUiLCJjaGlsZDptYW5hZ2UiLCJwcm9kdWN0OnZpZXciLCJwcm9kdWN0OnN0YWdlIiwicHJvZHVjdDptYW5hZ2UiLCJhcHByb3ZhbDp2aWV3IiwiYXBwcm92YWw6bWFuYWdlIiwiYXBpLWFuYWx5dGljczp2aWV3IiwiYXBpLWFuYWx5dGljczptYW5hZ2UiLCJjb25zdW1lci1vcmc6dmlldyIsImNvbnN1bWVyLW9yZzptYW5hZ2UiLCJhcHA6dmlldzphbGwiLCJhcHA6bWFuYWdlOmFsbCIsIm15OnZpZXciLCJteTptYW5hZ2UiLCJ3ZWJob29rOnZpZXciXX0.fNZlB-mdToi4JCK3Vcg9kvkSPyB1Wu9UoqJXD4n6tZCn8TIvCj_uBQ8BJ9X2dAQ1tL5RxNo0w-aZ13-GAwQHwemLGq6He0YeRgVhNcFOGiZeWAylvOecLrIEhwaGxBQjsi8t9x59NAY44TWo8HETLSQAFoCVDTAigawS_GdRtxvMi-gfyS14aef2TeD8KEZbJKoPAI7UF3dy3DMd6H4SQHc2TZs5nXVowKZLcHzeREpQzMpkRG9cIeQJltfHt-9Qx3PaAf_imNHFcUVCljwbudl646Ku2AS1IIty7IAdR7zBMTJ6n9OnUrjgxLpIhFQG0FNX5d5AzOsfFLlho7KOAA</font>
+<font color="#5E5C64">CMD: Interact with API Manager: curl -sk -X GET &quot;https://cp4i-apic-mgmt-platform-api-cp4i.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/api/orgs/org1/portal-services?fields=url&quot; -H &quot;Authorization: Bearer &lt;amToken&gt;&quot; -H &apos;accept: application/json&apos; -H &apos;content-type: application/json&apos; -H &apos;Connection: keep-alive&apos;</font>
+<font color="#12488B">mar. 06 févr. 2024 08:57:12 CET Creating Catalog: prod (Production) in org org1</font>
+<font color="#26A269">Sleeping 1</font>
+<font color="#26A269">Create the portal site in Drupal for: Production</font>
+<font color="#12488B">mar. 06 févr. 2024 08:57:22 CET Creating Catalog: uat (UAT) in org org1</font>
+<font color="#26A269">Sleeping 1</font>
+<font color="#26A269">Create the portal site in Drupal for: UAT</font>
+<font color="#12488B">mar. 06 févr. 2024 08:57:31 CET Creating Catalog: qa (Quality and Acceptance) in org org1</font>
+<font color="#26A269">Sleeping 1</font>
+<font color="#26A269">Create the portal site in Drupal for: Quality and Acceptance</font>
+<font color="#26A269">Load ping-api API as a draft</font>
+<font color="#26A269">{ &quot;type&quot;: &quot;draft_api&quot;, &quot;api_version&quot;: &quot;2.0.0&quot;, &quot;id&quot;: &quot;8b679184-d479-4f0b-b831-dc9df1019e70&quot;, &quot;name&quot;: &quot;ping-api&quot;, &quot;version&quot;: &quot;1.0.0&quot;, &quot;title&quot;: &quot;Ping API&quot;, &quot;enforced&quot;: true, &quot;api_type&quot;: &quot;rest&quot;, &quot;gateway_type&quot;: &quot;datapower-api-gateway&quot;, &quot;oai_version&quot;: &quot;openapi2&quot;, &quot;document_specification&quot;: &quot;openapi2&quot;, &quot;created_at&quot;: &quot;2024-02-06T07:57:41.880Z&quot;, &quot;updated_at&quot;: &quot;2024-02-06T07:57:41.880Z&quot;, &quot;org_url&quot;: &quot;https://cp4i-apic-mgmt-platform-api-cp4i.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/api/orgs/e69747b0-5327-44ed-b793-9e99316655b1&quot;, &quot;url&quot;: &quot;https://cp4i-apic-mgmt-platform-api-cp4i.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/api/orgs/e69747b0-5327-44ed-b793-9e99316655b1/drafts/draft-apis/8b679184-d479-4f0b-b831-dc9df1019e70&quot; }</font>
+<font color="#26A269">Load ibm-sample-order-api API as a draft</font>
+<font color="#26A269">{ &quot;type&quot;: &quot;draft_api&quot;, &quot;api_version&quot;: &quot;2.0.0&quot;, &quot;id&quot;: &quot;3b85f583-bf4d-438c-b851-395ae1d8e73e&quot;, &quot;name&quot;: &quot;ibm-sample-order-api&quot;, &quot;version&quot;: &quot;1.0.0&quot;, &quot;title&quot;: &quot;Order&quot;, &quot;enforced&quot;: true, &quot;api_type&quot;: &quot;rest&quot;, &quot;gateway_type&quot;: &quot;datapower-api-gateway&quot;, &quot;oai_version&quot;: &quot;openapi2&quot;, &quot;document_specification&quot;: &quot;openapi2&quot;, &quot;created_at&quot;: &quot;2024-02-06T07:57:42.396Z&quot;, &quot;updated_at&quot;: &quot;2024-02-06T07:57:42.396Z&quot;, &quot;org_url&quot;: &quot;https://cp4i-apic-mgmt-platform-api-cp4i.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/api/orgs/e69747b0-5327-44ed-b793-9e99316655b1&quot;, &quot;url&quot;: &quot;https://cp4i-apic-mgmt-platform-api-cp4i.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/api/orgs/e69747b0-5327-44ed-b793-9e99316655b1/drafts/draft-apis/3b85f583-bf4d-438c-b851-395ae1d8e73e&quot; }</font>
+<font color="#26A269">Load stock API as a draft</font>
+<font color="#26A269">{ &quot;type&quot;: &quot;draft_api&quot;, &quot;api_version&quot;: &quot;2.0.0&quot;, &quot;id&quot;: &quot;dd7eb45c-c3c5-4c9d-a318-9f15fcea9621&quot;, &quot;name&quot;: &quot;stock&quot;, &quot;version&quot;: &quot;1.0.0&quot;, &quot;title&quot;: &quot;Stock&quot;, &quot;enforced&quot;: true, &quot;api_type&quot;: &quot;rest&quot;, &quot;gateway_type&quot;: &quot;datapower-api-gateway&quot;, &quot;oai_version&quot;: &quot;openapi2&quot;, &quot;document_specification&quot;: &quot;openapi2&quot;, &quot;created_at&quot;: &quot;2024-02-06T07:57:43.133Z&quot;, &quot;updated_at&quot;: &quot;2024-02-06T07:57:43.133Z&quot;, &quot;org_url&quot;: &quot;https://cp4i-apic-mgmt-platform-api-cp4i.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/api/orgs/e69747b0-5327-44ed-b793-9e99316655b1&quot;, &quot;url&quot;: &quot;https://cp4i-apic-mgmt-platform-api-cp4i.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/api/orgs/e69747b0-5327-44ed-b793-9e99316655b1/drafts/draft-apis/dd7eb45c-c3c5-4c9d-a318-9f15fcea9621&quot; }</font>
+<font color="#26A269">Load fakeauthenticationurl API as a draft</font>
+<font color="#26A269">{ &quot;type&quot;: &quot;draft_api&quot;, &quot;api_version&quot;: &quot;2.0.0&quot;, &quot;id&quot;: &quot;acd29025-d842-4a05-9153-019c4cca2439&quot;, &quot;name&quot;: &quot;fakeauthenticationurl&quot;, &quot;version&quot;: &quot;1.0.0&quot;, &quot;title&quot;: &quot;FakeAuthenticationURL&quot;, &quot;enforced&quot;: true, &quot;api_type&quot;: &quot;rest&quot;, &quot;gateway_type&quot;: &quot;datapower-api-gateway&quot;, &quot;oai_version&quot;: &quot;openapi2&quot;, &quot;document_specification&quot;: &quot;openapi2&quot;, &quot;created_at&quot;: &quot;2024-02-06T07:57:43.622Z&quot;, &quot;updated_at&quot;: &quot;2024-02-06T07:57:43.622Z&quot;, &quot;org_url&quot;: &quot;https://cp4i-apic-mgmt-platform-api-cp4i.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/api/orgs/e69747b0-5327-44ed-b793-9e99316655b1&quot;, &quot;url&quot;: &quot;https://cp4i-apic-mgmt-platform-api-cp4i.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/api/orgs/e69747b0-5327-44ed-b793-9e99316655b1/drafts/draft-apis/acd29025-d842-4a05-9153-019c4cca2439&quot; }</font>
+<font color="#26A269">Load takeoff API as a draft</font>
+<font color="#26A269">{&quot;status&quot;:400,&quot;message&quot;:[&quot;If the API&apos;s \&quot;x-ibm-configuration.gateway\&quot; property is set, and the query parameter &apos;gateway_type &apos; is also sent; the values must match.&quot;]}</font>
+<font color="#26A269">Load landings API as a draft</font>
+<font color="#26A269">{&quot;status&quot;:400,&quot;message&quot;:[&quot;If the API&apos;s \&quot;x-ibm-configuration.gateway\&quot; property is set, and the query parameter &apos;gateway_type &apos; is also sent; the values must match.&quot;]}</font>
+<font color="#26A269">Load taxi-locator API as a draft</font>
+<font color="#26A269">{ &quot;type&quot;: &quot;draft_api&quot;, &quot;api_version&quot;: &quot;2.0.0&quot;, &quot;id&quot;: &quot;517fa2a0-4b68-43d4-9295-a384ecba3e7c&quot;, &quot;name&quot;: &quot;taxi-locator&quot;, &quot;version&quot;: &quot;1.0.0&quot;, &quot;title&quot;: &quot;Taxi locator&quot;, &quot;enforced&quot;: true, &quot;api_type&quot;: &quot;rest&quot;, &quot;gateway_type&quot;: &quot;datapower-api-gateway&quot;, &quot;oai_version&quot;: &quot;openapi3&quot;, &quot;document_specification&quot;: &quot;openapi3&quot;, &quot;created_at&quot;: &quot;2024-02-06T07:57:45.129Z&quot;, &quot;updated_at&quot;: &quot;2024-02-06T07:57:45.129Z&quot;, &quot;org_url&quot;: &quot;https://cp4i-apic-mgmt-platform-api-cp4i.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/api/orgs/e69747b0-5327-44ed-b793-9e99316655b1&quot;, &quot;url&quot;: &quot;https://cp4i-apic-mgmt-platform-api-cp4i.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/api/orgs/e69747b0-5327-44ed-b793-9e99316655b1/drafts/draft-apis/517fa2a0-4b68-43d4-9295-a384ecba3e7c&quot; }</font>
+<font color="#26A269">Load taxi-messaging API as a draft</font>
+<font color="#26A269">{ &quot;type&quot;: &quot;draft_api&quot;, &quot;api_version&quot;: &quot;2.0.0&quot;, &quot;id&quot;: &quot;1050e801-0a63-4b62-a797-ea75247eebdd&quot;, &quot;name&quot;: &quot;taxi-messaging&quot;, &quot;version&quot;: &quot;1.0.0&quot;, &quot;title&quot;: &quot;Taxi messaging&quot;, &quot;enforced&quot;: true, &quot;api_type&quot;: &quot;rest&quot;, &quot;gateway_type&quot;: &quot;datapower-api-gateway&quot;, &quot;oai_version&quot;: &quot;openapi3&quot;, &quot;document_specification&quot;: &quot;openapi3&quot;, &quot;created_at&quot;: &quot;2024-02-06T07:57:45.664Z&quot;, &quot;updated_at&quot;: &quot;2024-02-06T07:57:45.664Z&quot;, &quot;org_url&quot;: &quot;https://cp4i-apic-mgmt-platform-api-cp4i.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/api/orgs/e69747b0-5327-44ed-b793-9e99316655b1&quot;, &quot;url&quot;: &quot;https://cp4i-apic-mgmt-platform-api-cp4i.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/api/orgs/e69747b0-5327-44ed-b793-9e99316655b1/drafts/draft-apis/1050e801-0a63-4b62-a797-ea75247eebdd&quot; }</font>
+<font color="#26A269">Start: mar. 06 févr. 2024 08:56:55 CET - end: mar. 06 févr. 2024 08:57:45 CET</font>
+<font color="#26A269">25 minutes and 29 seconds elapsed.</font>
+<font color="#26A269"><b>desprets@ubuntu</b></font>:<font color="#12488B"><b>~/installcp4i</b></font>$
+===============================================================================================================================
+./provision_cluster-v2.sh cp4i.properties ./versions/cp4i-2023.4.properties cp4i ad202341
+The provided arguments are: cp4i.properties ./versions/cp4i-2023.4.properties cp4i ad202341
+<font color="#26A269">user already logged to IBM Cloud.</font>
+<font color="#2AA1B3">Checking OpenShift: ad202341...</font><font color="#26A269">OK, cluster exists</font>
+<font color="#26A269">Checking Openshift cluster took: 3 seconds.</font>
+<font color="#2AA1B3">Checking Cluster state...</font><font color="#26A269">OK, normal-All Workers Normal</font>
+<font color="#26A269">Checking Cluster state took: 1 seconds.</font>
+<font color="#2AA1B3">Checking Cluster URL...</font><font color="#26A269">OK -&gt; https://c101-e.eu-de.containers.cloud.ibm.com:31392</font>
+<font color="#26A269">Checking Cluster availability took: 2 seconds.</font>
+<font color="#2AA1B3">Checking Ingress address...</font><font color="#26A269">OK, ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud</font>
+<font color="#26A269">Checking Ingress availability took 1 seconds to execute.</font>
+<font color="#26A269">user already logged to openshift cluster.</font>
+<font color="#F66151">clusterrole.rbac.authorization.k8s.io/self-provisioner added: &quot;IAM#arnauld.desprets@fr.ibm.com&quot;</font>
+<font color="#2AA1B3">Checking project cp4i...</font><font color="#26A269">OK</font>
+<font color="#2AA1B3">Checking project ibm-common-services...</font><font color="#26A269">OK</font>
+<font color="#2AA1B3">Checking project cert-manager-operator...</font><font color="#26A269">OK</font>
+<font color="#2AA1B3">Checking OperatorGroup cert-manager-operatorgroup in cert-manager-operator project...</font><font color="#5E5C64">CMD: oc -n cert-manager-operator get OperatorGroup cert-manager-operatorgroup</font>
+<font color="#F66151">operatorgroup.operators.coreos.com/operatorgroup unchanged</font>
+<font color="#2AA1B3">Checking project ibm-licensing...</font><font color="#26A269">OK</font>
+<font color="#2AA1B3">Checking OperatorGroup license-server-operatorgroup in ibm-licensing project...</font><font color="#5E5C64">CMD: oc -n ibm-licensing get OperatorGroup license-server-operatorgroup</font>
+<font color="#F66151">operatorgroup.operators.coreos.com/operatorgroup unchanged</font>
+<font color="#2AA1B3">Checking ibm-entitlement-key in cp4i...</font><font color="#26A269">OK</font>
+<font color="#2AA1B3">Checking ibm-entitlement-key in openshift-operators...</font><font color="#26A269">OK</font>
+<font color="#26A269">==== Installing foundational services (Cert Manager, Licensing Server and Common Services).</font>
+<font color="#26A269">==== Redhat Cert Manager catalog.</font>
+<font color="#5E5C64">CMD: create_catalogsource &quot;openshift-marketplace&quot; &quot;redhat-operators&quot; &quot;Red Hat Operators&quot; &quot;registry.redhat.io/redhat/redhat-operator-index:v4.12&quot; &quot;Red Hat&quot; &quot;10m&quot;</font>
+<font color="#26A269">Custom Resource redhat-operators exists in ns openshift-marketplace and is newer than file /home/desprets/installcp4i/templates/resources/catalog_source.yaml</font>
+<font color="#5E5C64">CMD: create_operator_subscription &quot;openshift-cert-manager-operator&quot; &quot;stable-v1.12&quot; &quot;redhat-operators&quot; &quot;cert-manager-operator&quot; &quot;Automatic&quot; &quot;1&quot; &quot;cert-manager-operator.v1.12.1&quot;</font>
+<font color="#2AA1B3">Checking Subscription openshift-cert-manager-operator in cert-manager-operator project...</font><font color="#5E5C64">CMD: oc -n cert-manager-operator get Subscription openshift-cert-manager-operator</font>
+<font color="#26A269">OK</font>
+<font color="#26A269">Custom Resource openshift-cert-manager-operator is newer than file /home/desprets/installcp4i/templates/operators/subscription.yaml</font>
+<font color="#5E5C64">CMD: wait_for_state ClusterServiceVersion cert-manager-operator.v1.12.1 {.status.phase} is Succeeded | Succeeded | oc -n cert-manager-operator get ClusterServiceVersion cert-manager-operator.v1.12.1 -o jsonpath={.status.phase}</font>
+<font color="#2AA1B3">Checking ClusterServiceVersion cert-manager-operator.v1.12.1 {.status.phase} is Succeeded...</font><font color="#26A269">OK, Succeeded</font>
+<font color="#26A269">Creation of openshift-cert-manager-operator operator took 3 seconds to execute.</font>
+<font color="#26A269">==== IBM License Server.</font>
+<font color="#26A269">case ibm-licensing 4.2.2 already downloaded</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ibm-licensing-catalog unchanged</font>
+<font color="#26A269">Adding case ibm-licensing took 2 seconds to execute.</font>
+<font color="#5E5C64">CMD: create_catalogsource &quot;openshift-marketplace&quot; &quot;ibm-licensing-catalog&quot; &quot;ibm-licensing&quot; &quot;icr.io/cpopen/ibm-licensing-catalog&quot; &quot;IBM&quot; &quot;45m&quot;</font>
+<font color="#26A269">Custom Resource ibm-licensing-catalog exists in ns openshift-marketplace and is newer than file /home/desprets/installcp4i/templates/resources/catalog_source.yaml</font>
+<font color="#5E5C64">CMD: create_operator_subscription &quot;ibm-licensing-operator-app&quot; &quot;v4.2&quot; &quot;ibm-licensing-catalog&quot; &quot;ibm-licensing&quot; &quot;Automatic&quot; &quot;1&quot; &quot;ibm-licensing-operator.v4.2.2&quot;</font>
+<font color="#2AA1B3">Checking Subscription ibm-licensing-operator-app in ibm-licensing project...</font><font color="#5E5C64">CMD: oc -n ibm-licensing get Subscription ibm-licensing-operator-app</font>
+<font color="#26A269">OK</font>
+<font color="#26A269">Custom Resource ibm-licensing-operator-app is newer than file /home/desprets/installcp4i/templates/operators/subscription.yaml</font>
+<font color="#5E5C64">CMD: wait_for_state ClusterServiceVersion ibm-licensing-operator.v4.2.2 {.status.phase} is Succeeded | Succeeded | oc -n ibm-licensing get ClusterServiceVersion ibm-licensing-operator.v4.2.2 -o jsonpath={.status.phase}</font>
+<font color="#2AA1B3">Checking ClusterServiceVersion ibm-licensing-operator.v4.2.2 {.status.phase} is Succeeded...</font><font color="#26A269">OK, Succeeded</font>
+<font color="#26A269">Creation of ibm-licensing-operator-app operator took 2 seconds to execute.</font>
+<font color="#26A269">==== IBM Common Services.</font>
+<font color="#26A269">newer version of case ibm-cp-common-services is available. Current version=4.3.1. Latest version=4.4.0</font>
+<font color="#26A269">case ibm-cp-common-services 4.3.1 already downloaded</font>
+<font color="#F66151">catalogsource.operators.coreos.com/cloud-native-postgresql-catalog unchanged</font>
+<font color="#F66151">catalogsource.operators.coreos.com/opencloud-operators unchanged</font>
+<font color="#26A269">Adding case ibm-cp-common-services took 2 seconds to execute.</font>
+<font color="#5E5C64">CMD: create_catalogsource &quot;openshift-marketplace&quot; &quot;opencloud-operators&quot; &quot;IBMCS Operators&quot; &quot;icr.io/cpopen/ibm-common-service-catalog:4.3&quot; &quot;IBM&quot; &quot;45m&quot;</font>
+<font color="#26A269">Custom Resource opencloud-operators exists in ns openshift-marketplace and is newer than file /home/desprets/installcp4i/templates/resources/catalog_source.yaml</font>
+<font color="#5E5C64">CMD: create_operator_subscription &quot;ibm-common-service-operator&quot; &quot;v4.3&quot; &quot;opencloud-operators&quot; &quot;openshift-operators&quot; &quot;Automatic&quot; &quot;1&quot; &quot;ibm-common-service-operator.v4.3.1&quot;</font>
+<font color="#2AA1B3">Checking Subscription ibm-common-service-operator in openshift-operators project...</font><font color="#5E5C64">CMD: oc -n openshift-operators get Subscription ibm-common-service-operator</font>
+<font color="#26A269">OK</font>
+<font color="#26A269">Custom Resource ibm-common-service-operator is newer than file /home/desprets/installcp4i/templates/operators/subscription.yaml</font>
+<font color="#5E5C64">CMD: wait_for_state ClusterServiceVersion ibm-common-service-operator.v4.3.1 {.status.phase} is Succeeded | Succeeded | oc -n openshift-operators get ClusterServiceVersion ibm-common-service-operator.v4.3.1 -o jsonpath={.status.phase}</font>
+<font color="#2AA1B3">Checking ClusterServiceVersion ibm-common-service-operator.v4.3.1 {.status.phase} is Succeeded...</font><font color="#26A269">OK, Succeeded</font>
+<font color="#26A269">Creation of ibm-common-service-operator operator took 1 seconds to execute.</font>
+<font color="#5E5C64">CMD: oc -n openshift-operators get commonservice common-service -o jsonpath=&apos;{.spec.license.accept}&apos;</font>
+<font color="#5E5C64">CMD: accept=true</font>
+<font color="#26A269">license already accepted.</font>
+<font color="#5E5C64">CMD: check_create_oc_yaml &quot;CommonService&quot; &quot;common-service&quot; &quot;/home/desprets/installcp4i/templates/resources/foundational-services-cr.yaml&quot; &quot;openshift-operators&quot;</font>
+<font color="#2AA1B3">Checking CommonService common-service in openshift-operators project...</font><font color="#5E5C64">CMD: oc -n openshift-operators get CommonService common-service</font>
+<font color="#26A269">OK</font>
+<font color="#26A269">Custom Resource common-service is newer than file /home/desprets/installcp4i/templates/resources/foundational-services-cr.yaml</font>
+<font color="#26A269">==== Installing OpenLdap.</font>
+<font color="#2AA1B3">Checking project ldap...</font><font color="#26A269">Creating project ldap</font>
+<font color="#F66151">Now using project &quot;ldap&quot; on server &quot;https://c101-e.eu-de.containers.cloud.ibm.com:31392&quot;.</font>
+
+<font color="#F66151">You can add applications to this project with the &apos;new-app&apos; command. For example, try:</font>
+
+<font color="#F66151">    oc new-app rails-postgresql-example</font>
+
+<font color="#F66151">to build a new example application in Ruby. Or use kubectl to deploy a simple Kubernetes application:</font>
+
+<font color="#F66151">    kubectl create deployment hello-node --image=registry.k8s.io/e2e-test-images/agnhost:2.43 -- /agnhost serve-hostname</font>
+
+<font color="#2AA1B3">Checking deployment openldap in ldap...Checking service openldap in ldap...</font><font color="#26A269">Creating LDAP server</font>
+<font color="#F66151">clusterrole.rbac.authorization.k8s.io/system:openshift:scc:anyuid added: &quot;system:serviceaccounts:ldap&quot;</font>
+<font color="#F66151">--&gt; Found container image 31d1d6e (2 years old) from Docker Hub for &quot;osixia/openldap&quot;</font>
+
+<font color="#F66151">    * An image stream tag will be created as &quot;openldap:latest&quot; that will track this image</font>
+
+<font color="#F66151">--&gt; Creating resources ...</font>
+<font color="#F66151">    imagestream.image.openshift.io &quot;openldap&quot; created</font>
+<font color="#F66151">    deployment.apps &quot;openldap&quot; created</font>
+<font color="#F66151">    service &quot;openldap&quot; created</font>
+<font color="#F66151">--&gt; Success</font>
+<font color="#F66151">    WARNING: No container image registry has been configured with the server. Automatic builds and deployments may not function.</font>
+<font color="#F66151">    Application is not exposed. You can expose services to the outside world by executing one or more of the commands below:</font>
+<font color="#F66151">     &apos;oc expose service/openldap&apos; </font>
+<font color="#F66151">    Run &apos;oc status&apos; to view your app.</font>
+<font color="#F66151">deployment.apps/openldap patched</font>
+<font color="#F66151">service/openldap patched</font>
+<font color="#F66151">Error from server (Conflict): Operation cannot be fulfilled on services &quot;openldap&quot;: the object has been modified; please apply your changes to the latest version and try again</font>
+<font color="#F66151">persistentvolumeclaim/pvc-ldap-main created</font>
+<font color="#F66151">persistentvolumeclaim/pvc-ldap-config created</font>
+<font color="#2AA1B3">Checking pvc pvc-ldap-config status.phase is Bound...</font><font color="#A2734C">NO</font>
+<font color="#12488B">mar. 06 févr. 2024 09:15:45 CET Pending</font>
+<font color="#26A269">OK, Bound</font>
+<font color="#2AA1B3">Checking pvc pvc-ldap-main status.phase is Bound...</font><font color="#26A269">OK, Bound</font>
+<font color="#F66151">route.route.openshift.io/openldap-external exposed</font>
+<font color="#F66151">Error from server (AlreadyExists): routes.route.openshift.io &quot;openldap-external&quot; already exists</font>
+<font color="#26A269">Adding LDAP entries with following command: </font>
+<font color="#26A269">ldapadd -H ldap://openldap-external-ldap.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud:30450 -x -D &quot;cn=admin,dc=ibm,dc=com&quot; -w &quot;uLgH75o@At+9?zY0RBB&quot; -f /home/desprets/installcp4i/working/ldap-users.ldif</font>
+<font color="#F66151">ldap_sasl_bind(SIMPLE): Can&apos;t contact LDAP server (-1)</font>
+<font color="#26A269">You can search entries with the following command: </font>
+<font color="#26A269">ldapsearch -H ldap://openldap-external-ldap.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud:30450 -x -D &quot;cn=admin,dc=ibm,dc=com&quot; -w &quot;uLgH75o@At+9?zY0RBB&quot; -b &quot;dc=ibm,dc=com&quot; -s sub -a always -z 1000 &quot;(objectClass=*)&quot;</font>
+<font color="#26A269">==== Installing Navigator.</font>
+<font color="#26A269">case ibm-integration-platform-navigator 7.2.1 already downloaded</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ibm-integration-platform-navigator-catalog unchanged</font>
+<font color="#26A269">Adding case ibm-integration-platform-navigator took 2 seconds to execute.</font>
+<font color="#2AA1B3">Checking Subscription ibm-integration-platform-navigator in openshift-operators project...</font><font color="#5E5C64">CMD: oc -n openshift-operators get Subscription ibm-integration-platform-navigator</font>
+<font color="#26A269">OK</font>
+<font color="#26A269">Custom Resource ibm-integration-platform-navigator is newer than file /home/desprets/installcp4i/templates/operators/subscription.yaml</font>
+<font color="#5E5C64">CMD: wait_for_state ClusterServiceVersion ibm-integration-platform-navigator.v7.2.1 {.status.phase} is Succeeded | Succeeded | oc -n openshift-operators get ClusterServiceVersion ibm-integration-platform-navigator.v7.2.1 -o jsonpath={.status.phase}</font>
+<font color="#2AA1B3">Checking ClusterServiceVersion ibm-integration-platform-navigator.v7.2.1 {.status.phase} is Succeeded...</font><font color="#26A269">OK, Succeeded</font>
+<font color="#26A269">Creation of ibm-integration-platform-navigator operator took 2 seconds to execute.</font>
+<font color="#2AA1B3">Checking PlatformNavigator cp4i-navigator in cp4i project...</font><font color="#5E5C64">CMD: oc -n cp4i get PlatformNavigator cp4i-navigator</font>
+<font color="#26A269">OK</font>
+<font color="#26A269">Custom Resource cp4i-navigator is newer than file /home/desprets/installcp4i/templates/operands/Navigator-Capability.yaml</font>
+<font color="#5E5C64">CMD: wait_for_state | PlatformNavigator cp4i-navigator {.status.conditions[0].type} is Ready | Ready | oc -n cp4i get PlatformNavigator cp4i-navigator -o jsonpath={.status.conditions[0].type}</font>
+<font color="#2AA1B3">Checking PlatformNavigator cp4i-navigator {.status.conditions[0].type} is Ready...</font><font color="#26A269">OK, Ready</font>
+<font color="#26A269">Creation of PlatformNavigator instance took 2 seconds to execute.</font>
+<font color="#26A269">==== Installing Asset Repository.</font>
+<font color="#26A269">case ibm-integration-asset-repository 1.6.1 already downloaded</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ibm-integration-asset-repository-catalog unchanged</font>
+<font color="#26A269">Adding case ibm-integration-asset-repository took 2 seconds to execute.</font>
+<font color="#2AA1B3">Checking Subscription ibm-integration-asset-repository in openshift-operators project...</font><font color="#5E5C64">CMD: oc -n openshift-operators get Subscription ibm-integration-asset-repository</font>
+<font color="#26A269">OK</font>
+<font color="#26A269">Custom Resource ibm-integration-asset-repository is newer than file /home/desprets/installcp4i/templates/operators/subscription.yaml</font>
+<font color="#5E5C64">CMD: wait_for_state ClusterServiceVersion ibm-integration-asset-repository.v1.6.1 {.status.phase} is Succeeded | Succeeded | oc -n openshift-operators get ClusterServiceVersion ibm-integration-asset-repository.v1.6.1 -o jsonpath={.status.phase}</font>
+<font color="#2AA1B3">Checking ClusterServiceVersion ibm-integration-asset-repository.v1.6.1 {.status.phase} is Succeeded...</font><font color="#26A269">OK, Succeeded</font>
+<font color="#26A269">Creation of ibm-integration-asset-repository operator took 2 seconds to execute.</font>
+<font color="#2AA1B3">Checking AssetRepository cp4i-ar in cp4i project...</font><font color="#5E5C64">CMD: oc -n cp4i get AssetRepository cp4i-ar</font>
+<font color="#26A269">OK</font>
+<font color="#26A269">Custom Resource cp4i-ar is newer than file /home/desprets/installcp4i/templates/operands/AR-Capability.yaml</font>
+<font color="#5E5C64">CMD: wait_for_state | AssetRepository cp4i-ar {.status.phase} is Ready | Ready | oc -n cp4i get AssetRepository cp4i-ar -o jsonpath={.status.phase}</font>
+<font color="#2AA1B3">Checking AssetRepository cp4i-ar {.status.phase} is Ready...</font><font color="#26A269">OK, Ready</font>
+<font color="#26A269">Creation of AssetRepository instance took 1 seconds to execute.</font>
+<font color="#26A269">==== Installing ACE.</font>
+<font color="#26A269">case ibm-appconnect 11.2.0 already downloaded</font>
+<font color="#F66151">catalogsource.operators.coreos.com/appconnect-operator-catalogsource unchanged</font>
+<font color="#26A269">Adding case ibm-appconnect took 2 seconds to execute.</font>
+<font color="#5E5C64">CMD: create_operator_subscription &quot;ibm-appconnect&quot; &quot;v11.2&quot; &quot;appconnect-operator-catalogsource&quot; &quot;openshift-operators&quot; &quot;Automatic&quot; &quot;1&quot; &quot;ibm-appconnect.v11.2.0&quot;</font>
+<font color="#2AA1B3">Checking Subscription ibm-appconnect in openshift-operators project...</font><font color="#5E5C64">CMD: oc -n openshift-operators get Subscription ibm-appconnect</font>
+<font color="#26A269">OK</font>
+<font color="#26A269">Custom Resource ibm-appconnect is newer than file /home/desprets/installcp4i/templates/operators/subscription.yaml</font>
+<font color="#5E5C64">CMD: wait_for_state ClusterServiceVersion ibm-appconnect.v11.2.0 {.status.phase} is Succeeded | Succeeded | oc -n openshift-operators get ClusterServiceVersion ibm-appconnect.v11.2.0 -o jsonpath={.status.phase}</font>
+<font color="#2AA1B3">Checking ClusterServiceVersion ibm-appconnect.v11.2.0 {.status.phase} is Succeeded...</font><font color="#26A269">OK, Succeeded</font>
+<font color="#26A269">Creation of ibm-appconnect operator took 1 seconds to execute.</font>
+<font color="#2AA1B3">Checking Dashboard cp4i-ace-db in cp4i project...</font><font color="#5E5C64">CMD: oc -n cp4i get Dashboard cp4i-ace-db</font>
+<font color="#26A269">OK</font>
+<font color="#26A269">Custom Resource cp4i-ace-db is newer than file /home/desprets/installcp4i/templates/operands/ACE-Dashboard-Capability.yaml</font>
+<font color="#5E5C64">CMD: wait_for_state | Dashboard cp4i-ace-db {.status.conditions[0].type} is Ready | Ready | oc -n cp4i get Dashboard cp4i-ace-db -o jsonpath={.status.conditions[0].type}</font>
+<font color="#2AA1B3">Checking Dashboard cp4i-ace-db {.status.conditions[0].type} is Ready...</font><font color="#26A269">OK, Ready</font>
+<font color="#26A269">Creation of Dashboard instance took 2 seconds to execute.</font>
+<font color="#2AA1B3">Checking DesignerAuthoring cp4i-ace-dg in cp4i project...</font><font color="#5E5C64">CMD: oc -n cp4i get DesignerAuthoring cp4i-ace-dg</font>
+<font color="#26A269">OK</font>
+<font color="#26A269">Custom Resource cp4i-ace-dg is newer than file /home/desprets/installcp4i/templates/operands/ACE-Designer-Capability.yaml</font>
+<font color="#5E5C64">CMD: wait_for_state | DesignerAuthoring cp4i-ace-dg {.status.conditions[0].type} is Ready | Ready | oc -n cp4i get DesignerAuthoring cp4i-ace-dg -o jsonpath={.status.conditions[0].type}</font>
+<font color="#2AA1B3">Checking DesignerAuthoring cp4i-ace-dg {.status.conditions[0].type} is Ready...</font><font color="#26A269">OK, Ready</font>
+<font color="#26A269">Creation of DesignerAuthoring instance took 1 seconds to execute.</font>
+<font color="#26A269">==== Installing APIC.</font>
+<font color="#26A269">case ibm-apiconnect 5.1.0 already downloaded</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ibm-apiconnect-catalog unchanged</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ibm-datapower-operator-catalog unchanged</font>
+<font color="#26A269">Adding case ibm-apiconnect took 3 seconds to execute.</font>
+<font color="#2AA1B3">Checking Subscription ibm-apiconnect in openshift-operators project...</font><font color="#5E5C64">CMD: oc -n openshift-operators get Subscription ibm-apiconnect</font>
+<font color="#26A269">OK</font>
+<font color="#26A269">Custom Resource ibm-apiconnect is newer than file /home/desprets/installcp4i/templates/operators/subscription.yaml</font>
+<font color="#5E5C64">CMD: wait_for_state ClusterServiceVersion ibm-apiconnect.v5.1.0 {.status.phase} is Succeeded | Succeeded | oc -n openshift-operators get ClusterServiceVersion ibm-apiconnect.v5.1.0 -o jsonpath={.status.phase}</font>
+<font color="#2AA1B3">Checking ClusterServiceVersion ibm-apiconnect.v5.1.0 {.status.phase} is Succeeded...</font><font color="#26A269">OK, Succeeded</font>
+<font color="#26A269">Creation of ibm-apiconnect operator took 1 seconds to execute.</font>
+<font color="#2AA1B3">Checking APIConnectCluster cp4i-apic in cp4i project...</font><font color="#5E5C64">CMD: oc -n cp4i get APIConnectCluster cp4i-apic</font>
+<font color="#26A269">OK</font>
+<font color="#26A269">Custom Resource cp4i-apic is newer than file /home/desprets/installcp4i/templates/operands/APIC-Capability.yaml</font>
+<font color="#5E5C64">CMD: wait_for_state | APIConnectCluster cp4i-apic {.status.phase} is Ready | Ready | oc -n cp4i get APIConnectCluster cp4i-apic -o jsonpath={.status.phase}</font>
+<font color="#2AA1B3">Checking APIConnectCluster cp4i-apic {.status.phase} is Ready...</font><font color="#26A269">OK, Ready</font>
+<font color="#26A269">Creation of APIConnectCluster instance took 1 seconds to execute.</font>
+<font color="#26A269">Save certificate cp4i-apic-ingress-ca to /home/desprets/installcp4i/working/cp4i-apic-ingress-ca.pem</font>
+<font color="#26A269">Save certificate cp4i-apic-gw-gateway to /home/desprets/installcp4i/working/cp4i-apic-gw-gateway.pem</font>
+<font color="#26A269">Customise APIC</font>
+<font color="#26A269">Start customisation API Connect</font>
+<font color="#5E5C64">CMD: APIC_APIKEY: </font>
+<font color="#5E5C64">CMD: access_token: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjU2QzQ4M0Q2ODgxNTYwNkEzQzM5MzI0RTRDODgwQTNEQkJFMjdENUIifQ.eyJqdGkiOiIzYjA1ZmY1MC1iZTlhLTRjODUtYTk5Yi00YjYxYWUzYzBhMDUiLCJuYW1lc3BhY2UiOiI0NzRjZTIwMi1mNjI0LTRlMzctOTE4OS05MzBiMDJlOTY5ZDM6NGE5MWI5ODEtOWViYi00YWJhLTlhNTYtMDY3ZjhlNWM3NDVhOjVkNGM3N2Y4LTAzZjEtNDc4NS1iYTA5LWMyM2FiZTVmZjNlZCIsImF1ZCI6Ii9hcGkvY2xvdWQvcmVnaXN0cmF0aW9ucy9lNTEyMzYzYy03ZWExLTQ5MjAtYjI2NC02MGYyMjBmOGMyYzYiLCJzdWIiOiIvYXBpL3VzZXItcmVnaXN0cmllcy80NzRjZTIwMi1mNjI0LTRlMzctOTE4OS05MzBiMDJlOTY5ZDMvNGE5MWI5ODEtOWViYi00YWJhLTlhNTYtMDY3ZjhlNWM3NDVhL3VzZXJzLzVkNGM3N2Y4LTAzZjEtNDc4NS1iYTA5LWMyM2FiZTVmZjNlZCIsImlzcyI6IklCTSBBUEkgQ29ubmVjdCIsImV4cCI6MTcwNzIzNjI2OSwiaWF0IjoxNzA3MjA3NDY5LCJncmFudF90eXBlIjoicGFzc3dvcmQiLCJyZWZyZXNoX3Rva2VuIjoiYjg4YzVjMGMtYzM4Yy00OTc4LThhNjUtNDMxZDY1MGM3OWE2IiwidXNlcl9yZWdpc3RyeV91cmwiOiIvYXBpL3VzZXItcmVnaXN0cmllcy80NzRjZTIwMi1mNjI0LTRlMzctOTE4OS05MzBiMDJlOTY5ZDMvNGE5MWI5ODEtOWViYi00YWJhLTlhNTYtMDY3ZjhlNWM3NDVhIiwicmVhbG0iOiJhZG1pbi9kZWZhdWx0LWlkcC0xIiwidXNlcm5hbWUiOiJhZG1pbiIsImlkX3Rva2VuIjoiZXlKaGJHY2lPaUpTVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0lzSW10cFpDSTZJamhHTjBVMFFrWTVOalF4TnpsRU5rSkJORFV4TnpRNU1qQXdPVUUwUmpnd1F6YzBOMFUzUmtRaWZRLmV5Sm1hWEp6ZEY5dVlXMWxJam9pUTJ4dmRXUWlMQ0pzWVhOMFgyNWhiV1VpT2lKUGQyNWxjaUlzSW5WelpYSnVZVzFsSWpvaVlXUnRhVzRpTENKbGJXRnBiQ0k2SW1Ga2JXbHVRR0Z3YVdOdmJtNWxZM1F1Ym1WMElpd2lhV0YwSWpveE56QTNNakEzTkRZNWZRLll3M3BXczhzd2hpT1o3ZU42TXVNcTJxS0I0UDdhR2htQVFBRTg1d1lUZlVmS05acW5ITUQ5U1BaR090bWVLSlhvMTV3Z1BUTEJmUnlHbENTaHdsZzFRdjltaUlpWWNFb0F4LTROLTA4bnJDc3Q0b3hvQ2V5cjBfeFU4NU5CM2YzS2l6VFpHaDF3ZFVoWWNHb0w0MFR3aTdpRWZzazRfVXBZbEFmTTZOTnlWWk1JSHMyTXBmLWlmaVpBYkJvTUMzM1BiVUhXY3VQZEljZ1JhV3NqWjlxYlNiVlN5SV92OW5mam9KdlBmWjFZVVdmN1dUWU1TZVVnR2JuZjVaVWdKVmw4clBCRTVKRVd4ZlVBZVVGdngxQ3RrQkJZbUU1WnY0R1BVZ0ZvT0FoRE5OQUt2Y2tRTFR2eENKdzRIUTNxazlVLWNEbjgwTEZfczJSQWVoUFZqeUxGZyIsInNjb3BlcyI6WyJjbG91ZDp2aWV3IiwiY2xvdWQ6bWFuYWdlIiwicHJvdmlkZXItb3JnOnZpZXciLCJwcm92aWRlci1vcmc6bWFuYWdlIiwib3JnOnZpZXciLCJvcmc6bWFuYWdlIiwicHJvZHVjdC1kcmFmdHM6dmlldyIsInByb2R1Y3QtZHJhZnRzOmVkaXQiLCJhcGktZHJhZnRzOnZpZXciLCJhcGktZHJhZnRzOmVkaXQiLCJjaGlsZDp2aWV3IiwiY2hpbGQ6Y3JlYXRlIiwiY2hpbGQ6bWFuYWdlIiwicHJvZHVjdDp2aWV3IiwicHJvZHVjdDpzdGFnZSIsInByb2R1Y3Q6bWFuYWdlIiwiYXBwcm92YWw6dmlldyIsImFwcHJvdmFsOm1hbmFnZSIsImFwaS1hbmFseXRpY3M6dmlldyIsImFwaS1hbmFseXRpY3M6bWFuYWdlIiwiY29uc3VtZXItb3JnOnZpZXciLCJjb25zdW1lci1vcmc6bWFuYWdlIiwiYXBwOnZpZXc6YWxsIiwiYXBwOm1hbmFnZTphbGwiLCJteTp2aWV3IiwibXk6bWFuYWdlIiwid2ViaG9vazp2aWV3Il19.yy_p27EUjkDOUDYQISCQPduUFJbYQrgypOygD_LBbySxu14IPeSr18yI5d293utZO4zj-vYMTn-G9iqrhm4yYMfla1UCTXAC1-hxx36CTqyq3jBsYM1bpDpt9ENKoz5ZwAVk3zEaBbFS8tg4UMmxn6PhnNOQLKK4FLokH4oZfEjlEO0rSA-prv37ZvjxAPxNVUFAji9eN8skLrXfm0zakSjlXcQ_gl-G3RwogntuLXqbPQ948CNbryxxxkQ_IdaLSOCBcqcSotwuqx6LpKerGeguTS-_5eGnPZBs9Sz0sCF176M4g9HbCdnTjJhTlW2ZLdOR-FHSIJfZ0oox0DXxzA</font>
+<font color="#26A269">Downloading apic config json file</font>
+<font color="#F66151">cp4i-apic-mgmt-platform-api-cp4i.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud: creds.json</font>
+<font color="#5E5C64">CMD: Interact with Cloud Manager: curl -sk &quot;https://cp4i-apic-mgmt-platform-api-cp4i.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/api/orgs/admin/tls-server-profiles&quot;  -H &quot;Authorization: Bearer &lt;access_token&gt;&quot;  -H &apos;Accept: application/json&apos;</font>
+<font color="#26A269">User org1owner already exists, use it.</font>
+<font color="#26A269">Org1 already exists, use it.</font>
+<font color="#5E5C64">CMD: amToken: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjU2QzQ4M0Q2ODgxNTYwNkEzQzM5MzI0RTRDODgwQTNEQkJFMjdENUIifQ.eyJqdGkiOiJiMzE2N2ExNS0zNTlkLTQ5MTUtODY1ZC00ODhhY2I2MWUwZjEiLCJuYW1lc3BhY2UiOiI0NzRjZTIwMi1mNjI0LTRlMzctOTE4OS05MzBiMDJlOTY5ZDM6ODc2ZjU1ZjUtNjhhOS00Yjc1LWE1NmItYTY0ZWUyZWZkYTAyOjkxMjNiNDQzLWYxYTktNDAxMi04ODkwLTE3YzMwMDIxNTM1NCIsImF1ZCI6Ii9hcGkvY2xvdWQvcmVnaXN0cmF0aW9ucy9lNTEyMzYzYy03ZWExLTQ5MjAtYjI2NC02MGYyMjBmOGMyYzYiLCJzdWIiOiIvYXBpL3VzZXItcmVnaXN0cmllcy80NzRjZTIwMi1mNjI0LTRlMzctOTE4OS05MzBiMDJlOTY5ZDMvODc2ZjU1ZjUtNjhhOS00Yjc1LWE1NmItYTY0ZWUyZWZkYTAyL3VzZXJzLzkxMjNiNDQzLWYxYTktNDAxMi04ODkwLTE3YzMwMDIxNTM1NCIsImlzcyI6IklCTSBBUEkgQ29ubmVjdCIsImV4cCI6MTcwNzIzNjI3MSwiaWF0IjoxNzA3MjA3NDcxLCJncmFudF90eXBlIjoicGFzc3dvcmQiLCJyZWZyZXNoX3Rva2VuIjoiNTFlNmZjMGYtMWRmOC00Zjg4LWIxZmItNjUzYjI3MTFhYTAyIiwidXNlcl9yZWdpc3RyeV91cmwiOiIvYXBpL3VzZXItcmVnaXN0cmllcy80NzRjZTIwMi1mNjI0LTRlMzctOTE4OS05MzBiMDJlOTY5ZDMvODc2ZjU1ZjUtNjhhOS00Yjc1LWE1NmItYTY0ZWUyZWZkYTAyIiwicmVhbG0iOiJwcm92aWRlci9kZWZhdWx0LWlkcC0yIiwidXNlcm5hbWUiOiJvcmcxb3duZXIiLCJpZF90b2tlbiI6ImV5SmhiR2NpT2lKU1V6STFOaUlzSW5SNWNDSTZJa3BYVkNJc0ltdHBaQ0k2SWpoR04wVTBRa1k1TmpReE56bEVOa0pCTkRVeE56UTVNakF3T1VFMFJqZ3dRemMwTjBVM1JrUWlmUS5leUptYVhKemRGOXVZVzFsSWpvaWIzSm5NVzkzYm1WeUlpd2liR0Z6ZEY5dVlXMWxJam9pYjNKbk1XOTNibVZ5SWl3aWRYTmxjbTVoYldVaU9pSnZjbWN4YjNkdVpYSWlMQ0psYldGcGJDSTZJbTl5WnpGdmQyNWxja0JtY2k1cFltMHVZMjl0SWl3aWFXRjBJam94TnpBM01qQTNORGN4ZlEuWnRlS1BSUUg3Zm9mOFp6bnZ3N0NXVkVMZllSTWttQVFFNGxYdERBZFhydE5XLTYyTFlKbGdpTm5vckRic0VFMTdndy0zcUdQTU1YRy11b2NUMWNvWUl3Z1k5aU9jWWhLY3RqTkxTaThMUTBnUTdMOUxVTjdfR2xERS12aFNVMF85d0ZqUURDZWQ4d3RmVUZOeXhiNi1oZVZpZGZtMVlmbldWSzZkUEJYR2JocnMtdjF6Y3V0NzliYnVmTVE4OUNvWlBxZktDUk5BVnlTWU45cUFtbkdldExucjF2d3h6LVR2M0VHMTZ3UW5SUHU5Unh3Y0RWMmZTWlhxTHk2ZXlZME5XTG91Rm9VWnc4ckFLNUhjMTBtSG9GMGUzMDZ6bTA4emRzNEdJNlhLaDA0cVMteVh1bUJpREdTcW55V291OEhKM0VMZ2R5a2xzWTU0LW93bFUyaVJnIiwic2NvcGVzIjpbImNsb3VkOnZpZXciLCJjbG91ZDptYW5hZ2UiLCJwcm92aWRlci1vcmc6dmlldyIsInByb3ZpZGVyLW9yZzptYW5hZ2UiLCJvcmc6dmlldyIsIm9yZzptYW5hZ2UiLCJwcm9kdWN0LWRyYWZ0czp2aWV3IiwicHJvZHVjdC1kcmFmdHM6ZWRpdCIsImFwaS1kcmFmdHM6dmlldyIsImFwaS1kcmFmdHM6ZWRpdCIsImNoaWxkOnZpZXciLCJjaGlsZDpjcmVhdGUiLCJjaGlsZDptYW5hZ2UiLCJwcm9kdWN0OnZpZXciLCJwcm9kdWN0OnN0YWdlIiwicHJvZHVjdDptYW5hZ2UiLCJhcHByb3ZhbDp2aWV3IiwiYXBwcm92YWw6bWFuYWdlIiwiYXBpLWFuYWx5dGljczp2aWV3IiwiYXBpLWFuYWx5dGljczptYW5hZ2UiLCJjb25zdW1lci1vcmc6dmlldyIsImNvbnN1bWVyLW9yZzptYW5hZ2UiLCJhcHA6dmlldzphbGwiLCJhcHA6bWFuYWdlOmFsbCIsIm15OnZpZXciLCJteTptYW5hZ2UiLCJ3ZWJob29rOnZpZXciXX0.ox3ibNa_7csQtsg25ReNd4gBJDs4cW8g_Qp9ydz-UKAP5LGZgsqebfzfdvAAbcGrm2vgAvH5rI2HNE2rOntVzBbspjvkjs6MZMjWUCacsuQ6UsTuYWL0_2tIcGpiOkge51wFqNvxna8uh3HmuIsRIv_3Zn4gdbThBro0lV3Dlg6EBlxx_XCaAE3tDxt8H5wxPULwqiq-FMuEP1pTx3QBoL6-mOTATRhA9u3EmqogItVny8w_-SobG7cHMhsC-GlhFLky19VMYjos0RaAA5YiXoKFlN018bcF59XeN2oxXPMI4MsX14bjZ9Ah2Dn-Cp2OtG_X3VbYsWACBCzGAwRvcQ</font>
+<font color="#5E5C64">CMD: Interact with API Manager: curl -sk -X GET &quot;https://cp4i-apic-mgmt-platform-api-cp4i.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/api/orgs/org1/portal-services?fields=url&quot; -H &quot;Authorization: Bearer &lt;amToken&gt;&quot; -H &apos;accept: application/json&apos; -H &apos;content-type: application/json&apos; -H &apos;Connection: keep-alive&apos;</font>
+<font color="#26A269">Catalog prod already exists, use it.</font>
+<font color="#26A269">Create the portal site in Drupal for: Production</font>
+<font color="#26A269">Catalog uat already exists, use it.</font>
+<font color="#26A269">Create the portal site in Drupal for: UAT</font>
+<font color="#26A269">Catalog qa already exists, use it.</font>
+<font color="#26A269">Create the portal site in Drupal for: Quality and Acceptance</font>
+<font color="#26A269">ping-api API already exists, do not load it.</font>
+<font color="#26A269">ibm-sample-order-api API already exists, do not load it.</font>
+<font color="#26A269">stock API already exists, do not load it.</font>
+<font color="#26A269">fakeauthenticationurl API already exists, do not load it.</font>
+<font color="#26A269">Load takeoff API as a draft</font>
+<font color="#26A269">{&quot;status&quot;:400,&quot;message&quot;:[&quot;If the API&apos;s \&quot;x-ibm-configuration.gateway\&quot; property is set, and the query parameter &apos;gateway_type &apos; is also sent; the values must match.&quot;]}</font>
+<font color="#26A269">Load landings API as a draft</font>
+<font color="#26A269">{&quot;status&quot;:400,&quot;message&quot;:[&quot;If the API&apos;s \&quot;x-ibm-configuration.gateway\&quot; property is set, and the query parameter &apos;gateway_type &apos; is also sent; the values must match.&quot;]}</font>
+<font color="#26A269">taxi-locator API already exists, do not load it.</font>
+<font color="#26A269">taxi-messaging API already exists, do not load it.</font>
+<font color="#26A269">Start: mar. 06 févr. 2024 09:17:42 CET - end: mar. 06 févr. 2024 09:17:57 CET</font>
+<font color="#26A269">0 minutes and 17 seconds elapsed.</font>
+<font color="#26A269">==== Installing Event Endpoint Management.</font>
+<font color="#26A269">case ibm-eventendpointmanagement 11.1.2 already downloaded</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ibm-eventendpointmanagement-catalog created</font>
+<font color="#26A269">Adding case ibm-eventendpointmanagement took 2 seconds to execute.</font>
+<font color="#2AA1B3">Checking Subscription ibm-eventendpointmanagement in openshift-operators project...</font><font color="#5E5C64">CMD: oc -n openshift-operators get Subscription ibm-eventendpointmanagement</font>
+<font color="#F66151">subscription.operators.coreos.com/ibm-eventendpointmanagement created</font>
+<font color="#5E5C64">CMD: wait_for_state ClusterServiceVersion ibm-eventendpointmanagement.v11.1.2 {.status.phase} is Succeeded | Succeeded | oc -n openshift-operators get ClusterServiceVersion ibm-eventendpointmanagement.v11.1.2 -o jsonpath={.status.phase}</font>
+<font color="#2AA1B3">Checking ClusterServiceVersion ibm-eventendpointmanagement.v11.1.2 {.status.phase} is Succeeded...</font><font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventendpointmanagement.v11.1.2&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventendpointmanagement.v11.1.2&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventendpointmanagement.v11.1.2&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventendpointmanagement.v11.1.2&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventendpointmanagement.v11.1.2&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventendpointmanagement.v11.1.2&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventendpointmanagement.v11.1.2&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventendpointmanagement.v11.1.2&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventendpointmanagement.v11.1.2&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventendpointmanagement.v11.1.2&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#12488B">mar. 06 févr. 2024 09:18:56 CET Pending</font>
+<font color="#12488B">mar. 06 févr. 2024 09:19:02 CET Installing</font>
+<font color="#26A269">OK, Succeeded</font>
+<font color="#26A269">Creation of ibm-eventendpointmanagement operator took 128 seconds to execute.</font>
+<font color="#2AA1B3">Checking EventEndpointManagement cp4i-eem in cp4i project...</font><font color="#5E5C64">CMD: oc -n cp4i get EventEndpointManagement cp4i-eem</font>
+<font color="#F66151">eventendpointmanagement.events.ibm.com/cp4i-eem created</font>
+<font color="#5E5C64">CMD: wait_for_state | EventEndpointManagement cp4i-eem {.status.conditions[0].type} is Ready | Ready | oc -n cp4i get EventEndpointManagement cp4i-eem -o jsonpath={.status.conditions[0].type}</font>
+<font color="#2AA1B3">Checking EventEndpointManagement cp4i-eem {.status.conditions[0].type} is Ready...</font><font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#26A269">OK, Ready</font>
+<font color="#26A269">Creation of EventEndpointManagement instance took 19 seconds to execute.</font>
+<font color="#26A269">==== Installing Event Endpoint Gateway.</font>
+<font color="#2AA1B3">Checking EventGateway cp4i-eg in cp4i project...</font><font color="#5E5C64">CMD: oc -n cp4i get EventGateway cp4i-eg</font>
+<font color="#F66151">eventgateway.events.ibm.com/cp4i-eg created</font>
+<font color="#5E5C64">CMD: wait_for_state | EventGateway cp4i-eg {.status.conditions[0].type} is Ready | Ready | oc -n cp4i get EventGateway cp4i-eg -o jsonpath={.status.conditions[0].type}</font>
+<font color="#2AA1B3">Checking EventGateway cp4i-eg {.status.conditions[0].type} is Ready...</font><font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#26A269">OK, Ready</font>
+<font color="#26A269">Creation of EventGateway instance took 15 seconds to execute.</font>
+<font color="#26A269">==== Installing Event Processing.</font>
+<font color="#26A269">case ibm-eventprocessing 1.1.2 already downloaded</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ibm-eventprocessing-catalog created</font>
+<font color="#26A269">Adding case ibm-eventprocessing took 3 seconds to execute.</font>
+<font color="#2AA1B3">Checking Subscription ibm-eventprocessing in openshift-operators project...</font><font color="#5E5C64">CMD: oc -n openshift-operators get Subscription ibm-eventprocessing</font>
+<font color="#F66151">subscription.operators.coreos.com/ibm-eventprocessing created</font>
+<font color="#5E5C64">CMD: wait_for_state ClusterServiceVersion ibm-eventprocessing.v1.1.2 {.status.phase} is Succeeded | Succeeded | oc -n openshift-operators get ClusterServiceVersion ibm-eventprocessing.v1.1.2 -o jsonpath={.status.phase}</font>
+<font color="#2AA1B3">Checking ClusterServiceVersion ibm-eventprocessing.v1.1.2 {.status.phase} is Succeeded...</font><font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventprocessing.v1.1.2&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventprocessing.v1.1.2&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventprocessing.v1.1.2&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventprocessing.v1.1.2&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventprocessing.v1.1.2&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventprocessing.v1.1.2&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventprocessing.v1.1.2&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#12488B">mar. 06 févr. 2024 09:21:32 CET Installing</font>
+<font color="#26A269">OK, Succeeded</font>
+<font color="#26A269">Creation of ibm-eventprocessing operator took 80 seconds to execute.</font>
+<font color="#2AA1B3">Checking EventProcessing cp4i-ep in cp4i project...</font><font color="#5E5C64">CMD: oc -n cp4i get EventProcessing cp4i-ep</font>
+<font color="#F66151">eventprocessing.events.ibm.com/cp4i-ep created</font>
+<font color="#5E5C64">CMD: wait_for_state | EventProcessing cp4i-ep {.status.phase} is Running | Running | oc -n cp4i get EventProcessing cp4i-ep -o jsonpath={.status.phase}</font>
+<font color="#2AA1B3">Checking EventProcessing cp4i-ep {.status.phase} is Running...</font><font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#12488B">mar. 06 févr. 2024 09:22:18 CET Pending</font>
+<font color="#26A269">OK, Running</font>
+<font color="#26A269">Creation of EventProcessing instance took 155 seconds to execute.</font>
+<font color="#26A269">==== Installing Event Streams.</font>
+<font color="#26A269">case ibm-eventstreams 3.3.0 already downloaded</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ibm-eventstreams created</font>
+<font color="#26A269">Adding case ibm-eventstreams took 2 seconds to execute.</font>
+<font color="#2AA1B3">Checking Subscription ibm-eventstreams in openshift-operators project...</font><font color="#5E5C64">CMD: oc -n openshift-operators get Subscription ibm-eventstreams</font>
+<font color="#F66151">subscription.operators.coreos.com/ibm-eventstreams created</font>
+<font color="#5E5C64">CMD: wait_for_state ClusterServiceVersion ibm-eventstreams.v3.3.0 {.status.phase} is Succeeded | Succeeded | oc -n openshift-operators get ClusterServiceVersion ibm-eventstreams.v3.3.0 -o jsonpath={.status.phase}</font>
+<font color="#2AA1B3">Checking ClusterServiceVersion ibm-eventstreams.v3.3.0 {.status.phase} is Succeeded...</font><font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventstreams.v3.3.0&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventstreams.v3.3.0&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventstreams.v3.3.0&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventstreams.v3.3.0&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventstreams.v3.3.0&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventstreams.v3.3.0&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventstreams.v3.3.0&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventstreams.v3.3.0&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventstreams.v3.3.0&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#12488B">mar. 06 févr. 2024 09:25:47 CET Installing</font>
+<font color="#26A269">OK, Succeeded</font>
+<font color="#26A269">Creation of ibm-eventstreams operator took 210 seconds to execute.</font>
+<font color="#2AA1B3">Checking EventStreams cp4i-es in cp4i project...</font><font color="#5E5C64">CMD: oc -n cp4i get EventStreams cp4i-es</font>
+<font color="#F66151">eventstreams.eventstreams.ibm.com/cp4i-es created</font>
+<font color="#5E5C64">CMD: wait_for_state | EventStreams cp4i-es {.status.phase} is Ready | Ready | oc -n cp4i get EventStreams cp4i-es -o jsonpath={.status.phase}</font>
+<font color="#2AA1B3">Checking EventStreams cp4i-es {.status.phase} is Ready...</font><font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#12488B">mar. 06 févr. 2024 09:28:31 CET Pending</font>
+<font color="#26A269">OK, Ready</font>
+<font color="#26A269">Creation of EventStreams instance took 516 seconds to execute.</font>
+<font color="#2AA1B3">Checking configmap cluster-monitoring-config in openshift-monitoring project...</font><font color="#5E5C64">CMD: oc -n openshift-monitoring get configmap cluster-monitoring-config</font>
+<font color="#F66151">configmap/cluster-monitoring-config created</font>
+<font color="#26A269">Customise Event Streams</font>
+<font color="#26A269">topic name: demo-flight-takeoffs, topic spec name: FLIGHT.TAKEOFFS,  es_instance: cp4i-es</font>
+<font color="#2AA1B3">Checking KafkaTopic demo-flight-takeoffs in cp4i project...</font><font color="#5E5C64">CMD: oc -n cp4i get KafkaTopic demo-flight-takeoffs</font>
+<font color="#F66151">kafkatopic.eventstreams.ibm.com/demo-flight-takeoffs created</font>
+<font color="#26A269">topic name: demo-weather-armonk, topic spec name: WEATHER.ARMONK,  es_instance: cp4i-es</font>
+<font color="#2AA1B3">Checking KafkaTopic demo-weather-armonk in cp4i project...</font><font color="#5E5C64">CMD: oc -n cp4i get KafkaTopic demo-weather-armonk</font>
+<font color="#F66151">kafkatopic.eventstreams.ibm.com/demo-weather-armonk created</font>
+<font color="#26A269">topic name: demo-weather-hursley, topic spec name: WEATHER.HURSLEY,  es_instance: cp4i-es</font>
+<font color="#2AA1B3">Checking KafkaTopic demo-weather-hursley in cp4i project...</font><font color="#5E5C64">CMD: oc -n cp4i get KafkaTopic demo-weather-hursley</font>
+<font color="#F66151">kafkatopic.eventstreams.ibm.com/demo-weather-hursley created</font>
+<font color="#26A269">topic name: demo-weather-northharbour, topic spec name: WEATHER.NORTHHARBOUR,  es_instance: cp4i-es</font>
+<font color="#2AA1B3">Checking KafkaTopic demo-weather-northharbour in cp4i project...</font><font color="#5E5C64">CMD: oc -n cp4i get KafkaTopic demo-weather-northharbour</font>
+<font color="#F66151">kafkatopic.eventstreams.ibm.com/demo-weather-northharbour created</font>
+<font color="#26A269">topic name: demo-weather-paris, topic spec name: WEATHER.PARIS,  es_instance: cp4i-es</font>
+<font color="#2AA1B3">Checking KafkaTopic demo-weather-paris in cp4i project...</font><font color="#5E5C64">CMD: oc -n cp4i get KafkaTopic demo-weather-paris</font>
+<font color="#F66151">kafkatopic.eventstreams.ibm.com/demo-weather-paris created</font>
+<font color="#26A269">topic name: demo-weather-southbank, topic spec name: WEATHER.SOUTHBANK,  es_instance: cp4i-es</font>
+<font color="#2AA1B3">Checking KafkaTopic demo-weather-southbank in cp4i project...</font><font color="#5E5C64">CMD: oc -n cp4i get KafkaTopic demo-weather-southbank</font>
+<font color="#F66151">kafkatopic.eventstreams.ibm.com/demo-weather-southbank created</font>
+<font color="#26A269">topic name: demo-stock-apple, topic spec name: STOCK.APPLE,  es_instance: cp4i-es</font>
+<font color="#2AA1B3">Checking KafkaTopic demo-stock-apple in cp4i project...</font><font color="#5E5C64">CMD: oc -n cp4i get KafkaTopic demo-stock-apple</font>
+<font color="#F66151">kafkatopic.eventstreams.ibm.com/demo-stock-apple created</font>
+<font color="#26A269">topic name: demo-stock-google, topic spec name: STOCK.GOOGLE,  es_instance: cp4i-es</font>
+<font color="#2AA1B3">Checking KafkaTopic demo-stock-google in cp4i project...</font><font color="#5E5C64">CMD: oc -n cp4i get KafkaTopic demo-stock-google</font>
+<font color="#F66151">kafkatopic.eventstreams.ibm.com/demo-stock-google created</font>
+<font color="#26A269">topic name: demo-stock-ibm, topic spec name: STOCK.IBM,  es_instance: cp4i-es</font>
+<font color="#2AA1B3">Checking KafkaTopic demo-stock-ibm in cp4i project...</font><font color="#5E5C64">CMD: oc -n cp4i get KafkaTopic demo-stock-ibm</font>
+<font color="#F66151">kafkatopic.eventstreams.ibm.com/demo-stock-ibm created</font>
+<font color="#26A269">topic name: demo-stock-microsoft, topic spec name: STOCK.MICROSOFT,  es_instance: cp4i-es</font>
+<font color="#2AA1B3">Checking KafkaTopic demo-stock-microsoft in cp4i project...</font><font color="#5E5C64">CMD: oc -n cp4i get KafkaTopic demo-stock-microsoft</font>
+<font color="#F66151">kafkatopic.eventstreams.ibm.com/demo-stock-microsoft created</font>
+<font color="#26A269">topic name: demo-stock-salesforce, topic spec name: STOCK.SALESFORCE,  es_instance: cp4i-es</font>
+<font color="#2AA1B3">Checking KafkaTopic demo-stock-salesforce in cp4i project...</font><font color="#5E5C64">CMD: oc -n cp4i get KafkaTopic demo-stock-salesforce</font>
+<font color="#F66151">kafkatopic.eventstreams.ibm.com/demo-stock-salesforce created</font>
+<font color="#2AA1B3">Checking KafkaUser demo-stock-salesforce in cp4i project...</font><font color="#5E5C64">CMD: oc -n cp4i get KafkaUser demo-stock-salesforce</font>
+<font color="#F66151">kafkauser.eventstreams.ibm.com/es-all-access created</font>
+<font color="#26A269">Creation of the Kafka Topics took 76 seconds to execute.</font>
+<font color="#26A269">Start: mar. 06 févr. 2024 09:36:48 CET - end: mar. 06 févr. 2024 09:38:04 CET</font>
+<font color="#26A269">1 minutes and 16 seconds elapsed.</font>
+<font color="#26A269">==== Installing Flink.</font>
+<font color="#26A269">case ibm-eventautomation-flink 1.1.2 already downloaded</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ibm-eventautomation-flink-catalog created</font>
+<font color="#26A269">Adding case ibm-eventautomation-flink took 2 seconds to execute.</font>
+<font color="#2AA1B3">Checking Subscription ibm-eventautomation-flink in openshift-operators project...</font><font color="#5E5C64">CMD: oc -n openshift-operators get Subscription ibm-eventautomation-flink</font>
+<font color="#F66151">subscription.operators.coreos.com/ibm-eventautomation-flink created</font>
+<font color="#5E5C64">CMD: wait_for_state ClusterServiceVersion ibm-eventautomation-flink.v1.1.2 {.status.phase} is Succeeded | Succeeded | oc -n openshift-operators get ClusterServiceVersion ibm-eventautomation-flink.v1.1.2 -o jsonpath={.status.phase}</font>
+<font color="#2AA1B3">Checking ClusterServiceVersion ibm-eventautomation-flink.v1.1.2 {.status.phase} is Succeeded...</font><font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventautomation-flink.v1.1.2&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventautomation-flink.v1.1.2&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventautomation-flink.v1.1.2&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventautomation-flink.v1.1.2&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventautomation-flink.v1.1.2&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventautomation-flink.v1.1.2&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventautomation-flink.v1.1.2&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventautomation-flink.v1.1.2&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventautomation-flink.v1.1.2&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventautomation-flink.v1.1.2&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-eventautomation-flink.v1.1.2&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#12488B">mar. 06 févr. 2024 09:39:14 CET Installing</font>
+<font color="#26A269">OK, Succeeded</font>
+<font color="#26A269">Creation of ibm-eventautomation-flink operator took 101 seconds to execute.</font>
+<font color="#2AA1B3">Checking PersistentVolumeClaim ibm-flink-pvc in cp4i project...</font><font color="#5E5C64">CMD: oc -n cp4i get PersistentVolumeClaim ibm-flink-pvc</font>
+<font color="#F66151">persistentvolumeclaim/ibm-flink-pvc created</font>
+<font color="#5E5C64">CMD: wait_for_state | PersistentVolumeClaim ibm-flink-pvc {.status.phase} is Bound | Bound | oc -n cp4i get PersistentVolumeClaim ibm-flink-pvc -o jsonpath={.status.phase}</font>
+<font color="#2AA1B3">Checking PersistentVolumeClaim ibm-flink-pvc {.status.phase} is Bound...</font><font color="#A2734C">NO</font>
+<font color="#12488B">mar. 06 févr. 2024 09:39:51 CET Pending</font>
+<font color="#26A269">OK, Bound</font>
+<font color="#26A269">Creation of PersistentVolumeClaim instance took 89 seconds to execute.</font>
+<font color="#2AA1B3">Checking FlinkDeployment cp4i-flk in cp4i project...</font><font color="#5E5C64">CMD: oc -n cp4i get FlinkDeployment cp4i-flk</font>
+<font color="#F66151">flinkdeployment.flink.apache.org/cp4i-flk created</font>
+<font color="#5E5C64">CMD: wait_for_state | FlinkDeployment cp4i-flk {.status.lifecycleState}-{.status.jobManagerDeploymentStatus} is STABLE-READY | STABLE-READY | oc -n cp4i get FlinkDeployment cp4i-flk -o jsonpath={.status.lifecycleState}-{.status.jobManagerDeploymentStatus}</font>
+<font color="#2AA1B3">Checking FlinkDeployment cp4i-flk {.status.lifecycleState}-{.status.jobManagerDeploymentStatus} is STABLE-READY...</font><font color="#A2734C">NO</font>
+<font color="#12488B">mar. 06 févr. 2024 09:41:25 CET -</font>
+<font color="#12488B">mar. 06 févr. 2024 09:41:31 CET UPGRADING-MISSING</font>
+<font color="#12488B">mar. 06 févr. 2024 09:41:41 CET DEPLOYED-DEPLOYING</font>
+<font color="#12488B">mar. 06 févr. 2024 09:42:57 CET DEPLOYED-DEPLOYED_NOT_READY</font>
+<font color="#26A269">OK, STABLE-READY</font>
+<font color="#26A269">Creation of FlinkDeployment instance took 111 seconds to execute.</font>
+<font color="#26A269">==== Installing MQ.</font>
+<font color="#26A269">case ibm-mq 3.0.1 already downloaded</font>
+<font color="#F66151">catalogsource.operators.coreos.com/ibmmq-operator-catalogsource created</font>
+<font color="#26A269">Adding case ibm-mq took 2 seconds to execute.</font>
+<font color="#2AA1B3">Checking Subscription ibm-mq in openshift-operators project...</font><font color="#5E5C64">CMD: oc -n openshift-operators get Subscription ibm-mq</font>
+<font color="#F66151">subscription.operators.coreos.com/ibm-mq created</font>
+<font color="#5E5C64">CMD: wait_for_state ClusterServiceVersion ibm-mq.v3.0.1 {.status.phase} is Succeeded | Succeeded | oc -n openshift-operators get ClusterServiceVersion ibm-mq.v3.0.1 -o jsonpath={.status.phase}</font>
+<font color="#2AA1B3">Checking ClusterServiceVersion ibm-mq.v3.0.1 {.status.phase} is Succeeded...</font><font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-mq.v3.0.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-mq.v3.0.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-mq.v3.0.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-mq.v3.0.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-mq.v3.0.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-mq.v3.0.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-mq.v3.0.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-mq.v3.0.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-mq.v3.0.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-mq.v3.0.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-mq.v3.0.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-mq.v3.0.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#F66151">Error from server (NotFound): clusterserviceversions.operators.coreos.com &quot;ibm-mq.v3.0.1&quot; not found</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#A2734C">NO</font>
+<font color="#12488B">mar. 06 févr. 2024 09:44:33 CET Installing</font>
+<font color="#26A269">OK, Succeeded</font>
+<font color="#26A269">Creation of ibm-mq operator took 106 seconds to execute.</font>
+<font color="#2AA1B3">Checking QueueManager cp4imq in cp4i project...</font><font color="#5E5C64">CMD: oc -n cp4i get QueueManager cp4imq</font>
+<font color="#F66151">queuemanager.mq.ibm.com/cp4imq created</font>
+<font color="#5E5C64">CMD: wait_for_state | QueueManager cp4imq {.status.phase} is Running | Running | oc -n cp4i get QueueManager cp4imq -o jsonpath={.status.phase}</font>
+<font color="#2AA1B3">Checking QueueManager cp4imq {.status.phase} is Running...</font><font color="#A2734C">NO</font>
+<font color="#12488B">mar. 06 févr. 2024 09:45:00 CET Pending</font>
+<font color="#26A269">OK, Running</font>
+<font color="#26A269">Creation of QueueManager instance took 213 seconds to execute.</font>
+<font color="#26A269">==== Displaying Access Info to CP4I.</font>
+<font color="#26A269">CP4I Platform UI URL:  https://cp4i-navigator-pn-cp4i.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud</font>
+<font color="#26A269">ACE Dahsboard UI endpoint:  https://cp4i-ace-db-ui-cp4i.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud</font>
+<font color="#26A269">ACE Designer UI endpoint:  https://cp4i-ace-dg-ui-cp4i.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud</font>
+<font color="#26A269">APIC Gateway endpoint: https://cp4i-apic-gw-gateway-cp4i.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/</font>
+<font color="#26A269">APIC Gateway admin password: 4Pg3xe]8In#6:ip??#8gw~ac</font>
+<font color="#26A269">APIC Cloud Manager endpoint: https://cp4i-apic-mgmt-admin-cp4i.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/admin</font>
+<font color="#26A269">APIC Cloud Manager admin password: i+3i[h%+dV)7jz5Uum,&gt;pap1</font>
+<font color="#26A269">APIC API Manager endpoint: https://cp4i-apic-mgmt-api-manager-cp4i.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/manager</font>
+<font color="#26A269">APIC Web Portal root endpoint: https://cp4i-apic-ptl-portal-web-cp4i.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/</font>
+<font color="#26A269">Event Endpoint Management UI endpoint: https://cp4i-eem-ibm-eem-manager-cp4i.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud</font>
+<font color="#26A269">Event Endpoint Management Gateway endpoint: https://cp4i-eem-ibm-eem-gateway-cp4i.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud</font>
+<font color="#26A269">The credentials are defined in the file ./customisation/EP/config/user-credentials.yaml</font>
+<font color="#26A269">Event Streams Management UI endpoint: https://cp4i-es-ibm-es-ui-cp4i.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud</font>
+<font color="#26A269">Event Streams Management admin endpoint: https://cp4i-es-ibm-es-admapi-external-cp4i.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud</font>
+<font color="#26A269">Event Streams Management apicurio registry endpoint: https://cp4i-es-ibm-es-ac-reg-external-cp4i.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud</font>
+<font color="#26A269">Event Streams Management REST Producer endpoint: https://cp4i-es-ibm-es-recapi-external-cp4i.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud</font>
+<font color="#26A269">Event Streams Bootstraps servers endpoints: cp4i-es-kafka-bootstrap.cp4i.svc:9093 cp4i-es-kafka-bootstrap-cp4i.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud:443</font>
+<font color="#26A269">LDAP info</font>
+<font color="#26A269">AR info</font>
+<font color="#26A269">MQ info</font>
+<font color="#26A269">Licensing service endpoint: ibm-licensing-service-instance-ibm-licensing.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud</font>
+
+</pre>

@@ -345,7 +345,7 @@ function create_apic_resources() {
   local sandboxCfoauthProviderURL=$(curl -sk "${PLATFORM_API_URL}${lf_apicpath}" -H "Authorization: Bearer $lf_am_token" -H 'Accept: application/json' | jq --arg ur "$oauthProviderURL" '.results[].user_registry_url | select(. == "$ur")')
   decho 3 "sandboxCfoauthProviderURL: $sandboxCfoauthProviderURL"
 
-  # Add it if not already added TODO if
+  # Add it if not already added TODO if, important for idempotence  (hard coded for now)
   if [ 2 -gt 3 ]; then
     lf_org=APIC_PROVIDER_ORG
     lf_apicpath=api/catalogs/$org/$catalog/configured-oauth-providers

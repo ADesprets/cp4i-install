@@ -80,6 +80,8 @@ MY_TECHZONE_PASSWORD=<cluster admininstrator's password>
 MY_TECHZONE_OPENSHIFT_API_URL=<API URL of the cluster, example 'https://api.xxx.cloud.techzone.ibm.com:6443'>
 ```
 
+TODO Ajouter if Instana alors certificats sur instance Instana SaaS
+
 ### Configuration
 
 **Customize** the cp4i.properties file with your own parameters

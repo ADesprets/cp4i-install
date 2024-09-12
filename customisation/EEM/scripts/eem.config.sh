@@ -19,10 +19,21 @@ SECONDS=0
 # Instruction to create the event gateway in APIC
 # Documentation: https://ibm.github.io/event-automation/eem/integrating-with-apic/configure-eem-for-apic/
 # 1) JWKSurl: https://cp4i-apic-mgmt-platform-api-cp4i.apps.66c486d0cc846855dd383768.ocp.techzone.ibm.com/api/cloud/oauth2/certs
+
 # 2) ingress certificate (cp4i-apic-ingress-ca) D:\CurrentProjects\CP4I\Installation\cp4i-install\tmp\cp4i-apic-ingress-ca.pem
 # kubectl -n <APIC namespace> get secret <ingress-ca name> -ojsonpath="{.data['ca\.crt']}" | base64 -d
 # 	oc -n cp4i get secret cp4i-apic-ingress-ca -ojsonpath="{.data['ca\.crt']}" | base64 -d
 # 3) secret for EEM apim-cpd.yaml
+eem_apic_secret=$(oc -n=${MY_OC_PROJECT} get secret apim-cpd)
+if [ $eem_apic_secret -eq 0 ]; then
+    mylog info "Create secret to enable trust between EEM and APIC"
+    lf_apic_ca_ingress=$(oc -n $MY_OPERATOR_NAMESPACE get secret ${MY_APIC_INSTANCE_NAME}-ingress-ca -ojsonpath="{.data['ca\.crt']}")
+    export APIC_INGRESS_CA_CERT=${lf_apic_ca_ingress}
+    adapt_file ${MY_EEM_SCRIPTDIR}config/ ${MY_EEM_GEN_CUSTOMDIR}config/ apim-cpd.yaml
+    check_create_oc_yaml TODO
+
+fi
+
 # 4) Update cp4i-eem CRD
 # spec.manager
 #     apic:
