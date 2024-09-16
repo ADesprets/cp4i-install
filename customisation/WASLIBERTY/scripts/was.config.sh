@@ -51,7 +51,8 @@ function was_build_image() {
 function login_to_registry() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
   decho 3 "F:IN:login_to_registry"
-  mylog info "For now, you need to be logged in to the image registry before running the script"
+  mylog info "Changes made recently to login to doocker registry check you are correctly login"
+  oc login -u kubeadmin -p $MY_TECHZONE_PASSWORD $(oc whoami --show-server)
   decho 3 "docker login -u kubeadmin -p $(oc whoami -t) ${IMAGE_REGISTRY_HOST}"
   docker login -u kubeadmin -p $(oc whoami -t) ${IMAGE_REGISTRY_HOST}
   decho 3 "F:OUT:login_to_registry"
@@ -118,7 +119,6 @@ decho 5 "WAS configuration directory: ${lf_was_config_dir}"
 
   if $MY_WASLIBERTY_CUSTOM; then
     mylog info "==== Customise WAS." 1>&2
-: <<'END_COMMENT'
     prepare_internal_registry
     # Build the image
     if $MY_WASLIBERTY_CUSTOM_BUILD; then
@@ -130,7 +130,6 @@ decho 5 "WAS configuration directory: ${lf_was_config_dir}"
     fi
     login_to_registry
     push_image_to_registry
-END_COMMENT
     create_application
   fi
 

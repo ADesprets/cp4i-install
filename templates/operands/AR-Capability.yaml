@@ -1,20 +1,20 @@
 apiVersion: integration.ibm.com/v1beta1
 kind: AssetRepository
 metadata:
-  name: $MY_ASSET_REPO_INSTANCE_NAME
+  name: $MY_ASSETREPO_INSTANCE_NAME
   namespace: $MY_OC_PROJECT
   labels:
     backup.integration.ibm.com/component: assetrepository   
 spec:
   license:
     accept: true
-    license: $MY_ASSET_REPO_LIC
+    license: $MY_ASSETREPO_LIC
   replicas: 1
   storage:
     assetDataVolume:
       class: $MY_FILE_STORAGE_CLASS
     couchVolume:
       class: $MY_BLOCK_STORAGE_CLASS
-  version: $MY_ASSET_REPO_VERSION
+  version: $MY_ASSETREPO_VERSION
   designerAIFeatures:
     enabled: true

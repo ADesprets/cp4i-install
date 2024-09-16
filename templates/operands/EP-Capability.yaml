@@ -7,7 +7,7 @@ spec:
   license:
     accept: true
     license: $MY_EP_LIC
-    use: EventAutomationNonProduction
+    use: $MY_EP_LIC_USAGE
   flink:
     endpoint: ${MY_FLINK_INSTANCE_NAME}-rest.${MY_OC_PROJECT}.svc.cluster.local:8081
   authoring:

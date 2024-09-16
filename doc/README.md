@@ -14,8 +14,9 @@ The principles followed to implement this asset are the following:
 * Secured by using a private directory where the user has his own credentials
 * Follow good practice around scripting
 * Run everywhere, the use of ibm-pak allows an installation on IBM Red Hat Openshift in IBM Cloud, onPremise, with CRC - RedHat Code Ready Container, on TechZone. (It has been tested on the three first platforms)
+* Install CP4I components but also what is required to have interesting scenarios: LDAP, Mailhog, WAS liberty backends with JAX-RS applications
 
-Scenarios
+## Scenarios
 	Basics MQ
 	Basics ES
 	Taxi lab
@@ -67,12 +68,19 @@ Note that those files in `private` are ignored by git.
 1. private/user.properties contains :
 
 ``` properties
+# For IBM Cloud access
 MY_USER_EMAIL='<your email>'
 MY_USER_ID="IAM#${MY_USER_EMAIL}"
 MY_IMAGE_REGISTRY='<image reigstry>' # example: de.icr.io
 MY_IMAGE_REGISTRY_USERNAME='iamapikey'
 MY_IMAGE_REGISTRY_PASSWORD='<your password>'
+# For TechZone access
+MY_TECHZONE_USERNAME=<cluster admininstrator who has access to the cluster, example:  kubeadmin>
+MY_TECHZONE_PASSWORD=<cluster admininstrator's password>
+MY_TECHZONE_OPENSHIFT_API_URL=<API URL of the cluster, example 'https://api.xxx.cloud.techzone.ibm.com:6443'>
 ```
+
+TODO Ajouter if Instana alors certificats sur instance Instana SaaS
 
 ### Configuration
 
@@ -222,6 +230,10 @@ The main script does the following:
 
 To be moved
 In the subscription folder we have the definition of the operators. Since they are all equivalent we do not have one for each component, and use variables that are set at deployment.
+
+## Troubleshooting
+
+If you have a timeout error with oc ibm-pak command, you can increase the timeout using the variable IBMPAK_HTTP_TIMEOUT. it is explained at https://github.com/IBM/ibm-pak/blob/main/docs/command-help.md.
 
 ## Customisation
 

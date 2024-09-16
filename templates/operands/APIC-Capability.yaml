@@ -18,6 +18,8 @@ spec:
       enabled: true
       aiEnabled: false
       autoTestEnabled: true
+    governance:
+      enabled: true      
   license:
     accept: true
     license: $MY_APIC_LIC

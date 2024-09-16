@@ -5,6 +5,7 @@
     <!--The Liberty Maven Plugin has generated Liberty features necessary for your application in configDropins/overrides/generated-features.xml-->
     <featureManager>
         <feature>jakartaee-10.0</feature>
+        <!-- <feature>xmlWS-4.0</feature> included above -->
     </featureManager>
 
     <!-- This template enables security. To get the full use of all the capabilities, a keystore and user registry are required. -->

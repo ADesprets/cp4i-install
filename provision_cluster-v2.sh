@@ -323,7 +323,7 @@ function customise_openldap() {
   decho 3 "F:IN:customise_openldap"
 
   if $MY_LDAP_CUSTOM; then
-    mylog info "==== Customise ldap." 1>&2
+    mylog info "==== Customise ldap ()." 1>&2
     read_config_file "${MY_YAMLDIR}ldap/ldap.properties"
     check_file_exist ${MY_YAMLDIR}ldap/ldap-config.json
     check_file_exist ${MY_YAMLDIR}ldap/ldap-users.ldif
@@ -369,7 +369,7 @@ function display_access_info() {
   # Temporary access with Keycloack
 
   local lf_temp_integration_admin_pwd
-  lf_temp_integration_admin_pwd=$(oc -n $MY_COMMON_SERVICES_NAMESPACE get secret integration-admin-initial-temporary-credentials -o jsonpath={.data.password} | base64 -d)
+  lf_temp_integration_admin_pwd=$(oc -n $MY_COMMONSERVICES_NAMESPACE get secret integration-admin-initial-temporary-credentials -o jsonpath={.data.password} | base64 -d)
   mylog info "Integration admin password: ${lf_temp_integration_admin_pwd}"
 
   local lf_mailhog_hostname
@@ -390,7 +390,7 @@ function display_access_info() {
     mylog info "ACE Designer UI endpoint: " $lf_ace_ui_dg_url
   fi
 
-  local lf_gtw_url lf_apic_gtw_admin_pwd_secret_name lf_cm_admin_pwd lf_cm_url lf_cm_admin_pwd_secret_name lf_cm_admin_pwd lf_mgr_url lf_ptl_url
+  local lf_gtw_url lf_apic_gtw_admin_pwd_secret_name lf_cm_admin_pwd lf_cm_url lf_cm_admin_pwd_secret_name lf_cm_admin_pwd lf_mgr_url lf_ptl_url lf_jwks_url
   if $MY_APIC; then
     lf_gtw_url=$(oc -n $MY_OC_PROJECT get GatewayCluster -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].status.endpoints[?(@.name=="gateway")].uri}')
     mylog info "APIC Gateway endpoint: ${lf_gtw_url}"
@@ -408,18 +408,11 @@ function display_access_info() {
     mylog info "APIC API Manager endpoint: ${lf_mgr_url}"
     lf_ptl_url=$(oc -n $MY_OC_PROJECT get PortalCluster -o=jsonpath='{.items[?(@.kind=="PortalCluster")].status.endpoints[?(@.name=="portalWeb")].uri}')
     mylog info "APIC Web Portal root endpoint: ${lf_ptl_url}"
+    lf_jwks_url=$(oc -n $MY_OC_PROJECT get APIConnectCluster -o=jsonpath='{.items[?(@.kind=="APIConnectCluster")].status.endpoints[?(@.name=="jwksUrl")].uri}')
+    mylog info "APIC jwksUrl endpoint for EEM: ${lf_jwks_url}"
   fi
 
-  local lf_eem_ui_url lf_eem_lf_gtw_url
-  if $MY_EEM; then
-    lf_eem_ui_url=$(oc -n $MY_OC_PROJECT get EventEndpointManagement -o=jsonpath='{.items[?(@.kind=="EventEndpointManagement")].status.endpoints[?(@.name=="ui")].uri}')
-    mylog info "Event Endpoint Management UI endpoint: ${lf_eem_ui_url}"
-    lf_eem_lf_gtw_url=$(oc -n $MY_OC_PROJECT get EventEndpointManagement -o=jsonpath='{.items[?(@.kind=="EventEndpointManagement")].status.endpoints[?(@.name=="gateway")].uri}')
-    mylog info "Event Endpoint Management Gateway endpoint: ${lf_eem_lf_gtw_url}"
-    mylog info "The credentials are defined in the file ./customisation/EP/config/user-credentials.yaml"
-  fi
-
-  local lf_es_ui_url lf_es_admin_url lf_es_apicurioregistry_url lf_es_restproducer_url lf_es_bootstrap_urls
+  local lf_es_ui_url lf_es_admin_url lf_es_apicurioregistry_url lf_es_restproducer_url lf_es_bootstrap_urls lf_es_admin_pwd
   if $MY_ES; then
     lf_es_ui_url=$(oc -n $MY_OC_PROJECT get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="ui")].uri}')
     mylog info "Event Streams Management UI endpoint: ${lf_es_ui_url}"
@@ -431,8 +424,26 @@ function display_access_info() {
     mylog info "Event Streams Management REST Producer endpoint: ${lf_es_restproducer_url}"
     lf_es_bootstrap_urls=$(oc -n $MY_OC_PROJECT get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.kafkaListeners[*].bootstrapServers}')
     mylog info "Event Streams Bootstraps servers endpoints: ${lf_es_bootstrap_urls}"
+    lf_es_admin_pwd=$(oc -n $MY_OC_PROJECT get secret es-admin -o jsonpath={.data.password} | base64 -d)
+    mylog info "Event Streams UI Credentials: es-admin/${lf_es_admin_pwd}"
   fi
 
+  local lf_eem_ui_url lf_eem_lf_gtw_url
+  if $MY_EEM; then
+    lf_eem_ui_url=$(oc -n $MY_OC_PROJECT get EventEndpointManagement -o=jsonpath='{.items[?(@.kind=="EventEndpointManagement")].status.endpoints[?(@.name=="ui")].uri}')
+    mylog info "Event Endpoint Management UI endpoint: ${lf_eem_ui_url}"
+    lf_eem_lf_gtw_url=$(oc -n $MY_OC_PROJECT get EventEndpointManagement -o=jsonpath='{.items[?(@.kind=="EventEndpointManagement")].status.endpoints[?(@.name=="gateway")].uri}')
+    mylog info "Event Endpoint Management Gateway endpoint: ${lf_eem_lf_gtw_url}"
+    mylog info "The credentials are defined in the file ./customisation/EP/config/user-credentials.yaml"
+  fi
+
+  local lf_ep_ui_url
+  if $MY_EP; then
+    lf_ep_ui_url=$(oc -n $MY_OC_PROJECT get EventProcessing -o=jsonpath='{.items[?(@.kind=="EventProcessing")].status.endpoints[?(@.name=="ui")].uri}')
+    mylog info "Event Processing UI endpoint: ${lf_ep_ui_url}"
+    mylog info "The credentials are defined in the file ./customisation/EP/config/user-credentials.yaml"
+  fi
+  
   local lf_ldap_hostname lf_ldap_port
   if $MY_LDAP; then
     read_config_file "${MY_YAMLDIR}ldap/ldap.properties"
@@ -443,7 +454,7 @@ function display_access_info() {
   fi
 
   local lf_ar_ui_url
-  if $MY_ASSET_REPO; then
+  if $MY_ASSETREPO; then
     lf_ar_ui_url=$(oc -n $MY_OC_PROJECT get AssetRepository -o=jsonpath='{.items[?(@.kind=="AssetRepository")].status.endpoints[?(@.name=="ui")].uri}')
     mylog info "Asset Repository UI endpoint: ${lf_ar_ui_url}"
   fi
@@ -456,6 +467,12 @@ function display_access_info() {
   if $MY_MQ; then
     lf_mq_admin_url=$(oc -n $MY_OC_PROJECT get QueueManager $MY_MSGSRV_INSTANCE_NAME -o jsonpath='{.status.adminUiUrl}')
     mylog info "MQ Management Console : ${lf_mq_admin_url}"
+  fi
+
+  local lf_was_liberty_app_demo_url
+  if $MY_WASLIBERTY_CUSTOM; then
+    lf_was_liberty_app_demo_url=$(oc -n $MY_BACKEND_NAMESPACE get WebSphereLibertyApplication $MY_WLA_APP_NAME -o jsonpath='{.status.endpoints[0].uri}')
+    mylog info "WAS Liberty $MY_WLA_APP_NAME application URL : ${lf_was_liberty_app_demo_url}/$MY_WLA_APP_NAME"
   fi
 
   local lf_licensing_service_url lf_licensing_secret_token
@@ -484,13 +501,13 @@ function accept_license_fs() {
   lf_in_namespace=$1
 
   local accept
-  decho 5 "oc -n ${lf_in_namespace} get commonservice ${MY_COMMON_SERVICES_INSTANCE_NAME} -o jsonpath='{.spec.license.accept}'"
-  accept=$(oc -n ${lf_in_namespace} get commonservice ${MY_COMMON_SERVICES_INSTANCE_NAME} -o jsonpath='{.spec.license.accept}')
+  decho 5 "oc -n ${lf_in_namespace} get commonservice ${MY_COMMONSERVICES_INSTANCE_NAME} -o jsonpath='{.spec.license.accept}'"
+  accept=$(oc -n ${lf_in_namespace} get commonservice ${MY_COMMONSERVICES_INSTANCE_NAME} -o jsonpath='{.spec.license.accept}')
   decho 5 "accept=$accept"
   if [ "$accept" == "true" ]; then
     mylog info "license already accepted." 1>&2
   else
-    oc -n ${lf_in_namespace} patch commonservice ${MY_COMMON_SERVICES_INSTANCE_NAME} --type merge -p '{"spec": {"license": {"accept": true}}}'
+    oc -n ${lf_in_namespace} patch commonservice ${MY_COMMONSERVICES_INSTANCE_NAME} --type merge -p '{"spec": {"license": {"accept": true}}}'
   fi
 
   decho 5 "F:OUT:accept_license_fs"
@@ -580,14 +597,13 @@ function install_gitops() {
   # Après j'ai essayé de suivre dans la mesure du possible la procédure https://github.com/IBM/cloudpak-gitops/blob/main/docs/install.md
 
   lf_operator_name="$MY_GITOPS_OPERATORGROUP"
-  lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-  lf_current_chl=$MY_GITOPS_CHL
-  lf_strategy="Automatic"
   lf_catalog_source_name="redhat-operators"
+  lf_operator_namespace=$MY_OPERATORS_NAMESPACE
+  lf_strategy="Automatic"
   lf_wait_for_state=true
   lf_csv_name=$MY_GITOPS_CASE
-  decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_current_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
-  create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_current_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_wait_for_state}" "${lf_csv_name}"
+  decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
+  create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
   decho 3 "F:OUT:install_gitops"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
@@ -611,14 +627,13 @@ function install_cert_manager() {
 
   # SB]20231215 Pour obtenir le template de l'operateur cert-manager de Redhat, je l'ai installé avec la console, j'ai récupéré le Yaml puis désinstallé.
   lf_operator_name="openshift-cert-manager-operator"
-  lf_operator_namespace=$MY_CERT_MANAGER_NAMESPACE
-  lf_current_chl=$MY_CERT_MANAGER_CHL
-  lf_strategy="Automatic"
   lf_catalog_source_name="redhat-operators"
+  lf_operator_namespace=$MY_CERTMANAGER_NAMESPACE
+  lf_strategy="Automatic"
   lf_wait_for_state=true
-  lf_csv_name=$MY_CERT_MANAGER_CASE
-  decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_current_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
-  create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_current_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_wait_for_state}" "${lf_csv_name}"
+  lf_csv_name=$MY_CERTMANAGER_CASE
+  decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
+  create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
   decho 3 "F:OUT:install_cert_manager"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
@@ -647,15 +662,13 @@ function install_lic_srv() {
 
     # ATTENTION : pour le licensing server ajouter dans la partie spec.startingCSV: ibm-licensing-operator.v4.2.1 (sinon erreur).
     lf_operator_name="ibm-licensing-operator-app"
-    lf_operator_namespace=$MY_LICENSE_SERVER_NAMESPACE
-    lf_current_chl=$MY_LIC_SRV_CHL
-    lf_strategy="Automatic"
     lf_catalog_source_name="ibm-licensing-catalog"
+    lf_operator_namespace=$MY_LICENSE_SERVER_NAMESPACE
+    lf_strategy="Automatic"
     lf_wait_for_state=true
     lf_csv_name=$MY_LICENSE_SERVER_CASE
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_current_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_current_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_wait_for_state}" "${lf_csv_name}"
-
+    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
+    create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
   fi
 
   decho 3 "F:OUT:install_lic_srv"
@@ -676,7 +689,7 @@ function install_fs() {
 
   mylog info "==== IBM Common Services." 1>&2
   # ibm-cp-common-services
-  check_add_cs_ibm_pak $MY_COMMON_SERVICES_CASE amd64 $MY_COMMON_SERVICES_VERSION
+  check_add_cs_ibm_pak $MY_COMMONSERVICES_CASE amd64 $MY_COMMONSERVICES_VERSION
 
   lf_catalogsource_namespace=$MY_CATALOGSOURCES_NAMESPACE
   lf_catalogsource_name="opencloud-operators"
@@ -688,27 +701,28 @@ function install_fs() {
   create_catalogsource "${lf_catalogsource_namespace}" "${lf_catalogsource_name}" "${lf_catalogsource_dspname}" "${lf_catalogsource_image}" "${lf_catalogsource_publisher}" "${lf_catalogsource_interval}"
 
   # Pour les operations suivantes : utiliser un seul namespace
-  #lf_namespace=$MY_COMMON_SERVICES_NAMESPACE
+  #lf_namespace=$MY_COMMONSERVICES_NAMESPACE
   lf_operator_namespace=$MY_OPERATORS_NAMESPACE
 
-  # create common services operator subscription
+  #create_operator_subscription "ibm-common-service-operator" $MY_COMMONSERVICES_CHL "opencloud-operators" $MY_COMMONSERVICES_NAMESPACE "Automatic" $MY_STARTING_CSV
   lf_operator_name="ibm-common-service-operator"
-  lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-  lf_current_chl=$MY_COMMON_SERVICES_CHL
-  lf_strategy="Automatic"
   lf_catalog_source_name="opencloud-operators"
+  #lf_operator_namespace=$MY_COMMONSERVICES_NAMESPACE
+  lf_operator_namespace=$MY_OPERATORS_NAMESPACE
+  lf_strategy="Automatic"
   lf_wait_for_state=true
   lf_csv_name="ibm-common-service-operator"
-  decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_current_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
-create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_current_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_wait_for_state}" "${lf_csv_name}"
+  decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
+  create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
   ## Setting hardware  Accept the license to use foundational services by adding spec.license.accept: true in the spec section.
+  #accept_license_fs $MY_OPERATORS_NAMESPACE
   accept_license_fs $lf_operator_namespace
 
   # Configuring foundational services by using the CommonService custom resource.
   lf_operator_namespace=$MY_OPERATORS_NAMESPACE
   lf_type="CommonService"
-  lf_cr_name=$MY_COMMON_SERVICES_INSTANCE_NAME
+  lf_cr_name=$MY_COMMONSERVICES_INSTANCE_NAME
   lf_yaml_file="${MY_RESOURCESDIR}foundational-services-cr.yaml"
   decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_operator_namespace}\""
   check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_operator_namespace}"
@@ -733,14 +747,12 @@ function install_navigator() {
 
     # Creating Navigator operator subscription
     lf_operator_name="$MY_NAVIGATOR_CASE"
-    lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-    lf_current_chl=$MY_NAVIGATOR_CHL
-    lf_strategy="Automatic"
     lf_catalog_source_name="ibm-integration-platform-navigator-catalog"
+    lf_operator_namespace=$MY_OPERATORS_NAMESPACE
+    lf_strategy="Automatic"
     lf_wait_for_state=true
     lf_csv_name=$MY_NAVIGATOR_CASE
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_current_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
-  create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_current_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_wait_for_state}" "${lf_csv_name}"
+    create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
   fi
 
   if $MY_NAVIGATOR_INSTANCE; then
@@ -794,39 +806,38 @@ function install_assetrepo() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 3 "F:IN :install_assetrepo"
 
-  if $MY_ASSET_REPO; then
+  if $MY_ASSETREPO; then
     mylog info "==== Installing Asset Repository." 1>&2
     # add catalog sources using ibm_pak plugin
     check_add_cs_ibm_pak ibm-integration-asset-repository amd64
 
     # Creating Asset Repository operator subscription
     lf_operator_name="ibm-integration-asset-repository"
-    lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-    lf_current_chl="ibm-integration-asset-repository-catalog"
-    lf_strategy="Automatic"
     lf_catalog_source_name="ibm-integration-asset-repository-catalog"
+    lf_operator_namespace=$MY_OPERATORS_NAMESPACE
+    lf_strategy="Automatic"
     lf_wait_for_state=true
-    lf_csv_name=$MY_ASSET_REPO_CASE
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_current_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
-  create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_current_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_wait_for_state}" "${lf_csv_name}"
-  fi
+    lf_csv_name=$MY_ASSETREPO_CASE
+    create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
-  if $MY_ASSET_REPO_INSTANCE; then
-    #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
-    if [ -z "$MY_ASSET_REPO_VERSION" ]; then
-      export MY_ASSET_REPO_VERSION=$(oc ibm-pak list -o json | jq  --arg case "$MY_ASSET_REPO_CASE" '.[] | select (.name == $case ) | .latestAppVersion')
-      decho 3 "MY_ASSET_REPO_VERSION=$MY_ASSET_REPO_VERSION"
+    if $MY_ASSETREPO_INSTANCE; then
+      #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
+      if [ -z "$MY_ASSETREPO_VERSION" ]; then
+        export MY_ASSETREPO_VERSION=$(oc ibm-pak list -o json | jq  --arg case "$MY_ASSETREPO_CASE" '.[] | select (.name == $case ) | .latestAppVersion')
+        decho 3 "MY_ASSETREPO_VERSION=$MY_ASSETREPO_VERSION"
+      fi
+
+      # Creating Asset Repository instance
+      lf_file="${MY_OPERANDSDIR}AR-Capability.yaml"
+      lf_ns="${MY_OC_PROJECT}"
+      lf_path="{.status.phase}"
+      lf_resource="$MY_ASSETREPO_INSTANCE_NAME"
+      lf_state="Ready"
+      lf_type="AssetRepository"
+      lf_wait_for_state=true
+      create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
     fi
 
-    # Creating Asset Repository instance
-    lf_file="${MY_OPERANDSDIR}AR-Capability.yaml"
-    lf_ns="${MY_OC_PROJECT}"
-    lf_path="{.status.phase}"
-    lf_resource="$MY_ASSETREPO_INSTANCE_NAME"
-    lf_state="Ready"
-    lf_type="AssetRepository"
-    lf_wait_for_state=true
-    create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
   fi
 
   decho 3 "F:OUT:install_assetrepo"
@@ -848,14 +859,13 @@ function install_ace() {
 
     # Creating ACE operator subscription
     lf_operator_name="$MY_ACE_CASE"
-    lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-    lf_current_chl=$MY_ACE_CHL
-    lf_strategy="Automatic"
     lf_catalog_source_name="appconnect-operator-catalogsource"
-    lf_wait_for_state=true
+    lf_operator_namespace=$MY_OPERATORS_NAMESPACE
+    lf_strategy="Automatic"
     lf_csv_name=$MY_ACE_CASE
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_current_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_current_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_wait_for_state}" "${lf_csv_name}"
+    lf_wait_for_state=true
+    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
+    create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
     #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
     if [ -z "$MY_ACE_VERSION" ]; then
@@ -906,7 +916,7 @@ function customise_ace() {
   # Takes all the templates associated with the capabilities and generate the files from the context variables
   # The files are generated into ./customisation/working/<capability>/config
   if $MY_ACE_CUSTOM; then
-    mylog info "==== Customise ACE." 1>&2
+    mylog info "==== Customise ACE (ace.config.sh)." 1>&2
     . ${MY_ACE_SCRIPTDIR}scripts/ace.config.sh
   fi
 
@@ -929,14 +939,12 @@ function install_apic() {
 
     # Creating APIC operator subscription
     lf_operator_name="$MY_APIC_CASE"
-    lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-    lf_current_chl=$MY_APIC_CHL
-    lf_strategy="Automatic"
     lf_catalog_source_name="ibm-apiconnect-catalog"
+    lf_operator_namespace=$MY_OPERATORS_NAMESPACE
+    lf_strategy="Automatic"
     lf_wait_for_state=true
     lf_csv_name=$MY_APIC_CASE
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_current_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_current_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_wait_for_state}" "${lf_csv_name}"
+    create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
     #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
     if [ -z "$MY_APIC_VERSION" ]; then
@@ -954,6 +962,7 @@ function install_apic() {
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
 
     #AD/SB]20240703 enable the Gateway Cluster webGui Management and add webgui-port to set it accessible
+    mylog info "Enable web console of the API Connect Gateway"
     oc -n "${MY_OC_PROJECT}" patch GatewayCluster "${MY_APIC_INSTANCE_NAME}-gw" --type merge -p '{"spec": {"webGUIManagementEnabled": true}}'
 
     lf_type="Route"
@@ -975,8 +984,8 @@ function install_apic() {
 
     check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
 
-    save_certificate ${MY_OC_PROJECT} cp4i-apic-ingress-ca ${MY_WORKINGDIR}
-    save_certificate ${MY_OC_PROJECT} cp4i-apic-gw-gateway ${MY_WORKINGDIR}
+    save_certificate ${MY_OC_PROJECT} cp4i-apic-ingress-ca ca.crt ${MY_WORKINGDIR}
+    save_certificate ${MY_OC_PROJECT} cp4i-apic-gw-gateway ca.crt ${MY_WORKINGDIR}
   fi
 
   decho 3 "F:OUT:install_apic"
@@ -992,7 +1001,7 @@ function customise_apic() {
   # Takes all the templates associated with the capabilities and generate the files from the context variables
   # The files are generated into ./customisation/working/<capability>/config
   if $MY_APIC_CUSTOM; then
-    mylog info "==== Customise APIC." 1>&2
+    mylog info "==== Customise APIC (apic.config.sh)." 1>&2
     . ${MY_APIC_SCRIPTDIR}scripts/apic.config.sh
   fi
 
@@ -1052,7 +1061,7 @@ function customise_openliberty() {
 
   # backend J2EE applications
   if $MY_OPENLIBERTY_CUSTOM; then
-  mylog info "==== Customise Open Liberty." 1>&2
+  mylog info "==== Customise Open Liberty (olp.config.sh)." 1>&2
     . ${MY_OPENLIBERTY_SCRIPTDIR}scripts/olp.config.sh
   fi
 
@@ -1083,16 +1092,22 @@ function install_wasliberty() {
     decho 3 "create_catalogsource \"${lf_catalogsource_namespace}\" \"${lf_catalogsource_name}\" \"${lf_catalogsource_dspname}\" \"${lf_catalogsource_image}\" \"${lf_catalogsource_publisher}\" \"${lf_catalogsource_interval}\""
     create_catalogsource "${lf_catalogsource_namespace}" "${lf_catalogsource_name}" "${lf_catalogsource_dspname}" "${lf_catalogsource_image}" "${lf_catalogsource_publisher}" "${lf_catalogsource_interval}"
 
+    # Operator group for WAS Liberty in single namespace
+    lf_type="OperatorGroup"
+    lf_cr_name="${MY_WAS_LIBERTY_OPERATORGROUP}"
+    lf_yaml_file="${MY_RESOURCESDIR}operator-group-single.yaml"
+    lf_namespace=$MY_BACKEND_NAMESPACE
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
+
     # Creating WebSphere Liberty operator subscription
     lf_operator_name="ibm-websphere-liberty"
-    lf_operator_namespace=$MY_BACKEND_NAMESPACE
-    lf_current_chl=$MY_WL_CHL
-    lf_strategy="Automatic"
     lf_catalog_source_name="ibm-operator-catalog"
+    lf_operator_namespace=$MY_BACKEND_NAMESPACE
+    lf_strategy="Automatic"
     lf_wait_for_state=true
     lf_csv_name=$MY_WL_CASE
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_current_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_current_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_wait_for_state}" "${lf_csv_name}"
+    create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
   fi
 
   decho 3 "F:OUT:install_wasliberty"
@@ -1106,7 +1121,7 @@ function customise_wasliberty() {
   decho 3 "F:IN:customise_wasliberty"
 
   if $MY_WASLIBERTY_CUSTOM; then
-  mylog info "==== Customise WAS Liberty." 1>&2
+  mylog info "==== Customise WAS Liberty (was.config.sh)." 1>&2
     . ${MY_WASLIBERTY_SCRIPTDIR}scripts/was.config.sh
     fi
 
@@ -1129,16 +1144,13 @@ function install_dpgw() {
       export MY_DPGW_VERSION=$(oc ibm-pak list -o json | jq  --arg case "$MY_DPGW_CASE" '.[] | select (.name == $case ) | .latestAppVersion')
     fi
 
-    # Creating Datapower operator subscription
     lf_operator_name="datapower-operator"
-    lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-    lf_current_chl=$MY_DPGW_CHL
-    lf_strategy="Automatic"
     lf_catalog_source_name="ibm-datapower-operator-catalog"
+    lf_operator_namespace=$MY_OPERATORS_NAMESPACE
+    lf_strategy="Automatic"
     lf_wait_for_state=true
     lf_csv_name=$MY_DPGW_CASE
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_current_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_current_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_wait_for_state}" "${lf_csv_name}"
+    create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
   fi
 
   decho 3 "F:OUT:install_dpgw"
@@ -1163,15 +1175,13 @@ function install_eem() {
 
 
     # Creating Event Endpoint Management operator subscription
-    lf_operator_name=$MY_EEM_CASE
-    lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-    lf_current_chl=$MY_EEM_CHL
-    lf_strategy="Automatic"
+    lf_operator_name="ibm-eventendpointmanagement"
     lf_catalog_source_name="ibm-eventendpointmanagement-catalog"
+    lf_operator_namespace=$MY_OPERATORS_NAMESPACE
+    lf_strategy="Automatic"
     lf_wait_for_state=true
     lf_csv_name=$MY_EEM_CASE
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_current_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_current_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_wait_for_state}" "${lf_csv_name}"
+    create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
     #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
     if [ -z "$MY_EEM_VERSION" ]; then
@@ -1213,10 +1223,9 @@ function customise_eem() {
   decho 3 "F:IN :customise_eem"
 
   if $MY_EEM_CUSTOM; then
-    mylog info "==== Customise Event Endpoint Management." 1>&2
-
+    mylog info "==== Customise Event Endpoint Management (eem.config.sh)." 1>&2
     # launch custom script
-    mylog info "Customise EEM"
+      . ${MY_EEM_SCRIPTDIR}scripts/eem.config.sh
   fi
 
   decho 3 "F:OUT:customise_eem"
@@ -1256,8 +1265,7 @@ function customise_egw() {
 
   # Creating EventGateway instance (Event Gateway)
   if $MY_EGW_CUSTOM; then
-    mylog info "==== Customise Event Endpoint Gateway." 1>&2
-
+    mylog info "==== Customise Event Endpoint Gateway ()." 1>&2
   fi
 
   decho 3 "F:OUT:customise_egw"
@@ -1280,15 +1288,13 @@ function install_ep() {
     #oc -n  $lf_in_ns ibm-pak launch ibm-eventprocessing --version $MY_EP_CASE --inventory epOperatorSetup --action installCatalog
 
     ## Creating Event processing operator subscription
-    lf_operator_name=$MY_EP_CASE
-    lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-    lf_current_chl=$MY_EP_CHL
-    lf_strategy="Automatic"
+    lf_operator_name="$MY_EP_CASE"
     lf_catalog_source_name="ibm-eventprocessing-catalog"
+    lf_operator_namespace=$MY_OPERATORS_NAMESPACE
+    lf_strategy="Automatic"
     lf_wait_for_state=true
     lf_csv_name=$MY_EP_CASE
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_current_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_current_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_wait_for_state}" "${lf_csv_name}"
+    create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
     #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
     if [ -z "$MY_EP_VERSION" ]; then
@@ -1340,9 +1346,8 @@ function customise_ep() {
   # The files are generated into ./customisation/working/<capability>/config
   ## Creating Event Processing users and roles
   if $MY_EP_CUSTOM; then
-    mylog info "==== Customise Event Endpoint Processing." 1>&2
+    mylog info "==== Customise Event Endpoint Processing ()." 1>&2
     # launch custom script
-    mylog info "Customise Event Processing"
   fi
 
   decho 3 "F:OUT:customise_ep"
@@ -1362,15 +1367,13 @@ function install_es() {
     check_add_cs_ibm_pak $MY_ES_CASE amd64
 
     # Creating EventStreams operator subscription
-    lf_operator_name=$MY_ES_CASE
-    lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-    lf_current_chl=$MY_ES_CHL
-    lf_strategy="Automatic"
+    lf_operator_name="$MY_ES_CASE"
     lf_catalog_source_name="ibm-eventstreams"
+    lf_operator_namespace=$MY_OPERATORS_NAMESPACE
+    lf_strategy="Automatic"
     lf_wait_for_state=true
     lf_csv_name=$MY_ES_CASE
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_current_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_current_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_wait_for_state}" "${lf_csv_name}"
+    create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
     #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
     if [ -z "$MY_ES_VERSION" ]; then
@@ -1415,7 +1418,7 @@ function customise_es() {
   # - operands properties file,
   # - topics, ...
   if $MY_ES_CUSTOM; then
-      mylog info "==== Customise Event Streams" 1>&2
+      mylog info "==== Customise Event Streams (es.config.sh)." 1>&2
 
     # generate the differents properties files
     # SB]20231109 some generated files (yaml) are based on other generated files (properties), so :
@@ -1436,7 +1439,7 @@ function customise_es() {
     lf_yaml_file="${MY_RESOURCESDIR}openshift-monitoring-cm.yaml"
     lf_namespace="openshift-monitoring"
     check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
-      . ${MY_ES_SCRIPTDIR}scripts/es.config.sh
+    . ${MY_ES_SCRIPTDIR}scripts/es.config.sh
   fi
 
   decho 3 "F:OUT:customise_es"
@@ -1461,18 +1464,15 @@ function install_flink() {
     ## SB]20231020 For Flink and Event processing install the operator with the following command :
     ## https://ibm.github.io/event-automation/ep/installing/installing/, Chapter : Install the operator by using the CLI (oc ibm-pak)
     ## event flink
-    ## Creating Event processing operator subscription
-    
     ## Creating Eventautomation Flink operator subscription
-    lf_operator_name=$MY_FLINK_CASE
-    lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-    lf_current_chl=$MY_ES_CHL
-    lf_strategy="Automatic"
+    ## Creating Event processing operator subscription
+    lf_operator_name="$MY_FLINK_CASE"
     lf_catalog_source_name="ibm-eventautomation-flink-catalog"
+    lf_operator_namespace=$MY_OPERATORS_NAMESPACE
+    lf_strategy="Automatic"
     lf_wait_for_state=true
     lf_csv_name=$MY_FLINK_CASE
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_current_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_current_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_wait_for_state}" "${lf_csv_name}"
+    create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
     ## Creation of Event automation Flink PVC and instance
     # Even if it's a pvc we use the same generic function
@@ -1516,7 +1516,7 @@ function customise_flink() {
 
   local lf_in_ns=$1
   if $MY_FLINK_CUSTOM; then
-    mylog info "==== Customise Flink." 1>&2
+    mylog info "==== Customise Flink ()." 1>&2
   fi
 
   decho 3 "F:OUT:customise_flink"
@@ -1540,14 +1540,12 @@ function install_hsts() {
 
     # Creating Aspera HSTS operator subscription
     lf_operator_name="aspera-hsts-operator"
-    lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-    lf_current_chl=$MY_HSTS_CHL
-    lf_strategy="Automatic"
     lf_catalog_source_name="aspera-operators"
+    lf_operator_namespace=$MY_OPERATORS_NAMESPACE
+    lf_strategy="Automatic"
     lf_wait_for_state=true
     lf_csv_name=$MY_HSTS_CASE
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_current_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_current_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_wait_for_state}" "${lf_csv_name}"
+    create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
     lf_file="${MY_OPERANDSDIR}AsperaHSTS-Capability.yaml"
     lf_ns="${MY_OC_PROJECT}"
@@ -1571,7 +1569,7 @@ function customise_hsts() {
 
   # ibm aspera hsts
   if $MY_HSTS_CUSTOM; then
-    mylog info "==== Customise HSTS." 1>&2
+    mylog info "==== Customise HSTS ()." 1>&2
   fi
 
   decho 3 "F:OUT:customise_hsts"
@@ -1592,15 +1590,13 @@ function install_mq() {
     check_add_cs_ibm_pak $MY_MQ_CASE amd64
 
     # Creating MQ operator subscription
-    lf_operator_name=$MY_MQ_CASE
-    lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-    lf_current_chl=$MY_MQ_CHL
-    lf_strategy="Automatic"
+    lf_operator_name="$MY_MQ_CASE"
     lf_catalog_source_name="ibmmq-operator-catalogsource"
+    lf_operator_namespace=$MY_OPERATORS_NAMESPACE
+    lf_strategy="Automatic"
     lf_wait_for_state=true
     lf_csv_name=$MY_MQ_CASE
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_current_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_current_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_wait_for_state}" "${lf_csv_name}"
+    create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
     # Creating MQ instance
     #lf_file="${MY_OPERANDSDIR}MQ-Capability.yaml"
@@ -1612,7 +1608,7 @@ function install_mq() {
     #lf_wait_for_state=true
     #create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
  
-    # Use the new CRD MessagingServer(availabe since CP4I 16.1.0-SC2) 
+    # Use the new CRD MessagingServer(available since CP4I 16.1.0-SC2) 
     if $MY_MESSAGINGSERVER; then
       # Creating MQ MessagingServer instance
       lf_file="${MY_OPERANDSDIR}MessagingServer-Capability.yaml"
@@ -1647,7 +1643,7 @@ function customise_mq() {
     fi
 
     # launch custom script
-    mylog info "Customise MQ"
+    mylog info "Customise MQ (mq.config.sh)."
     . ${MY_MQ_SCRIPTDIR}scripts/mq.config.sh -i ${sc_properties_file} ${sc_versions_file} ${MY_MQ_INSTANCE_NAME}
   fi
 
@@ -1674,18 +1670,14 @@ function install_instana() {
     # Create namespace for Instana agent. The instana agent must be istalled in instana-agent namespace.
     create_namespace $MY_INSTANA_AGENT_NAMESPACE
 
-    oc -n $MY_INSTANA_AGENT_NAMESPACE adm policy add-scc-to-user privileged -z instana-agent
-    
-    # Create Instana agent subscription.
     lf_operator_name="instana-agent-operator"
-    lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-    lf_current_chl=$MY_INSTANA_CHL
-    lf_strategy="Automatic"
     lf_catalog_source_name="certified-operators"
+    lf_operator_namespace=$MY_OPERATORS_NAMESPACE
+    lf_strategy="Automatic"
+    lf_csv_name="instana-agent-operator"
     lf_wait_for_state=true
-    lf_csv_name=$MY_INSTANA_CSV_NAME
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_current_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_current_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_wait_for_state}" "${lf_csv_name}"
+    oc -n $MY_INSTANA_AGENT_NAMESPACE adm policy add-scc-to-user privileged -z instana-agent
+    create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
     # Creating Instana agent
     lf_file="${MY_OPERANDSDIR}Instana-Agent-CloudIBM-Capability.yaml"
@@ -1712,7 +1704,7 @@ function customise_instana() {
   #SB]20230201 Ajout d'Instana
   # Creating Instana operator subscription
   if $MY_INSTANA_CUSTOM; then
-    mylog info "==== Customise Instana." 1>&2
+    mylog info "==== Customise Instana ()." 1>&2
   fi
 
   decho 3 "F:OUT:customise_instana"
@@ -1728,197 +1720,129 @@ function install_logging_elk() {
 
   # Openshift Logging
   if $MY_LOGGING_ELK; then
-    mylog info "==== Installing Cluster Logging using ELK." 1>&2
+    mylog info "==== Installing Cluster Logging : ELK log store." 1>&2
 
-    # Create a namespace object for Loki Operator
-    oc apply -f ${MY_RESOURCESDIR}loki-namespace.yaml
+    # Create a namespace object for ELK Operator
+    oc apply -f ${MY_RESOURCESDIR}logging-namespace.yaml
 
-    # Create a subscription object for Loki Operator
-    lf_operator_name=$MY_LOGGING_OPERATOR
-    #lf_operator_namespace="openshift-operators-redhat"
-    lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-    lf_current_chl=$MY_LOKI_CHL
-    lf_strategy="Automatic"
-    lf_catalog_source_name="redhat-operators"
-    lf_wait_for_state=true
-    lf_csv_name=$MY_LOGGING_OPERATOR
+    # Create an OperatorGroup object for ELK Operator
+    local lf_type="OperatorGroup"
+    local lf_cr_name="openshift-operators-redhat"
+    local lf_yaml_file="${MY_RESOURCESDIR}operator-group-elk.yaml"
+    local lf_namespace="openshift-operators-redhat"
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
+
+    # Create a subscription object for Openshift Elasticsearch  Operator
+    #local lf_operator_name="${MY_OC_PROJECT}-elasticsearch-operator"
+    local lf_operator_name="elasticsearch-operator"
+    local lf_operator_namespace="openshift-operators-redhat"
+    #local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
+    local lf_current_chl=$MY_ELK_CHL
+    local lf_strategy="Automatic"
+    local lf_catalog_source_name="redhat-operators"
+    local lf_wait_for_state=true
+    local lf_csv_name="$lf_operator_name"
     decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_current_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_current_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_wait_for_state}" "${lf_csv_name}"
-
-    # Create a LokiStack instance
-    lf_file="${MY_OPERANDSDIR}Loki-Capability.yaml"
-    lf_ns=$MY_LOGGING_NAMESPACE
-    lf_path="{.status.phase}"
-    lf_resource="$MY_LOKI_INSTANCE_NAME"
-    lf_state="Ready"
-    lf_type="daemonset"
-    lf_wait_for_state=true
-    create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
-
-    # Create a namespace for Red Hat Openshift Logging Operator
-    oc apply -f ${MY_RESOURCESDIR}rhol-namespace.yaml
- 
-    # Create an OperatorGroup object for Red Hat Openhsift Logging Operator
-    ls_type="OperatorGroup"
-    ls_cr_name="${MY_LOGGING_OPERATORGROUP}"
-    ls_yaml_file="${MY_RESOURCESDIR}operator-group-single.yaml"
-    ls_namespace=$MY_LOGGING_NAMESPACE
-    export MY_OPERATORGROUP="${MY_LOGGING_OPERATORGROUP}"
-    check_create_oc_yaml "${ls_type}" "${ls_cr_name}" "${ls_yaml_file}" "${ls_namespace}"
-
-    # create a subscription object for the Red Hat Openshift Logging Operator
-    lf_operator_name=$MY_LOGGING_OPERATORGROUP
-    lf_operator_namespace=$MY_LOGGING_NAMESPACE
-    lf_current_chl=$MY_RHOL_CHL
-    lf_strategy="Automatic"
-    lf_catalog_source_name="redhat-operators"
-    lf_wait_for_state=true
-    lf_csv_name=$MY_LOGGING_OPERATOR
-    export MY_CURRENT_CHL="stable"
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_current_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_wait_for_state}" "${lf_csv_name}"
-
-    # Create a Red Hat Openshift Logging instance
-    lf_file="${MY_OPERANDSDIR}Rhol-Capability.yaml"
-    lf_ns=$MY_LOGGING_NAMESPACE
-    lf_path="{.status.phase}"
-    lf_resource="$MY_RHOL_INSTANCE_NAME"
-    lf_state="Ready"
-    lf_type="daemonset"
-    lf_wait_for_state=true
-    create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
+    create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"      
   fi
 
   decho 3 "F:OUT:install_logging_elk"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
-#########################################
-# Install CP4I Cluster Logging usinh Loki
+###############################################
+# Install CP4I Cluster Logging : Loki log store
 # use Openshift Logging
+# https://docs.openshift.com/container-platform/4.14/observability/logging/cluster-logging-deploying.html#logging-loki-cli-install_cluster-logging-deploying
 function install_logging_loki() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 3 "F:IN :install_logging_loki"
 
   # Openshift Logging
   if $MY_LOGGING_LOKI; then
-    mylog info "==== Installing Cluster Logging." 1>&2
+    mylog info "==== Installing Cluster Logging : Loki log store." 1>&2
 
     # Create a namespace object for Loki Operator
     oc apply -f ${MY_RESOURCESDIR}loki-namespace.yaml
 
     # Create a subscription object for Loki Operator
-    lf_operator_name=$MY_LOGGING_OPERATOR
-    #lf_operator_namespace="openshift-operators-redhat"
-    lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-    lf_current_chl=$MY_LOKI_CHL
-    lf_strategy="Automatic"
-    lf_catalog_source_name="redhat-operators"
-    lf_wait_for_state=true
-    lf_csv_name=$MY_LOGGING_OPERATOR
+    local lf_operator_name=$MY_LOKI_OPERATOR
+    #local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
+    local lf_operator_namespace="openshift-operators-redhat"
+    local lf_current_chl=$MY_LOKI_CHL
+    local lf_strategy="Automatic"
+    local lf_catalog_source_name="redhat-operators"
+    local lf_wait_for_state=true
+    local lf_csv_name=$MY_LOKI_OPERATOR
     decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_current_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_current_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_wait_for_state}" "${lf_csv_name}"
+    create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"      
+
+    # Create a namespace object for Red Hat Openshift Logging Operator
+    oc apply -f ${MY_RESOURCESDIR}rhel-logging-namespace.yaml
+
+    # Create an OperatorGroup object for Red Hat Openhsift Logging Operator
+    local lf_type="OperatorGroup"
+    local lf_cr_name="${MY_LOGGING_OPERATORGROUP}"
+    local lf_yaml_file="${MY_RESOURCESDIR}operator-group-single.yaml"
+    local lf_namespace=$MY_LOGGING_NAMESPACE
+    export MY_OPERATORGROUP="${MY_LOGGING_OPERATORGROUP}"
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
+    
+    # Create a subscription object for Red Hat Openshift Logging Operator
+    local lf_operator_name=$MY_LOGGING_OPERATORGROUP
+    local lf_operator_namespace="${MY_LOGGING_NAMESPACE}"
+    local lf_current_chl=$MY_RHOL_CHL
+    local lf_strategy="Automatic"
+    local lf_catalog_source_name="redhat-operators"
+    local lf_wait_for_state=true
+    local lf_csv_name=$MY_LOGGING_OPERATORGROUP
+    export MY_CURRENT_CHL="stable"
+    #export MY_CURRENT_CHL="stable-5.9"
+    export MY_STARTING_CSV="${MY_LOKI_STARTINGCSV}"
+    create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
     # create an ObjectBucketClaim in openshift-logging namespace
-    lf_operator_namespace=$MY_LOGGING_NAMESPACE
-    lf_type="ObjectBucketClaim"
-    lf_cr_name=$MY_LOKI_BUCKET_INSTANCE_NAME
-    lf_yaml_file="${MY_RESOURCESDIR}objectbucketclaim.yaml"
+    local lf_operator_namespace=$MY_LOGGING_NAMESPACE
+    local lf_type="ObjectBucketClaim"
+    local lf_cr_name=$MY_LOKI_BUCKET_INSTANCE_NAME
+    local lf_yaml_file="${MY_RESOURCESDIR}objectbucketclaim.yaml"
     decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_operator_namespace}\""
     check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_operator_namespace}"
 
     # get the needed parameters to create the object storage secret
-    #local lf_bucket_name=$(oc get -n $MY_LOGGING_NAMESPACE configmap $MY_LOKI_BUCKET_INSTANCE_NAME -o jsonpath='{.data.BUCKET_NAME}')
-    #local lf_bucket_host=$(oc get -n $MY_LOGGING_NAMESPACE configmap $MY_LOKI_BUCKET_INSTANCE_NAME -o jsonpath='{.data.BUCKET_HOST}')
-    #local lf_bucket_port=$(oc get -n $MY_LOGGING_NAMESPACE configmap $MY_LOKI_BUCKET_INSTANCE_NAME -o jsonpath='{.data.BUCKET_PORT}')
-    #local lf_access_key_id=$(oc get -n $MY_LOGGING_NAMESPACE secret $MY_LOKI_BUCKET_INSTANCE_NAME -o jsonpath='{.data.AWS_ACCESS_KEY_ID}' | base64 -d)
-    #local lf_secret_access_key=$(oc get -n n $MY_LOGGING_NAMESPACE secret $MY_LOKI_BUCKET_INSTANCE_NAME -o jsonpath='{.data.AWS_SECRET_ACCESS_KEY}' | base64 -d)
-    #local lf_access_key_id=$(oc get -n openshift-storage secret noobaa-admin -o jsonpath='{.data.AWS_ACCESS_KEY_ID}' | base64 --decode)
-    #local lf_secret_access_key=$(oc get -n openshift-storage secret noobaa-admin -o jsonpath='{.data.AWS_SECRET_ACCESS_KEY}' | base64 --decode)
     export MY_LOKI_ACCESS_KEY_ID=$(oc get -n openshift-storage secret  rook-ceph-object-user-ocs-storagecluster-cephobjectstore-noobaa-ceph-objectstore-user -o jsonpath='{.data.AccessKey}'| base64 --decode)
     export MY_LOKI_ACCESS_KEY_SECRET=$(oc get -n openshift-storage secret  rook-ceph-object-user-ocs-storagecluster-cephobjectstore-noobaa-ceph-objectstore-user -o jsonpath='{.data.SecretKey}'| base64 --decode)
     export MY_LOKI_ENDPOINT=$(oc get -n openshift-storage secret  rook-ceph-object-user-ocs-storagecluster-cephobjectstore-noobaa-ceph-objectstore-user -o jsonpath='{.data.Endpoint}'| base64 --decode)
-    lf_operator_namespace=$MY_LOGGING_NAMESPACE
-    lf_type="Secret"
-    lf_cr_name=$MY_LOKI_SECRET
-    lf_yaml_file="${MY_RESOURCESDIR}loki-secret.yaml"
+    local lf_operator_namespace="${MY_LOGGING_NAMESPACE}"
+    local lf_type="Secret"
+    local lf_cr_name=$MY_LOKI_SECRET
+    local lf_yaml_file="${MY_RESOURCESDIR}loki-secret.yaml"
+    decho 3 "MY_LOKI_ACCESS_KEY_ID=$MY_LOKI_ACCESS_KEY_ID|MY_LOKI_ACCESS_KEY_SECRET=$MY_LOKI_ACCESS_KEY_SECRET|MY_LOKI_ENDPOINT=$MY_LOKI_ENDPOINT"
     decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_operator_namespace}\""
     check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_operator_namespace}"
 
-    #decho 3 "lf_bucket_name=$lf_bucket_name|lf_bucket_host=$lf_bucket_host|lf_bucket_port=$lf_bucket_port|lf_access_key_id=$lf_access_key_id|lf_secret_access_key=$lf_secret_access_key"
-    #oc create -n $MY_LOGGING_NAMESPACE secret generic $MY_LOKI_SECRET \
-    #          --from-literal=access_key_id="${lf_access_key_id}" \
-    #          --from-literal=access_key_secret="${lf_secret_access_key}"
-    #          --from-literal=bucketnames="${lf_bucket_name}" \
-    #          --from-literal=endpoint="https://${lf_bucket_host}:${lf_bucket_port}"
-
     # Create a LokiStack instance
-    lf_file="${MY_OPERANDSDIR}Loki-Capability.yaml"
-    lf_ns=$MY_LOGGING_NAMESPACE
-    lf_path="{.status.conditions[1].type}"
-    lf_resource="$MY_LOKI_INSTANCE_NAME"
-    lf_state="Ready"
-    lf_type="LokiStack"
-    lf_wait_for_state=true
+    local lf_file="${MY_OPERANDSDIR}Loki-Capability.yaml"
+    local lf_ns=$MY_LOGGING_NAMESPACE
+    local lf_path="{.status.conditions[0].type}"
+    local lf_resource="$MY_LOKI_INSTANCE_NAME"
+    local lf_state="Ready"
+    local lf_type="LokiStack"
+    local lf_wait_for_state=true
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
 
-    # Create a namespace for Red Hat Openshift Logging Operator
-    oc apply -f ${MY_RESOURCESDIR}rhol-namespace.yaml
- 
-    # Create an OperatorGroup object for Red Hat Openhsift Logging Operator
-    ls_type="OperatorGroup"
-    ls_cr_name="${MY_LOGGING_OPERATORGROUP}"
-    ls_yaml_file="${MY_RESOURCESDIR}operator-group-single.yaml"
-    ls_namespace=$MY_LOGGING_NAMESPACE
-    export MY_OPERATORGROUP="${MY_LOGGING_OPERATORGROUP}"
-    check_create_oc_yaml "${ls_type}" "${ls_cr_name}" "${ls_yaml_file}" "${ls_namespace}"
-
-    # create a subscription object for the Red Hat Openshift Logging Operator
-    lf_operator_name=$MY_LOGGING_OPERATORGROUP
-    lf_operator_namespace=$MY_LOGGING_NAMESPACE
-    lf_current_chl=$MY_RHOL_CHL
-    lf_strategy="Automatic"
-    lf_catalog_source_name="redhat-operators"
-    lf_wait_for_state=true
-    lf_csv_name=$MY_LOGGING_OPERATOR
-    export MY_CURRENT_CHL="stable"
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_current_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_wait_for_state}" "${lf_csv_name}"
-
-    # Create a Red Hat Openshift Logging instance
-    lf_file="${MY_OPERANDSDIR}Rhol-Capability.yaml"
-    lf_ns=$MY_LOGGING_NAMESPACE
-    lf_path="{.status.conditions[0].type}"
-    lf_resource="$MY_RHOL_INSTANCE_NAME"
-    lf_state="Ready"
-    lf_type="ClusterLogging"
-    lf_wait_for_state=true
+    # Create a ClusterLogging CR object
+    local lf_file="${MY_OPERANDSDIR}Rhol-Loki-Capability.yaml"
+    local lf_ns=$MY_LOGGING_NAMESPACE
+    local lf_path="{.status.conditions[0].type}"
+    local lf_resource="$MY_RHOL_INSTANCE_NAME"
+    local lf_state="Ready"
+    local lf_type="ClusterLogging"
+    local lf_wait_for_state=true
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
   fi
 
   decho 3 "F:OUT:install_logging_loki"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
-}
-
-################################################
-# Customise MQ
-function customise_mq() {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 3 "F:IN :customise_mq"
-
-  # Takes all the templates associated with the capabilities and generate the files from the context variables
-  # The files are generated into ./customisation/working/<capability>/config
-  if $MY_MQ_CUSTOM; then
- 
-    #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
-    if [ -z "$MY_MQ_VERSION" ]; then
-      export MY_MQ_VERSION=$(oc ibm-pak list -o json | jq  --arg case "$MY_MQ_CASE" '.[] | select (.name == $case ) | .latestAppVersion')
-    fi
-
-    # launch custom script
-    mylog info "Customise MQ"
-    . ${MY_MQ_SCRIPTDIR}scripts/mq.config.sh -i ${sc_properties_file} ${sc_versions_file} ${MY_MQ_INSTANCE_NAME}
-  fi
-
-  decho 3 "F:OUT:customise_mq"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -1939,7 +1863,7 @@ sc_cluster_name=$4
 #
 export ADEBUG=1
 export TECHZONE=true
-export TRACELEVEL=3
+export TRACELEVEL=4
 
 # SB]20240404 Global Index sequence for incremental output for each function call
 export SC_SPACES_COUNTER=0
@@ -1956,7 +1880,7 @@ else
   echo "The provided arguments are: $@"
 fi
 
-trap 'display_access_info' EXIT
+# trap 'display_access_info' EXIT
 # load helper functions
 . "${MAINSCRIPTDIR}"lib.sh
 
@@ -1975,16 +1899,16 @@ check_exec_prereqs
 
 check_directory_exist_create "$MY_WORKINGDIR"
 
-: <<'END_COMMENT'
 
+: <<'END_COMMENT'
 # Log to IBM Cloud
-login_2_ibm_cloud
+#login_2_ibm_cloud
 
 # Create Openshift cluster
-create_openshift_cluster_wait_4_availability
+#create_openshift_cluster_wait_4_availability
 
 # Log to openshift cluster
-login_2_openshift_cluster
+#login_2_openshift_cluster
 
 # Create project namespace.
 # SB]20231213 erreur obtenue juste après la création du cluster openshift : Error from server (Forbidden): You may not request a new project via this API.
@@ -2006,14 +1930,14 @@ fi
 # We decided to install in openshift-operators so no need to OperatorGroup !
 # TODO # nommer correctement les operatorgroup
 create_namespace $MY_OC_PROJECT
-create_namespace $MY_COMMON_SERVICES_NAMESPACE
+create_namespace $MY_COMMONSERVICES_NAMESPACE
 
-create_namespace $MY_CERT_MANAGER_NAMESPACE
+create_namespace $MY_CERTMANAGER_NAMESPACE
 ls_type="OperatorGroup"
-ls_cr_name="${MY_CERT_MANAGER_OPERATORGROUP}"
+ls_cr_name="${MY_CERTMANAGER_OPERATORGROUP}"
 ls_yaml_file="${MY_RESOURCESDIR}operator-group-single.yaml"
-ls_namespace=$MY_CERT_MANAGER_NAMESPACE
-export MY_OPERATORGROUP="${MY_CERT_MANAGER_OPERATORGROUP}"
+ls_namespace=$MY_CERTMANAGER_NAMESPACE
+export MY_OPERATORGROUP="${MY_CERTMANAGER_OPERATORGROUP}"
 check_create_oc_yaml "${ls_type}" "${ls_cr_name}" "${ls_yaml_file}" "${ls_namespace}"
 
 create_namespace $MY_LICENSE_SERVER_NAMESPACE
@@ -2045,8 +1969,6 @@ install_cert_manager
 install_lic_srv
 install_fs
 install_mailhog
-
-# Add OpenLdap app to openshift
 install_openldap
 
 # install_xxx: For each capability install : case, operator, operand
@@ -2065,26 +1987,25 @@ install_ace
 
 install_apic
 
+install_es
+
 install_eem $MY_CATALOGSOURCES_NAMESPACE
 
 install_egw
 
-install_ep $MY_CATALOGSOURCES_NAMESPACE
-
-install_es
-
 install_flink $MY_CATALOGSOURCES_NAMESPACE
+
+install_ep $MY_CATALOGSOURCES_NAMESPACE
 
 install_hsts
 
 install_mq
 
-install_instana
-
 END_COMMENT
+install_instana
+: <<'END_COMMENT'
 
 install_logging_loki
-exit 0
 
 ######################################################
 # Start customisation
@@ -2122,3 +2043,4 @@ customise_mq
 customise_instana
 
 exit 0
+END_COMMENT

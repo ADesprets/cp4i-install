@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: $EEM_APIC_INGRESS_CA_CERT_SECRET_NAME
+  namespace: $MY_OC_PROJECT
+data:
+  ca.crt: $EEM_APIC_INGRESS_CA_CERT
+type: Opaque

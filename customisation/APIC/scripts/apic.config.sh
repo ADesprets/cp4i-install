@@ -175,7 +175,7 @@ function create_topology() {
   -H 'Content-Type: application/json' \
   --data-binary "{\"analytics_service_url\":	\"$analytUrl\" }");
 
-  decho 3 "analytGwy: $analytGwy"
+  decho 5 "analytGwy: $analytGwy"
 
   mylog info "Create Portal Service"
 
@@ -185,7 +185,7 @@ function create_topology() {
   -H "content-type: application/json"\
   --data "{\"title\":\"API Portal Service\",\"name\":\"portal-service\",\"endpoint\":\"https://$EP_PADMIN\",\"web_endpoint_base\":\"https://$EP_PORTAL\",\"visibility\":{\"group_urls\":null,\"org_urls\":null,\"type\":\"public\"}}");
 
-  decho 3 "createPortal: $createPortal"
+  decho 5 "createPortal: $createPortal"
 }
 
 ################################################
@@ -345,7 +345,7 @@ function create_apic_resources() {
   local sandboxCfoauthProviderURL=$(curl -sk "${PLATFORM_API_URL}${lf_apicpath}" -H "Authorization: Bearer $lf_am_token" -H 'Accept: application/json' | jq --arg ur "$oauthProviderURL" '.results[].user_registry_url | select(. == "$ur")')
   decho 3 "sandboxCfoauthProviderURL: $sandboxCfoauthProviderURL"
 
-  # Add it if not already added TODO if
+  # Add it if not already added TODO if, important for idempotence  (hard coded for now)
   if [ 2 -gt 3 ]; then
     lf_org=APIC_PROVIDER_ORG
     lf_apicpath=api/catalogs/$org/$catalog/configured-oauth-providers
@@ -373,8 +373,8 @@ function load_apis () {
 # First set the variables needed to adapt each file
 
 # Definition of all the API, the order is important betwen the two arrays
-api_names=("ping-api" "ibm-sample-order-api" "stock" "fakeauthenticationurl" "takeoff" "landings" "taxi-locator" "taxi-messaging" "swaggerpetstoreopenapi-3-0" "swagger-petstore")
-api_files=("ping-api_1.0.0.json" "ibm-sample-order-api_1.0.0.json" "stock_1.0.0.json" "fakeauthenticationurl_1.0.0.json" "takeoff_1.0.0.json" "landings_2.0.0.json" "taxi-locator_1.0.0.json" "taxi-messaging_1.0.0.json" "swaggerpetstoreopenapi-3-0_1.0.11.json" "swagger-petstore_1.0.6.json")
+api_names=("ping-api" "ibm-sample-order-api" "stock" "fakeauthenticationurl" "takeoff" "landings" "taxi-locator" "taxi-messaging" "swaggerpetstoreopenapi-3-0" "swagger-petstore" "httpbin")
+api_files=("ping-api_1.0.0.json" "ibm-sample-order-api_1.0.0.json" "stock_1.0.0.json" "fakeauthenticationurl_1.0.0.json" "takeoff_1.0.0.json" "landings_2.0.0.json" "taxi-locator_1.0.0.json" "taxi-messaging_1.0.0.json" "swaggerpetstoreopenapi-3-0_1.0.11.json" "swagger-petstore_1.0.6.json" "httpbin-1.0.0.json")
 
 for index in ${!api_names[@]}
   do
@@ -447,7 +447,7 @@ function init_apic_variables() {
 
 ################################################
 # Download toolkit
-# @param org_name: The name of the organisation.
+# @param
 function download_tools () {
   # APIC_NAMESPACE=$(oc get apiconnectcluster -A -o jsonpath='{..namespace}')
   local apic_instance=$(oc -n "${apic_project}" get apiconnectcluster -o=jsonpath='{.items[0].metadata.name}')
@@ -470,7 +470,7 @@ function download_tools () {
 
   pushd "${MY_APIC_GEN_CUSTOMDIR}config"
   if test ! -e "${MY_APIC_GEN_CUSTOMDIR}config/${lf_file2download}";then
-  	mylog info "Downloading toolkit $MY_PLATFORM" 1>&2
+  	mylog info "Downloading toolkit for $MY_PLATFORM platform" 1>&2
     apic_mgmt_client_downloads_server_pod="$(oc -n ${apic_project} get po -l app.kubernetes.io/name=client-downloads-server,app.kubernetes.io/part-of=${apic_instance} -o=jsonpath='{.items[0].metadata.name}')"
     # SB]20240207 using absolute path generate the following error on windows : error: one of src or dest must be a local file specification
     #             use pushd and popd for relative path
@@ -483,13 +483,7 @@ function download_tools () {
   popd
 
   toolkit_creds_url="${PLATFORM_API_URL}api/cloud/settings/toolkit-credentials"
-  # always download the credential.json
-  # if test ! -e "~/.apiconnect/config-apim";then
-  mylog info "Downloading apic config json file" 1>&2
-  curl -ks "${toolkit_creds_url}" -H "Authorization: Bearer ${access_token}" -H "Accept: application/json" -H "Content-Type: application/json" -o creds.json
-  yes | ${MY_APIC_GEN_CUSTOMDIR}config/apic client-creds:set ${MY_APIC_GEN_CUSTOMDIR}config/creds.json
-  # 	[[ -e creds.json ]] && rm creds.json
-  # fi
+  mylog info "To set the credential run the cmd apic client-creds:set <creds.json file>" 1>&2
 }
 
 #######################################################
@@ -502,7 +496,7 @@ function create_cm_token(){
   # The goal is to get the apikey defined in the realm provider/common-services, get the credentials for the toolkit, then use the token endpoint to get an oauth token for Cloud Manager from API Key
   TOOLKIT_CLIENT_ID=$(echo ${APIC_CRED} | jq -r .id)
   TOOLKIT_CLIENT_SECRET=$(echo ${APIC_CRED} | jq -r .secret)
-  
+  mylog info "Creating ${MY_APIC_GEN_CUSTOMDIR}config/creds.json" 1>&2
   echo "{\"username\": \"admin\", \"password\": \"$APIC_CM_ADMIN_PASSWORD\", \"realm\": \"admin/default-idp-1\", \"client_id\": \"$TOOLKIT_CLIENT_ID\", \"client_secret\": \"$TOOLKIT_CLIENT_SECRET\", \"grant_type\": \"password\"}" > "${MY_APIC_GEN_CUSTOMDIR}config/creds.json"
   
   cmToken=$(curl -ks -X POST "${PLATFORM_API_URL}api/token" \
@@ -594,9 +588,6 @@ TOOLKIT_CREDS_URL="${PLATFORM_API_URL}api/cloud/settings/toolkit-credentials"
 # if test ! -e "~/.apiconnect/config-apim";then
 mylog info "Downloading apic config json file" 1>&2
 curl -ks "${TOOLKIT_CREDS_URL}" -H "Authorization: Bearer ${access_token}" -H "Accept: application/json" -H "Content-Type: application/json" -o "${MY_APIC_GEN_CUSTOMDIR}config/fullcreds.json"
-# yes | apic client-creds:set "${MY_APIC_GEN_CUSTOMDIR}config/fullcreds.json"
-# 	[[ -e creds.json ]] && rm creds.json
-# fi
 
 # Get ClusterIP of the mail service
 create_mail_server "${APIC_SMTP_SERVER}" "${APIC_SMTP_SERVER_PORT}"

@@ -139,11 +139,14 @@ function save_certificate() {
 
   local lf_in_ns=$1
   local lf_in_secret_name=$2
-  local lf_in_destination_path=$3
+  local lf_in_data_name=$3
+  local lf_in_destination_path=$4
 
-  mylog info "Save certificate ${lf_in_secret_name} to ${lf_in_destination_path}${lf_in_secret_name}.pem"
-  cert=$(oc -n cp4i get secret ${lf_in_secret_name} -o jsonpath='{.data.ca\.crt}')
-  echo $cert | base64 --decode >"${lf_in_destination_path}${lf_in_secret_name}.pem"
+  local lf_data_normalised=$(sed 's/\./\\./g' <<< ${lf_in_data_name})
+
+  mylog info "Save certificate ${lf_in_secret_name} to ${lf_in_destination_path}${lf_in_secret_name}.${lf_in_data_name}.pem"
+  cert=$(oc -n cp4i get secret ${lf_in_secret_name} -o jsonpath="{.data.$lf_data_normalised}")
+  echo $cert | base64 --decode >"${lf_in_destination_path}${lf_in_secret_name}.${lf_in_data_name}.pem"
 
   decho 3 "F:OUT:save_certificate"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
@@ -330,7 +333,7 @@ function check_directory_exist_create() {
 ################################################
 function read_config_file() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :read_config_file"
+  decho 5 "F:IN :read_config_file"
 
   local lf_config_file
   if test -n "$PC_CONFIG"; then
@@ -342,7 +345,7 @@ function read_config_file() {
     mylog error "Usage: $0 <config file>" 1>&2
     mylog info "Example: $0 ${MAINSCRIPTDIR}cp4i.conf"
 
-    decho 4 "F:OUT:read_config_file"
+    decho 5 "F:OUT:read_config_file"
     SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
     exit 1
   fi
@@ -354,7 +357,7 @@ function read_config_file() {
   . "${lf_config_file}"
   set +a
 
-  decho 4 "F:OUT:read_config_file"
+  decho 5 "F:OUT:read_config_file"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -374,6 +377,10 @@ function check_exec_prereqs() {
   check_command_exist openssl
   if $MY_MQ_CUSTOM; then
     check_command_exist runmqakm
+  fi
+
+  if $MY_LDAP; then
+    check_command_exist ldapsearch
   fi
 
   decho 4 "F:OUT:check_exec_prereqs"
@@ -474,6 +481,7 @@ function check_create_oc_yaml() {
   local lf_in_yaml_file="$3"
   local lf_in_ns="$4"
 
+  export MY_OPERATORGROUP="$2"
   export MY_NAMESPACE="$4"
 
   local lf_newer
@@ -491,7 +499,7 @@ function check_create_oc_yaml() {
       envsubst <"${lf_in_yaml_file}" | oc -n ${lf_in_ns} apply -f - || exit 1
     fi
   else
-    envsubst <"${lf_in_yaml_file}" | oc -n ${lf_in_ns} apply -f - || exit 1
+    envsubst <"${lf_in_yaml_file}"  | oc -n ${lf_in_ns} apply -f - || exit 1
   fi
 
   decho 3 "F:OUT:check_create_oc_yaml"
@@ -507,7 +515,7 @@ function provision_persistence_openldap() {
   local lf_in_namespace="$1"
   # handle persitence for Openldap
   # only check one, assume that if one is created the other one is also created (short cut to optimize time)
-  mylog check "Checking persistant volume claim for LDAP in ${lf_in_namespace}"
+  mylog check "Checking persistent volume claim for LDAP in ${lf_in_namespace}"
   if oc -n ${lf_in_namespace} get "PersistentVolumeClaim" "pvc-ldap-main" >/dev/null 2>&1; then mylog ok; else
     envsubst <"${MY_YAMLDIR}ldap/ldap-pvc.main.yaml" >"${MY_WORKINGDIR}ldap-pvc.main.yaml"
     envsubst <"${MY_YAMLDIR}ldap/ldap-pvc.config.yaml" >"${MY_WORKINGDIR}ldap-pvc.config.yaml"
@@ -554,8 +562,6 @@ function deploy_openldap() {
       oc -n ${lf_in_namespace} get deployment.apps/openldap -o json | jq '. | del(."status")' >${MY_WORKINGDIR}openldap.json
       envsubst <"${MY_YAMLDIR}ldap/ldap-config.json" >"${MY_WORKINGDIR}ldap-config.json"
       oc -n ${lf_in_namespace} patch deployment.apps/openldap --patch-file ${MY_WORKINGDIR}ldap-config.json
-      oc -n ${lf_in_namespace} patch service ${lf_in_name} -p='{"spec": {"type": "NodePort"}}'
-      oc -n ${lf_in_namespace} patch service/${lf_in_name} --patch-file ${MY_WORKINGDIR}openldap-service.json
     fi
   fi
 
@@ -709,6 +715,12 @@ function expose_service_openldap() {
 
   # expose service externaly and get host and port
   oc -n ${lf_in_namespace} get service ${lf_in_name} -o json | jq '.spec.ports |= map(if .name == "389-tcp" then . + { "nodePort": 30389 } else . end)' | jq '.spec.ports |= map(if .name == "636-tcp" then . + { "nodePort": 30686 } else . end)' >${MY_WORKINGDIR}openldap-service.json
+
+  # Saad there was a bug the openldap-service.json did not exist when those two calls were made in the deploy_openldap function, I moved them here
+  # I do not think all this code is needed, what did you want to do?
+  oc -n ${lf_in_namespace} patch service ${lf_in_name} -p='{"spec": {"type": "NodePort"}}'
+  oc -n ${lf_in_namespace} patch service/${lf_in_name} --patch-file ${MY_WORKINGDIR}openldap-service.json
+
   lf_port0=$(oc -n ${lf_in_namespace} get service ${lf_in_name} -o jsonpath='{.spec.ports[0].nodePort}')
   lf_port1=$(oc -n ${lf_in_namespace} get service ${lf_in_name} -o jsonpath='{.spec.ports[1].nodePort}')
 
@@ -883,12 +895,11 @@ function create_operator_subscription() {
 
   # export are important because they are used to replace the variable in the subscription.yaml (envsubst command)
   export MY_OPERATOR_NAME=$1
-  export MY_OPERATOR_NAMESPACE=$2
-  export MY_CURRENT_CHL=$3
+  export MY_CATALOG_SOURCE_NAME=$2
+  export MY_OPERATOR_NAMESPACE=$3
   export MY_STRATEGY=$4
-  export MY_CATALOG_SOURCE_NAME=$5
-  local lf_in_wait=$6
-  local lf_in_csv_name=$7
+  local lf_in_wait=$5
+  local lf_in_csv_name=$6
 
   local lf_file lf_path lf_resource lf_state lf_type
   check_directory_exist ${MY_OPERATORSDIR}
@@ -896,6 +907,7 @@ function create_operator_subscription() {
   SECONDS=0
 
   lf_file="${MY_OPERATORSDIR}subscription.yaml"
+  #lf_file="${MY_OPERATORSDIR}subscription_startingcsv.yaml"
   lf_type="Subscription"
   check_create_oc_yaml "${lf_type}" "${MY_OPERATOR_NAME}" "${lf_file}" "${MY_OPERATOR_NAMESPACE}"
 
@@ -1059,6 +1071,7 @@ function adapt_file() {
   local lf_in_sourcedir=$1
   local lf_in_destdir=$2
   local lf_in_filename=$3
+  decho 4 "$lf_in_sourcedir | $lf_in_destdir | $lf_in_filename"
 
   if [ ! -d ${lf_in_destdir} ]; then
     mkdir -p ${lf_in_destdir}

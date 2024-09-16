@@ -1,0 +1,6 @@
+[32m            dn: cn=apiapps,ou=groups,dc=ibm,dc=com
+cn: apiapps
+objectClass: top
+objectClass: groupOfUniqueNames
+uniqueMember: uid=laura,ou=users,dc=ibm,dc=com
+[91m
