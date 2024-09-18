@@ -80,6 +80,8 @@ MY_TECHZONE_PASSWORD=<cluster admininstrator's password>
 MY_TECHZONE_OPENSHIFT_API_URL=<API URL of the cluster, example 'https://api.xxx.cloud.techzone.ibm.com:6443'>
 ```
 
+TODO Ajouter if Instana alors certificats sur instance Instana SaaS
+
 ### Configuration
 
 **Customize** the cp4i.properties file with your own parameters
@@ -228,6 +230,10 @@ The main script does the following:
 
 To be moved
 In the subscription folder we have the definition of the operators. Since they are all equivalent we do not have one for each component, and use variables that are set at deployment.
+
+## Troubleshooting
+
+If you have a timeout error with oc ibm-pak command, you can increase the timeout using the variable IBMPAK_HTTP_TIMEOUT. it is explained at https://github.com/IBM/ibm-pak/blob/main/docs/command-help.md.
 
 ## Customisation
 

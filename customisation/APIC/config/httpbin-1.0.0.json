@@ -1,0 +1,475 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "version": "1.0.0",
+    "title": "httpbin",
+    "x-ibm-name": "httpbin",
+    "description": "This a test API. It is implemented on a public interface. See https://httpbin.org/. It contains many samples to test various aspects on an API.\n\n- curl -v -X DELETE \"https://httpbin.org/status/100\" -H  \"accept: text/plain\"\n- curl -X DELETE \"https://httpbin.org/status/100\" -H  \"accept: text/plain\"\n- curl -X GET \"https://httpbin.org/anything/toto?param1=val1\" -H  \"accept: application/json\"\n- curl -X GET \"https://httpbin.org/gzip\" -H  \"accept: application/json\" --output c:\\temp\\test.zip\n- curl -X GET \"https://httpbin.org/headers\" -H  \"accept: application/json\"\n- curl -X GET \"https://httpbin.org/response-headers?param1=val1&param2=val2\" -H  \"accept: application/json\"\n- curl -X GET \"https://httpbin.org/status/200\" -H  \"accept: text/plain\"\n- curl -X GET \"https://httpbin.org/toto?param1=val1\" -H  \"accept: application/json\"\n- curl -X POST \"https://httpbin.org/anything\" -H \"content-type: application/json\" -H  \"accept: application/json\" -d \"{\\\"param1\\\":\\\"val1\\\"}\"\n\n```\n{\n  \"required\": [\n    \"customDataTypeId\",\n    \"displayText\",\n    \"searchText\",\n    \"value\"\n  ],\n  \"type\": \"object\",\n  \"properties\": {\n    \"customDataTypeId\": {\n      \"type\": \"integer\",\n      \"format\": \"int32\"\n    },\n    \"displayText\": {\n      \"maxLength\": 450,\n      \"type\": \"string\"\n    }\n  },\n  \"additionalProperties\": true\n}\n```",
+    "license": {
+      "url": "http://site.ibm.com/terms-and-licences.html",
+      "name": "API Terms"
+    },
+    "contact": {
+      "name": "Arnauld Desprets",
+      "email": "arnauld_desprets@fr.ibm.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "/",
+      "variables": {}
+    }
+  ],
+  "x-ibm-configuration": {
+    "properties": {
+      "target-url": {
+        "value": "https://httpbin.org",
+        "description": "The URL of the target service",
+        "encoded": false
+      }
+    },
+    "cors": {
+      "enabled": true
+    },
+    "gateway": "datapower-api-gateway",
+    "type": "rest",
+    "phase": "realized",
+    "enforced": true,
+    "testable": true,
+    "assembly": {
+      "execute": [
+        {
+          "invoke": {
+            "version": "2.0.0",
+            "title": "invoke",
+            "backend-type": "detect",
+            "header-control": {
+              "type": "blocklist",
+              "values": []
+            },
+            "parameter-control": {
+              "type": "allowlist",
+              "values": []
+            },
+            "timeout": 60,
+            "verb": "keep",
+            "chunked-uploads": true,
+            "persistent-connection": true,
+            "target-url": "$(target-url)$(request.path)$(request.search)",
+            "follow-redirects": false,
+            "inject-proxy-headers": true,
+            "description": "$(target-url)\n/status/200"
+          }
+        }
+      ]
+    },
+    "activity-log": {
+      "enabled": true,
+      "success-content": "activity",
+      "error-content": "payload"
+    },
+    "servers": [
+      {
+        "url": "https://cp4i-apic-gw-gateway-cp4i.apps.66c486d0cc846855dd383768.ocp.techzone.ibm.com/org1/sandbox"
+      }
+    ]
+  },
+  "paths": {
+    "/status/{status_code}": {
+      "summary": "Generates responses with given status code",
+      "description": "Generates responses with given status code.\nBody is empty.\nReturns only headers.",
+      "parameters": [
+        {
+          "name": "status_code",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer",
+            "title": "status_code_def",
+            "enum": [
+              100,
+              200,
+              300,
+              400,
+              500
+            ]
+          }
+        }
+      ],
+      "get": {
+        "responses": {
+          "100": {
+            "description": "Informational responses",
+            "content": {
+              "text/plain": {}
+            }
+          },
+          "200": {
+            "description": "Success"
+          },
+          "300": {
+            "description": "Redirection"
+          },
+          "400": {
+            "description": "Client Errors"
+          },
+          "406": {
+            "description": "Not Acceptable"
+          },
+          "415": {
+            "description": "Unsupported Media Type"
+          },
+          "500": {
+            "description": "Server Errors"
+          }
+        }
+      },
+      "put": {
+        "responses": {
+          "100": {
+            "description": "Informational responses"
+          },
+          "200": {
+            "description": "Success"
+          },
+          "300": {
+            "description": "Redirection"
+          },
+          "400": {
+            "description": "Client Errors"
+          },
+          "406": {
+            "description": "Not Acceptable"
+          },
+          "415": {
+            "description": "Unsupported Media Type"
+          },
+          "500": {
+            "description": "Server Errors"
+          }
+        }
+      },
+      "post": {
+        "responses": {
+          "100": {
+            "description": "Informational responses"
+          },
+          "200": {
+            "description": "Success"
+          },
+          "300": {
+            "description": "Redirection"
+          },
+          "400": {
+            "description": "Client Errors"
+          },
+          "406": {
+            "description": "Not Acceptable"
+          },
+          "415": {
+            "description": "Unsupported Media Type"
+          },
+          "500": {
+            "description": "Server Errors"
+          }
+        }
+      },
+      "delete": {
+        "responses": {
+          "100": {
+            "description": "Informational responses"
+          },
+          "200": {
+            "description": "Success"
+          },
+          "300": {
+            "description": "Redirection"
+          },
+          "400": {
+            "description": "Client Errors"
+          },
+          "406": {
+            "description": "Not Acceptable"
+          },
+          "415": {
+            "description": "Unsupported Media Type"
+          },
+          "500": {
+            "description": "Server Errors"
+          }
+        }
+      },
+      "options": {
+        "responses": {
+          "200": {
+            "description": "success"
+          }
+        }
+      },
+      "patch": {
+        "responses": {
+          "100": {
+            "description": "Informational responses"
+          },
+          "200": {
+            "description": "Success"
+          },
+          "300": {
+            "description": "Redirection"
+          },
+          "400": {
+            "description": "Client Errors"
+          },
+          "406": {
+            "description": "Not Acceptable"
+          },
+          "415": {
+            "description": "Unsupported Media Type"
+          },
+          "500": {
+            "description": "Server Errors"
+          }
+        }
+      }
+    },
+    "/anything": {
+      "summary": "Returns anything that is passed to request",
+      "parameters": [],
+      "post": {
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable"
+          },
+          "415": {
+            "description": "Unsupported Media Type"
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "data",
+                "type": "object",
+                "properties": {
+                  "data": {}
+                }
+              },
+              "example": {
+                "param1": "val1"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "clientID": []
+          }
+        ],
+        "tags": [
+          "genericbe"
+        ],
+        "parameters": []
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "clientID": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-IBM-Client-Id"
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {}
+          }
+        }
+      },
+      "429": {
+        "description": "Too Many Requests"
+      }
+    },
+    "schemas": {
+      "anythingresp": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "type": "object",
+            "properties": {}
+          },
+          "data": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "files": {
+            "type": "object",
+            "properties": {}
+          },
+          "form": {
+            "type": "object",
+            "properties": {}
+          },
+          "headers": {
+            "$ref": "#/components/schemas/headersresp"
+          },
+          "json": {
+            "type": "object",
+            "properties": {
+              "param1": {
+                "type": "string"
+              }
+            }
+          },
+          "method": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "origin": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "url": {
+            "type": "string",
+            "maxLength": 512
+          }
+        },
+        "example": "{\"args\":{},\"data\":\"{\\\"param1\\\":\\\"val1\\\"}\",\"files\":{},\"form\":{},\"headers\":{\"Accept\":\"application/json\",\"Content-Length\":\"17\",\"Content-Type\":\"application/json\",\"Host\":\"httpbin.org\",\"User-Agent\":\"curl/8.8.0\",\"X-Amzn-Trace-Id\":\"Root=1-66c759a6-071570956fa025ac08c66273\"},\"json\":{\"param1\":\"val1\"},\"method\":\"POST\",\"origin\":\"91.160.123.145\",\"url\":\"https://httpbin.org/anything\"}"
+      },
+      "headersresp": {
+        "type": "object",
+        "properties": {
+          "Accept": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "Accept-Language": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "Cache-Control": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "Content-Length": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "Content-Type": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "Dnt": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "Host": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "Origin": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "Pragma": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "Priority": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "Referer": {
+            "type": "string"
+          },
+          "Sec-Fetch-Dest": {
+            "type": "string"
+          },
+          "Sec-Fetch-Mode": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "Sec-Fetch-Site": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "Sec-Gpc": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "User-Agent": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "X-Client-Ip": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "X-Forwarded-Host": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "X-Global-Transaction-Id": {
+            "type": "string",
+            "maxLength": 512
+          }
+        },
+        "example": "{\"Accept\":\"application/json\",\"Accept-Language\":\"en-GB,en;q=0.5\",\"Cache-Control\":\"no-cache\",\"Content-Length\":\"24\",\"Content-Type\":\"application/json\",\"Dnt\":\"1\",\"Host\":\"httpbin.org\",\"Origin\":\"https://cp4i-apic-mgmt-api-manager-cp4i.apps.66c486d0cc846855dd383768.ocp.techzone.ibm.com\",\"Pragma\":\"no-cache\",\"Priority\":\"u=0\",\"Referer\":\"https://cp4i-apic-mgmt-api-manager-cp4i.apps.66c486d0cc846855dd383768.ocp.techzone.ibm.com/\",\"Sec-Fetch-Dest\":\"empty\",\"Sec-Fetch-Mode\":\"cors\",\"Sec-Fetch-Site\":\"same-site\",\"Sec-Gpc\":\"1\",\"User-Agent\":\"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:129.0) Gecko/20100101 Firefox/129.0\",\"X-Amzn-Trace-Id\":\"Root=1-66c834df-28b6386856330a0b64c1bfcb\",\"X-Client-Ip\":\"10.129.4.2\",\"X-Forwarded-Host\":\"cp4i-apic-gw-gateway-cp4i.apps.66c486d0cc846855dd383768.ocp.techzone.ibm.com\",\"X-Global-Transaction-Id\":\"2878b72866c834df00044810\"}"
+      }
+    },
+    "headers": {
+      "X-RateLimit-Limit": {
+        "description": "Request limit per hour",
+        "schema": {
+          "type": "integer"
+        },
+        "example": 100
+      },
+      "X-RateLimit-Remaining": {
+        "schema": {
+          "type": "integer"
+        },
+        "example": 94
+      }
+    },
+    "parameters": {},
+    "examples": {},
+    "requestBodies": {
+      "data": {
+        "content": {
+          "application/json": {
+            "schema": {}
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "clientID": []
+    }
+  ]
+}

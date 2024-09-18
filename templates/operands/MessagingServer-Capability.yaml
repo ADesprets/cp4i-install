@@ -11,8 +11,9 @@ spec:
   queueManager:
     storage:
       defaultClass: $MY_BLOCK_STORAGE_CLASS
-    availability: SingleInstance
-  version: $MY_MQ_VERSION
+    availability:
+      type: SingleInstance
+  version: $MY_MSGSRV_VERSION
 ---
 apiVersion: integration.ibm.com/v1beta1
 kind: MessagingQueue
@@ -22,6 +23,9 @@ metadata:
 spec:
   messagingServer:
     name: $MY_MSGSRV_INSTANCE_NAME
+  queue:
+    name: $MY_MSGQ_INSTANCE_NAME
+    type: Local
 ---
 apiVersion: integration.ibm.com/v1beta1
 kind: MessagingChannel
@@ -29,10 +33,13 @@ metadata:
   name: $MY_MSGCHL_INSTANCE_NAME
   namespace: $MY_OC_PROJECT
 spec:
+  messagingServer:
+    name: $MY_MSGSRV_INSTANCE_NAME
   channel:
     name: $MY_MSGSRV_INSTANCE_NAME
-    sniRoute: 
-      enabled: true
+    type: ServerConnMTLS
+  sniRoute: 
+    enabled: false
 ---
 apiVersion: integration.ibm.com/v1beta1
 kind: MessagingUser
@@ -41,8 +48,10 @@ metadata:
   namespace: $MY_OC_PROJECT
 spec:
   user:
+    name: $MY_MSGUSER_INSTANCE_NAME
     channel:
       name: $MY_MSGCHL_INSTANCE_NAME
     queues:
     - name: $MY_MSGQ_INSTANCE_NAME
-    - auth: PASSALL
+      auth: 
+        - "PASSALL"

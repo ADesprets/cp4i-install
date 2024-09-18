@@ -1,3 +1,9 @@
 {
-    "java.configuration.updateBuildConfiguration": "interactive"
+    "java.configuration.updateBuildConfiguration": "interactive",
+    "maven.terminal.favorites": [
+        {
+            "command": "liberty:dev",
+            "debug": false
+        }
+    ]
 }

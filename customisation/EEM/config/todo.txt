@@ -10,5 +10,5 @@ apic-integration-ibm-eem-user-roles
 eyJtYXBwaW5ncyI6W3siaWQiOiJlZW11c2VyMSIsInJvbGVzIjpbImF1dGhvciJdfSx7ImlkIjoiZWVtdXNlcjIiLCJyb2xlcyI6WyJ2aWV3ZXIiXX1dfQ==
 
 Ajouter la gateway
-Ajouter la cluster
+Ajouter le cluster
 Ajouter une subscription

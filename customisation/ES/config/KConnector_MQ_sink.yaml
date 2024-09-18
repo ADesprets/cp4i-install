@@ -1,0 +1,26 @@
+apiVersion: eventstreams.ibm.com/v1beta2
+kind: KafkaConnector
+metadata:
+  labels:
+    eventstreams.ibm.com/cluster: kafka-connect-cluster
+  name: mq-sink
+  namespace: $MY_OC_PROJECT
+spec:
+  class: com.ibm.eventstreams.connect.mqsink.MQSinkConnector
+  tasksMax: 1
+  config:
+    mq.queue.manager: MQTT
+    mq.connection.name.list: " "
+    mq.channel.name: KAFKA.SVRCONN
+    mq.queue: FROM.KAFKA
+    mq.user.name: ""
+    mq.password: ""
+    mq.message.body.jms: "false"
+    mq.time.to.live: "10800000"
+    topics: ToMQ
+    mq.connection.name.list: mqtt-ibm-mq(1414)
+    mq.persistent: "true"
+    mq.connection.mode: client
+    mq.message.builder: com.ibm.eventstreams.connect.mqsink.builders.DefaultMessageBuilder
+    key.converter: org.apache.kafka.connect.storage.StringConverter
+    value.converter: org.apache.kafka.connect.storage.StringConverter

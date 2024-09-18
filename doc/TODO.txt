@@ -1,5 +1,4 @@
 --- TODO 1 --- Manque DP capabilities
---- TODO 1 --- Manque DP capabilities
 --- TODO 2 --- Improve README  ---
 --- TODO 3 --- Improve code documentation  ---
 --- TODO 4 --- E2E Initial Customisation ---
@@ -17,7 +16,6 @@ High priority: 	Add a route to DataPower Gateway console
 	LDAP:
 		Review list of users, merge Saad entries
 	ACE: scenariis : HTTP 2 Kafka, Kafka Producer 2  file (à adapter à partir du tutorial existant), REST API Filtrage et Mapping
-High priority:         License Server : rajouter les access + token + un exemple d'utilisation.
 	Low priority: Load simulator application for taxi test
 		Box note: https://ibm.ent.box.com/notes/953089231688
 		Container eem-demo-rest-apis, quay.io/dale-lane/eem-demo-apis
@@ -46,7 +44,7 @@ Low priority:	Revoir nos scripts en fonction des bonnes pratiques
 High priority: 	Display access webconsoe/user MQ, MQ MQSC dynamique : https://github.com/ibm-messaging/mq-gitops-samples/tree/main/ccdt-deployment
 	
 High priority: revoir utilisation des la notion de service versus endpoint
-High priority: créer une fonction pour vérifier que les capabilites principales sont installées ET l'utiliser dans display_access.
+High priority: créer une fonction pour vérifier que les capabilites principales sont installées ET l'utiliser dans display_access_info.
 High priority : Dans decho un niveau de trace 1 actuel 2 F:IN/F:OU 3 le reste les F:IN et F:OUT optionnels entre autres
 	rationaliser l'utilisation de envsubst versus la fonction adapt_file (lib.sh)
 Important: Génération de certificats: comment éviter de la faire trop de fois pour éviter les impacts?

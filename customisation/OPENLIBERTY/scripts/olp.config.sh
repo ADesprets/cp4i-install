@@ -5,9 +5,9 @@
 ################################################
 function prepare_internal_registry() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho "F:IN:prepare_internal_registry"
+  decho 3 "F:IN:prepare_internal_registry"
 
-  decho "F:OUT:prepare_internal_registry"
+  decho 3 "F:OUT:prepare_internal_registry"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
 }
 
@@ -16,9 +16,9 @@ function prepare_internal_registry() {
 ################################################
 function compile_code() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho "F:IN:compile_code"
+  decho 3 "F:IN:compile_code"
   # $MY_CONTAINER_ENGINE build -t basicjaxrs:1.0 .
-  decho "F:OUT:compile_code"
+  decho 3 "F:OUT:compile_code"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
 }
 
@@ -27,9 +27,9 @@ function compile_code() {
 ################################################
 function was_build_image() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho "F:IN:was_build_image"
+  decho 3 "F:IN:was_build_image"
   $MY_CONTAINER_ENGINE build -t basicjaxrs:1.0 .
-  decho "F:OUT:was_build_image"
+  decho 3 "F:OUT:was_build_image"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
 }
 
@@ -38,9 +38,11 @@ function was_build_image() {
 ################################################
 function get_login_token() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho "F:IN:get_login_token"
+  decho 3 "F:IN:get_login_token"
+  oc get route -n openshift-image-registry
+  docker login -u kube:admin -p $(oc whoami -t) default-route-openshift-image-registry.apps.clustername.basedomain
 
-  decho "F:OUT:get_login_token"
+  decho 3 "F:OUT:get_login_token"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
 }
 
@@ -49,9 +51,9 @@ function get_login_token() {
 ################################################
 function push_image_to_registry() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho "F:IN:push_image_to_registry"
+  decho 3 "F:IN:push_image_to_registry"
   
-  decho "F:OUT:push_image_to_registry"
+  decho 3 "F:OUT:push_image_to_registry"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
 }
 
@@ -60,9 +62,9 @@ function push_image_to_registry() {
 ################################################
 function create_application() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho "F:IN:create_application"
+  decho 3 "F:IN:create_application"
   
-  decho "F:OUT:create_application"
+  decho 3 "F:OUT:create_application"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
 }
 
@@ -106,7 +108,7 @@ if $MY_OPENLIBERTY_CUSTOM; then
 
   # Build and create image, then load it into registry, this is optional because images won't change very often
   if $MY_OPENLIBERTY_CUSTOM; then
-    pushd ${OPENLIBERTY_SCRIPTDIR}system
+    pushd ${MY_OPENLIBERTY_SCRIPTDIR}system
 
     # Build the image
     if $MY_OPENLIBERTY_CUSTOM_BUILD; then
@@ -138,8 +140,8 @@ if $MY_OPENLIBERTY_CUSTOM; then
 
   # Deploy the image in the $MY_BACKEND_NAMESPACE namespace 
   ## create_application
-  adapt_file ${OPENLIBERTY_SCRIPTDIR}config/ ${OPENLIBERTY_GEN_CUSTOMDIR}config/ system-appdeploy.yaml
-  kubectl -n ${MY_BACKEND_NAMESPACE} apply -f ${OPENLIBERTY_GEN_CUSTOMDIR}config/system-appdeploy.yaml
+  adapt_file ${MY_OPENLIBERTY_SCRIPTDIR}config/ ${MY_OPENLIBERTY_GEN_CUSTOMDIR}config/ system-appdeploy.yaml
+  kubectl -n ${MY_BACKEND_NAMESPACE} apply -f ${MY_OPENLIBERTY_GEN_CUSTOMDIR}config/system-appdeploy.yaml
   # kubectl run <service_name> --image=de.icr.io/olo1/oljaxrs
   # kubectl -n ${MY_BACKEND_NAMESPACE} get OpenLibertyApplications
   # kubectl -n ${MY_BACKEND_NAMESPACE} describe olapps/mysystem

@@ -4,7 +4,14 @@
     version="3.1">
     <display-name>Test backends</display-name>
 
+    <!-- Home page -->
     <welcome-file-list>
         <welcome-file>index.html</welcome-file>
     </welcome-file-list>
+    <!-- For the upload Multipart API-->
+    <context-param>
+        <param-name>upload.path</param-name>
+        <param-value>C:\Users\060948706\Downloads</param-value>
+    </context-param>
+
 </web-app>

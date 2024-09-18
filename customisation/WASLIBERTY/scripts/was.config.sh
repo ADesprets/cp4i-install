@@ -5,7 +5,7 @@
 ################################################
 function prepare_internal_registry() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho "F:IN:prepare_internal_registry"
+  decho 3 "F:IN:prepare_internal_registry"
   # Expose service using default route
   oc patch configs.imageregistry.operator.openshift.io/cluster --patch '{"spec":{"defaultRoute":true}}' --type=merge
 
@@ -18,7 +18,7 @@ function prepare_internal_registry() {
   # For Ubuntu:  update-ca-certificates / For Mac: / For RH: update-ca-trust / For Windows: 
   # sudo update-ca-trust enable
 
-  decho "F:OUT:prepare_internal_registry"
+  decho 3 "F:OUT:prepare_internal_registry"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
 }
 
@@ -27,10 +27,10 @@ function prepare_internal_registry() {
 ################################################
 function compile_code() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho "F:IN:compile_code"
+  decho 3 "F:IN:compile_code"
   mvn clean install
   # $MY_CONTAINER_ENGINE build -t basicjaxrs:1.0 .
-  decho "F:OUT:compile_code"
+  decho 3 "F:OUT:compile_code"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
 }
 
@@ -39,20 +39,23 @@ function compile_code() {
 ################################################
 function was_build_image() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho "F:IN:was_build_image"
-  $MY_CONTAINER_ENGINE build -t demo:1.0 .
-  decho "F:OUT:was_build_image"
+  decho 3 "F:IN:was_build_image"
+  $MY_CONTAINER_ENGINE build -t ${MY_WLA_APP_NAME_VERSION} .
+  decho 3 "F:OUT:was_build_image"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
 }
 
 ################################################
-# Get token to access internal registry
+# Login to internal registry
 ################################################
-function get_login_token() {
+function login_to_registry() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho "F:IN:get_login_token"
-  mylog info "For now, you need to be logged in to the image registry before running the script"
-  decho "F:OUT:get_login_token"
+  decho 3 "F:IN:login_to_registry"
+  mylog info "Changes made recently to login to doocker reistry check you are correctly login"
+  oc login -u kubeadmin -p $MY_TECHZONE_PASSWORD $(oc whoami --show-server)
+  decho 3 "docker login -u kubeadmin -p $(oc whoami -t) ${IMAGE_REGISTRY_HOST}"
+  docker login -u kubeadmin -p $(oc whoami -t) ${IMAGE_REGISTRY_HOST}
+  decho 3 "F:OUT:login_to_registry"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
 }
 
@@ -61,13 +64,14 @@ function get_login_token() {
 ################################################
 function push_image_to_registry() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho "F:IN:push_image_to_registry"
+  decho 3 "F:IN:push_image_to_registry"
   
   #	tag the local image with details of image registry
-  $MY_CONTAINER_ENGINE tag demo:1.0 ${IMAGE_REGISTRY_HOST}/${MY_BACKEND_NAMESPACE}/demo:1.0
-  $MY_CONTAINER_ENGINE push ${IMAGE_REGISTRY_HOST}/${MY_BACKEND_NAMESPACE}/demo:1.0
+  decho 3 "CMD: $MY_CONTAINER_ENGINE tag ${MY_WLA_APP_NAME_VERSION} ${IMAGE_REGISTRY_HOST}/${MY_BACKEND_NAMESPACE}/${MY_WLA_APP_NAME_VERSION}"
+  $MY_CONTAINER_ENGINE tag ${MY_WLA_APP_NAME_VERSION} ${IMAGE_REGISTRY_HOST}/${MY_BACKEND_NAMESPACE}/${MY_WLA_APP_NAME_VERSION}
+  $MY_CONTAINER_ENGINE push ${IMAGE_REGISTRY_HOST}/${MY_BACKEND_NAMESPACE}/${MY_WLA_APP_NAME_VERSION}
     
-  decho "F:OUT:push_image_to_registry"
+  decho 3 "F:OUT:push_image_to_registry"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
 }
 
@@ -76,9 +80,19 @@ function push_image_to_registry() {
 ################################################
 function create_application() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho "F:IN:create_application"
+  decho 3 "F:IN:create_application"
+    mylog info "Application:version ${MY_WLA_APP_NAME_VERSION}"
+    # Creating APIC instance
+    lf_file="${MY_OPERANDSDIR}WAS-WLApp.yaml"
+    lf_ns="${MY_BACKEND_NAMESPACE}"
+    lf_path="{.status.phase}"
+    lf_resource="$MY_WLA_APP_NAME"
+    lf_state="Ready"
+    lf_type="WebSphereLibertyApplication"
+    lf_wait_for_state=false
+    create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
   
-  decho "F:OUT:create_application"
+  decho 3 "F:OUT:create_application"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
 }
 
@@ -94,24 +108,29 @@ starting=$(date);
 # end with / on purpose (if var not defined, uses CWD - Current Working Directory)
 # scriptdir=$(dirname "$0")/
 scriptdir=${PWD}/
+lf_was_config_dir=${MY_WASLIBERTY_SCRIPTDIR}config/
+decho 5 "WAS configuration directory: ${lf_was_config_dir}"
 
 # load helper functions
 . "${scriptdir}"lib.sh
 
+  # load config file
+  read_config_file "${lf_was_config_dir}was.properties"
+
   if $MY_WASLIBERTY_CUSTOM; then
     mylog info "==== Customise WAS." 1>&2
-    # prepare_internal_registry
+    prepare_internal_registry
     # Build the image
     if $MY_WASLIBERTY_CUSTOM_BUILD; then
-      pushd ${WASLIBERTY_SCRIPTDIR} > /dev/null 2>&1
+      pushd ${MY_WASLIBERTY_SCRIPTDIR} > /dev/null 2>&1
       mylog info "==== Compile code and build docker image." 1>&2
       compile_code
       was_build_image
       popd > /dev/null 2>&1
     fi
-    get_login_token
+    login_to_registry
     push_image_to_registry
-    # create_application
+    create_application
   fi
 
 duration=$SECONDS

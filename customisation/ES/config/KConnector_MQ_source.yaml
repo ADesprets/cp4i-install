@@ -1,0 +1,21 @@
+apiVersion: eventstreams.ibm.com/v1beta2
+kind: KafkaConnector
+metadata:
+  labels:
+    eventstreams.ibm.com/cluster: kafka-connect-cluster
+  name: mq-source
+  namespace: $MY_OC_PROJECT
+spec:
+  class: com.ibm.eventstreams.connect.mqsource.MQSourceConnector
+  tasksMax: 1
+  config:
+    mq.channel.name: KAFKA.SVRCONN
+    value.converter: org.apache.kafka.connect.storage.StringConverter
+    mq.queue.manager: MQTT
+    mq.queue: TO.KAFKA
+    mq.record.builder: com.ibm.eventstreams.connect.mqsource.builders.DefaultRecordBuilder
+    topic: FromMQ              
+    key.converter: org.apache.kafka.connect.storage.StringConverter
+    mq.message.body.jms: false 
+    mq.connection.name.list: mqtt-ibm-mq(1414)
+    mq.user.authentication.mqcsp: false

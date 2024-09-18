@@ -64,7 +64,7 @@ echo "ZEN token: $ZEN_TOKEN"
 echo "downloading apic config json file"
 PLATFORM_API_URL=$(oc get $MANAGER_CR $INSTANCE -n $NAMESPACE -o=jsonpath='{.status.endpoints[?(@.name=="platformApi")].uri}')
 
-echo "PLATFORM API URL: $PLATFORM_API_URL"
+echo "MY_PLATFORM API URL: $PLATFORM_API_URL"
 
 TOOLKIT_CREDS_URL="$PLATFORM_API_URL/cloud/settings/toolkit-credentials"
 curl -k $TOOLKIT_CREDS_URL -H "Authorization: Bearer ${ZEN_TOKEN}" -H "Accept: application/json" -H "Content-Type: application/json" -o creds.json
