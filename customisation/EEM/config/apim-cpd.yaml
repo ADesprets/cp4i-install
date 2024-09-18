@@ -1,11 +1,8 @@
-cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: Secret
 metadata:
-  name: apim-cpd
+  name: $EEM_APIC_INGRESS_CA_CERT_SECRET_NAME
   namespace: $MY_OC_PROJECT
 data:
-  ca.crt: >-
-    APIC_INGRESS_CA_CERT_B64
+  ca.crt: $EEM_APIC_INGRESS_CA_CERT
 type: Opaque
-EOF

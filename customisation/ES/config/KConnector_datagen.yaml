@@ -1,4 +1,4 @@
-apiVersion: eventstreams.ibm.com/v1beta2
+sapiVersion: eventstreams.ibm.com/v1beta2
 kind: KafkaConnector
 metadata:
   name: datagen

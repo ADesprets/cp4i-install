@@ -469,6 +469,12 @@ function display_access_info() {
     mylog info "MQ Management Console : ${lf_mq_admin_url}"
   fi
 
+  local lf_was_liberty_app_demo_url
+  if $MY_WASLIBERTY_CUSTOM; then
+    lf_was_liberty_app_demo_url=$(oc -n $MY_BACKEND_NAMESPACE get WebSphereLibertyApplication $MY_WLA_APP_NAME -o jsonpath='{.status.endpoints[0].uri}')
+    mylog info "WAS Liberty $MY_WLA_APP_NAME application URL : ${lf_was_liberty_app_demo_url}/$MY_WLA_APP_NAME"
+  fi
+
   local lf_licensing_service_url lf_licensing_secret_token
   if $MY_LIC_SRV; then
     lf_licensing_service_url=$(oc -n ${MY_LICENSE_SERVER_NAMESPACE} get Route -o=jsonpath='{.items[?(@.metadata.name=="ibm-licensing-service-instance")].spec.host}')
@@ -644,11 +650,28 @@ function install_lic_srv() {
     mylog info "==== IBM License Server." 1>&2
     check_add_cs_ibm_pak ibm-licensing amd64
 
-    #mylog info "==== Adding Licensing service catalog source in ns : openshift-marketplace." 1>&2
+    # Operator group forLicense Service Reporter in single namespace
+    ls_type="OperatorGroup"
+    ls_cr_name="${MY_LICENSE_SERVER_OPERATORGROUP}"
+    ls_yaml_file="${MY_RESOURCSEDIR}operator-group-single.yaml"
+    ls_namespace=$MY_LICENSE_SERVER_NAMESPACE
+    check_create_oc_yaml "${ls_type}" "${ls_cr_name}" "${ls_yaml_file}" "${ls_namespace}"
+
+    #mylog info "==== Creating Licensing service catalog source in ns : openshift-marketplace." 1>&2
     lf_catalogsource_namespace=$MY_CATALOGSOURCES_NAMESPACE
     lf_catalogsource_name="ibm-licensing-catalog"
     lf_catalogsource_dspname="ibm-licensing"
     lf_catalogsource_image="icr.io/cpopen/ibm-licensing-catalog"
+    lf_catalogsource_publisher="IBM"
+    lf_catalogsource_interval="45m"
+    decho 3 "create_catalogsource \"${lf_catalogsource_namespace}\" \"${lf_catalogsource_name}\" \"${lf_catalogsource_dspname}\" \"${lf_catalogsource_image}\" \"${lf_catalogsource_publisher}\" \"${lf_catalogsource_interval}\""
+    create_catalogsource "${lf_catalogsource_namespace}" "${lf_catalogsource_name}" "${lf_catalogsource_dspname}" "${lf_catalogsource_image}" "${lf_catalogsource_publisher}" "${lf_catalogsource_interval}"
+
+    #mylog info "==== Creating the CatalogSource for License Service Reporter in ns : openshift-marketplace." 1>&2
+    lf_catalogsource_namespace=$MY_CATALOGSOURCES_NAMESPACE
+    lf_catalogsource_name="ibm-license-service-reporter-operator-catalog"
+    lf_catalogsource_dspname="IBM License Service Reporter Catalog"
+    lf_catalogsource_image="icr.io/cpopen/ibm-license-service-reporter-operator-catalog"
     lf_catalogsource_publisher="IBM"
     lf_catalogsource_interval="45m"
     decho 3 "create_catalogsource \"${lf_catalogsource_namespace}\" \"${lf_catalogsource_name}\" \"${lf_catalogsource_dspname}\" \"${lf_catalogsource_image}\" \"${lf_catalogsource_publisher}\" \"${lf_catalogsource_interval}\""
@@ -663,6 +686,27 @@ function install_lic_srv() {
     lf_csv_name=$MY_LICENSE_SERVER_CASE
     decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
     create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
+
+    mylog info "==== Installing the License Service Reporter operator" 1>&2
+    lf_operator_name="ibm-license-service-reporter-operator"
+    lf_catalog_source_name="ibm-license-service-reporter-operator-catalog"
+    lf_operator_namespace=$MY_LICENSE_SERVER_NAMESPACE
+    lf_strategy="Automatic"
+    lf_wait_for_state=true
+    lf_csv_name=$MY_LICENSE_SERVER_REPORTER_CASE
+    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
+    create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
+
+    mylog info "==== Creating the License Service Reporter instance" 1>&2
+    # Creating Creating the License Service Reporter instance 
+    lf_file="${MY_OPERANDSDIR}LIC-Reporter-Capability.yaml"
+    lf_ns="${MY_LICENSE_SERVER_NAMESPACE}"
+    lf_path="{.status.conditions[0].type}"
+    lf_resource="$MY_LICENSE_SERVER_REPORTER_INSTANCE_NAME"
+    lf_state="Ready"
+    lf_type="IBMLicenseServiceReporter"
+    lf_wait_for_state=false
+    create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
   fi
 
   decho 3 "F:OUT:install_lic_srv"
@@ -1085,6 +1129,13 @@ function install_wasliberty() {
     lf_catalogsource_interval="45m"
     decho 3 "create_catalogsource \"${lf_catalogsource_namespace}\" \"${lf_catalogsource_name}\" \"${lf_catalogsource_dspname}\" \"${lf_catalogsource_image}\" \"${lf_catalogsource_publisher}\" \"${lf_catalogsource_interval}\""
     create_catalogsource "${lf_catalogsource_namespace}" "${lf_catalogsource_name}" "${lf_catalogsource_dspname}" "${lf_catalogsource_image}" "${lf_catalogsource_publisher}" "${lf_catalogsource_interval}"
+
+    # Operator group for WAS Liberty in single namespace
+    ls_type="OperatorGroup"
+    ls_cr_name="${MY_WAS_LIBERTY_OPERATORGROUP}"
+    ls_yaml_file="${MY_RESOURCSEDIR}operator-group-single.yaml"
+    ls_namespace=$MY_BACKEND_NAMESPACE
+    check_create_oc_yaml "${ls_type}" "${ls_cr_name}" "${ls_yaml_file}" "${ls_namespace}"
 
     # Creating WebSphere Liberty operator subscription
     lf_operator_name="ibm-websphere-liberty"
@@ -1749,10 +1800,6 @@ check_exec_prereqs
 
 check_directory_exist_create "$MY_WORKINGDIR"
 
-: <<'END_COMMENT'
-
-END_COMMENT
-
 # Log to IBM Cloud
 login_2_ibm_cloud
 
@@ -1777,25 +1824,23 @@ if ! ${TECHZONE};then
   oc adm policy add-cluster-role-to-user self-provisioner $MY_USER_ID -n $MY_OC_PROJECT
 fi
 
+: <<'END_COMMENT'
+END_COMMENT
+
 # https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.4?topic=operators-installing-by-using-cli
 # (Only if your preferred installation mode is a specific namespace on the cluster) Create an OperatorGroup
 # We decided to install in openshift-operators so no need to OperatorGroup !
 # TODO # nommer correctement les operatorgroup
 create_namespace $MY_OC_PROJECT
 create_namespace $MY_COMMON_SERVICES_NAMESPACE
+create_namespace $MY_LICENSE_SERVER_NAMESPACE
 
+# Operator group for certificate manager
 create_namespace $MY_CERT_MANAGER_NAMESPACE
 ls_type="OperatorGroup"
 ls_cr_name="${MY_CERT_MANAGER_OPERATORGROUP}"
 ls_yaml_file="${MY_RESOURCSEDIR}operator-group-single.yaml"
 ls_namespace=$MY_CERT_MANAGER_NAMESPACE
-check_create_oc_yaml "${ls_type}" "${ls_cr_name}" "${ls_yaml_file}" "${ls_namespace}"
-
-create_namespace $MY_LICENSE_SERVER_NAMESPACE
-ls_type="OperatorGroup"
-ls_cr_name="${MY_LICENSE_SERVER_OPERATORGROUP}"
-ls_yaml_file="${MY_RESOURCSEDIR}operator-group-single.yaml"
-ls_namespace=$MY_LICENSE_SERVER_NAMESPACE
 check_create_oc_yaml "${ls_type}" "${ls_cr_name}" "${ls_yaml_file}" "${ls_namespace}"
 
 # Add ibm entitlement key to namespace
@@ -1816,7 +1861,9 @@ install_gitops
 #SB]20231214 Installing Foundation services
 mylog info "==== Installing foundational services (Cert Manager, Licensing Server and Common Services)." 1>&2
 install_cert_manager
+
 install_lic_srv
+
 install_fs
 install_mailhog
 install_openldap

@@ -1065,6 +1065,7 @@ function adapt_file() {
   local lf_in_sourcedir=$1
   local lf_in_destdir=$2
   local lf_in_filename=$3
+  decho 4 "$lf_in_sourcedir | $lf_in_destdir | $lf_in_filename"
 
   if [ ! -d ${lf_in_destdir} ]; then
     mkdir -p ${lf_in_destdir}

@@ -1,4 +1,6 @@
-# APIC cases
+# APIC use cases
+
+## API Tests
 
 ![API Test](../images/api_atm-test0.png "API Test")
 
