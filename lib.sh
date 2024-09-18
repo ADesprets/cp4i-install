@@ -907,6 +907,7 @@ function create_operator_subscription() {
   SECONDS=0
 
   lf_file="${MY_OPERATORSDIR}subscription.yaml"
+  #lf_file="${MY_OPERATORSDIR}subscription-tekton.yaml"
   #lf_file="${MY_OPERATORSDIR}subscription_startingcsv.yaml"
   lf_type="Subscription"
   check_create_oc_yaml "${lf_type}" "${MY_OPERATOR_NAME}" "${lf_file}" "${MY_OPERATOR_NAMESPACE}"

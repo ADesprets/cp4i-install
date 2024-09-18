@@ -128,41 +128,6 @@ function add_ibm_entitlement() {
 }
 
 ################################################
-# start customization
-# Takes all the templates associated with the capabilities and generate the files from the context variables
-# The files are generated into ./customisation/working/<capability>/config
-# @param ns namespace where operands were instantiated
-function start_customization() {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :start_customization"
-
-  local lf_in_ns=$1
-  local lf_varb64
-
-  mylog info "Copy template files to the working directory"
-
-  decho 4 "F:OUT:start_customization"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
-}
-
-################################################
-# launch customization
-# Takes all the templates associated with the capabilities and generate the files from the context variables
-# The files are generated into ./customisation/working/<capability>/config
-# @param ns namespace where operands were instantiated
-# TODO Check if we nned this one
-function launch_customization() {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :launch_customization"
-
-  local lf_in_ns=$1
-
-  mylog info "Customisation of the capabilities"
-  decho 4 "F:OUT:launch_customization"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
-}
-
-################################################
 # TBC
 function create_openshift_cluster() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
@@ -606,6 +571,29 @@ function install_gitops() {
   create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
   decho 3 "F:OUT:install_gitops"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
+# Install redhat Pipelines (tekton)
+function install_pipelines() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho 3 "F:IN :install_pipelines"
+
+  # https://docs.openshift.com/pipelines/1.14/install_config/installing-pipelines.html
+
+  #mylog info "==== Redhat Openshift Pipelines (tekton)." 1>&2
+  lf_operator_name="$MY_PIPELINES_OPERATORGROUP"
+  lf_catalog_source_name="redhat-operators"
+  lf_operator_namespace=$MY_OPERATORS_NAMESPACE
+  lf_strategy="Automatic"
+  lf_wait_for_state=true
+  lf_csv_name=$MY_PIPELINES_CASE
+  export MY_CURRENT_CHL="latest"
+  decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
+  create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
+
+  decho 3 "F:OUT:install_pipelines"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -1736,7 +1724,6 @@ function install_logging_elk() {
     #local lf_operator_name="${MY_OC_PROJECT}-elasticsearch-operator"
     local lf_operator_name="elasticsearch-operator"
     local lf_operator_namespace="openshift-operators-redhat"
-    #local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     local lf_current_chl=$MY_ELK_CHL
     local lf_strategy="Automatic"
     local lf_catalog_source_name="redhat-operators"
@@ -1767,13 +1754,12 @@ function install_logging_loki() {
 
     # Create a subscription object for Loki Operator
     local lf_operator_name=$MY_LOKI_OPERATOR
-    #local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     local lf_operator_namespace="openshift-operators-redhat"
-    local lf_current_chl=$MY_LOKI_CHL
     local lf_strategy="Automatic"
     local lf_catalog_source_name="redhat-operators"
     local lf_wait_for_state=true
     local lf_csv_name=$MY_LOKI_OPERATOR
+    export MY_CURRENT_CHL="stable"
     decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_current_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
     create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"      
 
@@ -1791,13 +1777,11 @@ function install_logging_loki() {
     # Create a subscription object for Red Hat Openshift Logging Operator
     local lf_operator_name=$MY_LOGGING_OPERATORGROUP
     local lf_operator_namespace="${MY_LOGGING_NAMESPACE}"
-    local lf_current_chl=$MY_RHOL_CHL
     local lf_strategy="Automatic"
     local lf_catalog_source_name="redhat-operators"
     local lf_wait_for_state=true
     local lf_csv_name=$MY_LOGGING_OPERATORGROUP
     export MY_CURRENT_CHL="stable"
-    #export MY_CURRENT_CHL="stable-5.9"
     export MY_STARTING_CSV="${MY_LOKI_STARTINGCSV}"
     create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
@@ -1968,6 +1952,10 @@ mylog info "==== Installing foundational services (Cert Manager, Licensing Serve
 install_cert_manager
 install_lic_srv
 install_fs
+END_COMMENT
+install_pipelines
+: <<'END_COMMENT'
+
 install_mailhog
 install_openldap
 
@@ -2001,8 +1989,8 @@ install_hsts
 
 install_mq
 
-END_COMMENT
 install_instana
+END_COMMENT
 : <<'END_COMMENT'
 
 install_logging_loki
