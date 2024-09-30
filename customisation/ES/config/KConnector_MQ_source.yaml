@@ -1,0 +1,21 @@
+apiVersion: eventstreams.ibm.com/v1beta2
+kind: KafkaConnector
+metadata:
+  labels:
+    eventstreams.ibm.com/cluster: kconnect
+  name: mq-source
+  namespace: $MY_OC_PROJECT
+spec:
+  class: com.ibm.eventstreams.connect.mqsource.MQSourceConnector
+  tasksMax: 1
+  config:
+    mq.channel.name: CP4IMQCHL
+    value.converter: org.apache.kafka.connect.storage.StringConverter
+    mq.connection.name.list: cp4imq-ibm-mq(1414)
+    mq.queue.manager: cp4imq
+    mq.queue: TO.KAFKA
+    mq.record.builder: com.ibm.eventstreams.connect.mqsource.builders.DefaultRecordBuilder
+    topic: LH.ORDERS              
+    key.converter: org.apache.kafka.connect.storage.StringConverter
+    mq.message.body.jms: false 
+    mq.user.authentication.mqcsp: false

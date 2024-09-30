@@ -51,7 +51,7 @@ function was_build_image() {
 function login_to_registry() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
   decho 3 "F:IN:login_to_registry"
-  mylog info "Changes made recently to login to doocker registry check you are correctly login"
+  mylog info "Changes made recently to login to docker registry check you are correctly login"
   oc login -u kubeadmin -p $MY_TECHZONE_PASSWORD $(oc whoami --show-server)
   decho 3 "docker login -u kubeadmin -p $(oc whoami -t) ${IMAGE_REGISTRY_HOST}"
   docker login -u kubeadmin -p $(oc whoami -t) ${IMAGE_REGISTRY_HOST}

@@ -60,6 +60,7 @@ else
     # 	    trustedCertificates:
     # 	    - certificate: ca.crt
     # 		  secretName: apim-cpd
+    # Need to restart the pod
     # 5) Optional, Update cp4i-eem CRD
     # spec.manager.apic
     # 	clientSubjectDN: CN=IBM Event Endpoint Management
@@ -78,18 +79,20 @@ save_certificate ${MY_OC_PROJECT} cp4i-eem-ibm-eem-manager tls.crt ${MY_WORKINGD
 save_certificate ${MY_OC_PROJECT} cp4i-eem-ibm-eem-manager tls.key ${MY_WORKINGDIR}
 
 # 7) TlS Profile in APIC EMM Client/EEM Trust
-# 	TLS keystore (eem_key)
+# Create a TLS Client Profile (eemclientprofile)
+# 	Create a TLS keystore (eem_key)
 # 		/home/desprets/installcp4i/working/cp4i-eem-ibm-eem-manager.tls.crt.pem
 # 		/home/desprets/installcp4i/working/cp4i-eem-ibm-eem-manager.tls.key.pem
-# 	TLS truststore (eem_trust)
+# 	Create a TLS truststore (eem_trust)
 # 		/home/desprets/installcp4i/working/cp4i-eem-ibm-eem-manager.ca.crt.pem
-#   TLS Client profile (eem_TLS_client_profile)
-# 8) Register eem-eventgateway
+#   Create a TLS Client profile (eem_TLS_client_profile)
+# 8) Register eem-eventgateway eemgtw
 # Service endpoint configuration oc -n cp4i get route | grep apic | grep eem
-# 	https://cp4i-eem-ibm-eem-apic-cp4i.apps.66c486d0cc846855dd383768.ocp.techzone.ibm.com
+# 	https://cp4i-eem-ibm-eem-apic-cp4i.apps.66d5d603d361e1cd7ea1cfc0.ocp.techzone.ibm.com
+# Reference the TLS Client Profile
 # API invocation endpoint	ibm-egw-rt
 # oc -n cp4i get route | grep ibm-egw-rt
-# 	cp4i-eg-ibm-egw-rt-1-cp4i.apps.66c486d0cc846855dd383768.ocp.techzone.ibm.com:443
+# 	cp4i-eg-ibm-egw-rt-1-cp4i.apps.66d5d603d361e1cd7ea1cfc0.ocp.techzone.ibm.com:443
 
 duration=$SECONDS
 mylog info "Configuration for Event Endpont Manager took $duration seconds to execute." 1>&2

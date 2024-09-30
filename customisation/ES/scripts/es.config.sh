@@ -34,7 +34,7 @@ do
     export es_spec_topic_replica=${topic_replicas[$index]}
 
     # CRD described at https://ibm.github.io/event-automation/es/reference/api-reference-es/
-    # check_create_oc_yaml "KafkaTopic" "${es_topic_name}" "${MY_ES_GEN_CUSTOMDIR}config/topic.yaml" $es_project
+    check_create_oc_yaml "KafkaTopic" "${es_topic_name}" "${MY_ES_GEN_CUSTOMDIR}config/topic.yaml" $es_project
     # check_resource_availability "KafkaTopic" "${es_topic_name}" $es_project
     # wait_for_state KafkaTopic "${es_topic_name}" "Ready" '.status.phase' $es_project
 done
@@ -53,11 +53,15 @@ check_create_oc_yaml "KafkaUser" "${es_topic_name}" "${MY_ES_GEN_CUSTOMDIR}confi
 # create_namespace $ES_DESTINATION
 
 # Create KafkaConnect and KafkaConnector in $ES_APPS_PROJECT project
-mylog info "Create Kafka Connect for datagen"
-check_create_oc_yaml "KafkaConnect" "datagen-host" "${MY_ES_GEN_CUSTOMDIR}config/KConnect_datagen.yaml" $es_project
+mylog info "Create Kafka Connect for datagen, and MQ connectors"
+check_create_oc_yaml "KafkaConnect" "kconnect" "${MY_ES_GEN_CUSTOMDIR}config/KConnect.yaml" $es_project
 
-# mylog info "Create Kafka Connector for datagen"
+# TODO check for the TLS configuration: https://ibm.github.io/event-automation/es/connecting/mq/#configuration-options
+
+mylog info "Create Kafka Connectors for datagen and MQ connectors"
 check_create_oc_yaml "KafkaConnector" "datagen" "${MY_ES_GEN_CUSTOMDIR}config/KConnector_datagen.yaml" $es_project
+check_create_oc_yaml "KafkaConnector" "mqsync" "${MY_ES_GEN_CUSTOMDIR}config/KConnector_MQ_sink.yaml" $es_project
+check_create_oc_yaml "KafkaConnector" "mqsource" "${MY_ES_GEN_CUSTOMDIR}config/KConnector_MQ_source.yaml" $es_project
 
 duration=$SECONDS
 mylog info "Configuration for EventStreams took $duration seconds to execute." 1>&2

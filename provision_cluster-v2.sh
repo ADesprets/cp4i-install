@@ -333,17 +333,15 @@ function display_access_info() {
   mylog info "==== Displaying Access Info to CP4I." 1>&2
   # Temporary access with Keycloack
 
-  local lf_temp_integration_admin_pwd
-  lf_temp_integration_admin_pwd=$(oc -n $MY_COMMONSERVICES_NAMESPACE get secret integration-admin-initial-temporary-credentials -o jsonpath={.data.password} | base64 -d)
-  mylog info "Integration admin password: ${lf_temp_integration_admin_pwd}"
-
   local lf_mailhog_hostname
   lf_mailhog_hostname=$(oc -n ${MY_MAIL_SERVER_NAMESPACE} get route mailhog -o jsonpath='{.spec.host}')
   mylog info "MailHog accessible at http://${lf_mailhog_hostname}"
 
+  local lf_temp_integration_admin_pwd cp4i_url
   if $MY_NAVIGATOR_INSTANCE; then
+    lf_temp_integration_admin_pwd=$(oc -n $MY_COMMON_SERVICES_NAMESPACE get secret integration-admin-initial-temporary-credentials -o jsonpath={.data.password} | base64 -d)
+    mylog info "Integration admin password: ${lf_temp_integration_admin_pwd}"
     cp4i_url=$(oc -n $MY_OC_PROJECT get platformnavigator cp4i-navigator -o jsonpath='{range .status.endpoints[?(@.name=="navigator")]}{.uri}{end}')
-    # cp4i_uid=$(oc -n $MY_OC_PROJECT get secret ibm-iam-bindinfo-platform-auth-idp-credentials -o jsonpath={.data.admin_username} | base64 -d)
     mylog info "CP4I Platform UI URL: " $cp4i_url  
   fi
 
@@ -430,23 +428,29 @@ function display_access_info() {
 
   local lf_mq_admin_url
   if $MY_MQ; then
-    lf_mq_admin_url=$(oc -n $MY_OC_PROJECT get QueueManager $MY_MSGSRV_INSTANCE_NAME -o jsonpath='{.status.adminUiUrl}')
+    if $MY_MESSAGINGSERVER; then
+      lf_mq_qm_url=$(oc -n $MY_OC_PROJECT get MessagingServer $MY_MSGSRV_INSTANCE_NAME -o jsonpath='{.status.adminUiUrl}')
+    fi
+    lf_mq_admin_url=$(oc -n $MY_OC_PROJECT get QueueManager $MY_MQ_INSTANCE_NAME -o jsonpath='{.status.adminUiUrl}')
     mylog info "MQ Management Console : ${lf_mq_admin_url}"
   fi
 
   local lf_was_liberty_app_demo_url
   if $MY_WASLIBERTY_CUSTOM; then
-    lf_was_liberty_app_demo_url=$(oc -n $MY_BACKEND_NAMESPACE get WebSphereLibertyApplication $MY_WLA_APP_NAME -o jsonpath='{.status.endpoints[0].uri}')
-    mylog info "WAS Liberty $MY_WLA_APP_NAME application URL : ${lf_was_liberty_app_demo_url}/$MY_WLA_APP_NAME"
+    lf_was_liberty_app_demo_url=$(oc -n $MY_BACKEND_NAMESPACE get route demo -o jsonpath='{.status.ingress[0].host}')
+    mylog info "WAS Liberty $MY_WLA_APP_NAME application URL : https://${lf_was_liberty_app_demo_url}/$MY_WLA_APP_NAME"
   fi
 
-  local lf_licensing_service_url lf_licensing_secret_token
+  local lf_licensing_service_url lf_licensing_secret_token lf_licensing_service_reporter_url lf_licensing_reporter_password
   if $MY_LIC_SRV; then
     lf_licensing_service_url=$(oc -n ${MY_LICENSE_SERVER_NAMESPACE} get Route -o=jsonpath='{.items[?(@.metadata.name=="ibm-licensing-service-instance")].spec.host}')
     mylog info "Licensing service endpoint: https://${lf_licensing_service_url}"
-
-    lf_licensing_secret_token=$(oc get secret ibm-licensing-token -n ibm-licensing -o jsonpath='{.data.token}' | base64 -d)
+    lf_licensing_secret_token=$(oc get secret ibm-licensing-token -n ${MY_LICENSE_SERVER_NAMESPACE} -o jsonpath='{.data.token}' | base64 -d)
     mylog info "Licensing service token: ${lf_licensing_secret_token}"
+    lf_licensing_service_reporter_url=$(oc -n ${MY_LICENSE_SERVER_NAMESPACE} get Route ibm-lsr-console -o=jsonpath='{.status.ingress[0].host}')
+    mylog info "Licensing service reporter console endpoint: https://${lf_licensing_service_reporter_url}/license-service-reporter/"
+    lf_licensing_reporter_password=$(oc get secret ibm-license-service-reporter-credentials -n ${MY_LICENSE_SERVER_NAMESPACE} -o jsonpath='{.data.password}' | base64 -d)
+    mylog info "Licensing service reporter credential: license-administrator/${lf_licensing_reporter_password}"
   fi
 
   decho 3 "F:OUT:display_access_info"
@@ -638,11 +642,28 @@ function install_lic_srv() {
     mylog info "==== IBM License Server." 1>&2
     check_add_cs_ibm_pak ibm-licensing amd64
 
-    #mylog info "==== Adding Licensing service catalog source in ns : openshift-marketplace." 1>&2
+    # Operator group forLicense Service Reporter in single namespace
+    ls_type="OperatorGroup"
+    ls_cr_name="${MY_LICENSE_SERVER_OPERATORGROUP}"
+    ls_yaml_file="${MY_RESOURCSEDIR}operator-group-single.yaml"
+    ls_namespace=$MY_LICENSE_SERVER_NAMESPACE
+    check_create_oc_yaml "${ls_type}" "${ls_cr_name}" "${ls_yaml_file}" "${ls_namespace}"
+
+    #mylog info "Creating Licensing service catalog source in ns : openshift-marketplace." 1>&2
     lf_catalogsource_namespace=$MY_CATALOGSOURCES_NAMESPACE
     lf_catalogsource_name="ibm-licensing-catalog"
     lf_catalogsource_dspname="ibm-licensing"
     lf_catalogsource_image="icr.io/cpopen/ibm-licensing-catalog"
+    lf_catalogsource_publisher="IBM"
+    lf_catalogsource_interval="45m"
+    decho 3 "create_catalogsource \"${lf_catalogsource_namespace}\" \"${lf_catalogsource_name}\" \"${lf_catalogsource_dspname}\" \"${lf_catalogsource_image}\" \"${lf_catalogsource_publisher}\" \"${lf_catalogsource_interval}\""
+    create_catalogsource "${lf_catalogsource_namespace}" "${lf_catalogsource_name}" "${lf_catalogsource_dspname}" "${lf_catalogsource_image}" "${lf_catalogsource_publisher}" "${lf_catalogsource_interval}"
+
+    #mylog info "Creating the CatalogSource for License Service Reporter in ns : openshift-marketplace." 1>&2
+    lf_catalogsource_namespace=$MY_CATALOGSOURCES_NAMESPACE
+    lf_catalogsource_name="ibm-license-service-reporter-operator-catalog"
+    lf_catalogsource_dspname="IBM License Service Reporter Catalog"
+    lf_catalogsource_image="icr.io/cpopen/ibm-license-service-reporter-operator-catalog"
     lf_catalogsource_publisher="IBM"
     lf_catalogsource_interval="45m"
     decho 3 "create_catalogsource \"${lf_catalogsource_namespace}\" \"${lf_catalogsource_name}\" \"${lf_catalogsource_dspname}\" \"${lf_catalogsource_image}\" \"${lf_catalogsource_publisher}\" \"${lf_catalogsource_interval}\""
@@ -657,6 +678,33 @@ function install_lic_srv() {
     lf_csv_name=$MY_LICENSE_SERVER_CASE
     decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
     create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
+
+    mylog info "Installing the License Service Reporter operator" 1>&2
+    lf_operator_name="ibm-license-service-reporter-operator"
+    lf_catalog_source_name="ibm-license-service-reporter-operator-catalog"
+    lf_operator_namespace=$MY_LICENSE_SERVER_NAMESPACE
+    lf_strategy="Automatic"
+    lf_wait_for_state=true
+    lf_csv_name=$MY_LICENSE_SERVER_REPORTER_CASE
+    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
+    create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
+
+    mylog info "Creating the License Service Reporter instance" 1>&2
+    # Creating Creating the License Service Reporter instance 
+    lf_file="${MY_OPERANDSDIR}LIC-Reporter-Capability.yaml"
+    lf_ns="${MY_LICENSE_SERVER_NAMESPACE}"
+    lf_path="{.status.conditions[0].type}"
+    lf_resource="$MY_LICENSE_SERVER_REPORTER_INSTANCE_NAME"
+    lf_state="Ready"
+    lf_type="IBMLicenseServiceReporter"
+    lf_wait_for_state=false
+    create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
+
+    # Add license service to the reporter
+    # oc get routes -n ibm-licensing | grep ibm-license-service-reporter | awk '{print $2}'
+    mylog info "Add license service to the reporter" 1>&2
+    lf_licensing_service_reporter_url=$(oc -n ${MY_LICENSE_SERVER_NAMESPACE} get Route -o=jsonpath='{.items[?(@.metadata.name=="ibm-license-service-reporter")].spec.host}')
+    oc patch -n $MY_LICENSE_SERVER_NAMESPACE IBMLicensing instance --type merge --patch "{\"spec\":{\"sender\":{\"reporterSecretToken\":\"ibm-license-service-reporter-token\",\"reporterURL\":\"$reporterURL\",\"clusterID\":\"ClusterTest1\",\"clusterName\":\"ClusterTest1\"}}}"
   fi
 
   decho 3 "F:OUT:install_lic_srv"
@@ -1251,7 +1299,6 @@ function customise_egw() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 3 "F:IN :customise_egw"
 
-  # Creating EventGateway instance (Event Gateway)
   if $MY_EGW_CUSTOM; then
     mylog info "==== Customise Event Endpoint Gateway ()." 1>&2
   fi
@@ -1657,14 +1704,14 @@ function install_instana() {
     mylog info "==== Adding Instana." 1>&2
     # Create namespace for Instana agent. The instana agent must be istalled in instana-agent namespace.
     create_namespace $MY_INSTANA_AGENT_NAMESPACE
+    oc -n $MY_INSTANA_AGENT_NAMESPACE adm policy add-scc-to-user privileged -z instana-agent
 
     lf_operator_name="instana-agent-operator"
     lf_catalog_source_name="certified-operators"
     lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     lf_strategy="Automatic"
-    lf_csv_name="instana-agent-operator"
+    lf_csv_name=$MY_INSTANA_CSV_NAME
     lf_wait_for_state=true
-    oc -n $MY_INSTANA_AGENT_NAMESPACE adm policy add-scc-to-user privileged -z instana-agent
     create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
     # Creating Instana agent
@@ -1830,6 +1877,54 @@ function install_logging_loki() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
+################################################
+# Install PostGreSQL cloudnative-pg, see https://github.com/cloudnative-pg/cloudnative-pg TODO This does not work
+function install_postgresql() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho 3 "F:IN :install_postgresql"
+
+  if $MY_POSTGRESQL; then
+    mylog info "==== Adding PostGreSQL." 1>&2
+    # Create namespace for PostGreSQL.
+    create_namespace $MY_POSTGRESQL_NAMESPACE
+
+    # Catalog source for CloudNativePG
+    mylog info "==== cloudnative-pg-catalog catalog." 1>&2
+    lf_catalogsource_namespace=$MY_CATALOGSOURCES_NAMESPACE
+    lf_catalogsource_name="cloud-native-postgresql-catalog"
+    lf_catalogsource_dspname="ibm-cloud-native-postgresql-4.25.0"
+    lf_catalogsource_image="icr.io/cpopen/ibm-cpd-cloud-native-postgresql-operator-catalog@sha256:0b46a3ec66622dd4a96d96243602a21d7a29cd854f67a876ad745ec524337a1f"
+    lf_catalogsource_publisher="IBM"
+    lf_catalogsource_interval="10m"
+    decho 3 "create_catalogsource \"${lf_catalogsource_namespace}\" \"${lf_catalogsource_name}\" \"${lf_catalogsource_dspname}\" \"${lf_catalogsource_image}\" \"${lf_catalogsource_publisher}\" \"${lf_catalogsource_interval}\""
+    create_catalogsource "${lf_catalogsource_namespace}" "${lf_catalogsource_name}" "${lf_catalogsource_dspname}" "${lf_catalogsource_image}" "${lf_catalogsource_publisher}" "${lf_catalogsource_interval}"
+
+    # Operator group for PostGreSQL in single namespace (TODO should it be operators.coreos.com/v1 instead of operators.coreos.com/v1alpha2)
+    ls_type="OperatorGroup"
+    ls_cr_name="${MY_POSTGRESQL_OPERATORGROUP}"
+    ls_yaml_file="${MY_RESOURCSEDIR}operator-group-singlev1.yaml"
+    ls_namespace=$MY_POSTGRESQL_NAMESPACE
+    check_create_oc_yaml "${ls_type}" "${ls_cr_name}" "${ls_yaml_file}" "${ls_namespace}"
+
+    # Creating PostGreSQL operator subscription
+    lf_operator_name="cloud-native-postgresql"
+    lf_catalog_source_name="cloud-native-postgresql-catalog"
+    lf_operator_namespace=$MY_POSTGRESQL_NAMESPACE
+    lf_strategy="Automatic"
+    lf_csv_name=$MY_CLOUDNATIVE_PG_CASE
+    lf_wait_for_state=true
+    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
+    create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
+
+    # toto
+
+
+  fi
+
+  decho 3 "F:OUT:install_postgresql"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
 ################################################################################################
 # Start of the script main entry
 ################################################################################################
@@ -1864,7 +1959,7 @@ else
   echo "The provided arguments are: $@"
 fi
 
-# trap 'display_access_info' EXIT
+trap 'display_access_info' EXIT
 # load helper functions
 . "${MAINSCRIPTDIR}"lib.sh
 
@@ -1952,8 +2047,8 @@ mylog info "==== Installing foundational services (Cert Manager, Licensing Serve
 install_cert_manager
 install_lic_srv
 install_fs
-END_COMMENT
 install_pipelines
+END_COMMENT
 : <<'END_COMMENT'
 
 install_mailhog
@@ -1975,7 +2070,9 @@ install_ace
 
 install_apic
 
+END_COMMENT
 install_es
+: <<'END_COMMENT'
 
 install_eem $MY_CATALOGSOURCES_NAMESPACE
 
@@ -1990,8 +2087,6 @@ install_hsts
 install_mq
 
 install_instana
-END_COMMENT
-: <<'END_COMMENT'
 
 install_logging_loki
 

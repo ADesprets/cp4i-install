@@ -1,0 +1,29 @@
+apiVersion: eventstreams.ibm.com/v1beta2
+kind: KafkaConnector
+metadata:
+  labels:
+    eventstreams.ibm.com/cluster: kconnect
+  name: mq-sink
+  namespace: $MY_OC_PROJECT
+spec:
+  class: com.ibm.eventstreams.connect.mqsink.MQSinkConnector
+  tasksMax: 1
+  config:
+    mq.queue.manager: CP4IMQ
+    mq.channel.name: CP4IMQCHL
+    mq.connection.name.list: cp4imq-ibm-mq(1414)
+    mq.ssl.truststore.location: /tmp/kafka/cluster.truststore.p12
+    mq.ssl.truststore.password: Fxfj6ANTCNFzdrN-fpdeqZ6W-M_ZxD2W
+    mq.ssl.cipher.suite: TLS_AES_256_GCM_SHA384
+    mq.ssl.truststore.type: PKCS12
+    mq.queue: FROM.KAFKA
+    mq.user.name: ""
+    mq.password: ""
+    mq.message.body.jms: "false"
+    mq.time.to.live: "10800000"
+    topics: LH.ORDERS
+    mq.persistent: "true"
+    mq.connection.mode: client
+    mq.message.builder: com.ibm.eventstreams.connect.mqsink.builders.DefaultMessageBuilder
+    key.converter: org.apache.kafka.connect.storage.StringConverter
+    value.converter: org.apache.kafka.connect.storage.StringConverter

@@ -19,10 +19,12 @@ spec:
       authorization:
         type: simple
       config:
+        default.replication.factor: 3
         inter.broker.protocol.version: '3.7'
         offsets.topic.replication.factor: 1
         transaction.state.log.min.isr: 1
         transaction.state.log.replication.factor: 1
+        min.insync.replicas: 3
       listeners:
         - name: external
           port: 9094
@@ -60,8 +62,8 @@ spec:
         size: 4Gi
   adminApi: {}
   adminUI:
-    authentication:
-      - type: scram-sha-512
+     authentication:
+       - type: integrationKeycloak      
   apicurioRegistry: {}
   collector: {}
   restProducer: {}

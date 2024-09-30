@@ -259,7 +259,6 @@ function create_helper_scripts () {
 
 ################################################################################################
 # Start of the script main entry
-# main
 
 starting=$(date);
 
@@ -291,7 +290,7 @@ sc_clnt="clnt1"
 . "${MAINSCRIPTDIR}"lib.sh
 
 # I have to get first the qmgr name because it's used in the following configfile
-# SB]20240528: (pour les besoins de test AD)
+# SB]20240528: (pour les besoins de test AD) TODO Enhance the variabilisation of the name of the QM
 export QMGR=$(echo "${MY_MQ_INSTANCE_NAME}"| tr '[:upper:]' '[:lower:]')
 export QMGR_UC=$(echo $QMGR | tr '[:lower:]' '[:upper:]')
 export CLNT1="${sc_clnt}"
