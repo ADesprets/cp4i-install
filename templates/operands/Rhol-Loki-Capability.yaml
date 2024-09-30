@@ -1,0 +1,24 @@
+apiVersion: logging.openshift.io/v1
+kind: ClusterLogging
+metadata:
+  name: $MY_RHOL_INSTANCE_NAME
+  namespace: $MY_LOGGING_NAMESPACE
+spec:
+  collection:
+    type: vector
+  logStore:
+    lokistack:
+      name: $MY_LOKI_INSTANCE_NAME
+    retentionPolicy:
+      application:
+        maxAge: 7d
+      audit:
+        maxAge: 7d
+      infra:
+        maxAge: 7d
+    type: lokistack
+  visualization:
+    ocpConsole:
+      logsLimit: 15
+    type: ocp-console
+  managementState: Managed

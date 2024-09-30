@@ -119,8 +119,11 @@ if ! ibmcloud ks cluster get --cluster $my_cluster_name --output json > /dev/nul
 else
   gbl_cluster_url_filter=.serverURL
   my_cluster_url=$(ibmcloud ks cluster get --cluster $my_cluster_name --output json | jq -r "$gbl_cluster_url_filter")
-  SECONDS=0
+  SECO
+  NDS=0
+  
   mylog info "my_cluster_url: $my_cluster_url"
   Login2OpenshiftCluster
+  
   mylog info "Login in to Openshift cluster took $SECONDS seconds to execute." 1>&2
 fi

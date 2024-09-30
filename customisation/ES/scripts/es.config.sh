@@ -56,6 +56,8 @@ check_create_oc_yaml "KafkaUser" "${es_topic_name}" "${MY_ES_GEN_CUSTOMDIR}confi
 mylog info "Create Kafka Connect for datagen, and MQ connectors"
 check_create_oc_yaml "KafkaConnect" "kconnect" "${MY_ES_GEN_CUSTOMDIR}config/KConnect.yaml" $es_project
 
+# TODO check for the TLS configuration: https://ibm.github.io/event-automation/es/connecting/mq/#configuration-options
+
 mylog info "Create Kafka Connectors for datagen and MQ connectors"
 check_create_oc_yaml "KafkaConnector" "datagen" "${MY_ES_GEN_CUSTOMDIR}config/KConnector_datagen.yaml" $es_project
 check_create_oc_yaml "KafkaConnector" "mqsync" "${MY_ES_GEN_CUSTOMDIR}config/KConnector_MQ_sink.yaml" $es_project
