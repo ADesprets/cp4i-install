@@ -1,0 +1,40 @@
+apiVersion: logging.openshift.io/v1
+kind: ClusterLogging
+metadata:
+  name: $MY_RHOL_INSTANCE_NAME
+  namespace: $MY_LOGGING_NAMESPACE
+spec:
+  collection:
+    type: fluentd 
+    fluentd: {}
+  logStore:
+    type: elasticsearch 
+    retentionPolicy: 
+      application:
+        maxAge: 1d
+      infra:
+        maxAge: 7d
+      audit:
+        maxAge: 7d
+    elasticsearch:
+      nodeCount: 3 
+      storage:
+        storageClassName: $MY_BLOCK_STORAGE_CLASS
+        size: 200G
+      resources: 
+          limits:
+            memory: 16Gi
+          requests:
+            memory: 16Gi
+      proxy: 
+        resources:
+          limits:
+            memory: 256Mi
+          requests:
+            memory: 256Mi
+      redundancyPolicy: SingleRedundancy
+  managementState: Managed 
+  visualization:
+    type: kibana
+    kibana:
+      replicas: 1

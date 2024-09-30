@@ -15,7 +15,7 @@ metadata:
   name: ${QMGR}-mywebconfig
   namespace: $MY_OC_PROJECT
 data:
-  mqwebuser.xml: "<server><featureManager><feature>appSecurity-2.0</feature></featureManager><sslDefault sslRef=\"mqDefaultSSLConfig\"/><basicRegistry id=\"basic\" realm=\"defaultRealm\"><user name=\"mqadmin\" password=\"Passw0rd!\"/><group name=\"mqadmins\"><member name=\"mqadmin\"/></group></basicRegistry><application-bnd><security-role name=\"MQWebAdmin\"><user name=\"mqadmin\" /><group name=\"mqadmins\" /></security-role></application-bnd></server>"
+  mqwebuser.xml: "<server><featureManager><feature>appSecurity-2.0</feature><feature>basicAuthenticationMQ-1.0</feature></featureManager><enterpriseApplication id=\"com.ibm.mq.console\"><application-bnd><security-role name=\"MQWebAdmin\"><user name=\"mqadmin\" /><group name=\"mqadmins\" /></security-role><security-role name=\"MQWebAdminRO\"><user name=\"mqreader\" /></security-role></application-bnd></enterpriseApplication><basicRegistry id=\"basic\" realm=\"defaultRealm\"><user name=\"mqadmin\" password=\"Passw0rd!\"/><user name=\"mqreader\" password=\"mqreader\"/><group name=\"MQWebAdminGroup\"><member name=\"mqadmin\"/></group></basicRegistry></server>"
 ---
 apiVersion: route.openshift.io/v1
 kind: Route
@@ -40,6 +40,8 @@ metadata:
 data:
   ${QMGR}.mqsc: |
     DEFINE QLOCAL('Q1') REPLACE DEFPSIST(YES) 
+    DEFINE QLOCAL('TO.KAFKA') REPLACE DEFPSIST(YES) 
+    DEFINE QLOCAL('FROM.KAFKA') REPLACE DEFPSIST(YES) 
     DEFINE CHANNEL('${QMGR_UC}CHL') CHLTYPE(SVRCONN) REPLACE TRPTYPE(TCP) SSLCAUTH(OPTIONAL) SSLCIPH('ANY_TLS12_OR_HIGHER')
     SET CHLAUTH('${QMGR_UC}CHL') TYPE(BLOCKUSER) USERLIST(NOBODY) ACTION(ADD)
 ---

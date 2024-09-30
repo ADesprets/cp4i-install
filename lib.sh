@@ -379,6 +379,10 @@ function check_exec_prereqs() {
     check_command_exist runmqakm
   fi
 
+  if $MY_LDAP; then
+    check_command_exist ldapsearch
+  fi
+
   decho 4 "F:OUT:check_exec_prereqs"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
@@ -477,6 +481,7 @@ function check_create_oc_yaml() {
   local lf_in_yaml_file="$3"
   local lf_in_ns="$4"
 
+  export MY_OPERATORGROUP="$2"
   export MY_NAMESPACE="$4"
 
   local lf_newer
@@ -902,6 +907,8 @@ function create_operator_subscription() {
   SECONDS=0
 
   lf_file="${MY_OPERATORSDIR}subscription.yaml"
+  #lf_file="${MY_OPERATORSDIR}subscription-tekton.yaml"
+  #lf_file="${MY_OPERATORSDIR}subscription_startingcsv.yaml"
   lf_type="Subscription"
   check_create_oc_yaml "${lf_type}" "${MY_OPERATOR_NAME}" "${lf_file}" "${MY_OPERATOR_NAMESPACE}"
 
@@ -1031,7 +1038,7 @@ function create_catalogsource() {
   export CATALOG_SOURCE_INTERVAL=$6
 
   local lf_type="CatalogSource"
-  local lf_file="${MY_RESOURCSEDIR}catalog_source.yaml"
+  local lf_file="${MY_RESOURCESDIR}catalog_source.yaml"
   local lf_path="{.status.connectionState.lastObservedState}"
   local lf_state="READY"
   local lf_result

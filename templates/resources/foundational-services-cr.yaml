@@ -5,7 +5,7 @@ metadata:
   namespace: ${MY_OPERATORS_NAMESPACE}
 spec:
   operatorNamespace: ${MY_OPERATORS_NAMESPACE}
-  servicesNamespace: ${MY_COMMON_SERVICES_NAMESPACE}
+  servicesNamespace: ${MY_COMMONSERVICES_NAMESPACE}
   installPlanApproval: Automatic
   size: starterset
   license:

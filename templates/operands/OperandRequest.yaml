@@ -2,7 +2,7 @@ apiVersion: operator.ibm.com/v1alpha1
 kind: OperandRequest
 metadata:
  name: $MY_COMMONSERVICES_INSTANCE_NAME
- namespace: ${MY_COMMON_SERVICES_NAMESPACE}
+ namespace: ${MY_COMMONSERVICES_NAMESPACE}
 spec:
  requests:
    - operands:

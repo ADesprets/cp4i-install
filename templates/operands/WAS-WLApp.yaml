@@ -12,6 +12,15 @@ spec:
     mountToken: true
   applicationImage: 'image-registry.openshift-image-registry.svc:5000/${MY_BACKEND_NAMESPACE}/${MY_WLA_APP_NAME_VERSION}'
   expose: true
+  resources:
+    limits:
+      cpu: '1'
+      ephemeral-storage: 100Mi
+      memory: 500Mi
+    requests:
+      cpu: 150m
+      ephemeral-storage: 20Mi
+      memory: 150Mi
   manageTLS: true
   replicas: 1
   pullPolicy: Always

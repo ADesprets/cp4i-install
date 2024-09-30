@@ -1,6 +1,6 @@
-<mxfile host="Electron" modified="2024-09-17T13:25:20.991Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/24.4.0 Chrome/120.0.6099.109 Electron/28.1.0 Safari/537.36" etag="JsHKMsOOYMTgf1NxmsSJ" version="24.4.0" type="device" pages="4">
+<mxfile host="Electron" modified="2024-09-25T15:48:56.744Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/24.4.0 Chrome/120.0.6099.109 Electron/28.1.0 Safari/537.36" etag="fGlohZY58bAhl-iMpVpJ" version="24.4.0" type="device" pages="4">
   <diagram id="tJqLn7msZHwJoY5_B4Vj" name="Capabilities">
-    <mxGraphModel dx="1929" dy="1141" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+    <mxGraphModel dx="1278" dy="608" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -268,32 +268,32 @@
     </mxGraphModel>
   </diagram>
   <diagram id="oYA6_6Ym801ekZOoSG76" name="Design code">
-    <mxGraphModel dx="2074" dy="1196" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="1278" dy="608" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
         <mxCell id="MjGin5Dh7uQR8jkNlzEJ-2" value="Create_Capabilities(ns)&lt;br&gt;&lt;div&gt;&lt;span style=&quot;&quot;&gt;&lt;/span&gt;&lt;span style=&quot;&quot;&gt;&lt;/span&gt;&lt;span style=&quot;&quot;&gt;&lt;/span&gt;&amp;nbsp; &amp;nbsp; check_create_oc_yaml(octype, name, yaml, ns) [&lt;b&gt;Contains oc apply with envsubst&lt;/b&gt;]&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;&quot;&gt;&#x9;&lt;/span&gt;&lt;span style=&quot;&quot;&gt;&#x9;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;div style=&quot;border-color: var(--border-color);&quot;&gt;&lt;span style=&quot;&quot;&gt;&lt;span style=&quot;&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;&amp;nbsp; &amp;nbsp;&lt;/span&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;&amp;nbsp;&lt;/span&gt;wait_for_oc_state(octype, ocname, ocstate, ocpath)&lt;/div&gt;&lt;/div&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp;wait_for_state(what, value, command)&lt;br&gt;&amp;nbsp; &amp;nbsp;&amp;nbsp;&lt;div&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;check_resource_availability (octype, name)&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;&lt;br&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;&lt;div&gt;ibm-integration-platform-navigator.openshift-operators&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;&quot;&gt;&lt;/span&gt;&amp;nbsp; rhbk-operator.ibm-common-services&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;&quot;&gt;&lt;/span&gt;&amp;nbsp; &amp;nbsp; cloud-native-postgresql.openshift-operators&lt;/div&gt;&lt;/span&gt;&lt;/div&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
-          <mxGeometry x="40" y="40" width="570" height="310" as="geometry" />
+          <mxGeometry x="40" y="40" width="570" height="180" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
   </diagram>
-  <diagram id="8wNfLeNThi20D-himaWw" name="Page-4">
-    <mxGraphModel dx="1929" dy="1141" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+  <diagram id="8wNfLeNThi20D-himaWw" name="Architecture">
+    <mxGraphModel dx="1278" dy="608" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
         <mxCell id="flnhZq-FwbGgtsd0HrOw-1" value="WAS" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
-          <mxGeometry x="440" y="110" width="140" height="100" as="geometry" />
+          <mxGeometry x="440" y="120" width="140" height="90" as="geometry" />
         </mxCell>
         <mxCell id="flnhZq-FwbGgtsd0HrOw-2" value="&lt;i&gt;Order JAX -RS&lt;/i&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
           <mxGeometry x="465" y="150" width="90" height="50" as="geometry" />
         </mxCell>
         <mxCell id="flnhZq-FwbGgtsd0HrOw-3" value="Event Streams" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
-          <mxGeometry x="640" y="280" width="400" height="120" as="geometry" />
+          <mxGeometry x="640" y="280" width="500" height="120" as="geometry" />
         </mxCell>
         <mxCell id="flnhZq-FwbGgtsd0HrOw-4" value="Kafka Connect" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
-          <mxGeometry x="890" y="312" width="110" height="70" as="geometry" />
+          <mxGeometry x="1010" y="312" width="110" height="70" as="geometry" />
         </mxCell>
         <mxCell id="flnhZq-FwbGgtsd0HrOw-5" value="Kafka Connector" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
           <mxGeometry x="770" y="312" width="110" height="70" as="geometry" />
@@ -345,17 +345,17 @@
         <mxCell id="flnhZq-FwbGgtsd0HrOw-19" value="MQ" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
           <mxGeometry x="850" y="540" width="190" height="120" as="geometry" />
         </mxCell>
-        <mxCell id="flnhZq-FwbGgtsd0HrOw-20" value="QM&lt;div&gt;&lt;i&gt;-&lt;/i&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
+        <mxCell id="flnhZq-FwbGgtsd0HrOw-20" value="QM&lt;div&gt;&lt;i&gt;-&lt;/i&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
           <mxGeometry x="890" y="575" width="110" height="70" as="geometry" />
         </mxCell>
         <mxCell id="flnhZq-FwbGgtsd0HrOw-21" value="Database" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;fillColor=default;strokeColor=default;align=center;fontFamily=Helvetica;fontSize=12;fontColor=default;" parent="1" vertex="1">
           <mxGeometry x="875" y="810" width="140" height="70" as="geometry" />
         </mxCell>
         <mxCell id="flnhZq-FwbGgtsd0HrOw-22" value="WAS" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
-          <mxGeometry x="875" y="420" width="140" height="100" as="geometry" />
+          <mxGeometry x="910" y="414" width="140" height="100" as="geometry" />
         </mxCell>
         <mxCell id="flnhZq-FwbGgtsd0HrOw-23" value="App 1" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
-          <mxGeometry x="900" y="450" width="90" height="50" as="geometry" />
+          <mxGeometry x="935" y="444" width="90" height="50" as="geometry" />
         </mxCell>
         <mxCell id="flnhZq-FwbGgtsd0HrOw-24" value="WAS" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
           <mxGeometry x="875" y="690" width="140" height="100" as="geometry" />
@@ -390,11 +390,23 @@
         <mxCell id="flnhZq-FwbGgtsd0HrOw-35" style="edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.586;entryY=0.038;entryDx=0;entryDy=0;entryPerimeter=0;strokeColor=default;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=default;labelBackgroundColor=default;endArrow=classic;" parent="1" source="flnhZq-FwbGgtsd0HrOw-33" target="flnhZq-FwbGgtsd0HrOw-8" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="flnhZq-FwbGgtsd0HrOw-36" value="License Service&lt;div&gt;Basic (OK)&lt;br&gt;&lt;div&gt;License reporter&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
+        <mxCell id="flnhZq-FwbGgtsd0HrOw-36" value="License Service&lt;div&gt;Basic&lt;br&gt;&lt;div&gt;License reporter&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
           <mxGeometry x="440" y="810" width="140" height="60" as="geometry" />
         </mxCell>
         <mxCell id="flnhZq-FwbGgtsd0HrOw-37" value="Instana on Cloud&lt;div&gt;OpenTelemetry&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
           <mxGeometry x="850" y="70" width="190" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="SA-g-PLbYm2g3xsOlAVU-3" value="MQ Sink" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
+          <mxGeometry x="780" y="344" width="90" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="SA-g-PLbYm2g3xsOlAVU-1" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="SA-g-PLbYm2g3xsOlAVU-3" target="flnhZq-FwbGgtsd0HrOw-20" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="LMlduynwDklwnzTsW3_k-1" value="Kafka Connector" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
+          <mxGeometry x="890" y="312" width="110" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="LMlduynwDklwnzTsW3_k-2" value="Datagen" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
+          <mxGeometry x="900" y="344" width="90" height="26" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

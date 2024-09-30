@@ -49,7 +49,7 @@ spec:
           eventstreams.production.type: CloudPakForIntegrationNonProduction
           productID: 2a79e49111f44ec3acd89608e56138f5
           productName: IBM Event Streams for Non Production
-          productVersion: 11.4.0
+          productVersion: 11.5.0
           productMetric: VIRTUAL_PROCESSOR_CORE
           productChargedContainers: datagen-host-connect
           cloudpakId: c8b82d189e7545f0892db9ef2731b90d
@@ -95,4 +95,4 @@ spec:
       - name: mq-sink
         artifacts:
           - type: jar
-            url: https://github.com/ibm-messaging/kafka-connect-mq-sink/releases/download/v1.5.2/kafka-connect-mq-sink-1.5.2-jar-with-dependencies.jar            
+            url: https://github.com/ibm-messaging/kafka-connect-mq-sink/releases/download/v1.5.2/kafka-connect-mq-sink-1.5.2-jar-with-dependencies.jar
