@@ -1678,8 +1678,13 @@ function customise_mq() {
     fi
 
     # launch custom script
-    mylog info "Customise MQ (mq.config.sh)."
-    . ${MY_MQ_SCRIPTDIR}scripts/mq.config.sh -i ${sc_properties_file} ${sc_versions_file} ${MY_MQ_INSTANCE_NAME}
+    # mylog info "Customise MQ (mq.config.sh)."
+    # . ${MY_MQ_SCRIPTDIR}scripts/mq.config.sh -i ${sc_properties_file} ${sc_versions_file} ${MY_MQ_INSTANCE_NAME}
+    mylog info "Create certificates for MQ (tls.config.sh)."
+    . ${MY_TLS_SCRIPTDIR}scripts/tls.config.sh
+    # mylog info "Customise MQ (mq.demo.config.sh)."
+    # . ${MY_MQ_SCRIPTDIR}scripts/mq.demo.config.sh -i ${sc_properties_file} ${sc_versions_file} ${MY_MQ_INSTANCE_NAME}
+
   fi
 
   decho 3 "F:OUT:customise_mq"
@@ -2004,7 +2009,6 @@ fi
 
 : <<'END_COMMENT'
 
-
 # https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.4?topic=operators-installing-by-using-cli
 # (Only if your preferred installation mode is a specific namespace on the cluster) Create an OperatorGroup
 # We decided to install in openshift-operators so no need to OperatorGroup !
@@ -2109,8 +2113,6 @@ customise_wasliberty
 # customise_intassembly
 # customise_assetrepo
 
-END_COMMENT
-: <<'END_COMMENT'
 customise_ace
 
 customise_apic
@@ -2127,7 +2129,11 @@ customise_flink
 
 customise_hsts
 
+END_COMMENT
+
 customise_mq
+
+: <<'END_COMMENT'
 
 customise_instana
 

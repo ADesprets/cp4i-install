@@ -1,5 +1,6 @@
 ################################################
 # encode_b64_file function
+# @param 1: 
 # return the encoded (base64) input parameter
 #
 function encode_b64_file() {
@@ -12,7 +13,7 @@ function encode_b64_file() {
 
 ################################################
 # simple logging with colors
-# @param 1 level (info/error/warn/wait/check/ok/no)
+# @param 1: level (info/error/warn/wait/check/ok/no)
 function mylog() {
   local lf_spaces=$(printf "%0.s " $(seq 1 $SC_SPACES_COUNTER))
 
@@ -62,7 +63,9 @@ function var_fail() {
 }
 
 #########################################################################
-# function to print message if debug is set to 1
+# Print message with levels
+# @param 1:
+# @param 2:
 function decho () {
   local lf_in_messagelevel=$1
   shift 1
@@ -77,6 +80,7 @@ function decho () {
 #########################################################################
 # check if openshift version available
 # check_openshift_version v1 returns 0 if v1 does not exist 1 if v1 exist
+# @param 1:
 function check_openshift_version() {
   local lf_in_version=$1
 
@@ -90,9 +94,9 @@ function check_openshift_version() {
 ################################################
 # Compare versions
 # from chatgpt
-# This script defines a function compare_versions that takes two version strings as arguments and compares them component-wise.
+# Compare two version strings as arguments and compares them component-wise.
 # It uses the IFS (Internal Field Separator) to split the versions into components based on the dot ('.') separator.
-# The function then compares each component, determining whether the first version is older, newer, or equal to the second version.
+# It then compares each component, determining whether the first version is older, newer, or equal to the second version.
 # The script will output whether the first version is older, newer, or equal to the second version.
 # cmp_versions v1 v2 returns 0 if v1=v2, 1 if v1 is older than v2, 2 if v1 is newer than v2
 function cmp_versions() {
@@ -132,7 +136,11 @@ function cmp_versions() {
 }
 
 ################################################
-# Save a certificate in pem format
+# Save a certificate in pem format from secret
+# @param 1: namespace where the secret exist
+# @param 2: name of the secret
+# @param 3: Data in the secret that contains the certificate
+# @param 4: Directory where to save the certificate
 function save_certificate() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 3 "F:IN :save_certificate"
@@ -158,6 +166,8 @@ function save_certificate() {
 # example pour filtrer avec conditions :
 # avec jsonpath=$.[?(@.name=='ibm-licensing' && @.version=='4.2.1')]
 # Pour tester une variable null : https://stackoverflow.com/questions/48261038/shell-script-how-to-check-if-variable-is-null-or-no
+# @param 1:
+# @param 2:
 function is_case_downloaded() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 3 "F:IN :is_case_downloaded"
@@ -216,6 +226,10 @@ function is_case_downloaded() {
 #  - the file defining the custom resource
 #  - the namespace
 #  Returns 1 (if the cr is newer than the file) otherwise 0
+# @param 1:
+# @param 2:
+# @param 3:
+# @param 4:
 function is_cr_newer() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 3 "F:IN :is_cr_newer"
@@ -247,6 +261,7 @@ function is_cr_newer() {
 
 ################################################
 # Check that all required executables are installed
+# @param 1:
 function check_command_exist() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 5 "F:IN :check_command_exist"
@@ -264,7 +279,7 @@ function check_command_exist() {
 
 ######################################################
 # checks if the file exist, if no print a msg and exit
-#
+# @param 1:
 function check_file_exist() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 5 "F:IN :check_file_exist"
@@ -281,7 +296,7 @@ function check_file_exist() {
 
 ######################################################
 # checks if the directory exist, if no print a msg and exit
-#
+# @param 1:
 function check_directory_exist() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 4 "F:IN :check_directory_exist"
@@ -298,7 +313,7 @@ function check_directory_exist() {
 
 ######################################################
 # checks if the directory contains files, if no print a msg and exit
-#
+# @param 1:
 function check_directory_contains_files() {
   # SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   # decho 4 "F:IN :check_directory_contains_files"
@@ -316,7 +331,7 @@ function check_directory_contains_files() {
 
 ######################################################
 # checks if the directory exist, otherwise create it
-#
+# @param 1:
 function check_directory_exist_create() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 5 "F:IN :check_directory_exist_create"
@@ -331,6 +346,8 @@ function check_directory_exist_create() {
 }
 
 ################################################
+# 
+# @param 1:
 function read_config_file() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 5 "F:IN :read_config_file"
@@ -363,6 +380,7 @@ function read_config_file() {
 
 ################################################
 # Check that all required executables are installed
+# No parameters.
 function check_exec_prereqs() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 4 "F:IN :check_exec_prereqs"
@@ -390,6 +408,8 @@ function check_exec_prereqs() {
 ################################################
 # Wait n secs
 # @param secs: number of seconds to wait for and displays it on the same line
+# @param 1:
+
 function waitn() {
   local secs=$1
   mylog info "Sleeping $secs"
@@ -418,9 +438,9 @@ function send_email() {
 
 ################################################
 # wait for command to return specified value
-# @param what description of waited state
-# @param value expected state value from check command
-# @param command executed command that returns some state
+# @param 1: what description of waited state
+# @param 2: value expected state value from check command
+# @param 3: command executed command that returns some state
 function wait_for_state() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 3 "F:IN :wait_for_state"
@@ -468,10 +488,10 @@ function wait_for_state() {
 ################################################
 # Check if the resource of type octype with name name exists in the namespace ns.
 # If it does not exist use the yaml file, with the appropriate variable.
-# @param octype: kubernetes resource class, example: "subscription"
-# @param name: name of the resource, example: "ibm-integration-platform-navigator"
-# @param yaml: the file with the definition of the resource, example: "${subscriptionsdir}Navigator-Sub.yaml"
-# @param ns: name space where the reousrce is created, example: $MY_OPERATORS_NAMESPACE
+# @param 1: octype: kubernetes resource class, example: "subscription"
+# @param 2: name: name of the resource, example: "ibm-integration-platform-navigator"
+# @param 3: yaml: the file with the definition of the resource, example: "${subscriptionsdir}Navigator-Sub.yaml"
+# @param 4: ns: name space where the reousrce is created, example: $MY_OPERATORS_NAMESPACE
 function check_create_oc_yaml() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 3 "F:IN :check_create_oc_yaml"
@@ -507,7 +527,8 @@ function check_create_oc_yaml() {
 }
 
 ################################################
-# @param namespace
+# 
+# @param 1: namespace
 function provision_persistence_openldap() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 4 "F:IN :provision_persistence_openldap"
@@ -570,8 +591,9 @@ function deploy_openldap() {
 }
 
 ################################################
-# @param octype: kubernetes resource class, example: "deployment"
-# @param ocname: name of the resource, example: "mailhog"
+# @param 1: octype: kubernetes resource class, example: "deployment"
+# @param 2: ocname: name of the resource, example: "mailhog"
+# @param 3:
 # See https://github.com/osixia/docker-openldap for more details especialy all the configurations possible
 # To add a user/password protection to the web UI: https://stackoverflow.com/questions/60162842/how-can-i-add-basic-authentication-to-the-mailhog-service-in-ddev-local
 function deploy_mailhog() {
@@ -601,6 +623,9 @@ function deploy_mailhog() {
 
 ################################################
 # Check if the service is already exposed
+# @param 1:
+# @param 2:
+# @param 3:
 function is_service_exposed() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 4 "F:IN :is_service_exposed"
@@ -625,7 +650,13 @@ function is_service_exposed() {
 }
 
 #===========================================
-# Function to add entry if it doesn't exist
+# Add entry in LDAP if it doesn't exist
+# @param 1:
+# @param 2:
+# @param 3:
+# @param 4:
+# @param 5:
+# @param 6:
 function add_entry_if_not_exists() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 4 "F:IN :add_entry_if_not_exists"
@@ -656,7 +687,11 @@ function add_entry_if_not_exists() {
 }
 
 #========================================================
-# Function to add ldif file entries if each doesn't exist
+# add ldif file entries if each doesn't exist
+# @param 1:
+# @param 2:
+# @param 3:
+# @param 4:
 function add_ldif_file () {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 4 "F:IN :add_ldif_file"
@@ -701,8 +736,8 @@ function add_ldif_file () {
 }
 
 ################################################
-# @param name: name of the resource, example: "openldap"
-# @param namespace: the namespace to use
+# @param 1: name: name of the resource, example: "openldap"
+# @param 2: namespace: the namespace to use
 function expose_service_openldap() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 4 "F:IN :expose_service_openldap"
@@ -763,8 +798,8 @@ function expose_service_openldap() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 ################################################
-# @param name: name of the resource, example: "mailhog"
-# @param namespace: the namespace to use
+# @param 1: name: name of the resource, example: "mailhog"
+# @param 2: namespace: the namespace to use
 function expose_service_mailhog() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 4 "F:IN :expose_service_mailhog"
@@ -790,7 +825,7 @@ function expose_service_mailhog() {
 
 ################################################
 # Create namespace
-# @param ns namespace to be created
+# @param 1: ns namespace to be created
 function create_namespace() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 4 "F:IN :create_namespace"
@@ -813,9 +848,9 @@ function create_namespace() {
 
 ################################################
 # Check if the resource exists.
-# @param octype: kubernetes resource class, example: "subscription"
-# @param name: name of the resource, example: "ibm-integration-platform-navigator"
-# @param ns: namespace/project to perform the search
+# @param 1: octype: kubernetes resource class, example: "subscription"
+# @param 2: name: name of the resource, example: "ibm-integration-platform-navigator"
+# @param 3: ns: namespace/project to perform the search
 # TODO The var variable is initialised for another function, this is not good
 function check_resource_availability() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
@@ -842,6 +877,9 @@ function check_resource_availability() {
 ################################################
 ##SB]20230201 use ibm-pak oc plugin
 # https://ibm.github.io/cloud-pak/
+# @param 1:
+# @param 2:
+# @param 3:
 function check_add_cs_ibm_pak() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 4 "F:IN :check_add_cs_ibm_pak"
@@ -889,6 +927,12 @@ function check_add_cs_ibm_pak() {
 
 ################################################
 ##SB]20231201 create operator subscription
+# @param 1:
+# @param 2:
+# @param 3:
+# @param 4:
+# @param 5:
+# @param 6:
 function create_operator_subscription() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 3 "F:IN :create_operator_subscription"
@@ -938,6 +982,13 @@ function create_operator_subscription() {
 
 ################################################
 ##SB]20231204 create operand instance
+# @param 1:
+# @param 2:
+# @param 3:
+# @param 4:
+# @param 5:
+# @param 6:
+# @param 7:
 function create_operand_instance() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 3 "F:IN :create_operand_instance"
@@ -966,6 +1017,9 @@ function create_operand_instance() {
 ##SB]20231109 Generate properties and yaml/json files
 ## input parameter the operand custom dir (and generated dir both with config and scripts subdirectories)
 # TODO Decide if it only works with files in the directory, or with subdirectories. Today just one level no subdirectories.
+# @param 1:
+# @param 2:
+# @param 3:
 function generate_files() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 4 "F:IN :generate_files"
@@ -1026,6 +1080,13 @@ function generate_files() {
 }
 
 #############################################################################################################################
+# Create a catalog source
+# @param 1: namespace
+# @param 2: name of the catalog
+# @param 3: 
+# @param 4:
+# @param 5:
+# @param 6:
 function create_catalogsource() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 4 "F:IN :create_catalogsource"
@@ -1065,6 +1126,9 @@ function create_catalogsource() {
 #########################################################################################################
 ## adapt file into working dir
 ## called generate_files before
+# @param 1: Directory where the source file is located.
+# @param 2: Target directory where the file is created.
+# @param 3: name of the file (as source and for the target).
 function adapt_file() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 4 "F:IN :adapt_file"

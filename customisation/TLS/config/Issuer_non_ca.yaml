@@ -1,0 +1,8 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: ${TLS_CERT_ISSUER_NAME}
+  namespace: ${TLS_NAMESPACE}
+spec:
+  ca:
+    secretName: ${TLS_ROOT_CERT_NAME}

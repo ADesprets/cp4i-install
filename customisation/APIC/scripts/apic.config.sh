@@ -563,6 +563,7 @@ MY_MAIL_SERVER_NAMESPACE='mail'
 
 # Get ClusterIP for the mail server if MailHog
 mail_server_cluster_ip=$(oc -n ${MY_MAIL_SERVER_NAMESPACE} get svc/mailhog -o jsonpath='{.spec.clusterIP}')
+
 # TODO check error, if not there, ...
 decho 3 "To configure the mail server the clusterIP is ${mail_server_cluster_ip}"
 export MY_MAIL_SERVER_HOST_IP=${mail_server_cluster_ip}
