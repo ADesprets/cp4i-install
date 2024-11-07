@@ -6,7 +6,9 @@ This page describes the concetps behind the generation of certificates in Kubern
 
 In cert-manager, the Certificate resource represents a human readable definition of a certificate request. cert-manager uses this input to generate a private key and CertificateRequest resource in order to obtain a signed certificate from an Issuer or ClusterIssuer. The signed certificate and private key are then stored in the specified Secret resource. cert-manager will ensure that the certificate is auto-renewed before it expires and re-issued if requested.
 
-I'm using here the Certificate approach and not the CertificateRequest one. For information how to specify all the attributes of a certificate, you can look at the documnentation here: [Certificate resource](https://cert-manager.io/docs/usage/certificate/).
+I'm using here the Certificate approach and not the CertificateRequest one. For information how to specify all the attributes of a certificate, you can look at the documentation here: [Certificate resource](https://cert-manager.io/docs/usage/certificate/).
+
+Possible values for key usage are: "key encipherment", "digital signature", "client auth", "server auth", "signing", "cert sign", "code signing", "crl sign", "ocsp signing", "s/mime", "encipher only", "data encipherment", "content commitment", "decipher only", "email protection", "key agreement", "timestamping", "ipsec end system", "ipsec tunnel", "ipsec user", "microsoft sgc", "netscape sgc", "any".
 
 ![Creating Certificates with Cert Manager concepts](../images/tls_concepts_cert_manager.png "Creating Certificates with Cert Manager concepts")
 
@@ -95,3 +97,7 @@ spec:
   - digital signature
   - server auth
 ```
+
+Below a screen capture of the resources created.
+
+![Resources created (secret, issuers, certificates)](../images/tls_resources_created_cert_manager.png "Resources created (secret, issuers, certificates)")

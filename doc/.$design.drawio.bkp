@@ -1,6 +1,6 @@
-<mxfile host="Electron" modified="2024-11-07T08:31:45.502Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/24.4.0 Chrome/120.0.6099.109 Electron/28.1.0 Safari/537.36" etag="DmpmIDlOpqtKTA8zwIGr" version="24.4.0" type="device" pages="7">
+<mxfile host="Electron" modified="2024-10-11T16:35:54.522Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/24.4.0 Chrome/120.0.6099.109 Electron/28.1.0 Safari/537.36" etag="aUkglYryO3n6uHLK_2pZ" version="24.4.0" type="device" pages="6">
   <diagram id="tJqLn7msZHwJoY5_B4Vj" name="Capabilities">
-    <mxGraphModel dx="1471" dy="941" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+    <mxGraphModel dx="1034" dy="544" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -185,7 +185,7 @@
     </mxGraphModel>
   </diagram>
   <diagram id="g26Yq_MzOZSGEQxacyZF" name="Operators view">
-    <mxGraphModel dx="1681" dy="1064" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+    <mxGraphModel dx="2074" dy="1196" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -268,7 +268,7 @@
     </mxGraphModel>
   </diagram>
   <diagram id="oYA6_6Ym801ekZOoSG76" name="Design code">
-    <mxGraphModel dx="1681" dy="1064" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="1278" dy="608" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -279,7 +279,7 @@
     </mxGraphModel>
   </diagram>
   <diagram id="8wNfLeNThi20D-himaWw" name="Architecture">
-    <mxGraphModel dx="1681" dy="1064" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+    <mxGraphModel dx="1278" dy="608" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -390,7 +390,7 @@
         <mxCell id="flnhZq-FwbGgtsd0HrOw-35" style="edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.586;entryY=0.038;entryDx=0;entryDy=0;entryPerimeter=0;strokeColor=default;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=default;labelBackgroundColor=default;endArrow=classic;" parent="1" source="flnhZq-FwbGgtsd0HrOw-33" target="flnhZq-FwbGgtsd0HrOw-8" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="flnhZq-FwbGgtsd0HrOw-36" value="License Service&lt;div&gt;&lt;div&gt;License reporter&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
+        <mxCell id="flnhZq-FwbGgtsd0HrOw-36" value="License Service&lt;div&gt;Basic&lt;br&gt;&lt;div&gt;License reporter&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
           <mxGeometry x="440" y="810" width="140" height="60" as="geometry" />
         </mxCell>
         <mxCell id="flnhZq-FwbGgtsd0HrOw-37" value="Instana on Cloud&lt;div&gt;OpenTelemetry&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
@@ -408,14 +408,11 @@
         <mxCell id="LMlduynwDklwnzTsW3_k-2" value="Datagen" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
           <mxGeometry x="900" y="344" width="90" height="26" as="geometry" />
         </mxCell>
-        <mxCell id="bjHPBRdrWFLbVFLO6ORm-1" value="LDAP" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
-          <mxGeometry x="280" y="810" width="140" height="81" as="geometry" />
-        </mxCell>
       </root>
     </mxGraphModel>
   </diagram>
   <diagram id="-FBGFo-QPwYAwotHdK8A" name="MQ Demo">
-    <mxGraphModel dx="1681" dy="1064" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+    <mxGraphModel dx="1481" dy="913" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -495,7 +492,7 @@
     </mxGraphModel>
   </diagram>
   <diagram id="xdm_tiCWc_MeXE0C4f4C" name="TLS">
-    <mxGraphModel dx="1681" dy="1064" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+    <mxGraphModel dx="1050" dy="621" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -561,68 +558,6 @@
         </mxCell>
         <mxCell id="acHNUneEXAUyBgocVIXI-27" value="6" style="ellipse;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=18;labelBackgroundColor=none;fontStyle=1;fillColor=#3333FF;strokeColor=#000000;fontColor=#FFFFFF;" parent="1" vertex="1">
           <mxGeometry x="170" y="530" width="30" height="30" as="geometry" />
-        </mxCell>
-      </root>
-    </mxGraphModel>
-  </diagram>
-  <diagram id="OU_mMLl0SbnR3tihYOAJ" name="Keycloak">
-    <mxGraphModel dx="1014" dy="649" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
-      <root>
-        <mxCell id="0" />
-        <mxCell id="1" parent="0" />
-        <mxCell id="ySHuOfyN9tS2yjVSySgA-16" value="realm" style="ellipse;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
-          <mxGeometry x="510" y="110" width="540" height="322" as="geometry" />
-        </mxCell>
-        <mxCell id="ySHuOfyN9tS2yjVSySgA-1" value="User" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-          <mxGeometry x="577" y="213.5" width="96.45649999999999" height="30" as="geometry" />
-        </mxCell>
-        <mxCell id="ySHuOfyN9tS2yjVSySgA-2" value="email&lt;div&gt;username&lt;/div&gt;&lt;div&gt;address&lt;/div&gt;&lt;div&gt;phone number&lt;/div&gt;&lt;div&gt;birthday&lt;/div&gt;&lt;div&gt;credential&lt;/div&gt;&lt;div&gt;...&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
-          <mxGeometry x="577" y="243.5" width="96.45649999999999" height="110" as="geometry" />
-        </mxCell>
-        <mxCell id="ySHuOfyN9tS2yjVSySgA-4" value="Role" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-          <mxGeometry x="907" y="213.5" width="96.45649999999999" height="30" as="geometry" />
-        </mxCell>
-        <mxCell id="ySHuOfyN9tS2yjVSySgA-5" value="permissions" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
-          <mxGeometry x="907" y="243.5" width="96.46" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="ySHuOfyN9tS2yjVSySgA-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="ySHuOfyN9tS2yjVSySgA-6" target="ySHuOfyN9tS2yjVSySgA-1" edge="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="ySHuOfyN9tS2yjVSySgA-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="ySHuOfyN9tS2yjVSySgA-6" target="ySHuOfyN9tS2yjVSySgA-4" edge="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="ySHuOfyN9tS2yjVSySgA-6" value="RoleMapping" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-          <mxGeometry x="737" y="213.5" width="96.45649999999999" height="30" as="geometry" />
-        </mxCell>
-        <mxCell id="ySHuOfyN9tS2yjVSySgA-11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="ySHuOfyN9tS2yjVSySgA-9" target="ySHuOfyN9tS2yjVSySgA-6" edge="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="ySHuOfyN9tS2yjVSySgA-9" value="CompositeRole" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-          <mxGeometry x="737" y="153.5" width="96.45649999999999" height="30" as="geometry" />
-        </mxCell>
-        <mxCell id="ySHuOfyN9tS2yjVSySgA-14" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.75;entryDx=0;entryDy=0;" parent="1" source="ySHuOfyN9tS2yjVSySgA-12" target="ySHuOfyN9tS2yjVSySgA-1" edge="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="ySHuOfyN9tS2yjVSySgA-15" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.75;entryDx=0;entryDy=0;" parent="1" source="ySHuOfyN9tS2yjVSySgA-12" target="ySHuOfyN9tS2yjVSySgA-4" edge="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="ySHuOfyN9tS2yjVSySgA-12" value="Group" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-          <mxGeometry x="737" y="303.5" width="96.45649999999999" height="30" as="geometry" />
-        </mxCell>
-        <mxCell id="ySHuOfyN9tS2yjVSySgA-13" value="prop1" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
-          <mxGeometry x="737" y="333.5" width="96.46" height="50" as="geometry" />
-        </mxCell>
-        <mxCell id="ySHuOfyN9tS2yjVSySgA-17" value="Client adapter" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;" parent="1" vertex="1">
-          <mxGeometry x="290" y="270" width="96.45649999999999" height="30" as="geometry" />
-        </mxCell>
-        <mxCell id="ySHuOfyN9tS2yjVSySgA-18" value="client scope" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-          <mxGeometry x="290" y="240" width="96.45649999999999" height="30" as="geometry" />
-        </mxCell>
-        <mxCell id="ySHuOfyN9tS2yjVSySgA-19" value="Identity Provider" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-          <mxGeometry x="731.77" y="580" width="96.45649999999999" height="30" as="geometry" />
-        </mxCell>
-        <mxCell id="ySHuOfyN9tS2yjVSySgA-20" value="Client/Application" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-          <mxGeometry x="290" y="210" width="96.45649999999999" height="30" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

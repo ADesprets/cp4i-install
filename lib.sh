@@ -153,6 +153,7 @@ function save_certificate() {
   local lf_data_normalised=$(sed 's/\./\\./g' <<< ${lf_in_data_name})
 
   mylog info "Save certificate ${lf_in_secret_name} to ${lf_in_destination_path}${lf_in_secret_name}.${lf_in_data_name}.pem"
+  decho 6 "oc -n cp4i get secret ${lf_in_secret_name} -o jsonpath=\"{.data.$lf_data_normalised}\""
   cert=$(oc -n cp4i get secret ${lf_in_secret_name} -o jsonpath="{.data.$lf_data_normalised}")
   echo $cert | base64 --decode >"${lf_in_destination_path}${lf_in_secret_name}.${lf_in_data_name}.pem"
 
@@ -299,7 +300,7 @@ function check_file_exist() {
 # @param 1:
 function check_directory_exist() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :check_directory_exist"
+  decho 3 "F:IN :check_directory_exist"
 
   local directory=$1
   if [ ! -d $directory ]; then
@@ -307,7 +308,7 @@ function check_directory_exist() {
     exit 1
   fi
 
-  decho 4 "F:OUT:check_directory_exist"
+  decho 3 "F:OUT:check_directory_exist"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -316,14 +317,14 @@ function check_directory_exist() {
 # @param 1:
 function check_directory_contains_files() {
   # SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  # decho 4 "F:IN :check_directory_contains_files"
+  # decho 3 "F:IN :check_directory_contains_files"
 
   local lf_in_directory=$1
   local lf_files
   shopt -s nullglob dotglob # To include hidden files
   lf_files=$(find . -maxdepth 1 -type f | wc -l)
 
-    # decho 4 "F:OUT:check_directory_contains_files"
+    # decho 3 "F:OUT:check_directory_contains_files"
   # SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 
   return $lf_files
@@ -334,14 +335,14 @@ function check_directory_contains_files() {
 # @param 1:
 function check_directory_exist_create() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 5 "F:IN :check_directory_exist_create"
+  decho 4 "F:IN :check_directory_exist_create"
 
   local directory=$1
   if [ ! -d $directory ]; then
     mkdir -p $directory
   fi
 
-  decho 5 "F:OUT:check_directory_exist_create"
+  decho 4 "F:OUT:check_directory_exist_create"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -374,7 +375,7 @@ function read_config_file() {
   . "${lf_config_file}"
   set +a
 
-  decho 4 "F:OUT:read_config_file"
+  decho 5 "F:OUT:read_config_file"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -383,9 +384,10 @@ function read_config_file() {
 # No parameters.
 function check_exec_prereqs() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :check_exec_prereqs"
+  decho 3 "F:IN :check_exec_prereqs"
 
   check_command_exist awk
+  check_command_exist tr
   check_command_exist curl
   check_command_exist $MY_CONTAINER_ENGINE
   check_command_exist ibmcloud
@@ -401,7 +403,7 @@ function check_exec_prereqs() {
     check_command_exist ldapsearch
   fi
 
-  decho 4 "F:OUT:check_exec_prereqs"
+  decho 3 "F:OUT:check_exec_prereqs"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -531,7 +533,7 @@ function check_create_oc_yaml() {
 # @param 1: namespace
 function provision_persistence_openldap() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :provision_persistence_openldap"
+  decho 3 "F:IN :provision_persistence_openldap"
 
   local lf_in_namespace="$1"
   # handle persitence for Openldap
@@ -546,7 +548,7 @@ function provision_persistence_openldap() {
     wait_for_state "pvc pvc-ldap-main status.phase is Bound" "Bound" "oc -n ${lf_in_namespace} get pvc pvc-ldap-main -o jsonpath='{.status.phase}'"
   fi
 
-  decho 4 "F:OUT:provision_persistence_openldap"
+  decho 3 "F:OUT:provision_persistence_openldap"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -628,7 +630,7 @@ function deploy_mailhog() {
 # @param 3:
 function is_service_exposed() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :is_service_exposed"
+  decho 3 "F:IN :is_service_exposed"
 
   local lf_in_namespace="$1"
   local lf_in_service_name="$2"
@@ -637,14 +639,14 @@ function is_service_exposed() {
   local lf_port_name lf_res
 
   lf_port_name=$(oc -n "${lf_in_namespace}" get service "${lf_in_service_name}" -o json | jq --argjson port "$lf_in_port" '.spec.ports[] | select(.nodePort == $port) |.name')
-  decho 4 "lf_port_name=$lf_port_name"
+  decho 3 "lf_port_name=$lf_port_name"
   
   if [ -z "$lf_port_name" ]; then
     lf_res=1
   else
     lf_res=0
   fi
-  decho 4 "F:OUT:is_service_exposed"
+  decho 3 "F:OUT:is_service_exposed"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
   return $lf_res
 }
@@ -659,7 +661,7 @@ function is_service_exposed() {
 # @param 6:
 function add_entry_if_not_exists() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :add_entry_if_not_exists"
+  decho 3 "F:IN :add_entry_if_not_exists"
 
   local lf_in_ldap_server="$1"
   local lf_in_admin_dn="$2"
@@ -676,13 +678,13 @@ function add_entry_if_not_exists() {
     if echo "$lf_in_search_result" | grep -q "dn: $lf_in_entry_dn"; then
       mylog info "Entry $lf_in_entry_dn already exists. Skipping."
     else
-      decho 4 "Entry $lf_in_entry_dn does not exist. Adding entry."
+      decho 3 "Entry $lf_in_entry_dn does not exist. Adding entry."
       mylog info "$lf_in_entry_content" > $lf_in_tmp_ldif_file
       ldapadd -x -H $lf_in_ldap_server -D "$lf_in_admin_dn" -w $lf_in_admin_password -f $lf_in_tmp_ldif_file
     fi
   fi
 
-  decho 4 "F:OUT:add_entry_if_not_exists"
+  decho 3 "F:OUT:add_entry_if_not_exists"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -694,7 +696,7 @@ function add_entry_if_not_exists() {
 # @param 4:
 function add_ldif_file () {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :add_ldif_file"
+  decho 3 "F:IN :add_ldif_file"
 
   local lf_in_ldif_file="$1"
   local lf_in_ldap_server="$2"
@@ -731,7 +733,7 @@ function add_ldif_file () {
   # Clean up temporary file
   #rm -f $lf_tmp_ldif
 
-  decho 4 "F:OUT:add_ldif_file"
+  decho 3 "F:OUT:add_ldif_file"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -740,13 +742,13 @@ function add_ldif_file () {
 # @param 2: namespace: the namespace to use
 function expose_service_openldap() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :expose_service_openldap"
+  decho 3 "F:IN :expose_service_openldap"
 
   local lf_in_name="$1" 
   local lf_in_namespace="$2"
   local lf_hostname
 
-  decho 4 "lf_in_name=$lf_in_name|lf_in_namespace=$lf_in_namespace"
+  decho 3 "lf_in_name=$lf_in_name|lf_in_namespace=$lf_in_namespace"
 
   # expose service externaly and get host and port
   oc -n ${lf_in_namespace} get service ${lf_in_name} -o json | jq '.spec.ports |= map(if .name == "389-tcp" then . + { "nodePort": 30389 } else . end)' | jq '.spec.ports |= map(if .name == "636-tcp" then . + { "nodePort": 30686 } else . end)' >${MY_WORKINGDIR}openldap-service.json
@@ -794,7 +796,7 @@ function expose_service_openldap() {
   # ldapmodify -H ldap://$lf_hostname:$lf_port0 -D "$ldap_admin_dn" -w admin -f ${MY_LDAPDIR}Import.ldiff
   mylog info "ldapsearch -H ldap://${lf_hostname}:${lf_port0} -x -D \"$ldap_admin_dn\" -w \"$ldap_admin_password\" -b \"$ldap_base_dn\" -s sub -a always -z 1000 \"(objectClass=*)\""
 
-  decho 4 "F:OUT:expose_service_openldap"
+  decho 3 "F:OUT:expose_service_openldap"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 ################################################
@@ -802,7 +804,7 @@ function expose_service_openldap() {
 # @param 2: namespace: the namespace to use
 function expose_service_mailhog() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :expose_service_mailhog"
+  decho 3 "F:IN :expose_service_mailhog"
 
   local lf_in_name="$1"
   local lf_in_namespace="$2"
@@ -817,9 +819,9 @@ function expose_service_mailhog() {
     oc -n ${lf_in_namespace} expose svc/${lf_in_name} --port=${lf_port} --name=${lf_in_name}
   fi
   lf_hostname=$(oc -n ${lf_in_namespace} get route ${lf_in_name} -o jsonpath='{.spec.host}')
-  decho 4 "MailHog accessible at ${lf_hostname}"
+  decho 3 "MailHog accessible at ${lf_hostname}"
 
-  decho 4 "F:OUT:expose_service_mailhog"
+  decho 3 "F:OUT:expose_service_mailhog"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -828,7 +830,7 @@ function expose_service_mailhog() {
 # @param 1: ns namespace to be created
 function create_namespace() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :create_namespace"
+  decho 3 "F:IN :create_namespace"
 
   sc_in_ns=$1
   var_fail sc_in_ns "Please define project name in config"
@@ -836,13 +838,13 @@ function create_namespace() {
   if oc get project $sc_in_ns >/dev/null 2>&1; then mylog ok; else
     mylog info "Creating project $sc_in_ns"
     if ! oc new-project $sc_in_ns; then
-      decho 4 "F:OUT:create_namespace"
+      decho 3 "F:OUT:create_namespace"
       SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
       exit 1
     fi
   fi
 
-  decho 4 "F:OUT:create_namespace"
+  decho 3 "F:OUT:create_namespace"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -854,7 +856,7 @@ function create_namespace() {
 # TODO The var variable is initialised for another function, this is not good
 function check_resource_availability() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :check_resource_availability"
+  decho 3 "F:IN :check_resource_availability"
 
   local lf_in_type="$1"
   local lf_in_name="$2"
@@ -870,7 +872,7 @@ function check_resource_availability() {
   # SB]20240519 due to many problems with the return value, I will use an export variable to return the value
   export MY_RESOURCE=$var
 
-  decho 4 "F:OUT:check_resource_availability"
+  decho 3 "F:OUT:check_resource_availability"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -879,10 +881,10 @@ function check_resource_availability() {
 # https://ibm.github.io/cloud-pak/
 # @param 1:
 # @param 2:
-# @param 3:
+# @param 3: This is the version of the channel. It is an optional parameter, if ommited it is retrieved, else used values from invocation
 function check_add_cs_ibm_pak() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :check_add_cs_ibm_pak"
+  decho 3 "F:IN :check_add_cs_ibm_pak"
   SECONDS=0
 
   local lf_in_case_name="$1"
@@ -921,7 +923,7 @@ function check_add_cs_ibm_pak() {
 
   mylog info "Adding case $lf_in_case_name took $SECONDS seconds to execute." 1>&2
 
-  decho 4 "F:OUT:check_add_cs_ibm_pak"
+  decho 3 "F:OUT:check_add_cs_ibm_pak"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -975,6 +977,8 @@ function create_operator_subscription() {
     wait_for_state "$lf_type $lf_resource $lf_path is $lf_state" "$lf_state" "oc -n $MY_OPERATOR_NAMESPACE get $lf_type $lf_resource -o jsonpath='$lf_path'"
   fi
   mylog info "Creation of $MY_OPERATOR_NAME operator took $SECONDS seconds to execute." 1>&2
+  
+  unset MY_CURRENT_CHL
 
   decho 3 "F:OUT:create_operator_subscription"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
@@ -1022,7 +1026,7 @@ function create_operand_instance() {
 # @param 3:
 function generate_files() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :generate_files"
+  decho 3 "F:IN :generate_files"
   decho 5 "$1 $2 $3"
 
   local lf_in_customdir=$1
@@ -1075,7 +1079,7 @@ function generate_files() {
     done
   fi
   #set +a
-  decho 4 "F:OUT:generate_files"
+  decho 3 "F:OUT:generate_files"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -1089,7 +1093,7 @@ function generate_files() {
 # @param 6:
 function create_catalogsource() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :create_catalogsource"
+  decho 3 "F:IN :create_catalogsource"
 
   export CATALOG_SOURCE_NAMESPACE=$1
   export CATALOG_SOURCE_NAME=$2
@@ -1119,7 +1123,7 @@ function create_catalogsource() {
     fi
   fi
 
-  decho 4 "F:OUT:create_catalogsource"
+  decho 3 "F:OUT:create_catalogsource"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -1131,7 +1135,7 @@ function create_catalogsource() {
 # @param 3: name of the file (as source and for the target).
 function adapt_file() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :adapt_file"
+  decho 3 "F:IN :adapt_file"
 
   local lf_in_sourcedir=$1
   local lf_in_destdir=$2
@@ -1145,6 +1149,81 @@ function adapt_file() {
     envsubst < "${lf_in_sourcedir}${lf_in_filename}" > "${lf_in_destdir}${lf_in_filename}"
   fi
 
-  decho 4 "F:OUT:adapt_file"
+  decho 3 "F:OUT:adapt_file"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
+# Create a certificate chain using the Cert manager
+# @param 1: 
+# @param 2: 
+# @param 3:
+# @param 4:
+# @param 5:
+# @param 6:
+# @param 7:
+function create_certificate_chain() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho 3 "F:IN :create_certificate_chain"
+  local lf_namespace="$1"
+  local lf_issuername="$2"
+  local lf_root_cert_name="$3"
+  local lf_tls_label1="$4"
+  local lf_tls_certname="$5"
+  
+  local lf_type lf_cr_name lf_yaml_file
+  
+  mylog info "Create a certificate chain in ${lf_in_namespace} namespace"
+
+  # For Self-signed issuer
+  export TLS_CA_ISSUER_NAME=${lf_namespace}-${lf_issuername}-ca
+  export TLS_NAMESPACE=${lf_namespace}
+
+  adapt_file ${MY_TLS_SCRIPTDIR}config/ ${MY_TLS_GEN_CUSTOMDIR}config/ Issuer_ca.yaml
+
+  # For Self-signed Certificate and Root Certificate
+  export TLS_ROOT_CERT_NAME=${lf_namespace}-${lf_root_cert_name}-ca
+  export TLS_LABEL1=${lf_tls_label1}
+  export TLS_CERT_ISSUER_NAME=${lf_namespace}-${lf_issuername}-tls
+
+  adapt_file ${MY_TLS_SCRIPTDIR}config/ ${MY_TLS_GEN_CUSTOMDIR}config/ CACertificate.yaml
+  adapt_file ${MY_TLS_SCRIPTDIR}config/ ${MY_TLS_GEN_CUSTOMDIR}config/ Issuer_non_ca.yaml
+
+  # For TLS Certificate
+  export TLS_CERT_NAME=${lf_namespace}-${lf_tls_certname}-tls
+  export TLS_INGRESS=$(oc get ingresses.config/cluster -o jsonpath='{.spec.domain}')
+
+  adapt_file ${MY_TLS_SCRIPTDIR}config/ ${MY_TLS_GEN_CUSTOMDIR}config/ TLSCertificate.yaml
+
+  # Create both Issuers and both Certificates
+  lf_cert_namespace=${lf_namespace}
+  lf_type="Issuer"
+  lf_cr_name=${lf_namespace}-${lf_issuername}-ca
+  lf_yaml_file="${MY_TLS_GEN_CUSTOMDIR}config/Issuer_ca.yaml"
+  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_cert_namespace}\""
+  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_cert_namespace}"
+
+  lf_cert_namespace=${lf_namespace}
+  lf_type="Certificate"
+  lf_cr_name=${lf_namespace}-${lf_issuer_cert_name}-ca
+  lf_yaml_file="${MY_TLS_GEN_CUSTOMDIR}config/CACertificate.yaml"
+  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_cert_namespace}\""
+  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_cert_namespace}"
+
+  lf_cert_namespace=${lf_namespace}
+  lf_type="Issuer"
+  lf_cr_name=${lf_namespace}-${lf_issuername}-tls
+  lf_yaml_file="${MY_TLS_GEN_CUSTOMDIR}config/Issuer_non_ca.yaml"
+  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_cert_namespace}\""
+  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_cert_namespace}"
+
+  lf_cert_namespace=${lf_namespace}
+  lf_type="Certificate"
+  lf_cr_name=${lf_namespace}-${lf_tls_certname}-tls
+  lf_yaml_file="${MY_TLS_GEN_CUSTOMDIR}config/TLSCertificate.yaml"
+  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_cert_namespace}\""
+  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_cert_namespace}"
+
+  decho 3 "F:OUT:create_certificate_chain"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }

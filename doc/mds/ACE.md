@@ -1,4 +1,4 @@
-# App Connect entrperise
+# App Connect entreprise
 
 ## Introduction - Overview
 

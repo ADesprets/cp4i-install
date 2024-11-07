@@ -11,7 +11,7 @@
 # Create openshift cluster using classic infrastructure
 function create_openshift_cluster_classic() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :create_openshift_cluster_classic"
+  decho 3 "F:IN :create_openshift_cluster_classic"
 
   SECONDS=0
   var_fail sc_cluster_name "Choose a unique name for the cluster"
@@ -32,7 +32,7 @@ function create_openshift_cluster_classic() {
     if [ -z "$oc_version_full" ]; then
       mylog error "Failed to find full version for ${MY_OC_VERSION}" 1>&2
       #fix_oc_version
-      decho 4 "F:OUT:create_openshift_cluster_classic"
+      decho 3 "F:OUT:create_openshift_cluster_classic"
       SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
       exit 1
     fi
@@ -53,14 +53,14 @@ function create_openshift_cluster_classic() {
       --disable-disk-encrypt \
       $vlans; then
       mylog error "Failed to create cluster" 1>&2
-      decho 4 "F:OUT:create_openshift_cluster_classic"
+      decho 3 "F:OUT:create_openshift_cluster_classic"
       SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
       exit 1
     fi
     mylog info "Creation of the cluster took: $SECONDS seconds." 1>&2
   fi
 
-  decho 4 "F:OUT:create_openshift_cluster_classic"
+  decho 3 "F:OUT:create_openshift_cluster_classic"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -69,7 +69,7 @@ function create_openshift_cluster_classic() {
 # use terraform because creation is more complex than classic
 function create_openshift_cluster_vpc() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :create_openshift_cluster_vpc"
+  decho 3 "F:IN :create_openshift_cluster_vpc"
 
   # check vars from config file
   var_fail MY_OC_VERSION 'mylog warn "Choose one of:" 1>&2;ibmcloud ks versions -q --show-version OpenShift'
@@ -89,7 +89,7 @@ function create_openshift_cluster_vpc() {
   terraform apply -var-file=var_override.tfvars
   popd
 
-  decho 4 "F:OUT:create_openshift_cluster_vpc"
+  decho 3 "F:OUT:create_openshift_cluster_vpc"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -98,7 +98,7 @@ function create_openshift_cluster_vpc() {
 # @param ns namespace where secret is created
 function add_ibm_entitlement() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :add_ibm_entitlement"
+  decho 3 "F:IN :add_ibm_entitlement"
 
   local lf_in_ns=$1
 
@@ -111,19 +111,19 @@ function add_ibm_entitlement() {
     $MY_CONTAINER_ENGINE -h >/dev/null 2>&1
     if test $? -eq 0 && ! echo $MY_ENTITLEMENT_KEY | $MY_CONTAINER_ENGINE login cp.icr.io --username cp --password-stdin; then
       mylog error "Invalid entitlement key" 1>&2
-      decho 4 "F:OUT:add_ibm_entitlement"
+      decho 3 "F:OUT:add_ibm_entitlement"
       SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
       exit 1
     fi
     mylog info "Adding ibm-entitlement-key to $lf_in_ns"
     if ! oc -n $lf_in_ns create secret docker-registry ibm-entitlement-key --docker-username=cp --docker-password=$MY_ENTITLEMENT_KEY --docker-server=cp.icr.io; then
-      decho 4 "F:OUT:add_ibm_entitlement"
+      decho 3 "F:OUT:add_ibm_entitlement"
       SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
       exit 1
     fi
   fi
 
-  decho 4 "F:OUT:add_ibm_entitlement"
+  decho 3 "F:OUT:add_ibm_entitlement"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -131,7 +131,7 @@ function add_ibm_entitlement() {
 # TBC
 function create_openshift_cluster() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :create_openshift_cluster"
+  decho 3 "F:IN :create_openshift_cluster"
 
   var_fail MY_CLUSTER_INFRA 'mylog warn "Choose one of: classic or vpc" 1>&2'
   case "${MY_CLUSTER_INFRA}" in
@@ -150,7 +150,7 @@ function create_openshift_cluster() {
     ;;
   esac
 
-  decho 4 "F:OUT:create_openshift_cluster"
+  decho 3 "F:OUT:create_openshift_cluster"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -159,7 +159,7 @@ function create_openshift_cluster() {
 # set variable my_cluster_url
 function wait_for_cluster_availability() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :wait_for_cluster_availability"
+  decho 3 "F:IN :wait_for_cluster_availability"
 
   SECONDS=0
   wait_for_state 'Cluster state' 'normal-All Workers Normal' "ibmcloud oc cluster get --cluster $sc_cluster_name --output json|jq -r '(.state + \"-\" + .status)'"
@@ -181,7 +181,7 @@ function wait_for_cluster_availability() {
     ;;
   esac
 
-  decho 4 "F:OUT:wait_for_cluster_availability"
+  decho 3 "F:OUT:wait_for_cluster_availability"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -189,7 +189,7 @@ function wait_for_cluster_availability() {
 # wait for ingress address availability
 function wait_4_ingress_address_availability() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :wait_4_ingress_address_availability"
+  decho 3 "F:IN :wait_4_ingress_address_availability"
 
   SECONDS=0
   local lf_ingress_address
@@ -224,7 +224,7 @@ function wait_4_ingress_address_availability() {
   done
   mylog info "Checking Ingress availability took $SECONDS seconds to execute." 1>&2
 
-  decho 4 "F:OUT:wait_4_ingress_address_availability"
+  decho 3 "F:OUT:wait_4_ingress_address_availability"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -233,7 +233,7 @@ function wait_4_ingress_address_availability() {
 # and wait for both availability of the cluster and the ingress address
 function create_openshift_cluster_wait_4_availability() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :create_openshift_cluster_wait_4_availability"
+  decho 3 "F:IN :create_openshift_cluster_wait_4_availability"
 
   if ! ${TECHZONE}; then
     # Create openshift cluster
@@ -246,7 +246,7 @@ function create_openshift_cluster_wait_4_availability() {
     wait_4_ingress_address_availability
   fi
 
-  decho 4 "F:OUT:create_openshift_cluster_wait_4_availability"
+  decho 3 "F:OUT:create_openshift_cluster_wait_4_availability"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -254,7 +254,7 @@ function create_openshift_cluster_wait_4_availability() {
 # Add OpenLdap app to openshift
 function install_openldap() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :install_openldap"
+  decho 3 "F:IN :install_openldap"
 
   if $MY_LDAP; then
     mylog info "==== Installing OpenLdap." 1>&2
@@ -277,7 +277,7 @@ function install_openldap() {
     expose_service_openldap ${lf_name} ${MY_LDAP_NAMESPACE}
   fi
 
-  decho 4 "F:OUT:install_openldap"
+  decho 3 "F:OUT:install_openldap"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -337,6 +337,11 @@ function display_access_info() {
   lf_mailhog_hostname=$(oc -n ${MY_MAIL_SERVER_NAMESPACE} get route mailhog -o jsonpath='{.spec.host}')
   mylog info "MailHog accessible at http://${lf_mailhog_hostname}"
 
+  lf_keycloak_admin_ui=$(oc -n $MY_COMMONSERVICES_NAMESPACE get route keycloak --template='{{ .spec.host }}')
+  mylog info "Keycloak admin UI URL: " $lf_keycloak_admin_ui
+  lf_keycloak_admin_pwd=$(oc -n $MY_COMMONSERVICES_NAMESPACE get secret cs-keycloak-initial-admin -o jsonpath={.data.password} | base64 -d)
+  mylog info "Keycloak admin password: " $lf_keycloak_admin_pwd
+  
   local lf_temp_integration_admin_pwd cp4i_url
   if $MY_NAVIGATOR_INSTANCE; then
     lf_temp_integration_admin_pwd=$(oc -n $MY_COMMONSERVICES_NAMESPACE get secret integration-admin-initial-temporary-credentials -o jsonpath={.data.password} | base64 -d)
@@ -465,7 +470,7 @@ function display_access_info() {
 # License: Accept the license to use foundational services by adding spec.license.accept: true in the spec section.
 function accept_license_fs() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 5 "F:IN :accept_license_fs"
+  decho 4 "F:IN :accept_license_fs"
 
   lf_in_namespace=$1
 
@@ -479,7 +484,7 @@ function accept_license_fs() {
     oc -n ${lf_in_namespace} patch commonservice ${MY_COMMONSERVICES_INSTANCE_NAME} --type merge -p '{"spec": {"license": {"accept": true}}}'
   fi
 
-  decho 5 "F:OUT:accept_license_fs"
+  decho 4 "F:OUT:accept_license_fs"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -487,7 +492,7 @@ function accept_license_fs() {
 # Log in IBM Cloud
 function login_2_ibm_cloud() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 5 "F:IN :login_2_ibm_cloud"
+  decho 4 "F:IN :login_2_ibm_cloud"
 
   if ! ${TECHZONE}; then
     SECONDS=0
@@ -500,7 +505,7 @@ function login_2_ibm_cloud() {
       mylog check "Login to IBM Cloud"
       if ! ibmcloud login -q --no-region --apikey $MY_IC_APIKEY >/dev/null; then
         mylog error "Fail to login to IBM Cloud, check API key: $MY_IC_APIKEY" 1>&2
-        decho 5 "F:OUT:login_2_ibm_cloud"
+        decho 4 "F:OUT:login_2_ibm_cloud"
         SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
         exit 1
       else
@@ -510,7 +515,7 @@ function login_2_ibm_cloud() {
     fi
   fi
 
-  decho 5 "F:OUT:login_2_ibm_cloud"
+  decho 4 "F:OUT:login_2_ibm_cloud"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -520,7 +525,7 @@ function login_2_ibm_cloud() {
 # requires var my_cluster_url
 function login_2_openshift_cluster() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 5 "F:IN :login_2_openshift_cluster"
+  decho 4 "F:IN :login_2_openshift_cluster"
 
   SECONDS=0
 
@@ -543,7 +548,7 @@ function login_2_openshift_cluster() {
     fi
   fi
 
-  decho 5 "F:OUT:login_2_openshift_cluster"
+  decho 4 "F:OUT:login_2_openshift_cluster"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -781,6 +786,9 @@ function install_navigator() {
     # add catalog sources using ibm_pak plugin
     check_add_cs_ibm_pak $MY_NAVIGATOR_CASE amd64
 
+    # When you have this error: no operators found in channel latest of package, this is probably because the operator does not support latest for a channel version
+    export MY_CURRENT_CHL=$(oc ibm-pak list -o json | jq -r --arg case "$MY_NAVIGATOR_CASE" '.[] | select (.name == $case ) | .latestVersion')
+
     # Creating Navigator operator subscription
     lf_operator_name="$MY_NAVIGATOR_CASE"
     lf_catalog_source_name="ibm-integration-platform-navigator-catalog"
@@ -847,6 +855,10 @@ function install_assetrepo() {
     # add catalog sources using ibm_pak plugin
     check_add_cs_ibm_pak ibm-integration-asset-repository amd64
 
+    # When you have this error: no operators found in channel latest of package, this is probably because the operator does not support latest for a channel version
+    lf_case_result=$(oc ibm-pak list --case-name "$MY_ASSETREPO_CASE" -o json )
+    export MY_CURRENT_CHL=$(echo "$lf_case_result" | jq -r '.versions | keys | sort_by(split(".") | map(tonumber)) | last')
+    
     # Creating Asset Repository operator subscription
     lf_operator_name="ibm-integration-asset-repository"
     lf_catalog_source_name="ibm-integration-asset-repository-catalog"
@@ -892,6 +904,9 @@ function install_ace() {
 
     # add catalog sources using ibm_pak plugin
     check_add_cs_ibm_pak $MY_ACE_CASE amd64
+
+    # When you have this error: no operators found in channel latest of package, this is probably because the operator does not support latest for a channel version
+    export MY_CURRENT_CHL=$(oc ibm-pak list -o json | jq -r --arg case "$MY_ACE_CASE" '.[] | select (.name == $case ) | .latestVersion')
 
     # Creating ACE operator subscription
     lf_operator_name="$MY_ACE_CASE"
@@ -1678,12 +1693,10 @@ function customise_mq() {
     fi
 
     # launch custom script
-    # mylog info "Customise MQ (mq.config.sh)."
-    # . ${MY_MQ_SCRIPTDIR}scripts/mq.config.sh -i ${sc_properties_file} ${sc_versions_file} ${MY_MQ_INSTANCE_NAME}
-    mylog info "Create certificates for MQ (tls.config.sh)."
-    . ${MY_TLS_SCRIPTDIR}scripts/tls.config.sh
-    # mylog info "Customise MQ (mq.demo.config.sh)."
-    # . ${MY_MQ_SCRIPTDIR}scripts/mq.demo.config.sh -i ${sc_properties_file} ${sc_versions_file} ${MY_MQ_INSTANCE_NAME}
+    mylog info "Customise MQ (mq.config.sh)."
+    . ${MY_MQ_SCRIPTDIR}scripts/mq.config.sh -i ${sc_properties_file} ${sc_versions_file} ${MY_MQ_INSTANCE_NAME}
+    mylog info "Customise MQ (mq.demo.config.sh)."
+    . ${MY_MQ_SCRIPTDIR}scripts/mq.demo.config.sh -i ${sc_properties_file} ${sc_versions_file} ${MY_MQ_INSTANCE_NAME}
 
   fi
 
@@ -1833,7 +1846,7 @@ function install_logging_loki() {
     local lf_catalog_source_name="redhat-operators"
     local lf_wait_for_state=true
     local lf_csv_name=$MY_LOGGING_OPERATORGROUP
-    export MY_CURRENT_CHL="stable"
+    export MY_CURRENT_CHL="stable-6.0"
     export MY_STARTING_CSV="${MY_LOKI_STARTINGCSV}"
     create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
@@ -1921,7 +1934,7 @@ function install_postgresql() {
     decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
     create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
-    # toto
+    # toto postgres
 
 
   fi
@@ -2009,6 +2022,7 @@ fi
 
 : <<'END_COMMENT'
 
+
 # https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.4?topic=operators-installing-by-using-cli
 # (Only if your preferred installation mode is a specific namespace on the cluster) Create an OperatorGroup
 # We decided to install in openshift-operators so no need to OperatorGroup !
@@ -2090,13 +2104,10 @@ install_mq
 
 install_instana
 
-install_logging_loki
-
-END_COMMENT
+# install_logging_loki
 
 install_postgresql
 
-: <<'END_COMMENT'
 
 ######################################################
 # Start customisation
@@ -2123,17 +2134,17 @@ customise_egw
 
 customise_ep
 
+END_COMMENT
+
 customise_es
+
+: <<'END_COMMENT'
 
 customise_flink
 
 customise_hsts
 
-END_COMMENT
-
 customise_mq
-
-: <<'END_COMMENT'
 
 customise_instana
 
