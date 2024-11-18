@@ -8,6 +8,7 @@ spec:
   dnsNames:
   - ${TLS_CERT_NAME}.${TLS_INGRESS}
   duration: 17520h0m0s
+  isCA: false
   issuerRef:
     kind: Issuer
     name: ${TLS_CERT_ISSUER_NAME}
@@ -20,3 +21,6 @@ spec:
   secretTemplate:
     labels:
       app.kubernetes.io/component: ${TLS_LABEL1}
+  usages:
+  - server auth
+  - client auth

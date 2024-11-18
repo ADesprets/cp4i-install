@@ -1,7 +1,7 @@
 apiVersion: eventstreams.ibm.com/v1beta2
 kind: KafkaConnect
 metadata:
-  name: kconnect
+  name: ${MY_ES_KAFKA_CONNECT_INSTANCE_NAME}
   annotations:
     eventstreams.ibm.com/use-connector-resources: 'true'
   labels:
@@ -49,9 +49,9 @@ spec:
           eventstreams.production.type: CloudPakForIntegrationNonProduction
           productID: 2a79e49111f44ec3acd89608e56138f5
           productName: IBM Event Streams for Non Production
-          productVersion: 11.5.0
+          productVersion: 11.5.1
           productMetric: VIRTUAL_PROCESSOR_CORE
-          productChargedContainers: datagen-host-connect
+          productChargedContainers: ${MY_ES_KAFKA_CONNECT_INSTANCE_NAME}-connect
           cloudpakId: c8b82d189e7545f0892db9ef2731b90d
           cloudpakName: IBM Cloud Pak for Integration
           productCloudpakRatio: '2:1'
@@ -65,7 +65,7 @@ spec:
                     values:
                       - amd64
                       - s390x
-                      - ppc64le      
+                      - ppc64le
   tls:
     trustedCertificates:
       - certificate: ca.crt

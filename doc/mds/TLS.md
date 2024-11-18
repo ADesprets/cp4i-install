@@ -2,7 +2,7 @@
 
 ## Concepts: Issuer, Certificates and Secret
 
-This page describes the concetps behind the generation of certificates in Kubernetes, it belongs to API Connect documentation, but this information is generic and applies to the generation of certificates in Kubernetes for any situations. [Key Concepts: Cert-manager, Issuers, and Secrets](https://www.ibm.com/docs/en/api-connect/10.0.8?topic=deployment-key-concepts-cert-manager-issuers-secrets).
+This page describes the concetps behind the generation of certificates in Kubernetes, it belongs to API Connect documentation, but this information is generic and applies to the generation of certificates in Kubernetes for any situations. [Key Concepts: Cert-manager, Issuers, and Secrets](https://www.ibm.com/docs/en/api-connect/10.0.8?topic=deployment-key-concepts-cert-manager-issuers-secrets). The cert-manager Operator for Red Hat OpenShift is a cluster-wide service that provides application certificate lifecycle management. The cert-manager Operator for Red Hat OpenShift allows you to integrate with external certificate authorities and provides certificate provisioning, renewal, and retirement.
 
 In cert-manager, the Certificate resource represents a human readable definition of a certificate request. cert-manager uses this input to generate a private key and CertificateRequest resource in order to obtain a signed certificate from an Issuer or ClusterIssuer. The signed certificate and private key are then stored in the specified Secret resource. cert-manager will ensure that the certificate is auto-renewed before it expires and re-issued if requested.
 

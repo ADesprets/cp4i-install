@@ -647,7 +647,7 @@ function install_lic_srv() {
     mylog info "==== IBM License Server." 1>&2
     check_add_cs_ibm_pak ibm-licensing amd64
 
-    # Operator group forLicense Service Reporter in single namespace
+    # Operator group for License Service Reporter in single namespace
     ls_type="OperatorGroup"
     ls_cr_name="${MY_LICENSE_SERVER_OPERATORGROUP}"
     ls_yaml_file="${MY_RESOURCESDIR}operator-group-single.yaml"
@@ -664,7 +664,7 @@ function install_lic_srv() {
     decho 3 "create_catalogsource \"${lf_catalogsource_namespace}\" \"${lf_catalogsource_name}\" \"${lf_catalogsource_dspname}\" \"${lf_catalogsource_image}\" \"${lf_catalogsource_publisher}\" \"${lf_catalogsource_interval}\""
     create_catalogsource "${lf_catalogsource_namespace}" "${lf_catalogsource_name}" "${lf_catalogsource_dspname}" "${lf_catalogsource_image}" "${lf_catalogsource_publisher}" "${lf_catalogsource_interval}"
 
-    #mylog info "Creating the CatalogSource for License Service Reporter in ns : openshift-marketplace." 1>&2
+    #mylog info "Creating License Service Reporter catalog source in ns : openshift-marketplace." 1>&2
     lf_catalogsource_namespace=$MY_CATALOGSOURCES_NAMESPACE
     lf_catalogsource_name="ibm-license-service-reporter-operator-catalog"
     lf_catalogsource_dspname="IBM License Service Reporter Catalog"
@@ -707,9 +707,9 @@ function install_lic_srv() {
 
     # Add license service to the reporter
     # oc get routes -n ibm-licensing | grep ibm-license-service-reporter | awk '{print $2}'
-    mylog info "Add license service to the reporter" 1>&2
     lf_licensing_service_reporter_url=$(oc -n ${MY_LICENSE_SERVER_NAMESPACE} get Route -o=jsonpath='{.items[?(@.metadata.name=="ibm-license-service-reporter")].spec.host}')
-    oc patch -n $MY_LICENSE_SERVER_NAMESPACE IBMLicensing instance --type merge --patch "{\"spec\":{\"sender\":{\"reporterSecretToken\":\"ibm-license-service-reporter-token\",\"reporterURL\":\"$reporterURL\",\"clusterID\":\"ClusterTest1\",\"clusterName\":\"ClusterTest1\"}}}"
+    mylog info "Add license service to the reporter ${lf_licensing_service_reporter_url}" 1>&2
+    oc patch -n $MY_LICENSE_SERVER_NAMESPACE IBMLicensing instance --type merge --patch "{\"spec\":{\"sender\":{\"reporterSecretToken\":\"ibm-license-service-reporter-token\",\"reporterURL\":\"https://$lf_licensing_service_reporter_url/\",\"clusterID\":\"MyClusterTest1\",\"clusterName\":\"MyClusterTest1\"}}}"
   fi
 
   decho 3 "F:OUT:install_lic_srv"
@@ -1224,7 +1224,6 @@ function install_eem() {
     ## https://ibm.github.io/event-automation/eem/installing/installing/, chapter : Install the operator by using the CLI (oc ibm-pak)
     check_add_cs_ibm_pak $MY_EEM_CASE amd64
 
-
     # Creating Event Endpoint Management operator subscription
     lf_operator_name="ibm-eventendpointmanagement"
     lf_catalog_source_name="ibm-eventendpointmanagement-catalog"
@@ -1240,6 +1239,11 @@ function install_eem() {
     fi
 
     # Creating EventEndpointManager instance (Event Processing)
+    if $MY_KEYCLOAK_INTEGRATION; then
+      export MY_EEM_AUTH_TYPE=INTEGRATION_KEYCLOAK
+    else
+      export MY_EEM_AUTH_TYPE=LOCAL
+    fi
     lf_file="${MY_OPERANDSDIR}EEM-Capability.yaml"
     lf_ns="${MY_OC_PROJECT}"
     lf_path="{.status.conditions[0].type}"
@@ -1250,17 +1254,24 @@ function install_eem() {
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
 
     ## Creating EEM users and roles
-    # generate properties files
-    adapt_file ${MY_EEM_SCRIPTDIR}config/ ${MY_EEM_GEN_CUSTOMDIR}config/ user-credentials.yaml
-    adapt_file ${MY_EEM_SCRIPTDIR}config/ ${MY_EEM_GEN_CUSTOMDIR}config/ user-roles.yaml
-
-    # base64 generates an error ": illegal base64 data at input byte 76". Solution found here : https://bugzilla.redhat.com/show_bug.cgi?id=1809431. use base64 -w0
-    # user credentials
-    varb64=$(cat "${MY_EEM_GEN_CUSTOMDIR}config/user-credentials.yaml" | base64 -w0)
-    oc -n $MY_OC_PROJECT patch secret "${MY_EEM_INSTANCE_NAME}-ibm-eem-user-credentials" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-credentials.json\" ,\"value\" : \"$varb64\"}]"
-    # user roles
-    varb64=$(cat "${MY_EEM_GEN_CUSTOMDIR}config/user-roles.yaml" | base64 -w0)
-    oc -n $MY_OC_PROJECT patch secret "${MY_EEM_INSTANCE_NAME}-ibm-eem-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$varb64\"}]"
+    if $MY_KEYCLOAK_INTEGRATION; then
+      # generate properties files
+      adapt_file ${MY_EEM_SCRIPTDIR}config/ ${MY_EEM_GEN_CUSTOMDIR}config/ keycloak-user-roles
+      # keycloak user roles
+      varb64=$(cat "${MY_EEM_GEN_CUSTOMDIR}config/keycloak-user-roles.yaml" | base64 -w0)
+      oc -n $MY_OC_PROJECT patch secret "${MY_EEM_INSTANCE_NAME}-ibm-eem-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$varb64\"}]"
+    else
+      # generate properties files
+      adapt_file ${MY_EEM_SCRIPTDIR}config/ ${MY_EEM_GEN_CUSTOMDIR}config/ local-user-credentials.yaml
+      adapt_file ${MY_EEM_SCRIPTDIR}config/ ${MY_EEM_GEN_CUSTOMDIR}config/ local-user-roles.yaml
+      # base64 generates an error ": illegal base64 data at input byte 76". Solution found here : https://bugzilla.redhat.com/show_bug.cgi?id=1809431. use base64 -w0
+      # local user credentials
+      varb64=$(cat "${MY_EEM_GEN_CUSTOMDIR}config/local-user-credentials.yaml" | base64 -w0)
+      oc -n $MY_OC_PROJECT patch secret "${MY_EEM_INSTANCE_NAME}-ibm-eem-user-credentials" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-credentials.json\" ,\"value\" : \"$varb64\"}]"
+      # local user roles
+      varb64=$(cat "${MY_EEM_GEN_CUSTOMDIR}config/local-user-roles.yaml" | base64 -w0)
+      oc -n $MY_OC_PROJECT patch secret "${MY_EEM_INSTANCE_NAME}-ibm-eem-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$varb64\"}]"
+    fi
   fi
   
   decho 3 "F:OUT:install_eem"
@@ -1357,6 +1368,11 @@ function install_ep() {
     ## Creating EventProcessing instance (Event Processing)
     ## oc -n <namespace> get eventprocessing <instance-name> -o jsonpath='{.status.phase}'
     ## Creating Event processing instance
+    if $MY_KEYCLOAK_INTEGRATION; then
+      export MY_EP_AUTH_TYPE=INTEGRATION_KEYCLOAK
+    else
+      export MY_EP_AUTH_TYPE=LOCAL
+    fi
     lf_file="${MY_OPERANDSDIR}EP-Capability.yaml"
     lf_ns="${MY_OC_PROJECT}"
     lf_path="{.status.phase}"
@@ -2021,7 +2037,7 @@ if ! ${TECHZONE};then
 fi
 
 : <<'END_COMMENT'
-
+END_COMMENT
 
 # https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.4?topic=operators-installing-by-using-cli
 # (Only if your preferred installation mode is a specific namespace on the cluster) Create an OperatorGroup
@@ -2134,11 +2150,7 @@ customise_egw
 
 customise_ep
 
-END_COMMENT
-
 customise_es
-
-: <<'END_COMMENT'
 
 customise_flink
 
@@ -2147,7 +2159,5 @@ customise_hsts
 customise_mq
 
 customise_instana
-
-END_COMMENT
 
 exit 0

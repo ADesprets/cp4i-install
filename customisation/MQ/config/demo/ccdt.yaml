@@ -1,0 +1,83 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: cluster-ccdt
+  namespace: ${MY_MQ_DEMO_NAMESPACE}
+data:
+  ccdt.json: |
+    {
+        "channel": [
+                {
+                        "name": "IBM.APP.SVRCONN",
+                        "clientConnection": {
+                                "connection": [
+                                        {
+                                                "host": "uniform-cluster-${QMGR1}-ibm-mq.${MY_MQ_DEMO_NAMESPACE}",
+                                                "port": 1414
+                                        }
+                                ],
+                                "queueManager": "DEMOCLUSTER"
+                        },
+                        "transmissionSecurity": {
+                                "cipherSpecification": "ANY_TLS12_OR_HIGHER"
+                        },
+                        "connectionManagement": {
+                                "clientWeight": 1,
+                                "affinity": "none"
+                        },
+                        "type": "clientConnection"
+                },
+                {
+                        "name": "IBM.APP.SVRCONN",
+                        "clientConnection": {
+                                "connection": [
+                                        {
+                                                "host": "uniform-cluster-${QMGR2}-ibm-mq.${MY_MQ_DEMO_NAMESPACE}",
+                                                "port": 1414
+                                        }
+                                ],
+                                "queueManager": "DEMOCLUSTER"
+                        },
+                        "transmissionSecurity": {
+                                "cipherSpecification": "ANY_TLS12_OR_HIGHER"
+                        },
+                        "connectionManagement": {
+                                "clientWeight": 1,
+                                "affinity": "none"
+                        },
+                        "type": "clientConnection"
+                },
+                {
+                        "name": "IBM.APP.SVRCONN",
+                        "clientConnection": {
+                                "connection": [
+                                        {
+                                                "host": "uniform-cluster-${QMGR1}-ibm-mq.${MY_MQ_DEMO_NAMESPACE}",
+                                                "port": 1414
+                                        }
+                                ],
+                                "queueManager": "${QMGR1_UC}"
+                        },
+                        "transmissionSecurity": {
+                                "cipherSpecification": "ANY_TLS12_OR_HIGHER"
+                        },
+                        "type": "clientConnection"
+                },
+            {
+                        "name": "IBM.APP.SVRCONN",
+                        "clientConnection": {
+                                "connection": [
+                                        {
+                                                "host": "uniform-cluster-${QMGR2}-ibm-mq.${MY_MQ_DEMO_NAMESPACE}",
+                                                "port": 1414
+                                        }
+                                ],
+                                "queueManager": "${QMGR2_UC}"
+                        },
+                        "transmissionSecurity": {
+                                "cipherSpecification": "ANY_TLS12_OR_HIGHER"
+                        },
+                        "type": "clientConnection"
+                }
+        ]
+    }

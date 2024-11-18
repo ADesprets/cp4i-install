@@ -265,18 +265,10 @@ starting=$(date);
 # This environment is created to enable the MQ for Technical Sales Level 3 education
 SECONDS=0
 
-# end with / on purpose
 SCRIPTDIR="${MY_MQ_SCRIPTDIR}scripts/"
 CONFIGDIR="${SCRIPTDIR}../config/"
 
 MAINSCRIPTDIR="${SCRIPTDIR}../../../"
-
-# Template directories
-TMPLJSONDIR="${SCRIPTDIR}tmpl/json/"
-MQ_TMPLSHDIR="${SCRIPTDIR}tmpl/sh/"
-TMPLYAMLDIR="${SCRIPTDIR}tmpl/yaml/"
-TMPLTLSDIR="${SCRIPTDIR}tmpl/tls/"
-OPENSSLDIR="${SCRIPTDIR}openssl/"
 
 SC_SPACES_COUNTER=0
 SC_SPACES_INCR=3
@@ -292,13 +284,140 @@ read_config_file "${CONFIGDIR}mq.properties"
 
 create_namespace ${MY_MQ_DEMO_NAMESPACE}
 
+# Create the certificates/secrets required for MQ Configuration
+lf_namespace=${MY_MQ_DEMO_NAMESPACE}
+lf_issuername=mq
+lf_root_cert_name=mq
+lf_tls_label1=mq-demo
+# For TLS Certificate, name needs to be lower cases
+lf_tls_certname=qm
 
+create_certificate_chain $lf_namespace $lf_issuername $lf_root_cert_name $lf_tls_label1 $lf_tls_certname
+
+export MY_MQ_DEMO_NAMESPACE
+export MQ_CLUSTERNAME=cluster
+
+export QMGR1=qm1
+export QMGR2=qm2
+
+# Ensure it is lower case
+export QMGR1=$(echo "${QMGR1}" | tr '[:upper:]' '[:lower:]')
+export QMGR2=$(echo "${QMGR2}" | tr '[:upper:]' '[:lower:]')
+# Ensure it is upper case
+export QMGR_UC1=$(echo "${QMGR1}" | tr '[:lower:]' '[:upper:]')
+export QMGR_UC2=$(echo "${QMGR2}" | tr '[:lower:]' '[:upper:]')
+
+# Create ConfigMap ini for QM
+adapt_file ${MY_MQ_SCRIPTDIR}config/demo/ ${MY_MQ_GEN_CUSTOMDIR}config/ qms.ini.yaml
+
+lf_namespace=$MY_MQ_DEMO_NAMESPACE
+lf_type="ConfigMap"
+lf_cr_name=${MY_MQ_DEMO_NAMESPACE}-${MQ_CLUSTERNAME}-ini
+lf_yaml_file="${MY_MQ_GEN_CUSTOMDIR}config/qms.ini.yaml"
+decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
+check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
+
+# Create ConfigMap MQSC common part for QM
+adapt_file ${MY_MQ_SCRIPTDIR}config/demo/ ${MY_MQ_GEN_CUSTOMDIR}config/ queuedefs.cluster.mqsc.yaml
+
+lf_namespace=$MY_MQ_DEMO_NAMESPACE
+lf_type="ConfigMap"
+lf_cr_name=${MY_MQ_DEMO_NAMESPACE}-${MQ_CLUSTERNAME}-mqsc-common
+lf_yaml_file="${MY_MQ_GEN_CUSTOMDIR}config/queuedefs.cluster.mqsc.yaml"
+decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
+check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
+
+export QMGR=$QMGR1
+# Create ConfigMap MQSC Channels for QM1
+adapt_file ${MY_MQ_SCRIPTDIR}config/demo/ ${MY_MQ_GEN_CUSTOMDIR}config/ channels.mqsc.qm1.yaml
+
+lf_namespace=$MY_MQ_DEMO_NAMESPACE
+lf_type="ConfigMap"
+lf_cr_name="${MY_MQ_DEMO_NAMESPACE}-${MQ_CLUSTERNAME}-mqsc-${QMGR}"
+lf_yaml_file="${MY_MQ_GEN_CUSTOMDIR}config/channels.mqsc.qm1.yaml"
+decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
+check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
+
+# Create ConfigMap for web access
+adapt_file ${MY_MQ_SCRIPTDIR}config/demo/ ${MY_MQ_GEN_CUSTOMDIR}config/ qm.webaccess.yaml
+
+lf_namespace=$MY_MQ_DEMO_NAMESPACE
+lf_type="ConfigMap"
+lf_cr_name="${MY_MQ_DEMO_NAMESPACE}-${QMGR}-mywebconfig"
+lf_yaml_file="${MY_MQ_GEN_CUSTOMDIR}config/qm.webaccess.yaml"
+decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
+check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
+
+# Create QM
+adapt_file ${MY_MQ_SCRIPTDIR}config/demo/ ${MY_MQ_GEN_CUSTOMDIR}config/ qmgr.yaml
+
+lf_namespace=$MY_MQ_DEMO_NAMESPACE
+lf_type="QueueManager"
+lf_cr_name="${MY_MQ_DEMO_NAMESPACE}-$QMGR"
+lf_yaml_file="${MY_MQ_GEN_CUSTOMDIR}config/qmgr.yaml"
+decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
+check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
+
+adapt_file ${MY_MQ_SCRIPTDIR}config/demo/ ${MY_MQ_GEN_CUSTOMDIR}config/ channels.mqsc.qm2.yaml
+
+export QMGR=$QMGR2
+lf_namespace=$MY_MQ_DEMO_NAMESPACE
+lf_type="ConfigMap"
+lf_cr_name="${MY_MQ_DEMO_NAMESPACE}-${MQ_CLUSTERNAME}-mqsc-${QMGR}"
+lf_yaml_file="${MY_MQ_GEN_CUSTOMDIR}config/channels.mqsc.qm2.yaml"
+decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
+check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
+
+# Create ConfigMap for web access
+adapt_file ${MY_MQ_SCRIPTDIR}config/demo/ ${MY_MQ_GEN_CUSTOMDIR}config/ qm.webaccess.yaml
+
+lf_namespace=$MY_MQ_DEMO_NAMESPACE
+lf_type="ConfigMap"
+lf_cr_name="${MY_MQ_DEMO_NAMESPACE}-${QMGR}-mywebconfig"
+lf_yaml_file="${MY_MQ_GEN_CUSTOMDIR}config/qm.webaccess.yaml"
+decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
+check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
+
+# Create QM
+adapt_file ${MY_MQ_SCRIPTDIR}config/demo/ ${MY_MQ_GEN_CUSTOMDIR}config/ qmgr.yaml
+
+lf_namespace=$MY_MQ_DEMO_NAMESPACE
+lf_type="QueueManager"
+lf_cr_name="${MY_MQ_DEMO_NAMESPACE}-$QMGR"
+lf_yaml_file="${MY_MQ_GEN_CUSTOMDIR}config/qmgr.yaml"
+decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
+check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
+
+# Create CCDT
+adapt_file ${MY_MQ_SCRIPTDIR}config/demo/ ${MY_MQ_GEN_CUSTOMDIR}config/ ccdt.yaml
+
+lf_namespace=$MY_MQ_DEMO_NAMESPACE
+lf_type="QueueManager"
+lf_cr_name="${MY_MQ_DEMO_NAMESPACE}-$QMGR"
+lf_yaml_file="${MY_MQ_GEN_CUSTOMDIR}config/ccdt.yaml"
+decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
+check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
+
+# Provides access to ccdt to application through http
+adapt_file ${MY_MQ_SCRIPTDIR}config/demo/ ${MY_MQ_GEN_CUSTOMDIR}config/ ccdt-http-access-dep.yaml
+
+lf_namespace=$MY_MQ_DEMO_NAMESPACE
+lf_type="Deployment"
+lf_cr_name="${MY_MQ_DEMO_NAMESPACE}-ccdt-http-access"
+lf_yaml_file="${MY_MQ_GEN_CUSTOMDIR}config/ccdt-http-access-dep.yaml"
+decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
+check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
+
+adapt_file ${MY_MQ_SCRIPTDIR}config/demo/ ${MY_MQ_GEN_CUSTOMDIR}config/ ccdt-http-access-svc.yaml
+
+lf_namespace=$MY_MQ_DEMO_NAMESPACE
+lf_type="Service"
+lf_cr_name="${MY_MQ_DEMO_NAMESPACE}-ccdt-http-access"
+lf_yaml_file="${MY_MQ_GEN_CUSTOMDIR}config/ccdt-http-access-svc.yaml"
+decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
+check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
 
 duration=$SECONDS
-mylog info "Creation of the Queue Manager took $duration seconds to execute." 1>&2
-
-
-
 ending=$(date);
 # echo "------------------------------------"
 mylog info "Start: $starting - end: $ending" 1>&2
