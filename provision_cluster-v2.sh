@@ -11,7 +11,7 @@
 # Create openshift cluster using classic infrastructure
 function create_openshift_cluster_classic() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :create_openshift_cluster_classic"
+  decho 3 "F:IN :create_openshift_cluster_classic"
 
   SECONDS=0
   var_fail sc_cluster_name "Choose a unique name for the cluster"
@@ -32,7 +32,7 @@ function create_openshift_cluster_classic() {
     if [ -z "$oc_version_full" ]; then
       mylog error "Failed to find full version for ${MY_OC_VERSION}" 1>&2
       #fix_oc_version
-      decho 4 "F:OUT:create_openshift_cluster_classic"
+      decho 3 "F:OUT:create_openshift_cluster_classic"
       SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
       exit 1
     fi
@@ -53,14 +53,14 @@ function create_openshift_cluster_classic() {
       --disable-disk-encrypt \
       $vlans; then
       mylog error "Failed to create cluster" 1>&2
-      decho 4 "F:OUT:create_openshift_cluster_classic"
+      decho 3 "F:OUT:create_openshift_cluster_classic"
       SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
       exit 1
     fi
     mylog info "Creation of the cluster took: $SECONDS seconds." 1>&2
   fi
 
-  decho 4 "F:OUT:create_openshift_cluster_classic"
+  decho 3 "F:OUT:create_openshift_cluster_classic"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -69,7 +69,7 @@ function create_openshift_cluster_classic() {
 # use terraform because creation is more complex than classic
 function create_openshift_cluster_vpc() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :create_openshift_cluster_vpc"
+  decho 3 "F:IN :create_openshift_cluster_vpc"
 
   # check vars from config file
   var_fail MY_OC_VERSION 'mylog warn "Choose one of:" 1>&2;ibmcloud ks versions -q --show-version OpenShift'
@@ -89,7 +89,7 @@ function create_openshift_cluster_vpc() {
   terraform apply -var-file=var_override.tfvars
   popd
 
-  decho 4 "F:OUT:create_openshift_cluster_vpc"
+  decho 3 "F:OUT:create_openshift_cluster_vpc"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -98,7 +98,7 @@ function create_openshift_cluster_vpc() {
 # @param ns namespace where secret is created
 function add_ibm_entitlement() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :add_ibm_entitlement"
+  decho 3 "F:IN :add_ibm_entitlement"
 
   local lf_in_ns=$1
 
@@ -111,19 +111,19 @@ function add_ibm_entitlement() {
     $MY_CONTAINER_ENGINE -h >/dev/null 2>&1
     if test $? -eq 0 && ! echo $MY_ENTITLEMENT_KEY | $MY_CONTAINER_ENGINE login cp.icr.io --username cp --password-stdin; then
       mylog error "Invalid entitlement key" 1>&2
-      decho 4 "F:OUT:add_ibm_entitlement"
+      decho 3 "F:OUT:add_ibm_entitlement"
       SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
       exit 1
     fi
     mylog info "Adding ibm-entitlement-key to $lf_in_ns"
     if ! oc -n $lf_in_ns create secret docker-registry ibm-entitlement-key --docker-username=cp --docker-password=$MY_ENTITLEMENT_KEY --docker-server=cp.icr.io; then
-      decho 4 "F:OUT:add_ibm_entitlement"
+      decho 3 "F:OUT:add_ibm_entitlement"
       SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
       exit 1
     fi
   fi
 
-  decho 4 "F:OUT:add_ibm_entitlement"
+  decho 3 "F:OUT:add_ibm_entitlement"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -131,7 +131,7 @@ function add_ibm_entitlement() {
 # TBC
 function create_openshift_cluster() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :create_openshift_cluster"
+  decho 3 "F:IN :create_openshift_cluster"
 
   var_fail MY_CLUSTER_INFRA 'mylog warn "Choose one of: classic or vpc" 1>&2'
   case "${MY_CLUSTER_INFRA}" in
@@ -150,7 +150,7 @@ function create_openshift_cluster() {
     ;;
   esac
 
-  decho 4 "F:OUT:create_openshift_cluster"
+  decho 3 "F:OUT:create_openshift_cluster"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -159,7 +159,7 @@ function create_openshift_cluster() {
 # set variable my_cluster_url
 function wait_for_cluster_availability() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :wait_for_cluster_availability"
+  decho 3 "F:IN :wait_for_cluster_availability"
 
   SECONDS=0
   wait_for_state 'Cluster state' 'normal-All Workers Normal' "ibmcloud oc cluster get --cluster $sc_cluster_name --output json|jq -r '(.state + \"-\" + .status)'"
@@ -181,7 +181,7 @@ function wait_for_cluster_availability() {
     ;;
   esac
 
-  decho 4 "F:OUT:wait_for_cluster_availability"
+  decho 3 "F:OUT:wait_for_cluster_availability"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -189,7 +189,7 @@ function wait_for_cluster_availability() {
 # wait for ingress address availability
 function wait_4_ingress_address_availability() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :wait_4_ingress_address_availability"
+  decho 3 "F:IN :wait_4_ingress_address_availability"
 
   SECONDS=0
   local lf_ingress_address
@@ -224,7 +224,7 @@ function wait_4_ingress_address_availability() {
   done
   mylog info "Checking Ingress availability took $SECONDS seconds to execute." 1>&2
 
-  decho 4 "F:OUT:wait_4_ingress_address_availability"
+  decho 3 "F:OUT:wait_4_ingress_address_availability"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -233,7 +233,7 @@ function wait_4_ingress_address_availability() {
 # and wait for both availability of the cluster and the ingress address
 function create_openshift_cluster_wait_4_availability() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :create_openshift_cluster_wait_4_availability"
+  decho 3 "F:IN :create_openshift_cluster_wait_4_availability"
 
   if ! ${TECHZONE}; then
     # Create openshift cluster
@@ -246,7 +246,7 @@ function create_openshift_cluster_wait_4_availability() {
     wait_4_ingress_address_availability
   fi
 
-  decho 4 "F:OUT:create_openshift_cluster_wait_4_availability"
+  decho 3 "F:OUT:create_openshift_cluster_wait_4_availability"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -254,7 +254,7 @@ function create_openshift_cluster_wait_4_availability() {
 # Add OpenLdap app to openshift
 function install_openldap() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :install_openldap"
+  decho 3 "F:IN :install_openldap"
 
   if $MY_LDAP; then
     mylog info "==== Installing OpenLdap." 1>&2
@@ -277,7 +277,7 @@ function install_openldap() {
     expose_service_openldap ${lf_name} ${MY_LDAP_NAMESPACE}
   fi
 
-  decho 4 "F:OUT:install_openldap"
+  decho 3 "F:OUT:install_openldap"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -337,9 +337,14 @@ function display_access_info() {
   lf_mailhog_hostname=$(oc -n ${MY_MAIL_SERVER_NAMESPACE} get route mailhog -o jsonpath='{.spec.host}')
   mylog info "MailHog accessible at http://${lf_mailhog_hostname}"
 
+  lf_keycloak_admin_ui=$(oc -n $MY_COMMONSERVICES_NAMESPACE get route keycloak --template='{{ .spec.host }}')
+  mylog info "Keycloak admin UI URL: " $lf_keycloak_admin_ui
+  lf_keycloak_admin_pwd=$(oc -n $MY_COMMONSERVICES_NAMESPACE get secret cs-keycloak-initial-admin -o jsonpath={.data.password} | base64 -d)
+  mylog info "Keycloak admin password: " $lf_keycloak_admin_pwd
+  
   local lf_temp_integration_admin_pwd cp4i_url
   if $MY_NAVIGATOR_INSTANCE; then
-    lf_temp_integration_admin_pwd=$(oc -n $MY_COMMON_SERVICES_NAMESPACE get secret integration-admin-initial-temporary-credentials -o jsonpath={.data.password} | base64 -d)
+    lf_temp_integration_admin_pwd=$(oc -n $MY_COMMONSERVICES_NAMESPACE get secret integration-admin-initial-temporary-credentials -o jsonpath={.data.password} | base64 -d)
     mylog info "Integration admin password: ${lf_temp_integration_admin_pwd}"
     cp4i_url=$(oc -n $MY_OC_PROJECT get platformnavigator cp4i-navigator -o jsonpath='{range .status.endpoints[?(@.name=="navigator")]}{.uri}{end}')
     mylog info "CP4I Platform UI URL: " $cp4i_url  
@@ -465,7 +470,7 @@ function display_access_info() {
 # License: Accept the license to use foundational services by adding spec.license.accept: true in the spec section.
 function accept_license_fs() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 5 "F:IN :accept_license_fs"
+  decho 4 "F:IN :accept_license_fs"
 
   lf_in_namespace=$1
 
@@ -479,7 +484,7 @@ function accept_license_fs() {
     oc -n ${lf_in_namespace} patch commonservice ${MY_COMMONSERVICES_INSTANCE_NAME} --type merge -p '{"spec": {"license": {"accept": true}}}'
   fi
 
-  decho 5 "F:OUT:accept_license_fs"
+  decho 4 "F:OUT:accept_license_fs"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -487,7 +492,7 @@ function accept_license_fs() {
 # Log in IBM Cloud
 function login_2_ibm_cloud() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 5 "F:IN :login_2_ibm_cloud"
+  decho 4 "F:IN :login_2_ibm_cloud"
 
   if ! ${TECHZONE}; then
     SECONDS=0
@@ -500,7 +505,7 @@ function login_2_ibm_cloud() {
       mylog check "Login to IBM Cloud"
       if ! ibmcloud login -q --no-region --apikey $MY_IC_APIKEY >/dev/null; then
         mylog error "Fail to login to IBM Cloud, check API key: $MY_IC_APIKEY" 1>&2
-        decho 5 "F:OUT:login_2_ibm_cloud"
+        decho 4 "F:OUT:login_2_ibm_cloud"
         SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
         exit 1
       else
@@ -510,7 +515,7 @@ function login_2_ibm_cloud() {
     fi
   fi
 
-  decho 5 "F:OUT:login_2_ibm_cloud"
+  decho 4 "F:OUT:login_2_ibm_cloud"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -520,7 +525,7 @@ function login_2_ibm_cloud() {
 # requires var my_cluster_url
 function login_2_openshift_cluster() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 5 "F:IN :login_2_openshift_cluster"
+  decho 4 "F:IN :login_2_openshift_cluster"
 
   SECONDS=0
 
@@ -543,7 +548,7 @@ function login_2_openshift_cluster() {
     fi
   fi
 
-  decho 5 "F:OUT:login_2_openshift_cluster"
+  decho 4 "F:OUT:login_2_openshift_cluster"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -642,10 +647,10 @@ function install_lic_srv() {
     mylog info "==== IBM License Server." 1>&2
     check_add_cs_ibm_pak ibm-licensing amd64
 
-    # Operator group forLicense Service Reporter in single namespace
+    # Operator group for License Service Reporter in single namespace
     ls_type="OperatorGroup"
     ls_cr_name="${MY_LICENSE_SERVER_OPERATORGROUP}"
-    ls_yaml_file="${MY_RESOURCSEDIR}operator-group-single.yaml"
+    ls_yaml_file="${MY_RESOURCESDIR}operator-group-single.yaml"
     ls_namespace=$MY_LICENSE_SERVER_NAMESPACE
     check_create_oc_yaml "${ls_type}" "${ls_cr_name}" "${ls_yaml_file}" "${ls_namespace}"
 
@@ -659,7 +664,7 @@ function install_lic_srv() {
     decho 3 "create_catalogsource \"${lf_catalogsource_namespace}\" \"${lf_catalogsource_name}\" \"${lf_catalogsource_dspname}\" \"${lf_catalogsource_image}\" \"${lf_catalogsource_publisher}\" \"${lf_catalogsource_interval}\""
     create_catalogsource "${lf_catalogsource_namespace}" "${lf_catalogsource_name}" "${lf_catalogsource_dspname}" "${lf_catalogsource_image}" "${lf_catalogsource_publisher}" "${lf_catalogsource_interval}"
 
-    #mylog info "Creating the CatalogSource for License Service Reporter in ns : openshift-marketplace." 1>&2
+    #mylog info "Creating License Service Reporter catalog source in ns : openshift-marketplace." 1>&2
     lf_catalogsource_namespace=$MY_CATALOGSOURCES_NAMESPACE
     lf_catalogsource_name="ibm-license-service-reporter-operator-catalog"
     lf_catalogsource_dspname="IBM License Service Reporter Catalog"
@@ -704,7 +709,7 @@ function install_lic_srv() {
     # oc get routes -n ibm-licensing | grep ibm-license-service-reporter | awk '{print $2}'
     mylog info "Add license service to the reporter" 1>&2
     lf_licensing_service_reporter_url=$(oc -n ${MY_LICENSE_SERVER_NAMESPACE} get Route -o=jsonpath='{.items[?(@.metadata.name=="ibm-license-service-reporter")].spec.host}')
-    oc patch -n $MY_LICENSE_SERVER_NAMESPACE IBMLicensing instance --type merge --patch "{\"spec\":{\"sender\":{\"reporterSecretToken\":\"ibm-license-service-reporter-token\",\"reporterURL\":\"$reporterURL\",\"clusterID\":\"ClusterTest1\",\"clusterName\":\"ClusterTest1\"}}}"
+    oc patch -n $MY_LICENSE_SERVER_NAMESPACE IBMLicensing instance --type merge --patch "{\"spec\":{\"sender\":{\"reporterSecretToken\":\"ibm-license-service-reporter-token\",\"reporterURL\":\"https://$lf_licensing_service_reporter_url/\",\"clusterID\":\"MyClusterTest1\",\"clusterName\":\"MyClusterTest1\"}}}"
   fi
 
   decho 3 "F:OUT:install_lic_srv"
@@ -781,6 +786,9 @@ function install_navigator() {
     # add catalog sources using ibm_pak plugin
     check_add_cs_ibm_pak $MY_NAVIGATOR_CASE amd64
 
+    # When you have this error: no operators found in channel latest of package, this is probably because the operator does not support latest for a channel version
+    export MY_CURRENT_CHL=$(oc ibm-pak list -o json | jq -r --arg case "$MY_NAVIGATOR_CASE" '.[] | select (.name == $case ) | .latestVersion')
+
     # Creating Navigator operator subscription
     lf_operator_name="$MY_NAVIGATOR_CASE"
     lf_catalog_source_name="ibm-integration-platform-navigator-catalog"
@@ -847,6 +855,10 @@ function install_assetrepo() {
     # add catalog sources using ibm_pak plugin
     check_add_cs_ibm_pak ibm-integration-asset-repository amd64
 
+    # When you have this error: no operators found in channel latest of package, this is probably because the operator does not support latest for a channel version
+    lf_case_result=$(oc ibm-pak list --case-name "$MY_ASSETREPO_CASE" -o json )
+    export MY_CURRENT_CHL=$(echo "$lf_case_result" | jq -r '.versions | keys | sort_by(split(".") | map(tonumber)) | last')
+    
     # Creating Asset Repository operator subscription
     lf_operator_name="ibm-integration-asset-repository"
     lf_catalog_source_name="ibm-integration-asset-repository-catalog"
@@ -892,6 +904,9 @@ function install_ace() {
 
     # add catalog sources using ibm_pak plugin
     check_add_cs_ibm_pak $MY_ACE_CASE amd64
+
+    # When you have this error: no operators found in channel latest of package, this is probably because the operator does not support latest for a channel version
+    export MY_CURRENT_CHL=$(oc ibm-pak list -o json | jq -r --arg case "$MY_ACE_CASE" '.[] | select (.name == $case ) | .latestVersion')
 
     # Creating ACE operator subscription
     lf_operator_name="$MY_ACE_CASE"
@@ -1209,7 +1224,6 @@ function install_eem() {
     ## https://ibm.github.io/event-automation/eem/installing/installing/, chapter : Install the operator by using the CLI (oc ibm-pak)
     check_add_cs_ibm_pak $MY_EEM_CASE amd64
 
-
     # Creating Event Endpoint Management operator subscription
     lf_operator_name="ibm-eventendpointmanagement"
     lf_catalog_source_name="ibm-eventendpointmanagement-catalog"
@@ -1225,6 +1239,11 @@ function install_eem() {
     fi
 
     # Creating EventEndpointManager instance (Event Processing)
+    if $MY_KEYCLOAK_INTEGRATION; then
+      export MY_EEM_AUTH_TYPE=INTEGRATION_KEYCLOAK
+    else
+      export MY_EEM_AUTH_TYPE=LOCAL
+    fi
     lf_file="${MY_OPERANDSDIR}EEM-Capability.yaml"
     lf_ns="${MY_OC_PROJECT}"
     lf_path="{.status.conditions[0].type}"
@@ -1235,17 +1254,24 @@ function install_eem() {
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
 
     ## Creating EEM users and roles
-    # generate properties files
-    adapt_file ${MY_EEM_SCRIPTDIR}config/ ${MY_EEM_GEN_CUSTOMDIR}config/ user-credentials.yaml
-    adapt_file ${MY_EEM_SCRIPTDIR}config/ ${MY_EEM_GEN_CUSTOMDIR}config/ user-roles.yaml
-
-    # base64 generates an error ": illegal base64 data at input byte 76". Solution found here : https://bugzilla.redhat.com/show_bug.cgi?id=1809431. use base64 -w0
-    # user credentials
-    varb64=$(cat "${MY_EEM_GEN_CUSTOMDIR}config/user-credentials.yaml" | base64 -w0)
-    oc -n $MY_OC_PROJECT patch secret "${MY_EEM_INSTANCE_NAME}-ibm-eem-user-credentials" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-credentials.json\" ,\"value\" : \"$varb64\"}]"
-    # user roles
-    varb64=$(cat "${MY_EEM_GEN_CUSTOMDIR}config/user-roles.yaml" | base64 -w0)
-    oc -n $MY_OC_PROJECT patch secret "${MY_EEM_INSTANCE_NAME}-ibm-eem-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$varb64\"}]"
+    if $MY_KEYCLOAK_INTEGRATION; then
+      # generate properties files
+      adapt_file ${MY_EEM_SCRIPTDIR}config/ ${MY_EEM_GEN_CUSTOMDIR}config/ keycloak-user-roles
+      # keycloak user roles
+      varb64=$(cat "${MY_EEM_GEN_CUSTOMDIR}config/keycloak-user-roles.yaml" | base64 -w0)
+      oc -n $MY_OC_PROJECT patch secret "${MY_EEM_INSTANCE_NAME}-ibm-eem-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$varb64\"}]"
+    else
+      # generate properties files
+      adapt_file ${MY_EEM_SCRIPTDIR}config/ ${MY_EEM_GEN_CUSTOMDIR}config/ local-user-credentials.yaml
+      adapt_file ${MY_EEM_SCRIPTDIR}config/ ${MY_EEM_GEN_CUSTOMDIR}config/ local-user-roles.yaml
+      # base64 generates an error ": illegal base64 data at input byte 76". Solution found here : https://bugzilla.redhat.com/show_bug.cgi?id=1809431. use base64 -w0
+      # local user credentials
+      varb64=$(cat "${MY_EEM_GEN_CUSTOMDIR}config/local-user-credentials.yaml" | base64 -w0)
+      oc -n $MY_OC_PROJECT patch secret "${MY_EEM_INSTANCE_NAME}-ibm-eem-user-credentials" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-credentials.json\" ,\"value\" : \"$varb64\"}]"
+      # local user roles
+      varb64=$(cat "${MY_EEM_GEN_CUSTOMDIR}config/local-user-roles.yaml" | base64 -w0)
+      oc -n $MY_OC_PROJECT patch secret "${MY_EEM_INSTANCE_NAME}-ibm-eem-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$varb64\"}]"
+    fi
   fi
   
   decho 3 "F:OUT:install_eem"
@@ -1342,6 +1368,11 @@ function install_ep() {
     ## Creating EventProcessing instance (Event Processing)
     ## oc -n <namespace> get eventprocessing <instance-name> -o jsonpath='{.status.phase}'
     ## Creating Event processing instance
+    if $MY_KEYCLOAK_INTEGRATION; then
+      export MY_EP_AUTH_TYPE=INTEGRATION_KEYCLOAK
+    else
+      export MY_EP_AUTH_TYPE=LOCAL
+    fi
     lf_file="${MY_OPERANDSDIR}EP-Capability.yaml"
     lf_ns="${MY_OC_PROJECT}"
     lf_path="{.status.phase}"
@@ -1680,6 +1711,9 @@ function customise_mq() {
     # launch custom script
     mylog info "Customise MQ (mq.config.sh)."
     . ${MY_MQ_SCRIPTDIR}scripts/mq.config.sh -i ${sc_properties_file} ${sc_versions_file} ${MY_MQ_INSTANCE_NAME}
+    mylog info "Customise MQ (mq.demo.config.sh)."
+    . ${MY_MQ_SCRIPTDIR}scripts/mq.demo.config.sh -i ${sc_properties_file} ${sc_versions_file} ${MY_MQ_INSTANCE_NAME}
+
   fi
 
   decho 3 "F:OUT:customise_mq"
@@ -1828,7 +1862,7 @@ function install_logging_loki() {
     local lf_catalog_source_name="redhat-operators"
     local lf_wait_for_state=true
     local lf_csv_name=$MY_LOGGING_OPERATORGROUP
-    export MY_CURRENT_CHL="stable"
+    export MY_CURRENT_CHL="stable-6.0"
     export MY_STARTING_CSV="${MY_LOKI_STARTINGCSV}"
     create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
@@ -1902,7 +1936,7 @@ function install_postgresql() {
     # Operator group for PostGreSQL in single namespace (TODO should it be operators.coreos.com/v1 instead of operators.coreos.com/v1alpha2)
     ls_type="OperatorGroup"
     ls_cr_name="${MY_POSTGRESQL_OPERATORGROUP}"
-    ls_yaml_file="${MY_RESOURCSEDIR}operator-group-singlev1.yaml"
+    ls_yaml_file="${MY_RESOURCESDIR}operator-group-singlev1.yaml"
     ls_namespace=$MY_POSTGRESQL_NAMESPACE
     check_create_oc_yaml "${ls_type}" "${ls_cr_name}" "${ls_yaml_file}" "${ls_namespace}"
 
@@ -1916,7 +1950,7 @@ function install_postgresql() {
     decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_catalog_source_name}\" \"${lf_operator_namespace}\" \"${lf_strategy}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
     create_operator_subscription "${lf_operator_name}" "${lf_catalog_source_name}" "${lf_operator_namespace}" "${lf_strategy}" "${lf_wait_for_state}" "${lf_csv_name}"
 
-    # toto
+    # toto postgres
 
 
   fi
@@ -1978,16 +2012,14 @@ check_exec_prereqs
 
 check_directory_exist_create "$MY_WORKINGDIR"
 
-
-: <<'END_COMMENT'
 # Log to IBM Cloud
-#login_2_ibm_cloud
+login_2_ibm_cloud
 
 # Create Openshift cluster
-#create_openshift_cluster_wait_4_availability
+create_openshift_cluster_wait_4_availability
 
 # Log to openshift cluster
-#login_2_openshift_cluster
+login_2_openshift_cluster
 
 # Create project namespace.
 # SB]20231213 erreur obtenue juste après la création du cluster openshift : Error from server (Forbidden): You may not request a new project via this API.
@@ -2003,6 +2035,9 @@ if ! ${TECHZONE};then
   oc create clusterrolebinding myname-cluster-binding --clusterrole=admin --user=$MY_USER_ID > /dev/null 2>&1
   oc adm policy add-cluster-role-to-user self-provisioner $MY_USER_ID -n $MY_OC_PROJECT
 fi
+
+: <<'END_COMMENT'
+END_COMMENT
 
 # https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.4?topic=operators-installing-by-using-cli
 # (Only if your preferred installation mode is a specific namespace on the cluster) Create an OperatorGroup
@@ -2045,12 +2080,11 @@ install_gitops
 #SB]20231214 Installing Foundation services
 mylog info "==== Installing foundational services (Cert Manager, Licensing Server and Common Services)." 1>&2
 install_cert_manager
+
 install_lic_srv
+
 install_fs
 install_pipelines
-END_COMMENT
-: <<'END_COMMENT'
-
 install_mailhog
 install_openldap
 
@@ -2070,9 +2104,7 @@ install_ace
 
 install_apic
 
-END_COMMENT
 install_es
-: <<'END_COMMENT'
 
 install_eem $MY_CATALOGSOURCES_NAMESPACE
 
@@ -2088,7 +2120,10 @@ install_mq
 
 install_instana
 
-install_logging_loki
+# install_logging_loki
+
+install_postgresql
+
 
 ######################################################
 # Start customisation
@@ -2126,4 +2161,3 @@ customise_mq
 customise_instana
 
 exit 0
-END_COMMENT

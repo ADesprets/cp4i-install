@@ -4,9 +4,10 @@
     "version": "0.0.1",
     "private": true,
     "dependencies": {
+        "eem-demo-apis": "file:",
         "node-red": "^3.0.2",
-        "node-red-contrib-rdkafka-secure": "0.3.1",
-        "node-red-contrib-plugin-asyncapi": "0.0.19"
+        "node-red-contrib-plugin-asyncapi": "0.0.19",
+        "node-red-contrib-rdkafka-secure": "0.3.1"
     },
     "scripts": {
         "start": "node $NODE_OPTIONS node_modules/node-red/red.js $FLOWS"

@@ -1,0 +1,66 @@
+apiVersion: mq.ibm.com/v1beta1
+kind: QueueManager
+metadata:
+  annotations:
+    com.ibm.mq/write-defaults-spec: 'false'
+  name: ${MY_MQ_DEMO_NAMESPACE}-$QMGR
+  namespace: $MY_MQ_DEMO_NAMESPACE
+spec:
+  license:
+    accept: true
+    license: $MY_MQ_LIC
+    use: NonProduction
+  pki:
+    keys:
+      - name: default
+        secret:
+          secretName: ${MY_MQ_DEMO_NAMESPACE}-qm-tls
+          items:
+            - tls.key
+            - tls.crt
+            - ca.crt
+  queueManager:
+    name: ${QMGR}
+    ini:
+      - configMap:
+          items:
+          - config.ini
+          name: ${MY_MQ_DEMO_NAMESPACE}-${MQ_CLUSTERNAME}-ini
+    mqsc:
+      - configMap:
+          name: ${MY_MQ_DEMO_NAMESPACE}-${MQ_CLUSTERNAME}-mqsc-common
+          items:
+          - common_config.mqsc
+      - configMap:
+          name: ${MY_MQ_DEMO_NAMESPACE}-${MQ_CLUSTERNAME}-mqsc-${QMGR}
+          items:
+            - qm.mqsc
+    resources:
+      limits:
+        cpu: 500m
+      requests:
+        cpu: 500m
+    storage:
+      queueManager:
+        type: persistent-claim
+      defaultClass: $MY_BLOCK_STORAGE_CLASS
+    availability:
+      type: NativeHA
+  template:
+    pod:
+      containers:
+        - env:
+            - name: MQSNOAUT
+              value: 'yes'
+          name: qmgr
+  version: $MY_MQ_VERSION
+  web:
+    console:
+      authentication:
+        provider: manual
+      authorization:
+        provider: manual
+    manualConfig:
+      configMap: 
+        name: ${MY_MQ_DEMO_NAMESPACE}-${QMGR}-mywebconfig
+    enabled: true

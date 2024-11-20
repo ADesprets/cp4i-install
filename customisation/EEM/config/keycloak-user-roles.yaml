@@ -1,0 +1,1 @@
+{"mappings":[{"id":"admin","roles":["admin","author"]},{"id":"viewer","roles":["viewer"]},{"id":"eventendpointmanagement-admin","roles":["admin","author"]},{"id":"eventendpointmanagement-viewer","roles":["viewer"]},{"id":"eem-admin","roles":["admin"]},{"id":"eem-author","roles":["author"]},{"id":"eem-viewer","roles":["viewer"]},{"id":"author","roles":["author"]}]}
