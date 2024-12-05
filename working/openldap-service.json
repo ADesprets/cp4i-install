@@ -5,7 +5,7 @@
     "annotations": {
       "openshift.io/generated-by": "OpenShiftNewApp"
     },
-    "creationTimestamp": "2024-09-14T17:48:29Z",
+    "creationTimestamp": "2024-11-26T15:46:31Z",
     "labels": {
       "app": "openldap",
       "app.kubernetes.io/component": "openldap",
@@ -13,15 +13,14 @@
     },
     "name": "openldap",
     "namespace": "ldap",
-    "resourceVersion": "7134856",
-    "uid": "58756ffd-84e6-43ce-bcc9-4c5746396d0e"
+    "resourceVersion": "5573433",
+    "uid": "8e74de9a-9d7f-4790-872e-c23825cf173c"
   },
   "spec": {
-    "clusterIP": "172.30.79.20",
+    "clusterIP": "172.30.77.31",
     "clusterIPs": [
-      "172.30.79.20"
+      "172.30.77.31"
     ],
-    "externalTrafficPolicy": "Cluster",
     "internalTrafficPolicy": "Cluster",
     "ipFamilies": [
       "IPv4"
@@ -30,24 +29,24 @@
     "ports": [
       {
         "name": "389-tcp",
-        "nodePort": 30389,
         "port": 389,
         "protocol": "TCP",
-        "targetPort": 389
+        "targetPort": 389,
+        "nodePort": 30389
       },
       {
         "name": "636-tcp",
-        "nodePort": 30686,
         "port": 636,
         "protocol": "TCP",
-        "targetPort": 636
+        "targetPort": 636,
+        "nodePort": 30686
       }
     ],
     "selector": {
       "deployment": "openldap"
     },
     "sessionAffinity": "None",
-    "type": "NodePort"
+    "type": "ClusterIP"
   },
   "status": {
     "loadBalancer": {}

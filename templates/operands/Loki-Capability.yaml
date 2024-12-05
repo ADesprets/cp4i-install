@@ -4,6 +4,7 @@ metadata:
   name: $MY_LOKI_INSTANCE_NAME
   namespace: $MY_LOGGING_NAMESPACE
 spec:
+  managementState: Managed
   size: 1x.small 
   storage:
     schemas:
