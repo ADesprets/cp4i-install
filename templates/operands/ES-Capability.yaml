@@ -16,15 +16,16 @@ spec:
       topicOperator: {}
     kafka:
       replicas: 3
-      authorization:
-        type: simple
       config:
-        default.replication.factor: 3
-        inter.broker.protocol.version: '3.7'
+        auto.create.topics.enable: 'false'
+        inter.broker.protocol.version: '3.8'
         offsets.topic.replication.factor: 1
         transaction.state.log.min.isr: 1
         transaction.state.log.replication.factor: 1
+        default.replication.factor: 3
         min.insync.replicas: 3
+      authorization:
+        type: simple
       listeners:
         - name: external
           port: 9094
@@ -47,7 +48,7 @@ spec:
       storage:
         type: persistent-claim
         class: $MY_BLOCK_STORAGE_CLASS
-        size: 10Gi
+        size: 20Gi
     zookeeper:
       replicas: 1
       metricsConfig:
@@ -59,11 +60,13 @@ spec:
       storage:
         type: persistent-claim
         class: $MY_BLOCK_STORAGE_CLASS
-        size: 4Gi
+        size: 20Gi
   adminApi: {}
   adminUI:
      authentication:
-       - type: integrationKeycloak      
+       - type: scram-sha-512
   apicurioRegistry: {}
   collector: {}
   restProducer: {}
+  security:
+    internalTls: TLSv1.2

@@ -2,7 +2,7 @@ apiVersion: eventstreams.ibm.com/v1beta2
 kind: KafkaConnector
 metadata:
   labels:
-    eventstreams.ibm.com/cluster: kconnect
+        eventstreams.ibm.com/cluster: ${MY_ES_KAFKA_CONNECT_INSTANCE_NAME}
   name: mq-sink
   namespace: $MY_OC_PROJECT
 spec:

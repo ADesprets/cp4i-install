@@ -11,8 +11,20 @@ spec:
     use: $MY_EEM_LIC_USAGE
   manager:
     authConfig:
-      authType: LOCAL
+      authType: $MY_EEM_AUTH_TYPE
     storage: 
       storageClassName: $MY_FILE_STORAGE_CLASS 
       type: persistent-claim
+    template:
+      pod:
+        spec:
+          containers:
+            - resources:
+                limits:
+                  cpu: '0.5'
+                  memory: 512Mi
+                requests:
+                  cpu: '0.25'
+                  memory: 256Mi
+              name: manager
   version: $MY_EEM_VERSION

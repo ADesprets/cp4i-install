@@ -12,7 +12,7 @@ spec:
     endpoint: ${MY_FLINK_INSTANCE_NAME}-rest.${MY_OC_PROJECT}.svc.cluster.local:8081
   authoring:
     authConfig:
-      authType: LOCAL
+      authType: $MY_EP_AUTH_TYPE
     storage:
       type: persistent-claim
       storageClassName: $MY_FILE_STORAGE_CLASS

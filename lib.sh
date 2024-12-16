@@ -1,5 +1,6 @@
 ################################################
 # encode_b64_file function
+# @param 1: 
 # return the encoded (base64) input parameter
 #
 function encode_b64_file() {
@@ -12,7 +13,7 @@ function encode_b64_file() {
 
 ################################################
 # simple logging with colors
-# @param 1 level (info/error/warn/wait/check/ok/no)
+# @param 1: level (info/error/warn/wait/check/ok/no)
 function mylog() {
   local lf_spaces=$(printf "%0.s " $(seq 1 $SC_SPACES_COUNTER))
 
@@ -62,7 +63,9 @@ function var_fail() {
 }
 
 #########################################################################
-# function to print message if debug is set to 1
+# Print message with levels
+# @param 1:
+# @param 2:
 function decho () {
   local lf_in_messagelevel=$1
   shift 1
@@ -77,6 +80,7 @@ function decho () {
 #########################################################################
 # check if openshift version available
 # check_openshift_version v1 returns 0 if v1 does not exist 1 if v1 exist
+# @param 1:
 function check_openshift_version() {
   local lf_in_version=$1
 
@@ -90,9 +94,9 @@ function check_openshift_version() {
 ################################################
 # Compare versions
 # from chatgpt
-# This script defines a function compare_versions that takes two version strings as arguments and compares them component-wise.
+# Compare two version strings as arguments and compares them component-wise.
 # It uses the IFS (Internal Field Separator) to split the versions into components based on the dot ('.') separator.
-# The function then compares each component, determining whether the first version is older, newer, or equal to the second version.
+# It then compares each component, determining whether the first version is older, newer, or equal to the second version.
 # The script will output whether the first version is older, newer, or equal to the second version.
 # cmp_versions v1 v2 returns 0 if v1=v2, 1 if v1 is older than v2, 2 if v1 is newer than v2
 function cmp_versions() {
@@ -132,7 +136,11 @@ function cmp_versions() {
 }
 
 ################################################
-# Save a certificate in pem format
+# Save a certificate in pem format from secret
+# @param 1: namespace where the secret exist
+# @param 2: name of the secret
+# @param 3: Data in the secret that contains the certificate
+# @param 4: Directory where to save the certificate
 function save_certificate() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 3 "F:IN :save_certificate"
@@ -145,6 +153,7 @@ function save_certificate() {
   local lf_data_normalised=$(sed 's/\./\\./g' <<< ${lf_in_data_name})
 
   mylog info "Save certificate ${lf_in_secret_name} to ${lf_in_destination_path}${lf_in_secret_name}.${lf_in_data_name}.pem"
+  decho 6 "oc -n cp4i get secret ${lf_in_secret_name} -o jsonpath=\"{.data.$lf_data_normalised}\""
   cert=$(oc -n cp4i get secret ${lf_in_secret_name} -o jsonpath="{.data.$lf_data_normalised}")
   echo $cert | base64 --decode >"${lf_in_destination_path}${lf_in_secret_name}.${lf_in_data_name}.pem"
 
@@ -158,6 +167,8 @@ function save_certificate() {
 # example pour filtrer avec conditions :
 # avec jsonpath=$.[?(@.name=='ibm-licensing' && @.version=='4.2.1')]
 # Pour tester une variable null : https://stackoverflow.com/questions/48261038/shell-script-how-to-check-if-variable-is-null-or-no
+# @param 1:
+# @param 2:
 function is_case_downloaded() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 3 "F:IN :is_case_downloaded"
@@ -216,6 +227,10 @@ function is_case_downloaded() {
 #  - the file defining the custom resource
 #  - the namespace
 #  Returns 1 (if the cr is newer than the file) otherwise 0
+# @param 1:
+# @param 2:
+# @param 3:
+# @param 4:
 function is_cr_newer() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 3 "F:IN :is_cr_newer"
@@ -247,6 +262,7 @@ function is_cr_newer() {
 
 ################################################
 # Check that all required executables are installed
+# @param 1:
 function check_command_exist() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 5 "F:IN :check_command_exist"
@@ -264,7 +280,7 @@ function check_command_exist() {
 
 ######################################################
 # checks if the file exist, if no print a msg and exit
-#
+# @param 1:
 function check_file_exist() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 5 "F:IN :check_file_exist"
@@ -281,10 +297,10 @@ function check_file_exist() {
 
 ######################################################
 # checks if the directory exist, if no print a msg and exit
-#
+# @param 1:
 function check_directory_exist() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :check_directory_exist"
+  decho 3 "F:IN :check_directory_exist"
 
   local directory=$1
   if [ ! -d $directory ]; then
@@ -292,23 +308,23 @@ function check_directory_exist() {
     exit 1
   fi
 
-  decho 4 "F:OUT:check_directory_exist"
+  decho 3 "F:OUT:check_directory_exist"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
 ######################################################
 # checks if the directory contains files, if no print a msg and exit
-#
+# @param 1:
 function check_directory_contains_files() {
   # SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  # decho 4 "F:IN :check_directory_contains_files"
+  # decho 3 "F:IN :check_directory_contains_files"
 
   local lf_in_directory=$1
   local lf_files
   shopt -s nullglob dotglob # To include hidden files
   lf_files=$(find . -maxdepth 1 -type f | wc -l)
 
-    # decho 4 "F:OUT:check_directory_contains_files"
+    # decho 3 "F:OUT:check_directory_contains_files"
   # SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 
   return $lf_files
@@ -316,21 +332,23 @@ function check_directory_contains_files() {
 
 ######################################################
 # checks if the directory exist, otherwise create it
-#
+# @param 1:
 function check_directory_exist_create() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 5 "F:IN :check_directory_exist_create"
+  decho 4 "F:IN :check_directory_exist_create"
 
   local directory=$1
   if [ ! -d $directory ]; then
     mkdir -p $directory
   fi
 
-  decho 5 "F:OUT:check_directory_exist_create"
+  decho 4 "F:OUT:check_directory_exist_create"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
 ################################################
+# 
+# @param 1:
 function read_config_file() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 5 "F:IN :read_config_file"
@@ -357,17 +375,19 @@ function read_config_file() {
   . "${lf_config_file}"
   set +a
 
-  decho 4 "F:OUT:read_config_file"
+  decho 5 "F:OUT:read_config_file"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
 ################################################
 # Check that all required executables are installed
+# No parameters.
 function check_exec_prereqs() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :check_exec_prereqs"
+  decho 3 "F:IN :check_exec_prereqs"
 
   check_command_exist awk
+  check_command_exist tr
   check_command_exist curl
   check_command_exist $MY_CONTAINER_ENGINE
   check_command_exist ibmcloud
@@ -383,13 +403,15 @@ function check_exec_prereqs() {
     check_command_exist ldapsearch
   fi
 
-  decho 4 "F:OUT:check_exec_prereqs"
+  decho 3 "F:OUT:check_exec_prereqs"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
 ################################################
 # Wait n secs
 # @param secs: number of seconds to wait for and displays it on the same line
+# @param 1:
+
 function waitn() {
   local secs=$1
   mylog info "Sleeping $secs"
@@ -418,9 +440,9 @@ function send_email() {
 
 ################################################
 # wait for command to return specified value
-# @param what description of waited state
-# @param value expected state value from check command
-# @param command executed command that returns some state
+# @param 1: what description of waited state
+# @param 2: value expected state value from check command
+# @param 3: command executed command that returns some state
 function wait_for_state() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 3 "F:IN :wait_for_state"
@@ -468,10 +490,10 @@ function wait_for_state() {
 ################################################
 # Check if the resource of type octype with name name exists in the namespace ns.
 # If it does not exist use the yaml file, with the appropriate variable.
-# @param octype: kubernetes resource class, example: "subscription"
-# @param name: name of the resource, example: "ibm-integration-platform-navigator"
-# @param yaml: the file with the definition of the resource, example: "${subscriptionsdir}Navigator-Sub.yaml"
-# @param ns: name space where the reousrce is created, example: $MY_OPERATORS_NAMESPACE
+# @param 1: octype: kubernetes resource class, example: "subscription"
+# @param 2: name: name of the resource, example: "ibm-integration-platform-navigator"
+# @param 3: yaml: the file with the definition of the resource, example: "${subscriptionsdir}Navigator-Sub.yaml"
+# @param 4: ns: name space where the reousrce is created, example: $MY_OPERATORS_NAMESPACE
 function check_create_oc_yaml() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 3 "F:IN :check_create_oc_yaml"
@@ -507,10 +529,11 @@ function check_create_oc_yaml() {
 }
 
 ################################################
-# @param namespace
+# 
+# @param 1: namespace
 function provision_persistence_openldap() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :provision_persistence_openldap"
+  decho 3 "F:IN :provision_persistence_openldap"
 
   local lf_in_namespace="$1"
   # handle persitence for Openldap
@@ -525,7 +548,7 @@ function provision_persistence_openldap() {
     wait_for_state "pvc pvc-ldap-main status.phase is Bound" "Bound" "oc -n ${lf_in_namespace} get pvc pvc-ldap-main -o jsonpath='{.status.phase}'"
   fi
 
-  decho 4 "F:OUT:provision_persistence_openldap"
+  decho 3 "F:OUT:provision_persistence_openldap"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -570,8 +593,9 @@ function deploy_openldap() {
 }
 
 ################################################
-# @param octype: kubernetes resource class, example: "deployment"
-# @param ocname: name of the resource, example: "mailhog"
+# @param 1: octype: kubernetes resource class, example: "deployment"
+# @param 2: ocname: name of the resource, example: "mailhog"
+# @param 3:
 # See https://github.com/osixia/docker-openldap for more details especialy all the configurations possible
 # To add a user/password protection to the web UI: https://stackoverflow.com/questions/60162842/how-can-i-add-basic-authentication-to-the-mailhog-service-in-ddev-local
 function deploy_mailhog() {
@@ -601,9 +625,12 @@ function deploy_mailhog() {
 
 ################################################
 # Check if the service is already exposed
+# @param 1:
+# @param 2:
+# @param 3:
 function is_service_exposed() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :is_service_exposed"
+  decho 3 "F:IN :is_service_exposed"
 
   local lf_in_namespace="$1"
   local lf_in_service_name="$2"
@@ -612,23 +639,29 @@ function is_service_exposed() {
   local lf_port_name lf_res
 
   lf_port_name=$(oc -n "${lf_in_namespace}" get service "${lf_in_service_name}" -o json | jq --argjson port "$lf_in_port" '.spec.ports[] | select(.nodePort == $port) |.name')
-  decho 4 "lf_port_name=$lf_port_name"
+  decho 3 "lf_port_name=$lf_port_name"
   
   if [ -z "$lf_port_name" ]; then
     lf_res=1
   else
     lf_res=0
   fi
-  decho 4 "F:OUT:is_service_exposed"
+  decho 3 "F:OUT:is_service_exposed"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
   return $lf_res
 }
 
 #===========================================
-# Function to add entry if it doesn't exist
+# Add entry in LDAP if it doesn't exist
+# @param 1:
+# @param 2:
+# @param 3:
+# @param 4:
+# @param 5:
+# @param 6:
 function add_entry_if_not_exists() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :add_entry_if_not_exists"
+  decho 3 "F:IN :add_entry_if_not_exists"
 
   local lf_in_ldap_server="$1"
   local lf_in_admin_dn="$2"
@@ -645,21 +678,25 @@ function add_entry_if_not_exists() {
     if echo "$lf_in_search_result" | grep -q "dn: $lf_in_entry_dn"; then
       mylog info "Entry $lf_in_entry_dn already exists. Skipping."
     else
-      decho 4 "Entry $lf_in_entry_dn does not exist. Adding entry."
+      decho 3 "Entry $lf_in_entry_dn does not exist. Adding entry."
       mylog info "$lf_in_entry_content" > $lf_in_tmp_ldif_file
       ldapadd -x -H $lf_in_ldap_server -D "$lf_in_admin_dn" -w $lf_in_admin_password -f $lf_in_tmp_ldif_file
     fi
   fi
 
-  decho 4 "F:OUT:add_entry_if_not_exists"
+  decho 3 "F:OUT:add_entry_if_not_exists"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
 #========================================================
-# Function to add ldif file entries if each doesn't exist
+# add ldif file entries if each doesn't exist
+# @param 1:
+# @param 2:
+# @param 3:
+# @param 4:
 function add_ldif_file () {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :add_ldif_file"
+  decho 3 "F:IN :add_ldif_file"
 
   local lf_in_ldif_file="$1"
   local lf_in_ldap_server="$2"
@@ -696,22 +733,22 @@ function add_ldif_file () {
   # Clean up temporary file
   #rm -f $lf_tmp_ldif
 
-  decho 4 "F:OUT:add_ldif_file"
+  decho 3 "F:OUT:add_ldif_file"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
 ################################################
-# @param name: name of the resource, example: "openldap"
-# @param namespace: the namespace to use
+# @param 1: name: name of the resource, example: "openldap"
+# @param 2: namespace: the namespace to use
 function expose_service_openldap() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :expose_service_openldap"
+  decho 3 "F:IN :expose_service_openldap"
 
   local lf_in_name="$1" 
   local lf_in_namespace="$2"
   local lf_hostname
 
-  decho 4 "lf_in_name=$lf_in_name|lf_in_namespace=$lf_in_namespace"
+  decho 3 "lf_in_name=$lf_in_name|lf_in_namespace=$lf_in_namespace"
 
   # expose service externaly and get host and port
   oc -n ${lf_in_namespace} get service ${lf_in_name} -o json | jq '.spec.ports |= map(if .name == "389-tcp" then . + { "nodePort": 30389 } else . end)' | jq '.spec.ports |= map(if .name == "636-tcp" then . + { "nodePort": 30686 } else . end)' >${MY_WORKINGDIR}openldap-service.json
@@ -759,15 +796,15 @@ function expose_service_openldap() {
   # ldapmodify -H ldap://$lf_hostname:$lf_port0 -D "$ldap_admin_dn" -w admin -f ${MY_LDAPDIR}Import.ldiff
   mylog info "ldapsearch -H ldap://${lf_hostname}:${lf_port0} -x -D \"$ldap_admin_dn\" -w \"$ldap_admin_password\" -b \"$ldap_base_dn\" -s sub -a always -z 1000 \"(objectClass=*)\""
 
-  decho 4 "F:OUT:expose_service_openldap"
+  decho 3 "F:OUT:expose_service_openldap"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 ################################################
-# @param name: name of the resource, example: "mailhog"
-# @param namespace: the namespace to use
+# @param 1: name: name of the resource, example: "mailhog"
+# @param 2: namespace: the namespace to use
 function expose_service_mailhog() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :expose_service_mailhog"
+  decho 3 "F:IN :expose_service_mailhog"
 
   local lf_in_name="$1"
   local lf_in_namespace="$2"
@@ -782,18 +819,18 @@ function expose_service_mailhog() {
     oc -n ${lf_in_namespace} expose svc/${lf_in_name} --port=${lf_port} --name=${lf_in_name}
   fi
   lf_hostname=$(oc -n ${lf_in_namespace} get route ${lf_in_name} -o jsonpath='{.spec.host}')
-  decho 4 "MailHog accessible at ${lf_hostname}"
+  decho 3 "MailHog accessible at ${lf_hostname}"
 
-  decho 4 "F:OUT:expose_service_mailhog"
+  decho 3 "F:OUT:expose_service_mailhog"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
 ################################################
 # Create namespace
-# @param ns namespace to be created
+# @param 1: ns namespace to be created
 function create_namespace() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :create_namespace"
+  decho 3 "F:IN :create_namespace"
 
   sc_in_ns=$1
   var_fail sc_in_ns "Please define project name in config"
@@ -801,25 +838,25 @@ function create_namespace() {
   if oc get project $sc_in_ns >/dev/null 2>&1; then mylog ok; else
     mylog info "Creating project $sc_in_ns"
     if ! oc new-project $sc_in_ns; then
-      decho 4 "F:OUT:create_namespace"
+      decho 3 "F:OUT:create_namespace"
       SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
       exit 1
     fi
   fi
 
-  decho 4 "F:OUT:create_namespace"
+  decho 3 "F:OUT:create_namespace"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
 ################################################
 # Check if the resource exists.
-# @param octype: kubernetes resource class, example: "subscription"
-# @param name: name of the resource, example: "ibm-integration-platform-navigator"
-# @param ns: namespace/project to perform the search
+# @param 1: octype: kubernetes resource class, example: "subscription"
+# @param 2: name: name of the resource, example: "ibm-integration-platform-navigator"
+# @param 3: ns: namespace/project to perform the search
 # TODO The var variable is initialised for another function, this is not good
 function check_resource_availability() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :check_resource_availability"
+  decho 3 "F:IN :check_resource_availability"
 
   local lf_in_type="$1"
   local lf_in_name="$2"
@@ -835,16 +872,19 @@ function check_resource_availability() {
   # SB]20240519 due to many problems with the return value, I will use an export variable to return the value
   export MY_RESOURCE=$var
 
-  decho 4 "F:OUT:check_resource_availability"
+  decho 3 "F:OUT:check_resource_availability"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
 ################################################
 ##SB]20230201 use ibm-pak oc plugin
 # https://ibm.github.io/cloud-pak/
+# @param 1:
+# @param 2:
+# @param 3: This is the version of the channel. It is an optional parameter, if ommited it is retrieved, else used values from invocation
 function check_add_cs_ibm_pak() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :check_add_cs_ibm_pak"
+  decho 3 "F:IN :check_add_cs_ibm_pak"
   SECONDS=0
 
   local lf_in_case_name="$1"
@@ -859,7 +899,9 @@ function check_add_cs_ibm_pak() {
   else
     lf_case_version=$lf_in_case_version
   fi
-  
+
+  #export MY_OPERATOR_CHL=$lf_case_version
+
   is_case_downloaded ${lf_in_case_name} ${lf_case_version} #1>&2 > /dev/null
   lf_downloaded=$?
   decho 4 "lf_downloaded=$lf_downloaded"
@@ -883,23 +925,32 @@ function check_add_cs_ibm_pak() {
 
   mylog info "Adding case $lf_in_case_name took $SECONDS seconds to execute." 1>&2
 
-  decho 4 "F:OUT:check_add_cs_ibm_pak"
+  decho 3 "F:OUT:check_add_cs_ibm_pak"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
 ################################################
 ##SB]20231201 create operator subscription
+# @param 1: operator name 
+# @param 2: namespace where the subscription is created (openshift-operators or others)
+# @param 3: Operator channel
+# @param 4: Control of the upgrade in the subscription, automatic or manual
+# @param 5: name of the source catalog
+# @param 6: Wait for the of subscription to be ready
+# @param 7: csv Operator channel
+
 function create_operator_subscription() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 3 "F:IN :create_operator_subscription"
 
   # export are important because they are used to replace the variable in the subscription.yaml (envsubst command)
   export MY_OPERATOR_NAME=$1
-  export MY_CATALOG_SOURCE_NAME=$2
-  export MY_OPERATOR_NAMESPACE=$3
+  export MY_OPERATOR_NAMESPACE=$2
+  export MY_OPERATOR_CHL=$3
   export MY_STRATEGY=$4
-  local lf_in_wait=$5
-  local lf_in_csv_name=$6
+  export MY_CATALOG_SOURCE_NAME=$5
+  local lf_in_wait=$6
+  local lf_in_csv_name=$7
 
   local lf_file lf_path lf_resource lf_state lf_type
   check_directory_exist ${MY_OPERATORSDIR}
@@ -931,6 +982,8 @@ function create_operator_subscription() {
     wait_for_state "$lf_type $lf_resource $lf_path is $lf_state" "$lf_state" "oc -n $MY_OPERATOR_NAMESPACE get $lf_type $lf_resource -o jsonpath='$lf_path'"
   fi
   mylog info "Creation of $MY_OPERATOR_NAME operator took $SECONDS seconds to execute." 1>&2
+  
+  unset MY_OPERATOR_CHL
 
   decho 3 "F:OUT:create_operator_subscription"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
@@ -938,6 +991,13 @@ function create_operator_subscription() {
 
 ################################################
 ##SB]20231204 create operand instance
+# @param 1:
+# @param 2:
+# @param 3:
+# @param 4:
+# @param 5:
+# @param 6:
+# @param 7: boolean to indicate if we are waiting for the operand to be running (defined by the combination of path and state, example respectively .status.phase and Ready)
 function create_operand_instance() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 3 "F:IN :create_operand_instance"
@@ -966,9 +1026,12 @@ function create_operand_instance() {
 ##SB]20231109 Generate properties and yaml/json files
 ## input parameter the operand custom dir (and generated dir both with config and scripts subdirectories)
 # TODO Decide if it only works with files in the directory, or with subdirectories. Today just one level no subdirectories.
+# @param 1:
+# @param 2:
+# @param 3:
 function generate_files() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :generate_files"
+  decho 3 "F:IN :generate_files"
   decho 5 "$1 $2 $3"
 
   local lf_in_customdir=$1
@@ -1021,14 +1084,21 @@ function generate_files() {
     done
   fi
   #set +a
-  decho 4 "F:OUT:generate_files"
+  decho 3 "F:OUT:generate_files"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
 #############################################################################################################################
+# Create a catalog source
+# @param 1: namespace
+# @param 2: name of the catalog
+# @param 3: 
+# @param 4:
+# @param 5:
+# @param 6:
 function create_catalogsource() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :create_catalogsource"
+  decho 3 "F:IN :create_catalogsource"
 
   export CATALOG_SOURCE_NAMESPACE=$1
   export CATALOG_SOURCE_NAME=$2
@@ -1058,16 +1128,19 @@ function create_catalogsource() {
     fi
   fi
 
-  decho 4 "F:OUT:create_catalogsource"
+  decho 3 "F:OUT:create_catalogsource"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
 #########################################################################################################
 ## adapt file into working dir
 ## called generate_files before
+# @param 1: Directory where the source file is located.
+# @param 2: Target directory where the file is created.
+# @param 3: name of the file (as source and for the target).
 function adapt_file() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 4 "F:IN :adapt_file"
+  decho 3 "F:IN :adapt_file"
 
   local lf_in_sourcedir=$1
   local lf_in_destdir=$2
@@ -1081,6 +1154,295 @@ function adapt_file() {
     envsubst < "${lf_in_sourcedir}${lf_in_filename}" > "${lf_in_destdir}${lf_in_filename}"
   fi
 
-  decho 4 "F:OUT:adapt_file"
+  decho 3 "F:OUT:adapt_file"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
+
+################################################
+# Create a certificate chain using the Cert manager
+# @param 1: 
+# @param 2: 
+# @param 3:
+# @param 4:
+# @param 5:
+# @param 6:
+# @param 7:
+function create_certificate_chain() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho 3 "F:IN :create_certificate_chain"
+  local lf_namespace="$1"
+  local lf_issuername="$2"
+  local lf_root_cert_name="$3"
+  local lf_tls_label1="$4"
+  local lf_tls_certname="$5"
+  
+  local lf_type lf_cr_name lf_yaml_file
+  
+  mylog info "Create a certificate chain in ${lf_in_namespace} namespace"
+
+  # For Self-signed issuer
+  export TLS_CA_ISSUER_NAME=${lf_namespace}-${lf_issuername}-ca
+  export TLS_NAMESPACE=${lf_namespace}
+
+  adapt_file ${MY_TLS_SCRIPTDIR}config/ ${MY_TLS_GEN_CUSTOMDIR}config/ Issuer_ca.yaml
+
+  # For Self-signed Certificate and Root Certificate
+  export TLS_ROOT_CERT_NAME=${lf_namespace}-${lf_root_cert_name}-ca
+  export TLS_LABEL1=${lf_tls_label1}
+  export TLS_CERT_ISSUER_NAME=${lf_namespace}-${lf_issuername}-tls
+
+  adapt_file ${MY_TLS_SCRIPTDIR}config/ ${MY_TLS_GEN_CUSTOMDIR}config/ CACertificate.yaml
+  adapt_file ${MY_TLS_SCRIPTDIR}config/ ${MY_TLS_GEN_CUSTOMDIR}config/ Issuer_non_ca.yaml
+
+  # For TLS Certificate
+  export TLS_CERT_NAME=${lf_namespace}-${lf_tls_certname}-tls
+  export TLS_INGRESS=$(oc get ingresses.config/cluster -o jsonpath='{.spec.domain}')
+
+  adapt_file ${MY_TLS_SCRIPTDIR}config/ ${MY_TLS_GEN_CUSTOMDIR}config/ TLSCertificate.yaml
+
+  # Create both Issuers and both Certificates
+  lf_cert_namespace=${lf_namespace}
+  lf_type="Issuer"
+  lf_cr_name=${lf_namespace}-${lf_issuername}-ca
+  lf_yaml_file="${MY_TLS_GEN_CUSTOMDIR}config/Issuer_ca.yaml"
+  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_cert_namespace}\""
+  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_cert_namespace}"
+
+  lf_cert_namespace=${lf_namespace}
+  lf_type="Certificate"
+  lf_cr_name=${lf_namespace}-${lf_issuer_cert_name}-ca
+  lf_yaml_file="${MY_TLS_GEN_CUSTOMDIR}config/CACertificate.yaml"
+  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_cert_namespace}\""
+  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_cert_namespace}"
+
+  lf_cert_namespace=${lf_namespace}
+  lf_type="Issuer"
+  lf_cr_name=${lf_namespace}-${lf_issuername}-tls
+  lf_yaml_file="${MY_TLS_GEN_CUSTOMDIR}config/Issuer_non_ca.yaml"
+  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_cert_namespace}\""
+  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_cert_namespace}"
+
+  lf_cert_namespace=${lf_namespace}
+  lf_type="Certificate"
+  lf_cr_name=${lf_namespace}-${lf_tls_certname}-tls
+  lf_yaml_file="${MY_TLS_GEN_CUSTOMDIR}config/TLSCertificate.yaml"
+  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_cert_namespace}\""
+  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_cert_namespace}"
+
+  decho 3 "F:OUT:create_certificate_chain"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
+# Create openshift cluster using classic infrastructure
+function create_openshift_cluster_classic() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho 3 "F:IN :create_openshift_cluster_classic"
+
+  SECONDS=0
+  var_fail sc_cluster_name "Choose a unique name for the cluster"
+  mylog check "Checking OpenShift: $sc_cluster_name"
+  if ibmcloud ks cluster get --cluster $sc_cluster_name >/dev/null 2>&1; then
+    mylog ok ", cluster exists"
+    mylog info "Checking Openshift cluster took: $SECONDS seconds." 1>&2
+  else
+    mylog warn ", cluster does not exist"
+    var_fail MY_OC_VERSION 'mylog warn "Choose one of:" 1>&2;ibmcloud ks versions -q --show-version OpenShift'
+    var_fail MY_CLUSTER_ZONE 'mylog warn "Choose one of:" 1>&2;ibmcloud ks zone ls -q --provider classic'
+    var_fail MY_CLUSTER_FLAVOR_CLASSIC 'mylog warn "Choose one of:" 1>&2;ibmcloud ks flavors -q --zone $MY_CLUSTER_ZONE'
+    var_fail MY_CLUSTER_WORKERS 'Speficy number of worker nodes in cluster'
+    mylog info "Getting current version for OC: $MY_OC_VERSION"
+    oc_version_full=$(check_openshift_version $MY_OC_VERSION)
+    decho 4 "oc_version_full=$oc_version_full"
+
+    if [ -z "$oc_version_full" ]; then
+      mylog error "Failed to find full version for ${MY_OC_VERSION}" 1>&2
+      #fix_oc_version
+      decho 3 "F:OUT:create_openshift_cluster_classic"
+      SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+      exit 1
+    fi
+    oc_version_full=$(echo "[$oc_version_full]" | jq -r '.[] | (.major|tostring) + "." + (.minor|tostring) + "." + (.patch|tostring) + "_openshift"')
+    mylog info "Found: ${oc_version_full}"
+    # create
+    mylog info "Creating OpenShift cluster: $sc_cluster_name"
+
+    SECONDS=0
+    vlans=$(ibmcloud ks vlan ls --zone $MY_CLUSTER_ZONE --output json | jq -j '.[]|" --" + .type + "-vlan " + .id')
+    if ! ibmcloud ks cluster create classic \
+      --name $sc_cluster_name \
+      --version $oc_version_full \
+      --zone $MY_CLUSTER_ZONE \
+      --flavor $MY_CLUSTER_FLAVOR_CLASSIC \
+      --workers $MY_CLUSTER_WORKERS \
+      --entitlement cloud_pak \
+      --disable-disk-encrypt \
+      $vlans; then
+      mylog error "Failed to create cluster" 1>&2
+      decho 3 "F:OUT:create_openshift_cluster_classic"
+      SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+      exit 1
+    fi
+    mylog info "Creation of the cluster took: $SECONDS seconds." 1>&2
+  fi
+
+  decho 3 "F:OUT:create_openshift_cluster_classic"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
+# Create openshift cluster using VPC infra
+# use terraform because creation is more complex than classic
+function create_openshift_cluster_vpc() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho 3 "F:IN :create_openshift_cluster_vpc"
+
+  # check vars from config file
+  var_fail MY_OC_VERSION 'mylog warn "Choose one of:" 1>&2;ibmcloud ks versions -q --show-version OpenShift'
+  var_fail MY_CLUSTER_ZONE 'mylog warn "Choose one of:" 1>&2;ibmcloud ks zone ls -q --provider vpc-gen2'
+  var_fail MY_CLUSTER_FLAVOR_VPC 'mylog warn "Choose one of:" 1>&2;ibmcloud ks flavors -q --zone $MY_CLUSTER_ZONE'
+  var_fail MY_CLUSTER_WORKERS 'Speficy number of worker nodes in cluster'
+  # set variables for terraform
+  export TF_VAR_ibmcloud_api_key="$MY_IC_APIKEY"
+  export TF_VAR_openshift_worker_pool_flavor="$MY_CLUSTER_FLAVOR_VPC"
+  export TF_VAR_prefix="$MY_OC_PROJECT"
+  export TF_VAR_region="$MY_CLUSTER_REGION"
+  export TF_VAR_openshift_version=$(ibmcloud ks versions -q --show-version OpenShift | sed -Ene "s/^(${MY_OC_VERSION//./\\.}\.[^ ]*) .*$/\1/p")
+  export TF_VAR_resource_group="rg-$MY_OC_PROJECT"
+  export TF_VAR_openshift_cluster_name="$sc_cluster_name"
+  pushd terraform
+  terraform init
+  terraform apply -var-file=var_override.tfvars
+  popd
+
+  decho 3 "F:OUT:create_openshift_cluster_vpc"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
+# TBC
+function create_openshift_cluster() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho 3 "F:IN :create_openshift_cluster"
+
+  var_fail MY_CLUSTER_INFRA 'mylog warn "Choose one of: classic or vpc" 1>&2'
+  case "${MY_CLUSTER_INFRA}" in
+  classic)
+    create_openshift_cluster_classic
+    sc_ingress_hostname_filter=.ingressHostname
+    sc_cluster_url_filter=.serverURL
+    ;;
+  vpc)
+    create_openshift_cluster_vpc
+    sc_ingress_hostname_filter=.ingress.hostname
+    sc_cluster_url_filter=.masterURL
+    ;;
+  *)
+    mylog error "Only classic and vpc for MY_CLUSTER_INFRA"
+    ;;
+  esac
+
+  decho 3 "F:OUT:create_openshift_cluster"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
+# wait for Cluster availability
+# set variable my_cluster_url
+function wait_for_cluster_availability() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho 3 "F:IN :wait_for_cluster_availability"
+
+  SECONDS=0
+  wait_for_state 'Cluster state' 'normal-All Workers Normal' "ibmcloud oc cluster get --cluster $sc_cluster_name --output json|jq -r '(.state + \"-\" + .status)'"
+  mylog info "Checking Cluster state took: $SECONDS seconds." 1>&2
+
+  SECONDS=0
+  mylog check "Checking Cluster URL"
+  my_cluster_url=$(ibmcloud ks cluster get --cluster $sc_cluster_name --output json | jq -r "$sc_cluster_url_filter")
+  case "$my_cluster_url" in
+  https://*)
+    mylog ok " -> $my_cluster_url"
+    mylog info "Checking Cluster availability took: $SECONDS seconds." 1>&2
+    ;;
+  *)
+    mylog error "Error getting cluster URL for $sc_cluster_name" 1>&2
+    decho 4  "F:OUT:wait_for_cluster_availability"
+    SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+    exit 1
+    ;;
+  esac
+
+  decho 3 "F:OUT:wait_for_cluster_availability"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
+# wait for ingress address availability
+function wait_4_ingress_address_availability() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho 3 "F:IN :wait_4_ingress_address_availability"
+
+  SECONDS=0
+  local lf_ingress_address
+
+  mylog check "Checking Ingress address"
+  firsttime=true
+  case $MY_CLUSTER_INFRA in
+  classic)
+    sc_ingress_hostname_filter=.ingressHostname
+    ;;
+  vpc)
+    sc_ingress_hostname_filter=.ingress.hostname
+    ;;
+  *)
+    mylog error "Only classic and vpc for MY_CLUSTER_INFRA"
+    ;;
+  esac
+
+  while true; do
+    lf_ingress_address=$(ibmcloud ks cluster get --cluster $sc_cluster_name --output json | jq -r "$sc_ingress_hostname_filter")
+    if test -n "$lf_ingress_address"; then
+      mylog ok ", $lf_ingress_address"
+      break
+    fi
+    if $firsttime; then
+      mylog warn "not ready"
+      firsttime=false
+    fi
+    mylog wait "waiting for ingress address"
+    # It takes about 15 minutes (21 Aug 2023)
+    sleep 90
+  done
+  mylog info "Checking Ingress availability took $SECONDS seconds to execute." 1>&2
+
+  decho 3 "F:OUT:wait_4_ingress_address_availability"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
+# SB]20231215
+# SB]20231130 patcher les foundational services en acceptant la license
+# https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.2?topic=SSGT7J_23.2/installer/3.x.x/install_cs_cli.htm
+# 3.Setting the hardware profile and accepting the license
+# License: Accept the license to use foundational services by adding spec.license.accept: true in the spec section.
+function accept_license_fs() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho 4 "F:IN :accept_license_fs"
+
+  local lf_in_namespace=$1
+
+  local accept
+  decho 5 "oc -n ${lf_in_namespace} get commonservice ${MY_COMMONSERVICES_INSTANCE_NAME} -o jsonpath='{.spec.license.accept}'"
+  accept=$(oc -n ${lf_in_namespace} get commonservice ${MY_COMMONSERVICES_INSTANCE_NAME} -o jsonpath='{.spec.license.accept}')
+  decho 5 "accept=$accept"
+  if [ "$accept" == "true" ]; then
+    mylog info "license already accepted." 1>&2
+  else
+    oc -n ${lf_in_namespace} patch commonservice ${MY_COMMONSERVICES_INSTANCE_NAME} --type merge -p '{"spec": {"license": {"accept": true}}}'
+  fi
+
+  decho 4 "F:OUT:accept_license_fs"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+

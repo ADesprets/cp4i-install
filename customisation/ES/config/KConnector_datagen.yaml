@@ -3,7 +3,7 @@ kind: KafkaConnector
 metadata:
   name: datagen
   labels:
-    eventstreams.ibm.com/cluster: datagen-host
+    eventstreams.ibm.com/cluster: ${MY_ES_KAFKA_CONNECT_INSTANCE_NAME}
 spec:
   class: com.ibm.eventautomation.demos.loosehangerjeans.DatagenSourceConnector
   tasksMax: 1
