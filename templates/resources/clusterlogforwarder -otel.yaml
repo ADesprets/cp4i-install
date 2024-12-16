@@ -1,0 +1,34 @@
+apiVersion: observability.openshift.io/v1
+kind: ClusterLogForwarder
+metadata:
+  name: $MY_LOGGING_COLLECTOR_SA
+  namespace: $MY_LOGGING_NAMESPACE
+  annotations:
+    observability.openshift.io/tech-preview-otlp-output: "enabled" 
+spec:
+  managementState: "Managed"
+  serviceAccount:
+    name: $MY_LOGGING_COLLECTOR_SA
+  outputs:
+  - name: loki-otlp
+    type: lokiStack
+    lokiStack:
+      authentication:
+        token:
+          from: serviceAccount
+      target:
+        name: $MY_LOKI_INSTANCE_NAME
+        namespace: $MY_LOGGING_NAMESPACE
+      dataModel: Otel 
+    tls:
+      ca:
+        key: service-ca.crt
+        configMapName: openshift-service-ca.crt
+  pipelines:
+  - name: my-pipeline
+    inputRefs:
+    - application
+    - audit
+    - infrastructure
+    outputRefs:
+    - loki-otlp

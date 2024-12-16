@@ -7,6 +7,7 @@ metadata:
   namespace: $MY_OC_PROJECT
 spec:
   analytics:
+    mtlsValidateClient: true
     storage:
       enabled: true
       type: shared
@@ -19,7 +20,9 @@ spec:
       aiEnabled: false
       autoTestEnabled: true
     governance:
-      enabled: true      
+      enabled: true 
+  portal:
+    mtlsValidateClient: true           
   license:
     accept: true
     license: $MY_APIC_LIC

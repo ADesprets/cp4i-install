@@ -4,15 +4,15 @@ metadata:
   name: $MY_LOKI_INSTANCE_NAME
   namespace: $MY_LOGGING_NAMESPACE
 spec:
-  size: 1x.small 
+  managementState: Managed
+  size: $MY_LOKI_PROFILE
   storage:
     schemas:
     - version: v13
-      effectiveDate: "2024-07-01"
+      effectiveDate: "2024-12-01"
     secret:
       name: $MY_LOKI_SECRET
       type: s3
-      credentialMode: 
   storageClassName: $MY_BLOCK_STORAGE_CLASS
   tenants:
     mode: $MY_LOGGING_NAMESPACE
