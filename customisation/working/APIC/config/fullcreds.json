@@ -1,23 +1,23 @@
 {
-    "cloud_id": "37f5c6cd-6730-41c8-91c5-f1e3de468c4d",
+    "cloud_id": "a7e6fe4d-b61c-4c78-8505-78b79e14d5da",
     "toolkit": {
-        "endpoint": "https://cp4i-apic-mgmt-platform-api-cp4i.apps.66d826bdf6599fbacff4515d.ocp.techzone.ibm.com/api",
-        "client_id": "30718ed7-27d7-43e1-97fd-87367fd6ca6a",
-        "client_secret": "104d21c0-8642-456f-8c08-e7c8d1e55313"
+        "endpoint": "https://cp4i-apic-mgmt-platform-api-cp4i.apps.673c8153d48a532cc36d5e7a.ocp.techzone.ibm.com/api",
+        "client_id": "da8c5b34-68b4-4817-8b45-9521756ea724",
+        "client_secret": "c73f2879-834e-434a-bba1-920e798ca19f"
     },
     "consumer_toolkit": {
-        "endpoint": "https://cp4i-apic-mgmt-consumer-api-cp4i.apps.66d826bdf6599fbacff4515d.ocp.techzone.ibm.com/consumer-api",
-        "client_id": "edb96e15-8419-4fda-82e4-8b4a34e92907",
-        "client_secret": "9310d8b8-e117-4268-8e77-05a9c59a55d2"
+        "endpoint": "https://cp4i-apic-mgmt-consumer-api-cp4i.apps.673c8153d48a532cc36d5e7a.ocp.techzone.ibm.com/consumer-api",
+        "client_id": "c40b40bf-b696-4c59-8e32-16bf0f10f3f4",
+        "client_secret": "1f77ebc6-6bf2-46c2-9936-eeaa339a8465"
     },
     "governance": {
-        "endpoint": "https://cp4i-apic-mgmt-platform-api-cp4i.apps.66d826bdf6599fbacff4515d.ocp.techzone.ibm.com/governance",
-        "client_id": "26e3286b-8cea-4a1c-acf4-d641940e63c1",
-        "client_secret": "0e9fd3eb-ab29-4368-a07b-55d617f36404"
+        "endpoint": "https://cp4i-apic-mgmt-platform-api-cp4i.apps.673c8153d48a532cc36d5e7a.ocp.techzone.ibm.com/governance",
+        "client_id": "49708a0b-fc8f-4082-b2d6-9c4cd80d01f7",
+        "client_secret": "79d68c77-a22e-42fa-bada-2c1dcb59af2f"
     },
     "discovery": {
-        "endpoint": "https://cp4i-apic-mgmt-platform-api-cp4i.apps.66d826bdf6599fbacff4515d.ocp.techzone.ibm.com/discovery",
-        "client_id": "8fd34595-b944-4059-9b1b-0cee00c74a6b",
-        "client_secret": "41a01a68-7686-4ab1-ae82-fe4aaa1008cb"
+        "endpoint": "https://cp4i-apic-mgmt-platform-api-cp4i.apps.673c8153d48a532cc36d5e7a.ocp.techzone.ibm.com/discovery",
+        "client_id": "08b98672-cd4e-45b0-8337-073a3e0a268b",
+        "client_secret": "747ad856-4f62-4931-b95e-43a2e7d14aa5"
     }
 }

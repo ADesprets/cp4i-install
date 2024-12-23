@@ -353,12 +353,8 @@ function read_config_file() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 5 "F:IN :read_config_file"
 
-  local lf_config_file
-  if test -n "$PC_CONFIG"; then
-    lf_config_file="$PC_CONFIG"
-  else
-    lf_config_file="$1"
-  fi
+  local lf_config_file=$1
+
   if test -z "$lf_config_file"; then
     mylog error "Usage: $0 <config file>" 1>&2
     mylog info "Example: $0 ${MAINSCRIPTDIR}cp4i.conf"
@@ -900,7 +896,7 @@ function check_add_cs_ibm_pak() {
     lf_case_version=$lf_in_case_version
   fi
 
-  export MY_CURRENT_CHL=$lf_case_version
+  #export MY_OPERATOR_CHL=$lf_case_version
 
   is_case_downloaded ${lf_in_case_name} ${lf_case_version} #1>&2 > /dev/null
   lf_downloaded=$?
@@ -931,23 +927,26 @@ function check_add_cs_ibm_pak() {
 
 ################################################
 ##SB]20231201 create operator subscription
-# @param 1: name of the operator
-# @param 2: naoe of the source catalog
-# @param 3: namespace where the subscription is created (openshift-operators or others)
+# @param 1: operator name 
+# @param 2: namespace where the subscription is created (openshift-operators or others)
+# @param 3: Operator channel
 # @param 4: Control of the upgrade in the subscription, automatic or manual
-# @param 5: Wait for the of subscription to be ready
-# @param 6: 
+# @param 5: name of the source catalog
+# @param 6: Wait for the of subscription to be ready
+# @param 7: csv Operator channel
+
 function create_operator_subscription() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 3 "F:IN :create_operator_subscription"
 
   # export are important because they are used to replace the variable in the subscription.yaml (envsubst command)
   export MY_OPERATOR_NAME=$1
-  export MY_CATALOG_SOURCE_NAME=$2
-  export MY_OPERATOR_NAMESPACE=$3
+  export MY_OPERATOR_NAMESPACE=$2
+  export MY_OPERATOR_CHL=$3
   export MY_STRATEGY=$4
-  local lf_in_wait=$5
-  local lf_in_csv_name=$6
+  export MY_CATALOG_SOURCE_NAME=$5
+  local lf_in_wait=$6
+  local lf_in_csv_name=$7
 
   local lf_file lf_path lf_resource lf_state lf_type
   check_directory_exist ${MY_OPERATORSDIR}
@@ -980,7 +979,7 @@ function create_operator_subscription() {
   fi
   mylog info "Creation of $MY_OPERATOR_NAME operator took $SECONDS seconds to execute." 1>&2
   
-  unset MY_CURRENT_CHL
+  unset MY_OPERATOR_CHL
 
   decho 3 "F:OUT:create_operator_subscription"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
@@ -1231,92 +1230,6 @@ function create_certificate_chain() {
 }
 
 ################################################
-# Create openshift cluster using classic infrastructure
-function create_openshift_cluster_classic() {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 3 "F:IN :create_openshift_cluster_classic"
-
-  SECONDS=0
-  var_fail sc_cluster_name "Choose a unique name for the cluster"
-  mylog check "Checking OpenShift: $sc_cluster_name"
-  if ibmcloud ks cluster get --cluster $sc_cluster_name >/dev/null 2>&1; then
-    mylog ok ", cluster exists"
-    mylog info "Checking Openshift cluster took: $SECONDS seconds." 1>&2
-  else
-    mylog warn ", cluster does not exist"
-    var_fail MY_OC_VERSION 'mylog warn "Choose one of:" 1>&2;ibmcloud ks versions -q --show-version OpenShift'
-    var_fail MY_CLUSTER_ZONE 'mylog warn "Choose one of:" 1>&2;ibmcloud ks zone ls -q --provider classic'
-    var_fail MY_CLUSTER_FLAVOR_CLASSIC 'mylog warn "Choose one of:" 1>&2;ibmcloud ks flavors -q --zone $MY_CLUSTER_ZONE'
-    var_fail MY_CLUSTER_WORKERS 'Speficy number of worker nodes in cluster'
-    mylog info "Getting current version for OC: $MY_OC_VERSION"
-    oc_version_full=$(check_openshift_version $MY_OC_VERSION)
-    decho 4 "oc_version_full=$oc_version_full"
-
-    if [ -z "$oc_version_full" ]; then
-      mylog error "Failed to find full version for ${MY_OC_VERSION}" 1>&2
-      #fix_oc_version
-      decho 3 "F:OUT:create_openshift_cluster_classic"
-      SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
-      exit 1
-    fi
-    oc_version_full=$(echo "[$oc_version_full]" | jq -r '.[] | (.major|tostring) + "." + (.minor|tostring) + "." + (.patch|tostring) + "_openshift"')
-    mylog info "Found: ${oc_version_full}"
-    # create
-    mylog info "Creating OpenShift cluster: $sc_cluster_name"
-
-    SECONDS=0
-    vlans=$(ibmcloud ks vlan ls --zone $MY_CLUSTER_ZONE --output json | jq -j '.[]|" --" + .type + "-vlan " + .id')
-    if ! ibmcloud ks cluster create classic \
-      --name $sc_cluster_name \
-      --version $oc_version_full \
-      --zone $MY_CLUSTER_ZONE \
-      --flavor $MY_CLUSTER_FLAVOR_CLASSIC \
-      --workers $MY_CLUSTER_WORKERS \
-      --entitlement cloud_pak \
-      --disable-disk-encrypt \
-      $vlans; then
-      mylog error "Failed to create cluster" 1>&2
-      decho 3 "F:OUT:create_openshift_cluster_classic"
-      SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
-      exit 1
-    fi
-    mylog info "Creation of the cluster took: $SECONDS seconds." 1>&2
-  fi
-
-  decho 3 "F:OUT:create_openshift_cluster_classic"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
-}
-
-################################################
-# Create openshift cluster using VPC infra
-# use terraform because creation is more complex than classic
-function create_openshift_cluster_vpc() {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 3 "F:IN :create_openshift_cluster_vpc"
-
-  # check vars from config file
-  var_fail MY_OC_VERSION 'mylog warn "Choose one of:" 1>&2;ibmcloud ks versions -q --show-version OpenShift'
-  var_fail MY_CLUSTER_ZONE 'mylog warn "Choose one of:" 1>&2;ibmcloud ks zone ls -q --provider vpc-gen2'
-  var_fail MY_CLUSTER_FLAVOR_VPC 'mylog warn "Choose one of:" 1>&2;ibmcloud ks flavors -q --zone $MY_CLUSTER_ZONE'
-  var_fail MY_CLUSTER_WORKERS 'Speficy number of worker nodes in cluster'
-  # set variables for terraform
-  export TF_VAR_ibmcloud_api_key="$MY_IC_APIKEY"
-  export TF_VAR_openshift_worker_pool_flavor="$MY_CLUSTER_FLAVOR_VPC"
-  export TF_VAR_prefix="$MY_OC_PROJECT"
-  export TF_VAR_region="$MY_CLUSTER_REGION"
-  export TF_VAR_openshift_version=$(ibmcloud ks versions -q --show-version OpenShift | sed -Ene "s/^(${MY_OC_VERSION//./\\.}\.[^ ]*) .*$/\1/p")
-  export TF_VAR_resource_group="rg-$MY_OC_PROJECT"
-  export TF_VAR_openshift_cluster_name="$sc_cluster_name"
-  pushd terraform
-  terraform init
-  terraform apply -var-file=var_override.tfvars
-  popd
-
-  decho 3 "F:OUT:create_openshift_cluster_vpc"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
-}
-
-################################################
 # TBC
 function create_openshift_cluster() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
@@ -1340,80 +1253,6 @@ function create_openshift_cluster() {
   esac
 
   decho 3 "F:OUT:create_openshift_cluster"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
-}
-
-################################################
-# wait for Cluster availability
-# set variable my_cluster_url
-function wait_for_cluster_availability() {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 3 "F:IN :wait_for_cluster_availability"
-
-  SECONDS=0
-  wait_for_state 'Cluster state' 'normal-All Workers Normal' "ibmcloud oc cluster get --cluster $sc_cluster_name --output json|jq -r '(.state + \"-\" + .status)'"
-  mylog info "Checking Cluster state took: $SECONDS seconds." 1>&2
-
-  SECONDS=0
-  mylog check "Checking Cluster URL"
-  my_cluster_url=$(ibmcloud ks cluster get --cluster $sc_cluster_name --output json | jq -r "$sc_cluster_url_filter")
-  case "$my_cluster_url" in
-  https://*)
-    mylog ok " -> $my_cluster_url"
-    mylog info "Checking Cluster availability took: $SECONDS seconds." 1>&2
-    ;;
-  *)
-    mylog error "Error getting cluster URL for $sc_cluster_name" 1>&2
-    decho 4  "F:OUT:wait_for_cluster_availability"
-    SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
-    exit 1
-    ;;
-  esac
-
-  decho 3 "F:OUT:wait_for_cluster_availability"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
-}
-
-################################################
-# wait for ingress address availability
-function wait_4_ingress_address_availability() {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 3 "F:IN :wait_4_ingress_address_availability"
-
-  SECONDS=0
-  local lf_ingress_address
-
-  mylog check "Checking Ingress address"
-  firsttime=true
-  case $MY_CLUSTER_INFRA in
-  classic)
-    sc_ingress_hostname_filter=.ingressHostname
-    ;;
-  vpc)
-    sc_ingress_hostname_filter=.ingress.hostname
-    ;;
-  *)
-    mylog error "Only classic and vpc for MY_CLUSTER_INFRA"
-    ;;
-  esac
-
-  while true; do
-    lf_ingress_address=$(ibmcloud ks cluster get --cluster $sc_cluster_name --output json | jq -r "$sc_ingress_hostname_filter")
-    if test -n "$lf_ingress_address"; then
-      mylog ok ", $lf_ingress_address"
-      break
-    fi
-    if $firsttime; then
-      mylog warn "not ready"
-      firsttime=false
-    fi
-    mylog wait "waiting for ingress address"
-    # It takes about 15 minutes (21 Aug 2023)
-    sleep 90
-  done
-  mylog info "Checking Ingress availability took $SECONDS seconds to execute." 1>&2
-
-  decho 3 "F:OUT:wait_4_ingress_address_availability"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 

@@ -4,7 +4,7 @@
     "name": "url_registry",
     "title": "url_registry",
     "summary": "Sample URL registry using the fake authentication service.",
-    "integration_url": "https://cp4i-apic-mgmt-platform-api-cp4i.apps.66d826bdf6599fbacff4515d.ocp.techzone.ibm.com/api/cloud/integrations/user-registry/64d318d4-e18e-42b7-b2a9-da83b21c7f56",
+    "integration_url": "https://cp4i-apic-mgmt-platform-api-cp4i.apps.673c8153d48a532cc36d5e7a.ocp.techzone.ibm.com/api/cloud/integrations/user-registry/872684a2-3a8d-4fed-bf99-f05d9a555770",
     "registry_type": "authurl",
     "user_managed": false,
     "user_registry_managed": false,
@@ -23,6 +23,6 @@
     },
     "configuration": {},
     "endpoint": {
-        "endpoint": "https://cp4i-apic-gw-gateway-cp4i.apps.66d826bdf6599fbacff4515d.ocp.techzone.ibm.com/Org1/prod/fakeauth/v1/basic-auth"
+        "endpoint": "https://cp4i-apic-gw-gateway-cp4i.apps.673c8153d48a532cc36d5e7a.ocp.techzone.ibm.com/Org1/prod/fakeauth/v1/basic-auth"
     }
 }

@@ -6,7 +6,7 @@ metadata:
   labels:
     backup.integration.ibm.com/component: subscription    
 spec:
-  channel: $MY_CURRENT_CHL
+  channel: $MY_OPERATOR_CHL
   installPlanApproval: $MY_STRATEGY
   name: $MY_OPERATOR_NAME
   source: $MY_CATALOG_SOURCE_NAME
