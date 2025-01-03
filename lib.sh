@@ -403,6 +403,30 @@ function check_exec_prereqs() {
     check_command_exist ldapsearch
   fi
 
+  # check resource exist
+  local lf_in_type=storageclass
+  local lf_in_name=$MY_BLOCK_STORAGE_CLASS
+
+  local res
+  
+  res=$(oc get $lf_in_type $lf_in_name --ignore-not-found=true -o jsonpath='{.metadata.name}')
+  if test -z $res; then
+    mylog error "Resource $lf_in_name of type $lf_in_type does not exist, exiting."
+    exit 1
+  fi
+  lf_in_name=$MY_FILE_STORAGE_CLASS
+  res=$(oc get $lf_in_type $lf_in_name --ignore-not-found=true -o jsonpath='{.metadata.name}')
+  if test -z $res; then
+    mylog error "Resource $lf_in_name of type $lf_in_type does not exist, exiting."
+    exit 1
+  fi
+  lf_in_name=$MY_FILE_LDAP_STORAGE_CLASS
+  res=$(oc get $lf_in_type $lf_in_name --ignore-not-found=true -o jsonpath='{.metadata.name}')
+  if test -z $res; then
+    mylog error "Resource $lf_in_name of type $lf_in_type does not exist, exiting."
+    exit 1
+  fi
+  
   decho 3 "F:OUT:check_exec_prereqs"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
@@ -493,7 +517,7 @@ function wait_for_state() {
 # @param 1: octype: kubernetes resource class, example: "subscription"
 # @param 2: name: name of the resource, example: "ibm-integration-platform-navigator"
 # @param 3: yaml: the file with the definition of the resource, example: "${subscriptionsdir}Navigator-Sub.yaml"
-# @param 4: ns: name space where the reousrce is created, example: $MY_OPERATORS_NAMESPACE
+# @param 4: ns: name space where the resource is created, example: $MY_OPERATORS_NAMESPACE
 function check_create_oc_yaml() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 3 "F:IN :check_create_oc_yaml"
@@ -653,15 +677,15 @@ function is_service_exposed() {
 
 #===========================================
 # Add entry in LDAP if it doesn't exist
-# @param 1:
-# @param 2:
-# @param 3:
-# @param 4:
+# @param 1: LDAP Server
+# @param 2: user DN
+# @param 3: user password
+# @param 4: Base entry
 # @param 5:
 # @param 6:
-function add_entry_if_not_exists() {
+function add_ldap_entry_if_not_exists() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 3 "F:IN :add_entry_if_not_exists"
+  decho 3 "F:IN :add_ldap_entry_if_not_exists"
 
   local lf_in_ldap_server="$1"
   local lf_in_admin_dn="$2"
@@ -684,7 +708,7 @@ function add_entry_if_not_exists() {
     fi
   fi
 
-  decho 3 "F:OUT:add_entry_if_not_exists"
+  decho 3 "F:OUT:add_ldap_entry_if_not_exists"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -712,7 +736,7 @@ function add_ldif_file () {
     if [[ -z "$lf_line" ]]; then
       # Empty line indicates end of an entry
       if [[ -n "$lf_entry_dn" && -n "$lf_entry_content" ]]; then
-        add_entry_if_not_exists "$lf_in_ldap_server" "$lf_in_admin_dn" "$lf_in_admin_password" "$lf_entry_dn" "$lf_entry_content" "$lf_tmp_ldif"
+        add_ldap_entry_if_not_exists "$lf_in_ldap_server" "$lf_in_admin_dn" "$lf_in_admin_password" "$lf_entry_dn" "$lf_entry_content" "$lf_tmp_ldif"
         lf_entry_dn=""
         lf_entry_content=""
       fi
@@ -727,7 +751,7 @@ function add_ldif_file () {
   
   # Process the last entry if the file doesn't end with a new line
   if [[ -n "$lf_entry_dn" && -n "$lf_entry_content" ]]; then
-    add_entry_if_not_exists "$lf_in_ldap_server" "$lf_in_admin_dn" "$lf_in_admin_password" "$lf_entry_dn" "$lf_entry_content" "$lf_tmp_ldif"
+    add_ldap_entry_if_not_exists "$lf_in_ldap_server" "$lf_in_admin_dn" "$lf_in_admin_password" "$lf_entry_dn" "$lf_entry_content" "$lf_tmp_ldif"
   fi
   
   # Clean up temporary file

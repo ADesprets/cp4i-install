@@ -1063,7 +1063,7 @@ function install_es() {
     # Creating EventStreams operator subscription
     local lf_operator_name="$MY_ES_CASE"
     local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-    local lf_operator_chl=$MY_APIC_CHL
+    local lf_operator_chl=$MY_ES_CHL
     local lf_strategy="Automatic"
     local lf_catalog_source_name="ibm-eventstreams"
     local lf_wait_for_state=true
@@ -1284,7 +1284,8 @@ function install_ep() {
     # 20241127 : Problem The EventProcessing "cp4i-ep" is invalid: spec.authoring.authConfig.authType: Unsupported value: "INTEGRATION_KEYCLOAK": supported values: "LOCAL", "OIDC"
     # so use LOCAL or OIDC
     if $MY_KEYCLOAK_INTEGRATION; then
-      export MY_EP_AUTH_TYPE=OIDC
+      export MY_EP_AUTH_TYPE=LOCAL
+      # export MY_EP_AUTH_TYPE=OIDC
     else
       export MY_EP_AUTH_TYPE=LOCAL
     fi
@@ -2070,7 +2071,6 @@ fi
 
 : <<'END_COMMENT'
 
-
 # https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.4?topic=operators-installing-by-using-cli
 # (Only if your preferred installation mode is a specific namespace on the cluster) Create an OperatorGroup
 # We decided to install in openshift-operators so no need to OperatorGroup !
@@ -2132,8 +2132,6 @@ install_fs
 
 install_wasliberty
 
-END_COMMENT
-
 install_navigator
 
 install_assetrepo
@@ -2175,6 +2173,8 @@ customise_wasliberty
 customise_ace
 
 customise_apic
+
+END_COMMENT
 
 customise_es
 

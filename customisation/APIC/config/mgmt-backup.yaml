@@ -1,0 +1,7 @@
+apiVersion: postgresql.k8s.enterprisedb.io/v1
+kind: Backup
+metadata:
+  generateName: mgmt-backup-apic- # prefix for the name of the backup CR that is generated.
+spec:
+  cluster:
+    name: cp4i-apic-mgmt-8157a588-db

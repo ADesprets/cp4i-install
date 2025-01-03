@@ -1,0 +1,55 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: sftp
+  namespace: int-sftp
+  annotations:
+    deployment.kubernetes.io/revision: '1'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      deployment: sftp
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        deployment: sftp
+      annotations:
+        openshift.io/generated-by: OpenShiftNewApp
+    spec:
+      volumes:
+        - name: users
+          configMap:
+            name: sftp-etc-sftp
+            defaultMode: 420
+      containers:
+        - resources: {}
+          terminationMessagePath: /dev/termination-log
+          name: sftp
+          securityContext:
+            capabilities:
+              add:
+                - SYS_CHROOT
+          ports:
+            - containerPort: 22
+              protocol: TCP
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: users
+              readOnly: true
+              mountPath: /etc/sftp
+          terminationMessagePolicy: File
+          image: 'atmoz/sftp@sha256:7603ed1a8b0927973a664ed16fcc37c20a34edca5750794ca314efb5009d3395'
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      securityContext: {}
+      schedulerName: default-scheduler
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
