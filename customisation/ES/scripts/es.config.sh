@@ -48,9 +48,9 @@ check_create_oc_yaml "KafkaUser" "${es_topic_name}" "${MY_ES_GEN_CUSTOMDIR}confi
 # TODO Wanted to separate things for best practice, but not done yet
 # https://github.com/IBM/kafka-connect-loosehangerjeans-source/tree/main
 # Creation of the namespace for the kafka producers to separate them from product namespace
-# create_namespace $ES_APPS_PROJECT
+# create_namespace $ES_APPS_PROJECT "$ES_APPS_PROJECT project" "For EventStream source instances"
 # Creation of the namespace for the event streams cluster destination in the MM2 demo
-# create_namespace $ES_DESTINATION
+# create_namespace $ES_DESTINATION "$ES_DESTINATION project" "For EventStream destination instances"
 
 # Create KafkaConnect and KafkaConnector in $ES_APPS_PROJECT project
 mylog info "Create Kafka Connect for datagen, and MQ connectors"

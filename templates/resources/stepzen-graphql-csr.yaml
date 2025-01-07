@@ -1,0 +1,38 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: stepzen-to-graph-server-selfsigned-cert
+  namespace: stepzen
+spec:
+  dnsNames:
+  - stepzen.zen.apps.${MY_CLUSTER_DOMAIN}
+  secretName: stepzen-to-graph-server-selfsigned-cert-secret
+  issuerRef:
+    name: ${MY_CLUSTER_ISSUER}
+    kind: Issuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: graphql-to-graph-server-selfsigned-cert
+  namespace: stepzen
+spec:
+  dnsNames:
+  - graphql.zen.apps.${MY_CLUSTER_DOMAIN}
+  secretName: graphql-to-graph-server-selfsigned-cert-secret
+  issuerRef:
+    name: ${MY_CLUSTER_ISSUER}
+    kind: Issuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: graphql-to-graph-server-subscriptions-selfsigned-cert
+  namespace: stepzen
+spec:
+  dnsNames:
+  - graphql.zen.apps.${MY_CLUSTER_DOMAIN}
+  secretName: graphql-to-graph-server-subscriptions-selfsigned-cert-secret
+  issuerRef:
+    name: ${MY_CLUSTER_ISSUER}
+    kind: Issuer

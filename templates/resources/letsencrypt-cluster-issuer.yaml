@@ -1,0 +1,15 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  annotations:
+  name: ${MY_CLUSTER_ISSUER}
+spec:
+  acme:
+    email: ${MY_USER_EMAIL}
+    preferredChain: ""
+    privateKeySecretRef:
+      name: ${MY_CLUSTER_ISSUER}
+    server: https://acme-v02.api.letsencrypt.org/directory
+    solvers:
+      - http01:
+          ingress: {}

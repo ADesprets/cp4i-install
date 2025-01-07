@@ -1,0 +1,132 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: introspection-nodeport
+spec:
+  ports:
+  - name: introspection-port
+    port: 80
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: introspection
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: introspection
+    name: introspection
+  name: introspection
+spec:
+  minReadySeconds: 1
+  replicas: 1
+  selector:
+    matchLabels:
+      app: introspection
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  template:
+    metadata:
+      labels:
+        app: introspection
+        name: introspection
+    spec:
+      containers:
+      - args:
+        - --disable-telemetry
+        env:
+        - name: JAVA_TOOL_OPTIONS
+          value: ""
+        - name: JAVA_OPTS
+          value: -XX:+UseParallelGC -XX:MaxRAMPercentage=25.0 -XX:MinRAMPercentage=50.0
+            -XX:InitialRAMPercentage=25.0 -XX:+UseContainerSupport
+        image: cp.icr.io/cp/stepzen/introspection@sha256:6112f7eafa48f0202ba400cc0e5697b47add2623500a02b4624c47d2d50723c9
+        livenessProbe:
+          failureThreshold: 4
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 3
+          periodSeconds: 10
+          timeoutSeconds: 1
+        name: introspection
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 2
+          httpGet:
+            path: /readyz
+            port: 8080
+          initialDelaySeconds: 3
+          periodSeconds: 5
+          timeoutSeconds: 1
+        resources:
+          limits:
+            cpu: "1.6"
+            memory: 5Gi
+          requests:
+            cpu: "1.6"
+            memory: 5Gi
+        securityContext:
+          runAsNonRoot: true
+        startupProbe:
+          failureThreshold: 10
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 3
+          periodSeconds: 10
+          timeoutSeconds: 1
+      imagePullSecrets:
+      - name: jfrog-artifactory
+      - name: gcr-io-json-key
+      volumes:
+      - configMap:
+          name: introspection
+        name: config-volume
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: introspection
+spec:
+  maxReplicas: 5
+  minReplicas: 1
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: introspection
+  targetCPUUtilizationPercentage: 80
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  annotation:
+    haproxy.router.openshift.io/hsts_header: max-age=31536000;preload
+    haproxy.router.openshift.io/pod-concurrent-connections: 500
+    haproxy.router.openshift.io/timeout: 5m
+    haproxy.router.openshift.io/timeout-tunnel: 5d
+  annotations:
+    cert-manager.io/issuer-kind: ClusterIssuer
+    cert-manager.io/issuer-name: ${MY_CLUSTER_ISSUER}
+  labels:
+    route: stepzen-service
+  name: introspection
+spec:
+  host: stepzen-introspection.apps.${MY_CLUSTER_DOMAIN}
+  port:
+    targetPort: introspection-port
+  tls:
+    insecureEdgeTerminationPolicy: None
+    termination: edge
+  to:
+    kind: Service
+    name: introspection-nodeport
+    weight: 100
+  wildcardPolicy: None
