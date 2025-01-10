@@ -107,6 +107,14 @@ function cmp_versions() {
   local lf_in_version2=$2
   decho 3 "lf_in_version1=$lf_in_version1|lf_in_version2=$lf_in_version2"
 
+  # Just try to compare the versions using string comparison if they are equal
+  if [ "$lf_in_version1" == "$lf_in_version2" ]; then
+    #echo "$lf_in_version1 is equal to $lf_in_version2"
+    decho 3 "F:OUT:cmp_versions"
+    SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+    return 0
+  fi
+
   IFS='.' read -ra v1_components <<<"$lf_in_version1"
   IFS='.' read -ra v2_components <<<"$lf_in_version2"
 
@@ -163,6 +171,31 @@ function save_certificate() {
 }
 
 ################################################
+# Delete pem certificate
+# @param 1: namespace where the secret exist
+# @param 2: name of the secret
+# @param 3: Data in the secret that contains the certificate
+# @param 4: Directory where to save the certificate
+function delete_certificate() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho 3 "F:IN :delete_certificate"
+
+  local lf_in_ns=$1
+  local lf_in_secret_name=$2
+  local lf_in_data_name=$3
+  local lf_in_destination_path=$4
+
+  local lf_data_normalised=$(sed 's/\./\\./g' <<< ${lf_in_data_name})
+
+  mylog info "Delete certificate ${lf_in_secret_name} from ${lf_in_destination_path}${lf_in_secret_name}.${lf_in_data_name}.pem"
+  rm "${lf_in_destination_path}${lf_in_secret_name}.${lf_in_data_name}.pem"
+
+  decho 3 "F:OUT:delete_certificate"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+
+}
+
+################################################
 # Check that the CASE is already downloaded
 # example pour filtrer avec conditions :
 # avec jsonpath=$.[?(@.name=='ibm-licensing' && @.version=='4.2.1')]
@@ -178,7 +211,7 @@ function is_case_downloaded() {
   decho 3 "lf_in_case=$lf_in_case|lf_in_version=$lf_in_version"
 
   local lf_result lf_latestversion lf_cmp lf_res
-  local lf_directory="${MY_IBMPAKDIR}${lf_in_case}/${lf_in_version}"
+  local lf_directory="${MY_IBMPAK_CASESDIR}${lf_in_case}/${lf_in_version}"
 
   if [ ! -d "${lf_directory}" ]; then
     lf_res=0
@@ -375,6 +408,7 @@ function read_config_file() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
+
 ################################################
 # Check that all required executables are installed
 # No parameters.
@@ -391,15 +425,46 @@ function check_exec_prereqs() {
   check_command_exist keytool
   check_command_exist oc
   check_command_exist openssl
+
   if $MY_MQ_CUSTOM; then
     check_command_exist runmqakm
   fi
 
   if $MY_LDAP; then
     check_command_exist ldapsearch
+    check_resource_exist storageclass $MY_FILE_LDAP_STORAGE_CLASS
   fi
 
+  if $MY_APIC_GRAPHQL; then
+    check_command_exist helm
+  fi
+  
   decho 3 "F:OUT:check_exec_prereqs"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
+# Check that the resource exists
+# @param the resource to be chcked
+# @param 1: resource type
+# @param 2: resource name
+function check_resource_exist() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho 3 "F:IN :check_resource_exist"
+
+  local lf_in_type=$1
+  local lf_in_name=$2
+
+  # check resource exist
+  local res
+  
+  res=$(oc get $lf_in_type $lf_in_name --ignore-not-found=true -o jsonpath='{.metadata.name}')
+  if test -z $res; then
+    mylog error "Resource $lf_in_name of type $lf_in_type does not exist, exiting."
+    return 1
+  fi
+
+  decho 3 "F:OUT:check_resource_exist"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -484,12 +549,152 @@ function wait_for_state() {
 }
 
 ################################################
+# Log in IBM Cloud
+function login_2_ibm_cloud() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho 4 "F:IN :login_2_ibm_cloud"
+
+  if ! ${TECHZONE}; then
+    SECONDS=0
+
+    if ibmcloud resource groups -q >/dev/null 2>&1; then
+      mylog info "user already logged to IBM Cloud."
+    else
+      mylog info "user not logged to IBM Cloud." 1>&2
+      var_fail MY_IC_APIKEY "Create and save API key JSON file from: https://cloud.ibm.com/iam/apikeys"
+      mylog check "Login to IBM Cloud"
+      if ! ibmcloud login -q --no-region --apikey $MY_IC_APIKEY >/dev/null; then
+        mylog error "Fail to login to IBM Cloud, check API key: $MY_IC_APIKEY" 1>&2
+        decho 4 "F:OUT:login_2_ibm_cloud"
+        SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+        exit 1
+      else
+        mylog ok
+        mylog info "Connecting to IBM Cloud took: $SECONDS seconds." 1>&2
+      fi
+    fi
+  fi
+
+  decho 4 "F:OUT:login_2_ibm_cloud"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+######################################################################
+# Create openshift cluster if it does not exist
+# and wait for both availability of the cluster and the ingress address
+function create_openshift_cluster_wait_4_availability() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho 3 "F:IN :create_openshift_cluster_wait_4_availability"
+
+  if ! ${TECHZONE}; then
+    # Create openshift cluster
+    create_openshift_cluster
+
+    # Wait for Cluster availability
+    wait_for_cluster_availability
+
+    # Wait for ingress address availability
+    wait_4_ingress_address_availability
+  fi
+
+  decho 3 "F:OUT:create_openshift_cluster_wait_4_availability"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
+# Login to openshift cluster
+# note that this login requires that you login to the cluster once (using sso or web): not sure why
+# requires var my_cluster_url
+function login_2_openshift_cluster() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho 4 "F:IN :login_2_openshift_cluster"
+
+  SECONDS=0
+
+  if oc whoami >/dev/null 2>&1; then
+    mylog info "user already logged to openshift cluster."
+  else
+    if $TECHZONE; then
+      oc login -u ${MY_TECHZONE_USERNAME} -p ${MY_TECHZONE_PASSWORD} ${MY_TECHZONE_OPENSHIFT_API_URL}
+    else
+      mylog check "Login to cluster"
+      # SB 20231208 The following command sets your command line context for the cluster and download the TLS certificates and permission files for the administrator.
+      # more details here : https://cloud.ibm.com/docs/openshift?topic=openshift-access_cluster#access_public_se
+      ibmcloud ks cluster config --cluster ${sc_cluster_name} --admin
+      while ! oc login -u apikey -p $MY_IC_APIKEY --server=$my_cluster_url >/dev/null; do
+        mylog error "$(date) Fail to login to Cluster, retry in a while (login using web to unblock)" 1>&2
+        sleep 30
+      done
+      mylog ok
+      mylog info "Logging to Cluster took: $SECONDS seconds." 1>&2
+    fi
+  fi
+
+  decho 4 "F:OUT:login_2_openshift_cluster"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
+# add ibm entitlement key to namespace
+# @param ns namespace where secret is created
+function add_ibm_entitlement() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho 3 "F:IN :add_ibm_entitlement"
+
+  local lf_in_ns=$1
+
+  mylog check "Checking ibm-entitlement-key in $lf_in_ns"
+  if oc -n $lf_in_ns get secret ibm-entitlement-key >/dev/null 2>&1; then
+    mylog ok
+  else
+    var_fail MY_ENTITLEMENT_KEY "Missing entitlement key"
+    mylog info "Checking ibm-entitlement-key validity"
+    $MY_CONTAINER_ENGINE -h >/dev/null 2>&1
+    if test $? -eq 0 && ! echo $MY_ENTITLEMENT_KEY | $MY_CONTAINER_ENGINE login cp.icr.io --username cp --password-stdin; then
+      mylog error "Invalid entitlement key" 1>&2
+      decho 3 "F:OUT:add_ibm_entitlement"
+      SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+      exit 1
+    fi
+    mylog info "Adding ibm-entitlement-key to $lf_in_ns"
+    if ! oc -n $lf_in_ns create secret docker-registry ibm-entitlement-key --docker-username=cp --docker-password=$MY_ENTITLEMENT_KEY --docker-server=cp.icr.io; then
+      decho 3 "F:OUT:add_ibm_entitlement"
+      SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+      exit 1
+    fi
+  fi
+
+  decho 3 "F:OUT:add_ibm_entitlement"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
+# delete ibm entitlement key from namespace
+# @param ns namespace where secret will be deleted
+function delete_ibm_entitlement() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho 3 "F:IN :delete_ibm_entitlement"
+
+  local lf_in_ns=$1
+
+  mylog check "Checking ibm-entitlement-key in $lf_in_ns"
+  if oc -n $lf_in_ns get secret ibm-entitlement-key >/dev/null 2>&1; then
+    oc -n $lf_in_ns delete secret ibm-entitlement-key 
+  else
+    mylog info "ibm-entitlement-key already deleted from namespace $lf_in_ns"
+  fi
+
+  decho 3 "F:OUT:delete_ibm_entitlement"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
 # Check if the resource of type octype with name name exists in the namespace ns.
 # If it does not exist use the yaml file, with the appropriate variable.
 # @param 1: octype: kubernetes resource class, example: "subscription"
 # @param 2: name: name of the resource, example: "ibm-integration-platform-navigator"
 # @param 3: yaml: the file with the definition of the resource, example: "${subscriptionsdir}Navigator-Sub.yaml"
-# @param 4: ns: name space where the reousrce is created, example: $MY_OPERATORS_NAMESPACE
+# @param 4: ns: name space where the resource is created, example: $MY_OPERATORS_NAMESPACE
 function check_create_oc_yaml() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 3 "F:IN :check_create_oc_yaml"
@@ -498,9 +703,6 @@ function check_create_oc_yaml() {
   local lf_in_cr_name="$2"
   local lf_in_yaml_file="$3"
   local lf_in_ns="$4"
-
-  export MY_OPERATORGROUP="$2"
-  export MY_NAMESPACE="$4"
 
   local lf_newer
 
@@ -521,6 +723,36 @@ function check_create_oc_yaml() {
   fi
 
   decho 3 "F:OUT:check_create_oc_yaml"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
+# Check if the resource of type octype with name name exists in the namespace ns.
+# If it exist then delete it using the yaml file, with the appropriate variable.
+# @param 1: octype: kubernetes resource class, example: "subscription"
+# @param 2: name: name of the resource, example: "ibm-integration-platform-navigator"
+# @param 3: yaml: the file with the definition of the resource, example: "${subscriptionsdir}Navigator-Sub.yaml"
+# @param 4: ns: name space where the resource is created, example: $MY_OPERATORS_NAMESPACE
+function check_delete_oc_yaml() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho 3 "F:IN :check_delete_oc_yaml"
+
+  local lf_in_octype="$1"
+  local lf_in_cr_name="$2"
+  local lf_in_yaml_file="$3"
+  local lf_in_ns="$4"
+
+  check_file_exist $lf_in_yaml_file
+  mylog check "Checking ${lf_in_octype} ${lf_in_cr_name} in ${lf_in_ns} project"
+  decho 3 "oc -n ${lf_in_ns} get ${lf_in_octype} ${lf_in_cr_name}"
+
+  if oc -n ${lf_in_ns} get ${lf_in_octype} ${lf_in_cr_name} >/dev/null 2>&1; then
+    envsubst <"${lf_in_yaml_file}" | oc -n ${lf_in_ns} delete -f - #|| exit 1
+  else
+    mylog info "${lf_in_cr_name}/${lf_in_octype} in ${lf_in_ns} project already deleted"
+  fi
+
+  decho 3 "F:OUT:check_delete_oc_yaml"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -549,6 +781,28 @@ function provision_persistence_openldap() {
 }
 
 ################################################
+# 
+# @param 1: namespace
+function unprovision_persistence_openldap() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho 3 "F:IN :unprovision_persistence_openldap"
+
+  local lf_in_namespace="$1"
+  mylog check "Deleting persistent volume claim for LDAP in ${lf_in_namespace}"
+  if oc -n ${lf_in_namespace} get "PersistentVolumeClaim" "pvc-ldap-main" >/dev/null 2>&1; then
+    envsubst <"${MY_YAMLDIR}ldap/ldap-pvc.main.yaml" >"${MY_WORKINGDIR}ldap-pvc.main.yaml"
+    envsubst <"${MY_YAMLDIR}ldap/ldap-pvc.config.yaml" >"${MY_WORKINGDIR}ldap-pvc.config.yaml"
+    oc -n ${lf_in_namespace} delete -f ${MY_WORKINGDIR}ldap-pvc.main.yaml
+    oc -n ${lf_in_namespace} delete -f ${MY_WORKINGDIR}ldap-pvc.config.yaml
+  else
+    mylog info "pvc-ldap-main already deleted"
+  fi
+
+  decho 3 "F:OUT:unprovision_persistence_openldap"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
 # @param octype: kubernetes resource class, example: "deployment"
 # @param ocname: name of the resource, example: "openldap"
 # See https://github.com/osixia/docker-openldap for more details especialy all the configurations possible
@@ -559,7 +813,7 @@ function deploy_openldap() {
   local lf_in_octype="$1"
   local lf_in_name="$2"
   local lf_in_namespace="$3"
-  # check if deploment already performed
+  # check if deployment already performed
   mylog check "Checking ${lf_in_octype} ${lf_in_name} in ${lf_in_namespace}"
   if oc -n ${lf_in_namespace} get ${lf_in_octype} ${lf_in_name} >/dev/null 2>&1; then
     mylog ok
@@ -585,6 +839,45 @@ function deploy_openldap() {
   fi
 
   decho 3 "F:OUT:deploy_openldap"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
+# @param octype: kubernetes resource class, example: "deployment"
+# @param ocname: name of the resource, example: "openldap"
+function undeploy_openldap() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho 3 "F:IN :undeploy_openldap"
+
+  local lf_in_octype="$1"
+  local lf_in_name="$2"
+  local lf_in_namespace="$3"
+  # check if deployment already performed
+  mylog check "Checking ${lf_in_octype} ${lf_in_name} in ${lf_in_namespace}"
+  if oc -n ${lf_in_namespace} delete ${lf_in_octype} ${lf_in_name} >/dev/null 2>&1; then
+    mylog info "${lf_in_name}/${lf_in_octype} deleted from ${lf_in_namespace}"
+  else
+    mylog check "Checking service ${lf_in_name} in ${lf_in_namespace}"
+    if oc -n ${lf_in_namespace} delete service ${lf_in_name} >/dev/null 2>&1; then
+      mylog info "service ${lf_in_name} deleted from ${lf_in_namespace}"
+    else
+      mylog info "Deleting LDAP server"
+      oc adm policy remove-scc-from-group anyuid system:serviceaccounts:${lf_in_namespace}
+
+      # deploy openldap and take in account the PVCs just created
+      # check that deployment of openldap was not done
+      # https://www.ibm.com/docs/en/sva/10.0.6?topic=support-docker-image-openldap
+      #echo $MY_ENTITLEMENT_KEY | docker login icr.io --username isva --password-stdin
+      #oc -n ${lf_in_namespace} new-app ibmcom/verify-access-openldap:latest
+      #oc -n ${lf_in_namespace} new-app isva/verify-access-openldap
+      oc -n ${lf_in_namespace} delete deployment.apps/openldap
+      mylog info "LDAP server already deleted"
+    fi
+  fi
+
+  oc -n ${lf_in_namespace} delete all --selector app=${lf_in_name}
+
+  decho 3 "F:OUT:undeploy_openldap"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -620,6 +913,35 @@ function deploy_mailhog() {
 }
 
 ################################################
+# @param 1: octype: kubernetes resource class, example: "deployment"
+# @param 2: ocname: name of the resource, example: "mailhog"
+# @param 3:
+function undeploy_mailhog() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho 3 "F:IN :undeploy_mailhog"
+
+  local lf_in_octype="$1"
+  local lf_in_name="$2"
+  local lf_in_namespace="$3"
+
+  # check if deploment already performed
+  mylog check "Deleting ${lf_in_octype} ${lf_in_name} in ${lf_in_namespace}"
+  if oc -n ${lf_in_namespace} delete ${lf_in_octype} ${lf_in_name} >/dev/null 2>&1; then
+    mylog info "${lf_in_name}/${lf_in_octype} deleted from ${lf_in_namespace}"
+  else
+    mylog check "Deleting service ${lf_in_name} from ${lf_in_namespace}"
+    if oc -n ${lf_in_namespace} delete service ${lf_in_name} >/dev/null 2>&1; then
+      mylog info "service ${lf_in_name} deleted from ${lf_in_namespace}"
+    else
+      mylog info "mailhog server already deleted"
+    fi
+  fi
+  oc -n ${lf_in_namespace} delete all --selector app=${lf_in_name}
+  decho 3 "F:OUT:undeploy_mailhog"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
 # Check if the service is already exposed
 # @param 1:
 # @param 2:
@@ -649,15 +971,15 @@ function is_service_exposed() {
 
 #===========================================
 # Add entry in LDAP if it doesn't exist
-# @param 1:
-# @param 2:
-# @param 3:
-# @param 4:
+# @param 1: LDAP Server
+# @param 2: user DN
+# @param 3: user password
+# @param 4: Base entry
 # @param 5:
 # @param 6:
-function add_entry_if_not_exists() {
+function add_ldap_entry_if_not_exists() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 3 "F:IN :add_entry_if_not_exists"
+  decho 3 "F:IN :add_ldap_entry_if_not_exists"
 
   local lf_in_ldap_server="$1"
   local lf_in_admin_dn="$2"
@@ -680,7 +1002,7 @@ function add_entry_if_not_exists() {
     fi
   fi
 
-  decho 3 "F:OUT:add_entry_if_not_exists"
+  decho 3 "F:OUT:add_ldap_entry_if_not_exists"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -708,7 +1030,7 @@ function add_ldif_file () {
     if [[ -z "$lf_line" ]]; then
       # Empty line indicates end of an entry
       if [[ -n "$lf_entry_dn" && -n "$lf_entry_content" ]]; then
-        add_entry_if_not_exists "$lf_in_ldap_server" "$lf_in_admin_dn" "$lf_in_admin_password" "$lf_entry_dn" "$lf_entry_content" "$lf_tmp_ldif"
+        add_ldap_entry_if_not_exists "$lf_in_ldap_server" "$lf_in_admin_dn" "$lf_in_admin_password" "$lf_entry_dn" "$lf_entry_content" "$lf_tmp_ldif"
         lf_entry_dn=""
         lf_entry_content=""
       fi
@@ -723,7 +1045,7 @@ function add_ldif_file () {
   
   # Process the last entry if the file doesn't end with a new line
   if [[ -n "$lf_entry_dn" && -n "$lf_entry_content" ]]; then
-    add_entry_if_not_exists "$lf_in_ldap_server" "$lf_in_admin_dn" "$lf_in_admin_password" "$lf_entry_dn" "$lf_entry_content" "$lf_tmp_ldif"
+    add_ldap_entry_if_not_exists "$lf_in_ldap_server" "$lf_in_admin_dn" "$lf_in_admin_password" "$lf_entry_dn" "$lf_entry_content" "$lf_tmp_ldif"
   fi
   
   # Clean up temporary file
@@ -795,6 +1117,7 @@ function expose_service_openldap() {
   decho 3 "F:OUT:expose_service_openldap"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
+
 ################################################
 # @param 1: name: name of the resource, example: "mailhog"
 # @param 2: namespace: the namespace to use
@@ -822,18 +1145,48 @@ function expose_service_mailhog() {
 }
 
 ################################################
+# @param 1: name: name of the resource, example: "mailhog"
+# @param 2: namespace: the namespace to use
+function unexpose_service_mailhog() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho 3 "F:IN :unexpose_service_mailhog"
+
+  local lf_in_name="$1"
+  local lf_in_namespace="$2"
+  local lf_port="$3"
+
+  # unexpose service 
+  # Check if the service is already exposed
+  if oc -n ${lf_in_namespace} get route ${lf_in_name} >/dev/null 2>&1; then
+    mylog info "Unexposing service ${lf_in_name}."
+    oc -n ${lf_in_namespace} delete route ${lf_in_name}
+  else
+    mylog info "Service ${lf_in_name} is not exposed."
+  fi
+
+  decho 3 "F:OUT:expose_service_mailhog"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
 # Create namespace
 # @param 1: ns namespace to be created
+# @param 2: display name of the project
+# @param 3: description of the project
 function create_namespace() {
+  local lf_in_name="$1"
+  local lf_in_display_name="$2"
+  local lf_in_description="$3"
+  
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 3 "F:IN :create_namespace"
 
-  sc_in_ns=$1
-  var_fail sc_in_ns "Please define project name in config"
-  mylog check "Checking project $sc_in_ns"
-  if oc get project $sc_in_ns >/dev/null 2>&1; then mylog ok; else
-    mylog info "Creating project $sc_in_ns"
-    if ! oc new-project $sc_in_ns; then
+  lf_in_name=$1
+  var_fail lf_in_name "Please define project name in config"
+  mylog check "Checking project $lf_in_name"
+  if oc get project $lf_in_name >/dev/null 2>&1; then mylog ok; else
+    mylog info "Creating project $lf_in_name"
+    if ! oc new-project $lf_in_name --display-name="$lf_in_display_name" --description="$lf_in_description"; then
       decho 3 "F:OUT:create_namespace"
       SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
       exit 1
@@ -841,6 +1194,24 @@ function create_namespace() {
   fi
 
   decho 3 "F:OUT:create_namespace"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
+# Delete namespace
+# @param 1: ns namespace to be deleted
+function delete_namespace() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho 3 "F:IN :delete_namespace"
+
+  local lf_in_ns=$1
+  var_fail lf_in_ns "Please define project name in config"
+  mylog check "Checking project $lf_in_ns"
+  if oc get project $lf_in_ns >/dev/null 2>&1; then oc delete project $lf_in_ns; else
+    mylog info "project $lf_in_ns already deleted"
+  fi
+
+  decho 3 "F:OUT:delete_namespace"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -891,7 +1262,7 @@ function check_add_cs_ibm_pak() {
 
   #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
   if [ -z "$lf_in_case_version" ]; then
-    local lf_case_version=$(oc ibm-pak list -o json | jq -r --arg case "$lf_in_case_name" '.[] | select (.name == $case ) | .latestVersion')
+    lf_case_version=$(oc ibm-pak list -o json | jq -r --arg case "$lf_in_case_name" '.[] | select (.name == $case ) | .latestVersion')
   else
     lf_case_version=$lf_in_case_version
   fi
@@ -909,12 +1280,12 @@ function check_add_cs_ibm_pak() {
     oc ibm-pak generate mirror-manifests ${lf_in_case_name} icr.io --version ${lf_case_version}
   fi
 
-  lf_file=~/.ibm-pak/data/mirror/${lf_in_case_name}/${lf_case_version}/catalog-sources.yaml
+  lf_file=${MY_IBMPAK_MIRRORDIR}${lf_in_case_name}/${lf_case_version}/catalog-sources.yaml
   if [ -e "$lf_file" ]; then
     oc apply -f $lf_file
   fi
 
-  lf_file=~/.ibm-pak/data/mirror/${lf_in_case_name}/${lf_case_version}/catalog-sources-linux-${lf_in_arch}.yaml
+  lf_file=${MY_IBMPAK_MIRRORDIR}${lf_in_case_name}/${lf_case_version}/catalog-sources-linux-${lf_in_arch}.yaml
   if [ -e "$lf_file" ]; then
     oc apply -f $lf_file
   fi
@@ -922,6 +1293,46 @@ function check_add_cs_ibm_pak() {
   mylog info "Adding case $lf_in_case_name took $SECONDS seconds to execute." 1>&2
 
   decho 3 "F:OUT:check_add_cs_ibm_pak"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
+##SB]20230201 use ibm-pak oc plugin
+# https://ibm.github.io/cloud-pak/
+# @param 1:
+# @param 2:
+# @param 3: This is the version of the channel. It is an optional parameter, if ommited it is retrieved, else used values from invocation
+function check_delete_cs_ibm_pak() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho 3 "F:IN :check_delete_cs_ibm_pak"
+  SECONDS=0
+
+  local lf_in_case_name="$1"
+  local lf_in_arch="$2"
+  local lf_in_case_version="$3"
+
+  local lf_case_version lf_file lf_downloaded
+
+  #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
+  if [ -z "$lf_in_case_version" ]; then
+    local lf_case_version=$(oc ibm-pak list -o json | jq -r --arg case "$lf_in_case_name" '.[] | select (.name == $case ) | .latestVersion')
+  else
+    lf_case_version=$lf_in_case_version
+  fi
+
+  lf_file=${MY_IBMPAK_MIRRORDIR}${lf_in_case_name}/${lf_case_version}/catalog-sources.yaml
+  if [ -e "$lf_file" ]; then
+    oc delete -f $lf_file
+  fi
+
+  lf_file=${MY_IBMPAK_MIRRORDIR}${lf_in_case_name}/${lf_case_version}/catalog-sources-linux-${lf_in_arch}.yaml
+  if [ -e "$lf_file" ]; then
+    oc delete -f $lf_file
+  fi
+
+  mylog info "Deleting case $lf_in_case_name took $SECONDS seconds to execute." 1>&2
+
+  decho 3 "F:OUT:check_delete_cs_ibm_pak"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -953,11 +1364,13 @@ function create_operator_subscription() {
 
   SECONDS=0
 
-  lf_file="${MY_OPERATORSDIR}subscription.yaml"
+  local lf_type="Subscription"
+  local lf_cr_name="${MY_OPERATOR_NAME}"
+  local lf_file="${MY_OPERATORSDIR}subscription.yaml"
+  local lf_namespace="${MY_OPERATOR_NAMESPACE}"
   #lf_file="${MY_OPERATORSDIR}subscription-tekton.yaml"
   #lf_file="${MY_OPERATORSDIR}subscription_startingcsv.yaml"
-  lf_type="Subscription"
-  check_create_oc_yaml "${lf_type}" "${MY_OPERATOR_NAME}" "${lf_file}" "${MY_OPERATOR_NAMESPACE}"
+  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_file}" "${lf_namespace}"
 
   lf_type="clusterserviceversion"
   lf_path="{.status.phase}"
@@ -979,9 +1392,56 @@ function create_operator_subscription() {
   fi
   mylog info "Creation of $MY_OPERATOR_NAME operator took $SECONDS seconds to execute." 1>&2
   
-  unset MY_OPERATOR_CHL
+  unset MY_OPERATOR_NAME MY_OPERATOR_NAMESPACE MY_OPERATOR_CHL MY_STRATEGY MY_CATALOG_SOURCE_NAME
 
   decho 3 "F:OUT:create_operator_subscription"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
+# delete operator subscription
+# @param 1: operator name 
+# @param 2: namespace where the subscription is created (openshift-operators or others)
+# @param 3: Operator channel
+# @param 4: Control of the upgrade in the subscription, automatic or manual
+# @param 5: name of the source catalog
+# @param 6: Wait for the of subscription to be ready
+# @param 7: csv Operator channel
+
+function delete_operator_subscription() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho 3 "F:IN :delete_operator_subscription"
+
+  # export are important because they are used to replace the variable in the subscription.yaml (envsubst command)
+  export MY_OPERATOR_NAME=$1
+  export MY_OPERATOR_NAMESPACE=$2
+  export MY_OPERATOR_CHL=$3
+  export MY_STRATEGY=$4
+  export MY_CATALOG_SOURCE_NAME=$5
+  local lf_in_wait=$6
+  local lf_in_csv_name=$7
+
+  local lf_file lf_path lf_resource lf_state lf_type
+  check_directory_exist ${MY_OPERATORSDIR}
+
+  local lf_type="Subscription"
+  local lf_cr_name="${MY_OPERATOR_NAME}"
+  local lf_file="${MY_OPERATORSDIR}subscription.yaml"
+  local lf_namespace="${MY_OPERATOR_NAMESPACE}"
+  #lf_file="${MY_OPERATORSDIR}subscription-tekton.yaml"
+  #lf_file="${MY_OPERATORSDIR}subscription_startingcsv.yaml"
+  check_delete_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_file}" "${lf_namespace}"
+
+  lf_type="clusterserviceversion"
+  lf_path="{.status.phase}"
+  lf_state="Succeeded"
+  decho 3 "oc -n $MY_OPERATOR_NAMESPACE get $lf_type -o json | jq -r --arg my_resource \"$lf_in_csv_name\" '.items[].metadata | select (.name | contains ($my_resource)).name'"
+  lf_resource=$(oc -n $MY_OPERATOR_NAMESPACE get $lf_type -o json | jq -r --arg my_resource "$lf_in_csv_name" '.items[].metadata | select (.name | contains ($my_resource)).name')
+  oc delete csv $lf_resource -n $MY_OPERATOR_NAMESPACE
+  
+  unset MY_OPERATOR_NAME MY_OPERATOR_NAMESPACE MY_OPERATOR_CHL MY_STRATEGY MY_CATALOG_SOURCE_NAME
+
+  decho 3 "F:OUT:delete_operator_subscription"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -1007,14 +1467,54 @@ function create_operand_instance() {
   local lf_in_wait=$7
 
   SECONDS=0
-  check_create_oc_yaml $lf_in_type $lf_in_resource $lf_in_file $lf_in_ns
-  decho 3 "wait_for_state | $lf_in_type $lf_in_resource $lf_in_path is $lf_in_state | $lf_in_state | oc -n $lf_in_ns get $lf_in_type $lf_in_resource -o jsonpath=$lf_in_path"
-  if $lf_in_wait; then
-    wait_for_state "$lf_in_type $lf_in_resource $lf_in_path is $lf_in_state" "$lf_in_state" "oc -n $lf_in_ns get $lf_in_type $lf_in_resource -o jsonpath='$lf_in_path'"
+  local lf_type=$lf_in_type
+  local lf_cr_name=$lf_in_resource
+  local lf_file=lf_in_file
+  local lf_namespace=lf_in_ns
+  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_file}" "${lf_namespace}"
+
+  local lf_path=$lf_in_path
+  local lf_state=$lf_in_state
+  local lf_wait_for_state=$lf_in_wait
+
+  decho 3 "wait_for_state | $lf_type $lf_cr_name $lf_path is $lf_state | $lf_state | oc -n $lf_namespace get $lf_type $lf_cr_name -o jsonpath=$lf_path"
+  if $lf_wait_for_state; then
+    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $lf_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
   fi
-  mylog info "Creation of $lf_in_type instance took $SECONDS seconds to execute." 1>&2
+  mylog info "Creation of $lf_type instance took $SECONDS seconds to execute." 1>&2
 
   decho 3 "F:OUT:create_operand_instance"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
+# delete operand instance
+# @param 1:
+# @param 2:
+# @param 3:
+# @param 4:
+# @param 5:
+# @param 6:
+# @param 7: boolean to indicate if we are waiting for the operand to be running (defined by the combination of path and state, example respectively .status.phase and Ready)
+function delete_operand_instance() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho 3 "F:IN :delete_operand_instance"
+
+  local lf_in_file=$1
+  local lf_in_ns=$2
+  local lf_in_path=$3
+  local lf_in_resource=$4
+  local lf_in_state=$5
+  local lf_in_type=$6
+  local lf_in_wait=$7
+
+  local lf_type=$lf_in_type
+  local lf_cr_name=$lf_in_resource
+  local lf_file=$lf_in_file
+  local lf_namespace=$lf_in_ns
+  check_delete_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_file}" "${lf_namespace}"
+
+  decho 3 "F:OUT:delete_operand_instance"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -1128,6 +1628,42 @@ function create_catalogsource() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
+#############################################################################################################################
+# Delete a catalog source
+# @param 1: namespace
+# @param 2: name of the catalog
+# @param 3: 
+# @param 4:
+# @param 5:
+# @param 6:
+function delete_catalogsource() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho 3 "F:IN :delete_catalogsource"
+
+  export CATALOG_SOURCE_NAMESPACE=$1
+  export CATALOG_SOURCE_NAME=$2
+  export CATALOG_SOURCE_DISPLAY_NAME=$3
+  export CATALOG_SOURCE_IMAGE=$4
+  export CATALOG_SOURCE_PUBLISHER=$5
+  export CATALOG_SOURCE_INTERVAL=$6
+
+  local lf_type="CatalogSource"
+  local lf_file="${MY_RESOURCESDIR}catalog_source.yaml"
+  local lf_path="{.status.connectionState.lastObservedState}"
+  local lf_state="READY"
+  local lf_result
+
+  lf_result=$(oc get $lf_type -A -o json | jq -r --arg name $CATALOG_SOURCE_NAME --arg namespace $CATALOG_SOURCE_NAMESPACE '.items[] | select (.metadata.name == $name and .metadata.namespace == $namespace)')
+  if [ -z "$lf_result" ]; then
+    mylog info "catalogsource $CATALOG_SOURCE_NAME deleted from namespace $CATALOG_SOURCE_NAMESPACE"
+  else
+    envsubst <"${lf_file}" | oc -n ${CATALOG_SOURCE_NAMESPACE} delete -f - #|| exit 1
+  fi
+
+  decho 3 "F:OUT:delete_catalogsource"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
 #########################################################################################################
 ## adapt file into working dir
 ## called generate_files before
@@ -1230,6 +1766,92 @@ function create_certificate_chain() {
 }
 
 ################################################
+# Create openshift cluster using classic infrastructure
+function create_openshift_cluster_classic() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho 3 "F:IN :create_openshift_cluster_classic"
+
+  SECONDS=0
+  var_fail sc_cluster_name "Choose a unique name for the cluster"
+  mylog check "Checking OpenShift: $sc_cluster_name"
+  if ibmcloud ks cluster get --cluster $sc_cluster_name >/dev/null 2>&1; then
+    mylog ok ", cluster exists"
+    mylog info "Checking Openshift cluster took: $SECONDS seconds." 1>&2
+  else
+    mylog warn ", cluster does not exist"
+    var_fail MY_OC_VERSION 'mylog warn "Choose one of:" 1>&2;ibmcloud ks versions -q --show-version OpenShift'
+    var_fail MY_CLUSTER_ZONE 'mylog warn "Choose one of:" 1>&2;ibmcloud ks zone ls -q --provider classic'
+    var_fail MY_CLUSTER_FLAVOR_CLASSIC 'mylog warn "Choose one of:" 1>&2;ibmcloud ks flavors -q --zone $MY_CLUSTER_ZONE'
+    var_fail MY_CLUSTER_WORKERS 'Speficy number of worker nodes in cluster'
+    mylog info "Getting current version for OC: $MY_OC_VERSION"
+    oc_version_full=$(check_openshift_version $MY_OC_VERSION)
+    decho 4 "oc_version_full=$oc_version_full"
+
+    if [ -z "$oc_version_full" ]; then
+      mylog error "Failed to find full version for ${MY_OC_VERSION}" 1>&2
+      #fix_oc_version
+      decho 3 "F:OUT:create_openshift_cluster_classic"
+      SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+      exit 1
+    fi
+    oc_version_full=$(echo "[$oc_version_full]" | jq -r '.[] | (.major|tostring) + "." + (.minor|tostring) + "." + (.patch|tostring) + "_openshift"')
+    mylog info "Found: ${oc_version_full}"
+    # create
+    mylog info "Creating OpenShift cluster: $sc_cluster_name"
+
+    SECONDS=0
+    vlans=$(ibmcloud ks vlan ls --zone $MY_CLUSTER_ZONE --output json | jq -j '.[]|" --" + .type + "-vlan " + .id')
+    if ! ibmcloud ks cluster create classic \
+      --name $sc_cluster_name \
+      --version $oc_version_full \
+      --zone $MY_CLUSTER_ZONE \
+      --flavor $MY_CLUSTER_FLAVOR_CLASSIC \
+      --workers $MY_CLUSTER_WORKERS \
+      --entitlement cloud_pak \
+      --disable-disk-encrypt \
+      $vlans; then
+      mylog error "Failed to create cluster" 1>&2
+      decho 3 "F:OUT:create_openshift_cluster_classic"
+      SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+      exit 1
+    fi
+    mylog info "Creation of the cluster took: $SECONDS seconds." 1>&2
+  fi
+
+  decho 3 "F:OUT:create_openshift_cluster_classic"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
+# Create openshift cluster using VPC infra
+# use terraform because creation is more complex than classic
+function create_openshift_cluster_vpc() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho 3 "F:IN :create_openshift_cluster_vpc"
+
+  # check vars from config file
+  var_fail MY_OC_VERSION 'mylog warn "Choose one of:" 1>&2;ibmcloud ks versions -q --show-version OpenShift'
+  var_fail MY_CLUSTER_ZONE 'mylog warn "Choose one of:" 1>&2;ibmcloud ks zone ls -q --provider vpc-gen2'
+  var_fail MY_CLUSTER_FLAVOR_VPC 'mylog warn "Choose one of:" 1>&2;ibmcloud ks flavors -q --zone $MY_CLUSTER_ZONE'
+  var_fail MY_CLUSTER_WORKERS 'Speficy number of worker nodes in cluster'
+  # set variables for terraform
+  export TF_VAR_ibmcloud_api_key="$MY_IC_APIKEY"
+  export TF_VAR_openshift_worker_pool_flavor="$MY_CLUSTER_FLAVOR_VPC"
+  export TF_VAR_prefix="$MY_OC_PROJECT"
+  export TF_VAR_region="$MY_CLUSTER_REGION"
+  export TF_VAR_openshift_version=$(ibmcloud ks versions -q --show-version OpenShift | sed -Ene "s/^(${MY_OC_VERSION//./\\.}\.[^ ]*) .*$/\1/p")
+  export TF_VAR_resource_group="rg-$MY_OC_PROJECT"
+  export TF_VAR_openshift_cluster_name="$sc_cluster_name"
+  pushd terraform
+  terraform init
+  terraform apply -var-file=var_override.tfvars
+  popd
+
+  decho 3 "F:OUT:create_openshift_cluster_vpc"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
 # TBC
 function create_openshift_cluster() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
@@ -1253,6 +1875,80 @@ function create_openshift_cluster() {
   esac
 
   decho 3 "F:OUT:create_openshift_cluster"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
+# wait for Cluster availability
+# set variable my_cluster_url
+function wait_for_cluster_availability() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho 3 "F:IN :wait_for_cluster_availability"
+
+  SECONDS=0
+  wait_for_state 'Cluster state' 'normal-All Workers Normal' "ibmcloud oc cluster get --cluster $sc_cluster_name --output json|jq -r '(.state + \"-\" + .status)'"
+  mylog info "Checking Cluster state took: $SECONDS seconds." 1>&2
+
+  SECONDS=0
+  mylog check "Checking Cluster URL"
+  my_cluster_url=$(ibmcloud ks cluster get --cluster $sc_cluster_name --output json | jq -r "$sc_cluster_url_filter")
+  case "$my_cluster_url" in
+  https://*)
+    mylog ok " -> $my_cluster_url"
+    mylog info "Checking Cluster availability took: $SECONDS seconds." 1>&2
+    ;;
+  *)
+    mylog error "Error getting cluster URL for $sc_cluster_name" 1>&2
+    decho 4  "F:OUT:wait_for_cluster_availability"
+    SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+    exit 1
+    ;;
+  esac
+
+  decho 3 "F:OUT:wait_for_cluster_availability"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
+# wait for ingress address availability
+function wait_4_ingress_address_availability() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho 3 "F:IN :wait_4_ingress_address_availability"
+
+  SECONDS=0
+  local lf_ingress_address
+
+  mylog check "Checking Ingress address"
+  firsttime=true
+  case $MY_CLUSTER_INFRA in
+  classic)
+    sc_ingress_hostname_filter=.ingressHostname
+    ;;
+  vpc)
+    sc_ingress_hostname_filter=.ingress.hostname
+    ;;
+  *)
+    mylog error "Only classic and vpc for MY_CLUSTER_INFRA"
+    ;;
+  esac
+
+  while true; do
+    lf_ingress_address=$(ibmcloud ks cluster get --cluster $sc_cluster_name --output json | jq -r "$sc_ingress_hostname_filter")
+    if test -n "$lf_ingress_address"; then
+      mylog ok ", $lf_ingress_address"
+      break
+    fi
+    if $firsttime; then
+      mylog warn "not ready"
+      firsttime=false
+    fi
+    mylog wait "waiting for ingress address"
+    # It takes about 15 minutes (21 Aug 2023)
+    sleep 90
+  done
+  mylog info "Checking Ingress availability took $SECONDS seconds to execute." 1>&2
+
+  decho 3 "F:OUT:wait_4_ingress_address_availability"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -1282,3 +1978,19 @@ function accept_license_fs() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
+################################################
+function generate_password() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho 4 "F:IN :generate_password"
+
+  local lf_in_length=$1
+
+  local lf_pattern='A-Za-z0-9!@#$%^&*()_+'
+
+  # Generate a password based on the pattern
+  local lf_password=$(cat /dev/urandom | tr -dc "$lf_pattern" | head -c "$lf_in_length")
+  export USER_PASSWORD_GEN=$lf_password
+
+  decho 4 "F:OUT:generate_password"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}

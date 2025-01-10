@@ -282,7 +282,7 @@ sc_clnt="clnt1"
 # load config file
 read_config_file "${CONFIGDIR}mq.properties"
 
-create_namespace ${MY_MQ_DEMO_NAMESPACE}
+create_namespace ${MY_MQ_DEMO_NAMESPACE} "${MY_MQ_DEMO_NAMESPACE} project" "For MQ native HA and clustering demonstration"
 
 # Create the certificates/secrets required for MQ Configuration
 lf_namespace=${MY_MQ_DEMO_NAMESPACE}

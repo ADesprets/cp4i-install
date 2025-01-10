@@ -1,9 +1,0 @@
-apiVersion: appconnect.ibm.com/v1beta1
-kind: Configuration
-metadata:
-  name: httpechoapp-serverconf
-  namespace: cp4i
-spec:
-  contents: U3RhdGlzdGljczogCiAgU25hcHNob3Q6IAogICAgYWNjb3VudGluZ09yaWdpbjogJ2Jhc2ljJyAKICAgIG5vZGVEYXRhTGV2ZWw6ICdhZHZhbmNlZCcgCiAgICBvdXRwdXRGb3JtYXQ6ICdqc29uJyAKICAgIHB1YmxpY2F0aW9uT246ICdhY3RpdmUnIAogICAgdGhyZWFkRGF0YUxldmVsOiAnYmFzaWMn
-  version: 12.0.12.3-r1
-  type: serverconf

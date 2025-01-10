@@ -138,6 +138,10 @@ This is the identity accessing EEM, so the client of the Event Gateway.
 
 ![EEM Subscribe topic Step 11](../images/eem_subscribe-s11.png "EEM Subscribe topic Step 11")
 
+## Use of the REST API
+
+![IBM Event Automation demo](https://github.com/IBM/event-automation-demo/ "IBM Event Automation demo")
+
 ## Java client
 
 We are using the code provided to acccess EEM topic.

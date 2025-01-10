@@ -3,39 +3,63 @@
 # Laurent 2021
 # Updated July 2023 Saad / Arnauld
 ################################################
+# @param $1 cp4i properties file path (ex : ./cp4.properties)
+# @param $2 cp4i versions file path (ex : ./versions/cp4-16.1.0.properties)
+# @param $3 namespace
+# @param $4 cluster_name
+################################################
 
 ################################################
-# add ibm entitlement key to namespace
-# @param ns namespace where secret is created
-function add_ibm_entitlement() {
+# Install Keycloak
+function install_keycloak() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
-  decho 3 "F:IN :add_ibm_entitlement"
+  decho 3 "F:IN :install_keycloak"
 
-  local lf_in_ns=$1
+  mylog info "==== Installing Redhat Openshift Keycloak." 1>&2
+  local lf_operator_name="$MY_KEYCLOAK_OPERATOR"
+  local lf_operator_namespace=$MY_COMMONSERVICES_NAMESPACE
+  local lf_operator_chl=$MY_KEYCLOAK_CHL
+  local lf_strategy="Automatic"
+  local lf_catalog_source_name="redhat-operators"
+  local lf_wait_for_state=true
+  local lf_csv_name=$MY_KEYCLOAK_OPERATOR
+  decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
+  create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_wait_for_state}" "${lf_csv_name}"
 
-  mylog check "Checking ibm-entitlement-key in $lf_in_ns"
-  if oc -n $lf_in_ns get secret ibm-entitlement-key >/dev/null 2>&1; then
+  decho 3 "F:OUT:install_keycloak"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
+# Install SFTP server, it is usefull for example for backups
+function install_sftp() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho 3 "F:IN :install_sftp"
+
+  mylog info "==== Installing an SFTP server." 1>&2
+  mylog info "IN PROGRESS" 1>&2
+
+  create_namespace ${MY_SFTP_SERVER_NAMESPACE} "${MY_SFTP_SERVER_NAMESPACE} project" "For SFTP server"
+
+  # Create configmap with users
+  mylog check "Checking ConfigMap for credential ${MY_SFTP_SERVER_NAMESPACE}-sftp-creds" 1>&2
+  if oc get configmap -n ${MY_SFTP_SERVER_NAMESPACE} "${MY_SFTP_SERVER_NAMESPACE}-sftp-creds" >/dev/null 2>&1; then
     mylog ok
   else
-    var_fail MY_ENTITLEMENT_KEY "Missing entitlement key"
-    mylog info "Checking ibm-entitlement-key validity"
-    $MY_CONTAINER_ENGINE -h >/dev/null 2>&1
-    if test $? -eq 0 && ! echo $MY_ENTITLEMENT_KEY | $MY_CONTAINER_ENGINE login cp.icr.io --username cp --password-stdin; then
-      mylog error "Invalid entitlement key" 1>&2
-      decho 3 "F:OUT:add_ibm_entitlement"
-      SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
-      exit 1
-    fi
-    mylog info "Adding ibm-entitlement-key to $lf_in_ns"
-    if ! oc -n $lf_in_ns create secret docker-registry ibm-entitlement-key --docker-username=cp --docker-password=$MY_ENTITLEMENT_KEY --docker-server=cp.icr.io; then
-      decho 3 "F:OUT:add_ibm_entitlement"
-      SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
-      exit 1
-    fi
+    generate_password 32
+    adapt_file ${MY_SFTP_SCRIPTDIR}config/ ${MY_SFTP_GEN_CUSTOMDIR}config/ users.conf
+    unset $USER_PASSWORD_GEN
+    oc -n $MY_SFTP_SERVER_NAMESPACE create configmap ${MY_SFTP_SERVER_NAMESPACE}-sftp-creds --from-file=${MY_SFTP_GEN_CUSTOMDIR}config/users.conf
   fi
 
-  decho 3 "F:OUT:add_ibm_entitlement"
+  # Create configmap with SSH keys
+  ssh-keygen -t ed25519 -f ssh_host_ed25519_key < /dev/null
+  ssh-keygen -t rsa -b 4096 -f ssh_host_rsa_key < /dev/null
+  
+
+  decho 3 "F:OUT:install_sftp"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+
 }
 
 ################################################
@@ -49,6 +73,7 @@ function install_gitops() {
   mylog info "==== Installing Redhat Openshift GitOps." 1>&2
   export MY_NAMESPACE=$MY_GITOPS_NAMESPACE
   envsubst <"${MY_RESOURCESDIR}namespace.yaml" | oc apply -f - || exit 1
+  unset MY_NAMESPACE
 
   local lf_operator_name="$MY_GITOPS_OPERATORGROUP"
   local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
@@ -84,7 +109,10 @@ function install_logging_loki() {
     local lf_cr_name="${MY_LOKI_OPERATORGROUP}"
     local lf_yaml_file="${MY_RESOURCESDIR}operator-group-all.yaml"
     local lf_namespace="openshift-operators-redhat"
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"  
+    export MY_OPERATORGROUP=$lf_cr_name
+    export MY_NAMESPACE=$lf_namespace  
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
+    unset MY_OPERATORGROUP MY_NAMESPACE
 
     # Create a subscription object for Loki Operator    
     local lf_operator_name=$MY_LOKI_OPERATOR
@@ -105,8 +133,10 @@ function install_logging_loki() {
     local lf_cr_name="${MY_LOGGING_OPERATORGROUP}"
     local lf_yaml_file="${MY_RESOURCESDIR}operator-group-single.yaml"
     local lf_namespace=$MY_LOGGING_NAMESPACE
-    export MY_OPERATORGROUP="${MY_LOGGING_OPERATORGROUP}"
+    export MY_OPERATORGROUP=$lf_cr_name
+    export MY_NAMESPACE=$lf_namespace  
     check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
+    unset MY_OPERATORGROUP MY_NAMESPACE
     
     # Create a subscription object for Red Hat Openshift Logging Operator
     local lf_operator_name=$MY_LOGGING_OPERATORGROUP
@@ -130,9 +160,9 @@ function install_logging_loki() {
     check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_operator_namespace}"
 
     # get the needed parameters to create the object storage secret
-    export MY_LOKI_ACCESS_KEY_ID=$(oc get -n openshift-storage secret  rook-ceph-object-user-ocs-storagecluster-cephobjectstore-noobaa-ceph-objectstore-user -o jsonpath='{.data.AccessKey}'| base64 --decode)
-    export MY_LOKI_ACCESS_KEY_SECRET=$(oc get -n openshift-storage secret  rook-ceph-object-user-ocs-storagecluster-cephobjectstore-noobaa-ceph-objectstore-user -o jsonpath='{.data.SecretKey}'| base64 --decode)
-    export MY_LOKI_ENDPOINT=$(oc get -n openshift-storage secret  rook-ceph-object-user-ocs-storagecluster-cephobjectstore-noobaa-ceph-objectstore-user -o jsonpath='{.data.Endpoint}'| base64 --decode)
+    export MY_LOKI_ACCESS_KEY_ID=$(oc -n openshift-storage get secret  rook-ceph-object-user-ocs-storagecluster-cephobjectstore-noobaa-ceph-objectstore-user -o jsonpath='{.data.AccessKey}'| base64 --decode)
+    export MY_LOKI_ACCESS_KEY_SECRET=$(oc -n openshift-storage get secret  rook-ceph-object-user-ocs-storagecluster-cephobjectstore-noobaa-ceph-objectstore-user -o jsonpath='{.data.SecretKey}'| base64 --decode)
+    export MY_LOKI_ENDPOINT=$(oc -n openshift-storage get secret  rook-ceph-object-user-ocs-storagecluster-cephobjectstore-noobaa-ceph-objectstore-user -o jsonpath='{.data.Endpoint}'| base64 --decode)
     local lf_operator_namespace="${MY_LOGGING_NAMESPACE}"
     local lf_type="Secret"
     local lf_cr_name=$MY_LOKI_SECRET
@@ -343,13 +373,18 @@ function install_oadp() {
   # create_namespace $MY_OADP_NAMESPACE
   export MY_NAMESPACE=$MY_OADP_NAMESPACE
   envsubst <"${MY_RESOURCESDIR}namespace.yaml" | oc apply -f - || exit 1
+  unset MY_NAMESPACE
 
   # Operator group for OADP in single namespace
   local lf_type="OperatorGroup"
   local lf_cr_name="${MY_OADP_OPERATORGROUP}"
   local lf_yaml_file="${MY_RESOURCESDIR}operator-group-single.yaml"
   local lf_namespace=$MY_OADP_NAMESPACE
-  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"  
+  export MY_OPERATORGROUP=$lf_cr_name
+  export MY_NAMESPACE=$lf_namespace  
+  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
+  unset MY_OPERATORGROUP MY_NAMESPACE
+
 
   # SB]20241120 Pour obtenir le template de l'operateur oadp de Redhat, je l'ai installé avec la console, j'ai récupéré le Yaml puis désinstallé.
   local lf_operator_name="redhat-oadp-operator"
@@ -405,7 +440,7 @@ function install_mailhog() {
     # read_config_file "${MY_YAMLDIR}ldap/ldap.properties"
 
     # create namespace if needed
-    create_namespace ${MY_MAIL_SERVER_NAMESPACE}
+    create_namespace ${MY_MAIL_SERVER_NAMESPACE} "${MY_MAIL_SERVER_NAMESPACE} project" "For Mailhog fake SMTP server deployment"
 
     deploy_mailhog ${lf_type} ${lf_name} ${MY_MAIL_SERVER_NAMESPACE}
     expose_service_mailhog ${lf_name} ${MY_MAIL_SERVER_NAMESPACE} '8025'
@@ -429,7 +464,7 @@ function install_openldap() {
     read_config_file "${MY_YAMLDIR}ldap/ldap.properties"
 
     # create namespace if needed
-    create_namespace ${MY_LDAP_NAMESPACE}
+    create_namespace ${MY_LDAP_NAMESPACE} "${MY_LDAP_NAMESPACE} project" "For OpenLDAP deployment"
 
     #SB]20231207 checks if used directories and files exists
     check_file_exist ${MY_YAMLDIR}ldap/ldap-pvc.main.yaml
@@ -464,7 +499,7 @@ function install_cert_manager() {
 
   # SB]20231215 Pour obtenir le template de l'operateur cert-manager de Redhat, je l'ai installé avec la console, j'ai récupéré le Yaml puis désinstallé.
   local lf_operator_name="openshift-cert-manager-operator"
-  local lf_operator_namespace=$MY_CERTMANAGER_NAMESPACE
+  local lf_operator_namespace=$MY_CERTMANAGER_OPERATOR_NAMESPACE
   local lf_operator_chl=$MY_CERT_MANAGER_CHL
   local lf_strategy="Automatic"
   local lf_catalog_source_name="redhat-operators"
@@ -489,11 +524,14 @@ function install_lic_srv() {
     check_add_cs_ibm_pak ibm-licensing amd64
 
     # Operator group for License Service Reporter in single namespace
-    ls_type="OperatorGroup"
-    ls_cr_name="${MY_LICENSE_SERVER_OPERATORGROUP}"
-    ls_yaml_file="${MY_RESOURCESDIR}operator-group-single.yaml"
-    ls_namespace=$MY_LICENSE_SERVER_NAMESPACE
-    check_create_oc_yaml "${ls_type}" "${ls_cr_name}" "${ls_yaml_file}" "${ls_namespace}"
+    local lf_type="OperatorGroup"
+    local lf_cr_name="${MY_LICENSE_SERVER_OPERATORGROUP}"
+    local lf_yaml_file="${MY_RESOURCESDIR}operator-group-single.yaml"
+    local lf_namespace=$MY_LICENSE_SERVER_NAMESPACE
+    export MY_OPERATORGROUP=$lf_cr_name
+    export MY_NAMESPACE=$lf_namespace  
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
+    unset MY_OPERATORGROUP MY_NAMESPACE
 
     #mylog info "Creating Licensing service catalog source in ns : openshift-marketplace." 1>&2
     lf_catalogsource_namespace=$MY_CATALOGSOURCES_NAMESPACE
@@ -552,7 +590,7 @@ function install_lic_srv() {
     # oc get routes -n ibm-licensing | grep ibm-license-service-reporter | awk '{print $2}'
     mylog info "Add license service to the reporter" 1>&2
     lf_licensing_service_reporter_url=$(oc -n ${MY_LICENSE_SERVER_NAMESPACE} get Route -o=jsonpath='{.items[?(@.metadata.name=="ibm-license-service-reporter")].spec.host}')
-    oc patch -n $MY_LICENSE_SERVER_NAMESPACE IBMLicensing instance --type merge --patch "{\"spec\":{\"sender\":{\"reporterSecretToken\":\"ibm-license-service-reporter-token\",\"reporterURL\":\"https://$lf_licensing_service_reporter_url/\",\"clusterID\":\"MyClusterTest1\",\"clusterName\":\"MyClusterTest1\"}}}"
+    oc -n $MY_LICENSE_SERVER_NAMESPACE patch IBMLicensing instance --type merge --patch "{\"spec\":{\"sender\":{\"reporterSecretToken\":\"ibm-license-service-reporter-token\",\"reporterURL\":\"https://$lf_licensing_service_reporter_url/\",\"clusterID\":\"MyClusterTest1\",\"clusterName\":\"MyClusterTest1\"}}}"
   fi
 
   decho 3 "F:OUT:install_lic_srv"
@@ -565,7 +603,9 @@ function install_lic_srv() {
 # "The IBM Cloud Pak foundational services operator is no longer installed automatically.
 #  Install this operator manually if you need to create an instance that uses identity and access management.
 #  Also, make sure you have a certificate manager; otherwise, the IBM Cloud Pak foundational services operator installation will not complete."
-# This function implements the following steps described here :
+# SB]20250109
+# https://www.ibm.com/docs/en/cloud-paks/cp-integration/16.1.1?topic=planning-structuring-your-deployment
+# The IBM Cloud Pak foundational services in Cloud Pak for Integration enable functions such as Keycloak and EDB.
 ############################################################################################################################################
 function install_fs() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
@@ -620,7 +660,7 @@ function install_openliberty() {
   if $MY_OPENLIBERTY; then
     mylog info "==== Installing OPEN Liberty." 1>&2
 
-    create_namespace $MY_BACKEND_NAMESPACE
+    create_namespace $MY_BACKEND_NAMESPACE "$MY_BACKEND_NAMESPACE project" "For Open Liberty instances and create custom API"
 
     # TODO other approach is to use the catalog which already inludes the Open Liberty operator and use a subscription
     # Case exists 1.3.1, and IBM/RedHat Catalog
@@ -645,7 +685,7 @@ function install_openliberty() {
     else
       oc apply --server-side -f ${MY_OPENLIBERTY_GEN_CUSTOMDIR}config/openliberty-app-crd.yaml
       oc apply -f ${MY_OPENLIBERTY_GEN_CUSTOMDIR}config/openliberty-app-rbac-watch-all.yaml
-      oc apply -n ${MY_BACKEND_NAMESPACE} -f ${MY_OPENLIBERTY_GEN_CUSTOMDIR}config/openliberty-app-operator.yaml
+      oc -n ${MY_BACKEND_NAMESPACE} apply -f ${MY_OPENLIBERTY_GEN_CUSTOMDIR}config/openliberty-app-operator.yaml
     fi
 
   fi
@@ -663,7 +703,7 @@ function install_wasliberty() {
   if $MY_WASLIBERTY; then
     mylog info "==== Installing WAS Liberty." 1>&2
 
-    create_namespace $MY_BACKEND_NAMESPACE
+    create_namespace $MY_BACKEND_NAMESPACE "$MY_BACKEND_NAMESPACE project" "For WebSphere Application Server (Liberty) instances and create custom API"
 
     # add catalog sources using ibm_pak plugin
     check_add_cs_ibm_pak $MY_WL_CASE amd64
@@ -684,7 +724,10 @@ function install_wasliberty() {
     lf_yaml_file="${MY_RESOURCESDIR}operator-group-single.yaml"
     lf_namespace=$MY_BACKEND_NAMESPACE
     decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
+    export MY_OPERATORGROUP=$lf_cr_name
+    export MY_NAMESPACE=$lf_namespace  
     check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
+    unset MY_OPERATORGROUP MY_NAMESPACE
 
     # Creating WebSphere Liberty operator subscription
     local lf_operator_name="ibm-websphere-liberty"
@@ -759,10 +802,10 @@ function install_assetrepo() {
   if $MY_ASSETREPO; then
     mylog info "==== Installing Asset Repository." 1>&2
     # add catalog sources using ibm_pak plugin
-    check_add_cs_ibm_pak ibm-integration-asset-repository amd64
+    check_add_cs_ibm_pak $MY_ASSETREPO_CASE amd64
 
     # Creating Asset Repository operator subscription
-    local lf_operator_name="ibm-integration-asset-repository"
+    local lf_operator_name=$MY_ASSETREPO_CASE
     local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     local lf_operator_chl=$MY_ASSETREPO_CHL
     local lf_strategy="Automatic"
@@ -916,13 +959,13 @@ function install_apic() {
       mylog info "HOLD PLACE"
     else
       # Creating APIC instance
-      lf_file="${MY_OPERANDSDIR}APIC-Capability.yaml"
-      lf_ns="${MY_OC_PROJECT}"
-      lf_path="{.status.phase}"
-      lf_resource="$MY_APIC_INSTANCE_NAME"
-      lf_state="Ready"
-      lf_type="APIConnectCluster"
-      lf_wait_for_state=true
+      local lf_file="${MY_OPERANDSDIR}APIC-Capability.yaml"
+      local lf_ns="${MY_OC_PROJECT}"
+      local lf_path="{.status.phase}"
+      local lf_resource="$MY_APIC_INSTANCE_NAME"
+      local lf_state="Ready"
+      local lf_type="APIConnectCluster"
+      local lf_wait_for_state=true
       create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
     fi
 
@@ -930,10 +973,6 @@ function install_apic() {
     mylog info "Enable web console of the API Connect Gateway"
     oc -n "${MY_OC_PROJECT}" patch GatewayCluster "${MY_APIC_INSTANCE_NAME}-gw" --type merge -p '{"spec": {"webGUIManagementEnabled": true}}'
 
-    lf_type="Route"
-    lf_cr_name="${MY_APIC_INSTANCE_NAME}-gw-webconsole"
-    lf_yaml_file="${MY_RESOURCESDIR}route.yaml"
-    lf_namespace="${MY_OC_PROJECT}"
     
     export MY_NAMESPACE="${MY_OC_PROJECT}"
     export MY_ROUTE_NAME="${MY_APIC_INSTANCE_NAME}-gw-webconsole"
@@ -947,6 +986,10 @@ function install_apic() {
 
     decho 3 "${MY_NAMESPACE}, ${MY_ROUTE_NAME}, ${MY_ROUTE_BALANCE}, ${MY_ROUTE_INSTANCE}, ${MY_ROUTE_PARTOF}, ${MY_ROUTE_HOST}, ${MY_ROUTE_PORT}, ${MY_ROUTE_SERVICE}"
 
+    local lf_type="Route"
+    local lf_cr_name="${MY_APIC_INSTANCE_NAME}-gw-webconsole"
+    local lf_yaml_file="${MY_RESOURCESDIR}route.yaml"
+    local lf_namespace="${MY_OC_PROJECT}"
     check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
 
     save_certificate ${MY_OC_PROJECT} cp4i-apic-ingress-ca ca.crt ${MY_WORKINGDIR}
@@ -956,6 +999,117 @@ function install_apic() {
   decho 3 "F:OUT:install_apic"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
+
+################################################
+# Install APIC Graphql (Ex Stepzen)
+# https://www.ibm.com/docs/en/api-connect/graphql/1.x?topic=installing-maintaining-api-connect-graphql
+# https://www.ibm.com/docs/en/api-connect/graphql/1.x?topic=graphql-installing-api-connect
+function install_apic_graphql() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho 3 "F:IN :install_apic_graphql"
+
+  # ibm apic graphql
+  if $MY_APIC_GRAPHQL; then
+    mylog info "==== Installing APIC Graphql." 1>&2
+
+    # Create namespace for IBM Stepzen.
+    create_namespace $MY_IBM_STEPZEN_NAMESPACE
+    add_ibm_entitlement $MY_IBM_STEPZEN_NAMESPACE $MY_CONTAINER_ENGINE
+
+    local lf_namespace="${MY_IBM_STEPZEN_NAMESPACE}"
+    local lf_postgresql_host lf_dsn lf_type lf_cr_name
+    local lf_case_version lf_file lf_deploy_dir
+    local lf_path lf_state lf_resource lf_url
+
+    # create a generic secret for the PostgreSQL server
+    # there are three postgresql services : 
+    # - ${MY_POSTGRESQL_CLUSTER}-r"  : for read-only workloads across all nodes
+    # - ${MY_POSTGRESQL_CLUSTER}-ro" : for read-only workloads on replicas only
+    # - ${MY_POSTGRESQL_CLUSTER}-rw" : for read-write workloads on the primary node
+
+    lf_postgresql_host="${MY_POSTGRESQL_CLUSTER}-rw.${MY_POSTGRESQL_NAMESPACE}.svc.cluster.local"
+    lf_dsn="postgresql://${MY_POSTGRESQL_USER}:${MY_POSTGRESQL_PASSWORD}@${lf_postgresql_host}/${MY_POSTGRESQL_DATABASE}"
+    lf_type="Secret"
+    lf_cr_name="${MY_POSTGRESQL_DSN_PASSWORD}"
+    if oc -n ${lf_namespace} get ${lf_type} ${lf_cr_name} >/dev/null 2>&1; then
+      mylog info "Custom Resource $lf_type/$lf_cr_name already exists"
+    else
+      oc -n ${lf_namespace} create secret generic $lf_cr_name --from-literal=DSN="${lf_dsn}"
+    fi
+
+    # Download and extract the CASE bundle.
+    lf_case_version=$(oc ibm-pak list -o json | jq -r --arg case "$MY_APIC_GRAPHQL_CASE" '.[] | select (.name == $case ) | .latestVersion')
+    oc ibm-pak get ${MY_APIC_GRAPHQL_CASE} --version ${lf_case_version} 1>&2
+
+    lf_file=${MY_IBMPAK_CASESDIR}${MY_APIC_GRAPHQL_CASE}/${lf_case_version}/${MY_APIC_GRAPHQL_CASE}-${lf_case_version}.tgz
+    if [ -e "$lf_file" ]; then
+      tar xvzf ${lf_file} -C ${MY_WORKINGDIR} >/dev/null 2>&1
+    fi    
+    
+    # Apply the operator manifest files to the cluster
+    lf_deploy_dir="${MY_WORKINGDIR}/${MY_APIC_GRAPHQL_CASE}/inventory/stepzenGraphOperator/files/deploy/"
+    decho 3 "Applying the operator manifest files to the cluster : crd.yaml." 1>&2
+    oc -n ${lf_namespace} apply -f ${lf_deploy_dir}crd.yaml
+    decho 3 "Applying the operator manifest files to the cluster : operator.yaml." 1>&2
+    oc -n ${lf_namespace} apply -f ${lf_deploy_dir}operator.yaml
+    sleep 10
+
+    # Configuring APIC Graphql
+    decho 3 "Configuring APIC Graphql." 1>&2
+    envsubst <"${MY_RESOURCESDIR}stepzen.yaml" | oc -n ${lf_namespace} apply -f - || exit 1
+
+    #local lf_resource=$(oc -n $lf_namespace get $lf_type -o json | jq -r --arg my_resource "$lf_cr_name" '.items[0].metadata | select (.name | contains ($my_resource)).name')
+    lf_type="StepZenGraphServer"
+    lf_cr_name="stepzen"
+    lf_path="{.status.conditions[-1].type}"
+    lf_state="Ready"
+
+    lf_resource=$(oc -n $lf_namespace get $lf_type -o jsonpath="{.items[0].metadata.name}")
+    decho 3 "wait_for_state \"$lf_type $lf_resource is $lf_state\" \"$lf_state\" \"oc -n $lf_namespace get $lf_type $lf_resource -o jsonpath='$lf_path'\""
+    wait_for_state "$lf_type $lf_resource $lf_path is $lf_state" "$lf_state" "oc -n $lf_namespace get $lf_type $lf_resource -o jsonpath='$lf_path'"
+
+    # Creating APIC Graphql route
+    # first create a cluster issuer (this creates a simple self-signed issuer for the root certificate)
+    envsubst <"${MY_RESOURCESDIR}self-signed-issuer.yaml" | oc apply -f - || exit 1
+    #envsubst <"${MY_RESOURCESDIR}letsencrypt-cluster-issuer.yaml" | oc -n ${lf_namespace} apply -f - || exit 1
+
+    # The first method to get the cluster domain
+    #lf_url=$(oc get infrastructure cluster -o jsonpath='{.status.apiServerURL}')
+    #export MY_CLUSTER_DOMAIN=$(echo "$lf_url" | cut -d'/' -f3 | cut -d':' -f1)
+    #export MY_CLUSTER_DOMAIN=$(echo "$lf_url" | cut -d'/' -f3 | cut -d':' -f1 | cut -d'.' -f2-)
+
+    # The second method to get the cluster domain
+    export MY_CLUSTER_DOMAIN=$(oc get dns cluster -o jsonpath='{.spec.baseDomain}')
+    decho 3 "MY_CLUSTER_DOMAIN=$MY_CLUSTER_DOMAIN"
+
+    # Add the certificate csr for routes (following chatgpt advice)
+    # Arnauld : Then you create the Certificate which contains the specification for this (these) Certificat(es)
+    envsubst <"${MY_RESOURCESDIR}stepzen-graphql-csr.yaml" | oc apply -f - || exit 1
+
+    # Then Install OpenShift Route Support for cert-manager (openshift-routes).
+    # ATTENTION REVOIR le namespace : c'est cert-manager et non pas cert-manager-namespace (https://github.com/cert-manager/openshift-routes?tab=readme-ov-file)
+    # https://github.com/cert-manager/openshift-routes
+    helm install openshift-routes -n cert-manager oci://ghcr.io/cert-manager/charts/openshift-routes
+    #oc -n cert-manager apply -f <(helm template openshift-routes -n cert-manager oci://ghcr.io/cert-manager/charts/openshift-routes --set omitHelmLabels=true)
+
+    # Set up a stepzen-graph-server route for the stepzen account. This is the "root" account of the API Connect Graphql service, 
+    # which is used to host endpoints that modify the metadata database but does not serve application requests. 
+    # The stepzen-graph-server route is required for the API Connect Graphql CLI to function.
+    envsubst <"${MY_RESOURCESDIR}stepzen-route.yaml" | oc -n ${lf_namespace} apply -f - || exit 1
+
+    # Set up stepzen-graph-server and stepzen-graph-server-subscriptions routes for the graphql account.
+    # This is the default account for serving application requests.
+    envsubst <"${MY_RESOURCESDIR}graphql-route.yaml" | oc -n ${lf_namespace} apply -f - || exit 1
+
+    # Install Introspection service
+    envsubst <"${MY_RESOURCESDIR}introspection.yaml" | oc -n ${lf_namespace} apply -f - || exit 1
+
+  fi
+
+  decho 3 "F:OUT:install_apic_graphql"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
 
 ################################################
 # Install IBM Event streams
@@ -972,7 +1126,7 @@ function install_es() {
     # Creating EventStreams operator subscription
     local lf_operator_name="$MY_ES_CASE"
     local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-    local lf_operator_chl=$MY_APIC_CHL
+    local lf_operator_chl=$MY_ES_CHL
     local lf_strategy="Automatic"
     local lf_catalog_source_name="ibm-eventstreams"
     local lf_wait_for_state=true
@@ -1008,6 +1162,11 @@ function install_eem() {
 
   local lf_in_ns=$1
   local varb64
+
+  if [ -n "$lf_in_ns" ]; then
+    mylog error "Namespace is missing."
+    return 1
+  fi
 
   if $MY_EEM; then
     mylog info "==== Installing Event Endpoint Management." 1>&2
@@ -1352,16 +1511,6 @@ function install_mq() {
     decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
     create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_wait_for_state}" "${lf_csv_name}"
 
-    # Creating MQ instance
-    #lf_file="${MY_OPERANDSDIR}MQ-Capability.yaml"
-    #lf_ns="${MY_OC_PROJECT}"
-    #lf_path="{.status.phase}"
-    #lf_resource="$MY_MQ_INSTANCE_NAME"
-    #lf_state="Running"
-    #lf_type="QueueManager"
-    #lf_wait_for_state=true
-    #create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
- 
     # Use the new CRD MessagingServer(available since CP4I 16.1.0-SC2) 
     if $MY_MESSAGINGSERVER; then
       # Creating MQ MessagingServer instance
@@ -1383,6 +1532,8 @@ function install_mq() {
 
 ################################################
 # Install Instana
+# Voir ceci dans CP4I 16.1.1 : With the release of Cloud Pak for Integration 16.1.1 , Instana agents are now included in the Cloud Pak for Integration package. 
+# https://www.ibm.com/docs/en/cloud-paks/cp-integration/16.1.1?topic=planning-licensing#instana__title__1
 function install_instana() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 3 "F:IN :install_instana"
@@ -1398,7 +1549,7 @@ function install_instana() {
   if $MY_INSTANA; then
     mylog info "==== Adding Instana." 1>&2
     # Create namespace for Instana agent. The instana agent must be istalled in instana-agent namespace.
-    create_namespace $MY_INSTANA_AGENT_NAMESPACE
+    create_namespace $MY_INSTANA_AGENT_NAMESPACE "$MY_INSTANA_AGENT_NAMESPACE project" "For monitoring with Instana"
     oc -n $MY_INSTANA_AGENT_NAMESPACE adm policy add-scc-to-user privileged -z instana-agent
 
     local lf_operator_name="instana-agent-operator"
@@ -1428,6 +1579,9 @@ function install_instana() {
 
 ################################################
 # Install PostGreSQL cloudnative-pg, see https://github.com/cloudnative-pg/cloudnative-pg TODO This does not work
+# SB]20241228 : after many tentatives to install PostgrSQL, getting errors (conflict errors, no operator errors, ...). I found that PostgreSQL operator
+# is already installed and a subscription already exists (edb-keycloak)
+#  !!! check to see how to use it because it's a pre requisite for installing IBM APIC Graphql
 function install_postgresql() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
   decho 3 "F:IN :install_postgresql"
@@ -1435,38 +1589,41 @@ function install_postgresql() {
   if $MY_POSTGRESQL; then
 
     # add catalog sources using ibm_pak plugin
-    check_add_cs_ibm_pak $MY_CLOUDNATIVE_PG_CASE amd64
+    check_add_cs_ibm_pak $MY_POSTGRESQL_CASE amd64
 
     mylog info "==== Adding PostGreSQL." 1>&2
     # Create namespace for PostGreSQL.
     create_namespace $MY_POSTGRESQL_NAMESPACE
 
-    # Catalog source for CloudNativePG
-    mylog info "==== cloudnative-pg-catalog catalog." 1>&2
-    lf_catalogsource_namespace=$MY_CATALOGSOURCES_NAMESPACE
-    lf_catalogsource_name="cloud-native-postgresql-catalog"
-    lf_catalogsource_dspname="ibm-cloud-native-postgresql-4.25.0"
-    lf_catalogsource_image="icr.io/cpopen/ibm-cpd-cloud-native-postgresql-operator-catalog@sha256:0b46a3ec66622dd4a96d96243602a21d7a29cd854f67a876ad745ec524337a1f"
-    lf_catalogsource_publisher="IBM"
-    lf_catalogsource_interval="10m"
-    decho 3 "create_catalogsource \"${lf_catalogsource_namespace}\" \"${lf_catalogsource_name}\" \"${lf_catalogsource_dspname}\" \"${lf_catalogsource_image}\" \"${lf_catalogsource_publisher}\" \"${lf_catalogsource_interval}\""
-    create_catalogsource "${lf_catalogsource_namespace}" "${lf_catalogsource_name}" "${lf_catalogsource_dspname}" "${lf_catalogsource_image}" "${lf_catalogsource_publisher}" "${lf_catalogsource_interval}"
+   ## # Catalog source for CloudNativePG
+   ## mylog info "==== cloudnative-pg-catalog catalog." 1>&2
+   ## lf_catalogsource_namespace=$MY_CATALOGSOURCES_NAMESPACE
+   ## lf_catalogsource_name="cloud-native-postgresql-catalog"
+   ## lf_catalogsource_dspname="ibm-cloud-native-postgresql-4.25.0"
+   ## lf_catalogsource_image="icr.io/cpopen/ibm-cpd-cloud-native-postgresql-operator-catalog@sha256:0b46a3ec66622dd4a96d96243602a21d7a29cd854f67a876ad745ec524337a1f"
+   ## lf_catalogsource_publisher="IBM"
+   ## lf_catalogsource_interval="10m"
+   ## decho 3 "create_catalogsource \"${lf_catalogsource_namespace}\" \"${lf_catalogsource_name}\" \"${lf_catalogsource_dspname}\" \"${lf_catalogsource_image}\" \"${lf_catalogsource_publisher}\" \"${lf_catalogsource_interval}\""
+   ## create_catalogsource "${lf_catalogsource_namespace}" "${lf_catalogsource_name}" "${lf_catalogsource_dspname}" "${lf_catalogsource_image}" "${lf_catalogsource_publisher}" "${lf_catalogsource_interval}"
 
-    # Operator group for PostGreSQL in single namespace (TODO should it be operators.coreos.com/v1 instead of operators.coreos.com/v1alpha2)
-    ls_type="OperatorGroup"
-    ls_cr_name="${MY_POSTGRESQL_OPERATORGROUP}"
-    ls_yaml_file="${MY_RESOURCESDIR}operator-group-singlev1.yaml"
-    ls_namespace=$MY_POSTGRESQL_NAMESPACE
-    check_create_oc_yaml "${ls_type}" "${ls_cr_name}" "${ls_yaml_file}" "${ls_namespace}"
+   ## # Operator group for PostGreSQL in single namespace (TODO should it be operators.coreos.com/v1 instead of operators.coreos.com/v1alpha2)
+   ## lf_type="OperatorGroup"
+   ## lf_cr_name="${MY_POSTGRESQL_OPERATORGROUP}"
+   ## lf_yaml_file="${MY_RESOURCESDIR}operator-group-singlev1.yaml"
+   ## lf_namespace=$MY_POSTGRESQL_NAMESPACE
+   ## check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
 
-    # Creating PostGreSQL operator subscription
-    local lf_operator_name="cloud-native-postgresql"
-    local lf_operator_namespace=$MY_POSTGRESQL_NAMESPACE
-    local lf_operator_chl=$MY_CLOUDNATIVE_PG_CHL
+    # Creating EDB Postgres for Kubernetes operator subscription
+    local lf_operator_name="edb-cloud-native-postgresql"
+    #local lf_operator_namespace=$MY_POSTGRESQL_NAMESPACE
+    local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
+    local lf_operator_chl=$MY_POSTGRESQL_CHL
     local lf_strategy="Automatic"
     local lf_catalog_source_name="cloud-native-postgresql-catalog"
-    local lf_csv_name=$MY_CLOUDNATIVE_PG_CASE
+    #local lf_catalog_source_name="integration-ibm-cloud-native-postgresql"
+    local lf_csv_name=$MY_POSTGRESQL_CASE
     local lf_wait_for_state=true
+    #export MY_STARTING_CSV="${MY_POSTGRESQL_STARTINGCSV}"
     decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
     create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_wait_for_state}" "${lf_csv_name}"
 
@@ -1478,6 +1635,67 @@ function install_postgresql() {
   fi
 
   decho 3 "F:OUT:install_postgresql"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
+# Create a PostGreSQL DB
+#
+function create_postgresql_db() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho 3 "F:IN :create_postgresql_db"
+
+  if $MY_POSTGRESQL_DB; then
+    
+    # Create namespace for PostGreSQL.
+    #export MY_NAMESPACE=$MY_POSTGRESQL_NAMESPACE
+    #envsubst <"${MY_RESOURCESDIR}namespace.yaml" | oc apply -f - || exit 1
+    create_namespace $MY_POSTGRESQL_NAMESPACE
+
+    # Create a PostGreSQL DB secret
+    local lf_type="Secret"
+    local lf_cr_name="${MY_POSTGRESQL_SECRET}"
+    local lf_namespace=$MY_POSTGRESQL_NAMESPACE
+    #local lf_secret_type="Opaque"
+    local lf_username=${MY_POSTGRESQL_USER}
+    local lf_password=${MY_POSTGRESQL_PASSWORD}
+    #local lf_username=$(echo -n "${MY_POSTGRESQL_USER}" | base64 -w0)
+    #local lf_password=$(echo -n "${MY_POSTGRESQL_PASSWORD}" | base64 -w0)
+    #local lf_yaml_file="${MY_RESOURCESDIR}secret.yaml"
+    #check_create_secret "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
+
+    if oc -n ${lf_namespace} get ${lf_type} ${lf_cr_name} >/dev/null 2>&1; then
+      mylog info "Custom Resource $lf_type/$lf_cr_name already exists"
+    else
+      oc -n $lf_namespace create secret generic $lf_cr_name --from-literal=username=$MY_POSTGRESQL_USER --from-literal=password=$MY_POSTGRESQL_PASSWORD
+    fi
+
+    # PostGreSQL DB
+    local lf_type="Cluster"
+    local lf_cr_name="${MY_POSTGRESQL_CLUSTER}"
+    local lf_yaml_file="${MY_RESOURCESDIR}postgresql-cluster.yaml"
+    local lf_namespace=$MY_POSTGRESQL_NAMESPACE
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
+
+    #local lf_resource=$(oc -n $lf_namespace get $lf_type -o json | jq -r --arg my_resource "$lf_cr_name" '.items[0].metadata | select (.name | contains ($my_resource)).name')
+    local lf_resource=$(oc -n $lf_namespace get $lf_type -o jsonpath="{.items[0].metadata.name}")
+    local lf_path="{.status.conditions[0].type}"
+    local lf_state="Ready"
+    decho 3 "wait_for_state \"$lf_type $lf_resource is $lf_state\" \"$lf_state\" \"oc -n $lf_namespace get $lf_type $lf_resource -o jsonpath='$lf_path'\""
+    wait_for_state "$lf_type $lf_resource $lf_path is $lf_state" "$lf_state" "oc -n $lf_namespace get $lf_type $lf_resource -o jsonpath='$lf_path'"
+
+    # Authorize superuser access
+    oc -n $lf_namespace patch $lf_type $lf_cr_name --type=merge -p '{"spec":{"enableSuperuserAccess":true}}'
+
+    # Here after how to check the status of the PostGreSQL DB and connect to it
+    # oc run pg-check --image=postgres:15 --restart=Never -- sleep 3600
+    # oc exec -it pg-check -- bash
+    # psql -h <postgresql_svc> -U <postgres_user> -d <database_name> // password is asked
+    # \q to quit
+
+  fi
+
+  decho 3 "F:OUT:create_postgresql_db"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
@@ -1742,7 +1960,9 @@ function customise_instana() {
 ################################################
 # Display information to access CP4I
 function display_access_info() {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  # To start displaying access info from the start of the line
+  #SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  SC_SPACES_COUNTER=0
   decho 3 "F:IN  :display_access_info"
 
   mylog info "==== Displaying Access Info to CP4I." 1>&2
@@ -1865,16 +2085,16 @@ function display_access_info() {
   if $MY_LIC_SRV; then
     lf_licensing_service_url=$(oc -n ${MY_LICENSE_SERVER_NAMESPACE} get Route -o=jsonpath='{.items[?(@.metadata.name=="ibm-licensing-service-instance")].spec.host}')
     mylog info "Licensing service endpoint: https://${lf_licensing_service_url}"
-    lf_licensing_secret_token=$(oc get secret ibm-licensing-token -n ${MY_LICENSE_SERVER_NAMESPACE} -o jsonpath='{.data.token}' | base64 -d)
+    lf_licensing_secret_token=$(oc -n ${MY_LICENSE_SERVER_NAMESPACE} get secret ibm-licensing-token -o jsonpath='{.data.token}' | base64 -d)
     mylog info "Licensing service token: ${lf_licensing_secret_token}"
     lf_licensing_service_reporter_url=$(oc -n ${MY_LICENSE_SERVER_NAMESPACE} get Route ibm-lsr-console -o=jsonpath='{.status.ingress[0].host}')
     mylog info "Licensing service reporter console endpoint: https://${lf_licensing_service_reporter_url}/license-service-reporter/"
-    lf_licensing_reporter_password=$(oc get secret ibm-license-service-reporter-credentials -n ${MY_LICENSE_SERVER_NAMESPACE} -o jsonpath='{.data.password}' | base64 -d)
+    lf_licensing_reporter_password=$(oc -n ${MY_LICENSE_SERVER_NAMESPACE} get secret ibm-license-service-reporter-credentials -o jsonpath='{.data.password}' | base64 -d)
     mylog info "Licensing service reporter credential: license-administrator/${lf_licensing_reporter_password}"
   fi
 
   decho 3 "F:OUT:display_access_info"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+  #SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
 
 ################################################
@@ -1915,7 +2135,7 @@ function install_needed_resources_part() {
   if ! ${TECHZONE};then
     oc create clusterrolebinding myname-cluster-admin-binding --clusterrole=cluster-admin --user=$MY_USER_ID > /dev/null 2>&1
     oc create clusterrolebinding myname-cluster-binding --clusterrole=admin --user=$MY_USER_ID > /dev/null 2>&1
-    oc adm policy add-cluster-role-to-user self-provisioner $MY_USER_ID -n $MY_OC_PROJECT
+    oc -n $MY_OC_PROJECT adm policy add-cluster-role-to-user self-provisioner $MY_USER_ID
   fi
   
   # https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.4?topic=operators-installing-by-using-cli
@@ -1924,29 +2144,33 @@ function install_needed_resources_part() {
   # TODO # nommer correctement les operatorgroup
   create_namespace $MY_OC_PROJECT
   create_namespace $MY_COMMONSERVICES_NAMESPACE
-  
-  create_namespace $MY_CERTMANAGER_NAMESPACE
-  ls_type="OperatorGroup"
-  ls_cr_name="${MY_CERTMANAGER_OPERATORGROUP}"
-  ls_yaml_file="${MY_RESOURCESDIR}operator-group-single.yaml"
-  ls_namespace=$MY_CERTMANAGER_NAMESPACE
-  export MY_OPERATORGROUP="${MY_CERTMANAGER_OPERATORGROUP}"
-  check_create_oc_yaml "${ls_type}" "${ls_cr_name}" "${ls_yaml_file}" "${ls_namespace}"
+  create_namespace $MY_CERTMANAGER_OPERATOR_NAMESPACE
+
+  local lf_type="OperatorGroup"
+  local lf_cr_name="${MY_CERTMANAGER_OPERATORGROUP}"
+  local lf_yaml_file="${MY_RESOURCESDIR}operator-group-single.yaml"
+  local lf_namespace=$MY_CERTMANAGER_OPERATOR_NAMESPACE
+  export MY_OPERATORGROUP=$lf_cr_name
+  export MY_NAMESPACE=$lf_namespace  
+  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
+  unset MY_OPERATORGROUP MY_NAMESPACE
   
   create_namespace $MY_LICENSE_SERVER_NAMESPACE
-  ls_type="OperatorGroup"
-  ls_cr_name="${MY_LICENSE_SERVER_OPERATORGROUP}"
-  ls_yaml_file="${MY_RESOURCESDIR}operator-group-single.yaml"
-  ls_namespace=$MY_LICENSE_SERVER_NAMESPACE
-  export MY_OPERATORGROUP="${MY_LICENSE_SERVER_OPERATORGROUP}"
-  check_create_oc_yaml "${ls_type}" "${ls_cr_name}" "${ls_yaml_file}" "${ls_namespace}"
+  local lf_type="OperatorGroup"
+  local lf_cr_name="${MY_LICENSE_SERVER_OPERATORGROUP}"
+  local lf_yaml_file="${MY_RESOURCESDIR}operator-group-single.yaml"
+  local lf_namespace=$MY_LICENSE_SERVER_NAMESPACE
+  export MY_OPERATORGROUP=$lf_cr_name
+  export MY_NAMESPACE=$lf_namespace  
+  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
+  unset MY_OPERATORGROUP MY_NAMESPACE
+
   
   # Add ibm entitlement key to namespace
   # SB]20230209 Aspera hsts service cannot be created because a problem with the entitlement, it must be added in the openshift-operators namespace.
   mylog info "Creating entitlement, need to check if it is needed or works"
   add_ibm_entitlement $MY_OC_PROJECT $MY_CONTAINER_ENGINE
   add_ibm_entitlement $MY_OPERATORS_NAMESPACE $MY_CONTAINER_ENGINE
-  #add_ibm_entitlement $MY_GITOPS_NAMESPACE $MY_CONTAINER_ENGINE
 
   decho 3 "F:OUT:install_needed_resources_part"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
@@ -1971,6 +2195,7 @@ function install_part() {
   #SB]20241121 install other useful tools
   install_mailhog
   install_openldap
+  install_sftp
   
   #SB]20231214 Installing Foundation services
   #mylog info "==== Installing foundational services (Cert Manager, Licensing Server and Common Services)." 1>&2
@@ -2011,6 +2236,9 @@ function install_part() {
   install_instana
   
   install_postgresql
+  create_postgresql_db
+
+  install_apic_graphql
 
   install_cluster_monitoring
 
@@ -2083,9 +2311,60 @@ function run_all() {
 }
 
 ################################################
+# Function to process calls
+function process_calls() {
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
+  decho 3 "F:IN :process_calls"
+
+  local lf_calls="$1"  # Get the full string of calls and parameters
+  local lf_commands    # Array to store the commands
+  local lf_cmd         # Command to process
+  local lf_func        # Function name
+  local lf_params      # Parameters
+  local lf_list        # List of available functions
+
+
+    # Split the calls by comma and loop through each
+    IFS=',' read -ra lf_commands <<< "$lf_calls"
+    for lf_cmd in "${lf_commands[@]}"; do
+      # Trim leading/trailing spaces from the command
+      lf_cmd=$(echo "$lf_cmd" | xargs)
+
+      # Extract the function name and parameters
+      lf_func=$(echo "$lf_cmd" | awk '{print $1}')
+      lf_params=$(echo "$lf_cmd" | awk '{$1=""; sub(/^ /, ""); print}')  # Get all the parameters after the function name
+      decho 3 "Function: $lf_func|Parameters: $lf_params"
+
+      # Check if the function exists and call it
+      if declare -f "$lf_func" > /dev/null; then
+        if [ "$lf_func" = "main" ] || [ "$lf_func" = "process_calls" ]; then
+          mylog error "Functions 'main', 'process_calls' cannot be called."
+          return 1
+        fi
+        #install_needed_resources_part
+        $lf_func $lf_params
+      else
+        #SC_SPACES_COUNTER=0
+        #SC_SPACES_INCR=0
+        mylog error "Function '$lf_func' not found."
+        lf_list=$(grep -E '^\s*(function\s+\w+|\w+\s*\(\))' $(basename "$0") | sed -E 's/^\s*(function\s+)?([a-zA-Z_][a-zA-Z0-9_]*)\s*\(.*/\2/')
+        mylog info "Available functions are:"
+        mylog info "$lf_list"
+        return 1
+      fi
+    done
+
+  decho 3 "F:OUT:process_calls"
+  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+}
+
+################################################
 # main function
-# SB]20241220 : this script is idempotent and with Arnauld we have run it many times using comments to avoid the execution of some parts of the script.
-# some times also we have run it just to execute one function. So that's why we added the following section to have the choice between executing the whole script or just a single function
+# SB]20241220 : this script is idempotent and with Arnauld we have run it many times using comments 
+#               to avoid the execution of some parts of the script.
+#               Sometimes also we have run it just to execute one function. 
+#               So that's why we added the following section to have the choice between executing 
+#               the whole script or execute one to many functions
 # Main logic
 function main() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER + $SC_SPACES_INCR))
@@ -2096,62 +2375,64 @@ function main() {
     return 1
   fi
 
-  while test $# -gt 0; do
+  # Main script logic
+  local lf_calls=""  # Initialize calls variable
+  local lf_key
 
-    # Process the remaining options
-    case $1 in
+  while [[ $# -gt 0 ]]; do
+    lf_key="$1"
+    decho 3 "Key: $lf_key"
+    case $lf_key in
       --all)
         install_needed_resources_part
         run_all
         ;;
       --call)
-        shift # Remove --call
-        if [[ $# -lt 1 ]]; then
-          mylog error "Function name required after --call."
-          return 1
-        fi
-        
-        function_name=$1
-        shift # Remove function name
-        if declare -f "$function_name" > /dev/null; then
-          if [ "$function_name" = "main" ]; then
-            mylog error "Function 'main' cannot be called."
-            return 1
-          else
-            install_needed_resources_part
-            # Call the function dynamically with remaining arguments
-            "$function_name" "$@"
-          fi
-        else
-          mylog error "Function '$function_name' not found."
-          sc_list=$(grep -E '^\s*(function\s+\w+|\w+\s*\(\))' $(basename "$0") | sed -E 's/^\s*(function\s+)?([a-zA-Z_][a-zA-Z0-9_]*)\s*\(.*/\2/')
-          mylog error "Available functions are:"
-          mylog error "$sc_list"
-          return 1
-        fi
+        shift
+        while [[ $# -gt 0 && "$1" != --* ]]; do
+          lf_calls+="$1 "  # Accumulate all arguments after --call
+          shift
+        done
         ;;
       *)
-        mylog error "Invalid option '$1'. Use --all or --call function_name parameters."
+        mylog error "Invalid option '$1'. Use --all or --call function_name parameters, function_name parameters, ...."
         return 1
         ;;
-    esac
+      esac
   done
+  lf_calls=$(echo "$lf_calls" | xargs)  # Trim leading/trailing spaces
+
+  # Call processing function if --call was used
+  if [[ -n $lf_calls ]]; then
+    process_calls "$lf_calls"
+  else
+    mylog error "No function to call. Use --call function_name parameters, function_name parameters, ...."
+    return 1
+  fi
 
   decho 3 "F:OUT:main"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
+  
+  exit 0
 }
 
 ################################################################################################
 # Start of the script main entry
 ################################################################################################
+# @param sc_properties_file: file path and name of the properties file
+# @param MY_OC_PROJECT: namespace where to create the operators and capabilities
+# @param sc_cluster_name: name of the cluster
 # example of invocation: ./provision_cluster-v2.sh private/my-cp4i.properties sbtest cp4i-sb-cluster
 # other example: ./provision_cluster-v2.sh script-parameters.properties cp4i sb20240102
 # other example: ./provision_cluster-v2.sh script-parameters.properties cp4i ad202341
-
+# other example: ./provision_cluster-v2.sh --all
+# other example: ./provision_cluster-v2.sh --call <function_name1>, <function_name2>, ...
+# other example: ./provision_cluster-v2.sh --all
 #
 export ADEBUG=1
 export TECHZONE=true
-export TRACELEVEL=3
+export TRACELEVEL=4
+
 
 # SB]20240404 Global Index sequence for incremental output for each function call
 export SC_SPACES_COUNTER=0
@@ -2185,6 +2466,8 @@ read_config_file "$sc_versions_file"
 
 # check the differents pre requisites
 check_exec_prereqs
+check_resource_exist storageclass $MY_BLOCK_STORAGE_CLASS
+check_resource_exist storageclass $MY_FILE_STORAGE_CLASS
 
 check_directory_exist_create "$MY_WORKINGDIR"
 

@@ -51,10 +51,15 @@ function was_build_image() {
 function login_to_registry() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
   decho 3 "F:IN:login_to_registry"
-  mylog info "Changes made recently to login to docker registry check you are correctly login"
-  oc login -u kubeadmin -p $MY_TECHZONE_PASSWORD $(oc whoami --show-server)
-  decho 3 "docker login -u kubeadmin -p $(oc whoami -t) ${IMAGE_REGISTRY_HOST}"
-  docker login -u kubeadmin -p $(oc whoami -t) ${IMAGE_REGISTRY_HOST}
+
+  decho 3 "Internal image registry host: $IMAGE_REGISTRY_HOST"
+  local lf_cluster_server=$(oc whoami --show-server)
+  decho 3 "Cluster server host: $lf_cluster_server"
+  echo "kubeadmin password: $MY_TECHZONE_PASSWORD"
+  oc login -u kubeadmin -p $MY_TECHZONE_PASSWORD $lf_cluster_server
+  local lf_token=$(oc whoami -t)
+  docker login -u kubeadmin -p $lf_token $IMAGE_REGISTRY_HOST
+  
   decho 3 "F:OUT:login_to_registry"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
 }
@@ -118,7 +123,6 @@ decho 5 "WAS configuration directory: ${lf_was_config_dir}"
   read_config_file "${lf_was_config_dir}was.properties"
 
   if $MY_WASLIBERTY_CUSTOM; then
-    mylog info "==== Customise WAS." 1>&2
     prepare_internal_registry
     # Build the image
     if $MY_WASLIBERTY_CUSTOM_BUILD; then

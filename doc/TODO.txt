@@ -1,17 +1,39 @@
+- APIC By Components
+	Réorganisation des properties 
+- Loki
+	Log (pas oublié de déconnecter/reconnecter) DONE
+	Monitoring / Grafana	IN PROGRESS
+- SSO
+	One user for all in Keycloak
+	Automatisation
+- postgre finir l'installation
+- Indentation et silent (le rouge)
+	create_project en YAML
+- EEM resource customisation pas automatisée
+	Security OIDC
+	Automatisation des topics (EEM API)
+	Event Gateway avec APIC
+- EP pas assez de customisation
+- Channel sous forme de fonction	DONE
+- Specialisation d'autres worker (infra) - Low priority
+	master 3, storage 3, infra 2, worker 4
+- APIC form factor migration
+- Faire un petit script pour latest app (ibm-pak/cluster), latest version (ibm-pak/cluster), channel version (cluster)
+- decho faut il mettre le nom de la fonction si on a déjà F:IN F:OUT
+- envsubst devrait être uniquement dans adapt_file
+- ARGO CD
+- Rationaliser l'utilisation de envsubst versus la fonction adapt_file (lib.sh)
+- tests uniform cluster (clients java ou scripts)
+
 --- TODO 1 --- Manque DP capabilities
 --- TODO 2 --- Improve README  ---
 --- TODO 3 --- Improve code documentation  ---
 --- TODO 4 --- E2E Initial Customisation ---
-	ES:
-		TOPICs
 	APIC:
 		Manage 404 if not present
-High priority: 	Add a route to DataPower Gateway console
+High priority: 	
 		Load Taxi Locator/... (call-back-end-simulator_1.0.0.yaml, flightlandings_1.0.0.yaml, passenger_1.0.0.zip, passenger_airshopping-v02.wsdl_1.0.0.zip, taxi-locator_1.0.0.yaml, taxi-messaging_1.0.0.yaml)
-		OK: Create OAuth
 		L'adapter pour petstore.
-		Create LDAP user registry : Voir globalement avec Keycloak.
-		Presque terminé (à finir): Create Fake Authentication API, publish it in prod, create a corg, create an app and create a subscription to the fake authentication API.
 		Securite topic (à voir) : Create users from LDAP entries
 	LDAP:
 		Review list of users, merge Saad entries
@@ -19,8 +41,6 @@ High priority: 	Add a route to DataPower Gateway console
 	Low priority: Load simulator application for taxi test
 		Box note: https://ibm.ent.box.com/notes/953089231688
 		Container eem-demo-rest-apis, quay.io/dale-lane/eem-demo-apis
-à compléter: --- TODO 5 --- Create/Extract all certificates for Web UI ---
-		 Need a few certificate to get it including gateway, login, cdp, ... Attention the nginx is passthrough
 --- TODO 6 --- Harmoniser les commandes soit en oc only soit oc + jq (avoid strings manipulation) ---
 Low priority (Gitops/Argocd/Ansible/...): --- TODO 8 --- Check Daffy (wget http://get.daffy-installer.com/download-scripts/daffy-init.sh; chmod 777 daffy-init.sh;./daffy-init.sh ) and also https://production-gitops.dev/ and https://ibm.github.io/cloud-pak-deployer/
 Low priority : --- TODO 9 --- Test TerraForm
@@ -33,7 +53,6 @@ Low priority : --- TODO 11 --- Envoie email (voir Joel Gomez)
 Low priority : --- TODO 12 --- Check if reuse from https://github.ibm.com/kskhong/terraform-cp4i
 --- TODO 14 --- Security TODOs
 Low priority : 	Certificates: Check if we need to create the secret before maybe using the cert manager and provide it to the CR
-High priority : Vérifier dépendances versions EP/Flink/EEM ?, Automatiser EEM/EP/ES : acces, CR,
 High priority: 	Automatiser WAS Liberty : Que fait on des targets qui sont générés dans les build? 1 GB...
 	1 solution on efface à la fin (on garde que le war) A implémenter
 	2 le target ailleurs dans un fichier tmp dans le projet
@@ -41,16 +60,8 @@ High priority: 	Automatiser WAS Liberty : Que fait on des targets qui sont gén�
 	Documentation des scénarios
 Low priority:	Revoir nos scripts en fonction des bonnes pratiques
 		"CP4I Architecture and Deployment 2023.4.PPTX"
-High priority: 	Display access webconsoe/user MQ, MQ MQSC dynamique : https://github.com/ibm-messaging/mq-gitops-samples/tree/main/ccdt-deployment
-	
-High priority: revoir utilisation des la notion de service versus endpoint
-High priority: créer une fonction pour vérifier que les capabilites principales sont installées ET l'utiliser dans display_access_info.
-High priority : Dans decho un niveau de trace 1 actuel 2 F:IN/F:OU 3 le reste les F:IN et F:OUT optionnels entre autres
-	rationaliser l'utilisation de envsubst versus la fonction adapt_file (lib.sh)
-Important: Génération de certificats: comment éviter de la faire trop de fois pour éviter les impacts?
+High priority: 	Display access webconsole/user MQ, MQ MQSC dynamique : https://github.com/ibm-messaging/mq-gitops-samples/tree/main/ccdt-deployment
 idempotence:
-	KafkaUser
-	KafkaTopic (prendre significatifs pas tous)
 	Voir sur les configuration qui sont faites qu'une seule fois, genre internal registry
 Add following before or after # REST Management enabled\nrest-mgmt
     key: >-

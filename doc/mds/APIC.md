@@ -17,3 +17,13 @@
 ![API Test](../images/api_atm-test4.png "API Test")
 
 ![API Test](../images/api_atm-test5.png "API Test")
+
+## Backup
+
+``` bash
+oc -n cp4i create secret generic apic-mgmt-backup-secret --from-literal=username='foo' --from-literal=password='123'
+oc -n cp4i get ManagementCluster
+oc -n cp4i get cluster
+oc -n cp4i create -f mgmtbackup_cr.yaml
+oc -n cp4i get backup -o custom-columns="name:.metadata.name,backupId:.status.backupId,endpoint:.status.endpointURL,path:.status.destinationPath,servername:.status.serverName,status:.status.phase"
+```
