@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: $MY_SFTP_SERVER_NAMESPACE-sftp-service
+  namespace: $MY_SFTP_SERVER_NAMESPACE
+spec: 
+  selector:
+    deployment: ${MY_SFTP_SERVER_NAMESPACE}-sftp-server
+  ipFamilies:
+    - IPv4
+  ports: 
+    - name: 22-tcp
+      protocol: TCP
+      port: 22
+      targetPort: 22
+      nodePort: 30122
+  type:	NodePort

@@ -1,0 +1,14 @@
+apiVersion: v1
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: ${MY_SFTP_SERVER_NAMESPACE}-sftp-route
+  namespace: $MY_SFTP_SERVER_NAMESPACE
+spec:
+  to:
+    kind: Service
+    name: $MY_SFTP_SERVER_NAMESPACE-sftp-service
+    weight: 100
+  port:
+    targetPort: 22-tcp
+  wildcardPolicy: None

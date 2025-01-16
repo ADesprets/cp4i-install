@@ -586,6 +586,7 @@ function check_create_oc_yaml() {
   local lf_in_yaml_file="$3"
   local lf_in_ns="$4"
 
+  # Todo Why this line?
   export MY_OPERATORGROUP="$2"
   export MY_NAMESPACE="$4"
 
@@ -646,7 +647,7 @@ function deploy_openldap() {
   local lf_in_octype="$1"
   local lf_in_name="$2"
   local lf_in_namespace="$3"
-  # check if deploment already performed
+  # check if deployment already performed
   mylog check "Checking ${lf_in_octype} ${lf_in_name} in ${lf_in_namespace}"
   if oc -n ${lf_in_namespace} get ${lf_in_octype} ${lf_in_name} >/dev/null 2>&1; then
     mylog ok
@@ -689,7 +690,7 @@ function deploy_mailhog() {
   local lf_in_name="$2"
   local lf_in_namespace="$3"
 
-  # check if deploment already performed
+  # check if deployment already performed
   mylog check "Checking ${lf_in_octype} ${lf_in_name} in ${lf_in_namespace}"
   if oc -n ${lf_in_namespace} get ${lf_in_octype} ${lf_in_name} >/dev/null 2>&1; then
     mylog ok
@@ -1025,6 +1026,7 @@ function check_add_cs_ibm_pak() {
     oc apply -f $lf_file
   fi
 
+  # For Asset Repository (Exception)
   lf_file=${MY_IBMPAK_MIRRORDIR}${lf_in_case_name}/${lf_case_version}/catalog-sources-linux-${lf_in_arch}.yaml
   if [ -e "$lf_file" ]; then
     oc apply -f $lf_file
@@ -1160,21 +1162,14 @@ function create_operand_instance() {
   local lf_in_wait=$7
 
   SECONDS=0
-  local lf_type=$lf_in_type
   local lf_cr_name=$lf_in_resource
-  local lf_file=lf_in_file
-  local lf_namespace=lf_in_ns
-  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_file}" "${lf_namespace}"
+  check_create_oc_yaml "${lf_in_type}" "${lf_cr_name}" "${lf_in_file}" "${lf_in_ns}"
 
-  local lf_path=$lf_in_path
-  local lf_state=$lf_in_state
-  local lf_wait_for_state=$lf_in_wait
-
-  decho 3 "wait_for_state | $lf_type $lf_cr_name $lf_path is $lf_state | $lf_state | oc -n $lf_namespace get $lf_type $lf_cr_name -o jsonpath=$lf_path"
-  if $lf_wait_for_state; then
-    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $lf_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
+  decho 3 "wait_for_state | $lf_in_type $lf_cr_name $lf_in_path is $lf_in_state | $lf_in_state | oc -n $lf_in_ns get $lf_in_type $lf_cr_name -o jsonpath=$lf_in_path"
+  if $lf_in_wait; then
+    wait_for_state "$lf_in_type $lf_cr_name $lf_in_path is $lf_in_state" "$lf_in_state" "oc -n $lf_in_ns get $lf_in_type $lf_cr_name -o jsonpath='$lf_in_path'"
   fi
-  mylog info "Creation of $lf_type instance took $SECONDS seconds to execute." 1>&2
+  mylog info "Creation of $lf_in_type instance took $SECONDS seconds to execute." 1>&2
 
   decho 3 "F:OUT:create_operand_instance"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))

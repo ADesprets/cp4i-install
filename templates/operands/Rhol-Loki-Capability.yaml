@@ -11,11 +11,11 @@ spec:
       name: $MY_LOKI_INSTANCE_NAME
     retentionPolicy:
       application:
-        maxAge: 7d
+        maxAge: 2d
       audit:
         maxAge: 7d
       infra:
-        maxAge: 7d
+        maxAge: 2d
     type: lokistack
   visualization:
     ocpConsole:

@@ -30,7 +30,6 @@ lf_jwks_url=$(oc -n $MY_OC_PROJECT get APIConnectCluster -o=jsonpath='{.items[?(
 # 	oc -n cp4i get secret cp4i-apic-ingress-ca -ojsonpath="{.data['ca\.crt']}" | base64 -d
 # 3) secret for EEM apim-cpd.yaml
 
-
 export EEM_APIC_INGRESS_CA_CERT_SECRET_NAME=apim-cpd
 if oc -n ${MY_OC_PROJECT} get secret $EEM_APIC_INGRESS_CA_CERT_SECRET_NAME >/dev/null 2>&1; then
     mylog ok

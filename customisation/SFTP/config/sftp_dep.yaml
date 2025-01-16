@@ -1,46 +1,57 @@
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: sftp
-  namespace: int-sftp
-  annotations:
-    deployment.kubernetes.io/revision: '1'
+  name: ${MY_SFTP_SERVER_NAMESPACE}-sftp-server
+  namespace: $MY_SFTP_SERVER_NAMESPACE
+  labels:
+    app: ${MY_SFTP_SERVER_NAMESPACE}-sftp-server
+    app.kubernetes.io/component: ${MY_SFTP_SERVER_NAMESPACE}-sftp-server
+    app.kubernetes.io/instance: ${MY_SFTP_SERVER_NAMESPACE}-sftp-server  
 spec:
   replicas: 1
   selector:
     matchLabels:
-      deployment: sftp
+      deployment: ${MY_SFTP_SERVER_NAMESPACE}-sftp-server  
   template:
     metadata:
-      creationTimestamp: null
       labels:
-        deployment: sftp
-      annotations:
-        openshift.io/generated-by: OpenShiftNewApp
+        deployment: ${MY_SFTP_SERVER_NAMESPACE}-sftp-server 
     spec:
       volumes:
-        - name: users
-          configMap:
-            name: sftp-etc-sftp
+        - name: sftp-users
+          secret:
+            secretName: ${MY_SFTP_SERVER_NAMESPACE}-sftp-creds-secret
             defaultMode: 420
+        - name: sftp-ssh
+          configMap:
+            name: ${MY_SFTP_SERVER_NAMESPACE}-ssh-conf-cm
+            defaultMode: 384
+        - name: ${MY_SFTP_SERVER_NAMESPACE}-sftp-pvc
+          persistentVolumeClaim:
+            claimName: ${MY_SFTP_SERVER_NAMESPACE}-sftp-pvc            
       containers:
         - resources: {}
           terminationMessagePath: /dev/termination-log
-          name: sftp
+          name: ${MY_SFTP_SERVER_NAMESPACE}-sftp-server
           securityContext:
             capabilities:
               add:
-                - SYS_CHROOT
+                - SYS_CHROOT          
           ports:
             - containerPort: 22
               protocol: TCP
           imagePullPolicy: IfNotPresent
           volumeMounts:
-            - name: users
+            - name: sftp-users
               readOnly: true
               mountPath: /etc/sftp
+            - name: sftp-ssh
+              readOnly: true
+              mountPath: /etc/ssh
+            - name: ${MY_SFTP_SERVER_NAMESPACE}-sftp-pvc
+              mountPath: /home/data              
           terminationMessagePolicy: File
-          image: 'atmoz/sftp@sha256:7603ed1a8b0927973a664ed16fcc37c20a34edca5750794ca314efb5009d3395'
+          image: 'atmoz/sftp:alpine'
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
       dnsPolicy: ClusterFirst

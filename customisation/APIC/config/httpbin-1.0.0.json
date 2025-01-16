@@ -9,6 +9,7 @@
       "url": "http://site.ibm.com/terms-and-licences.html",
       "name": "API Terms"
     },
+    "termsOfService": "http://site.ibm.com/terms-and-licences.html",
     "contact": {
       "name": "Arnauld Desprets",
       "email": "arnauld_desprets@fr.ibm.com"
@@ -70,7 +71,7 @@
     },
     "servers": [
       {
-        "url": "https://cp4i-apic-gw-gateway-cp4i.apps.66c486d0cc846855dd383768.ocp.techzone.ibm.com/org1/sandbox"
+        "url": "https://cp4i-apic-gw-gateway-cp4i.apps.677651fd23fb424f7dff4a9f.ocp.techzone.ibm.com/org1/sandbox"
       }
     ]
   },
@@ -85,7 +86,10 @@
           "required": true,
           "schema": {
             "type": "integer",
+            "format": "int32",
             "title": "status_code_def",
+            "minimum": 100,
+            "maximum": 600,
             "enum": [
               100,
               200,
@@ -105,19 +109,63 @@
             }
           },
           "200": {
-            "description": "Success"
+            "description": "Success",
+            "headers": {
+              "X-Rate-Limit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-Rate-Limit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "Access-Control-Allow-Origin": {
+                "$ref": "#/components/headers/Access-Control-Allow-Origin"
+              }
+            }
           },
           "300": {
             "description": "Redirection"
           },
           "400": {
-            "description": "Client Errors"
+            "description": "Client Errors",
+            "headers": {
+              "X-Rate-Limit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-Rate-Limit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "Access-Control-Allow-Origin": {
+                "$ref": "#/components/headers/Access-Control-Allow-Origin"
+              }
+            }
           },
           "406": {
-            "description": "Not Acceptable"
+            "description": "Not Acceptable",
+            "headers": {
+              "X-Rate-Limit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-Rate-Limit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "Access-Control-Allow-Origin": {
+                "$ref": "#/components/headers/Access-Control-Allow-Origin"
+              }
+            }
           },
           "415": {
-            "description": "Unsupported Media Type"
+            "description": "Unsupported Media Type",
+            "headers": {
+              "X-Rate-Limit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-Rate-Limit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "Access-Control-Allow-Origin": {
+                "$ref": "#/components/headers/Access-Control-Allow-Origin"
+              }
+            }
           },
           "500": {
             "description": "Server Errors"
@@ -130,19 +178,68 @@
             "description": "Informational responses"
           },
           "200": {
-            "description": "Success"
+            "description": "Success",
+            "headers": {
+              "X-Rate-Limit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-Rate-Limit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "Access-Control-Allow-Origin": {
+                "$ref": "#/components/headers/Access-Control-Allow-Origin"
+              }
+            }
           },
           "300": {
-            "description": "Redirection"
+            "description": "Redirection",
+            "headers": {
+              "Access-Control-Allow-Origin": {
+                "$ref": "#/components/headers/Access-Control-Allow-Origin"
+              }
+            }
           },
           "400": {
-            "description": "Client Errors"
+            "description": "Client Errors",
+            "headers": {
+              "X-Rate-Limit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-Rate-Limit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "Access-Control-Allow-Origin": {
+                "$ref": "#/components/headers/Access-Control-Allow-Origin"
+              }
+            }
           },
           "406": {
-            "description": "Not Acceptable"
+            "description": "Not Acceptable",
+            "headers": {
+              "X-Rate-Limit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-Rate-Limit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "Access-Control-Allow-Origin": {
+                "$ref": "#/components/headers/Access-Control-Allow-Origin"
+              }
+            }
           },
           "415": {
-            "description": "Unsupported Media Type"
+            "description": "Unsupported Media Type",
+            "headers": {
+              "X-Rate-Limit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-Rate-Limit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "Access-Control-Allow-Origin": {
+                "$ref": "#/components/headers/Access-Control-Allow-Origin"
+              }
+            }
           },
           "500": {
             "description": "Server Errors"
@@ -155,19 +252,63 @@
             "description": "Informational responses"
           },
           "200": {
-            "description": "Success"
+            "description": "Success",
+            "headers": {
+              "X-Rate-Limit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-Rate-Limit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "Access-Control-Allow-Origin": {
+                "$ref": "#/components/headers/Access-Control-Allow-Origin"
+              }
+            }
           },
           "300": {
             "description": "Redirection"
           },
           "400": {
-            "description": "Client Errors"
+            "description": "Client Errors",
+            "headers": {
+              "X-Rate-Limit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-Rate-Limit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "Access-Control-Allow-Origin": {
+                "$ref": "#/components/headers/Access-Control-Allow-Origin"
+              }
+            }
           },
           "406": {
-            "description": "Not Acceptable"
+            "description": "Not Acceptable",
+            "headers": {
+              "X-Rate-Limit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-Rate-Limit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "Access-Control-Allow-Origin": {
+                "$ref": "#/components/headers/Access-Control-Allow-Origin"
+              }
+            }
           },
           "415": {
-            "description": "Unsupported Media Type"
+            "description": "Unsupported Media Type",
+            "headers": {
+              "X-Rate-Limit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-Rate-Limit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "Access-Control-Allow-Origin": {
+                "$ref": "#/components/headers/Access-Control-Allow-Origin"
+              }
+            }
           },
           "500": {
             "description": "Server Errors"
@@ -180,19 +321,63 @@
             "description": "Informational responses"
           },
           "200": {
-            "description": "Success"
+            "description": "Success",
+            "headers": {
+              "X-Rate-Limit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-Rate-Limit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "Access-Control-Allow-Origin": {
+                "$ref": "#/components/headers/Access-Control-Allow-Origin"
+              }
+            }
           },
           "300": {
             "description": "Redirection"
           },
           "400": {
-            "description": "Client Errors"
+            "description": "Client Errors",
+            "headers": {
+              "X-Rate-Limit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-Rate-Limit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "Access-Control-Allow-Origin": {
+                "$ref": "#/components/headers/Access-Control-Allow-Origin"
+              }
+            }
           },
           "406": {
-            "description": "Not Acceptable"
+            "description": "Not Acceptable",
+            "headers": {
+              "X-Rate-Limit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-Rate-Limit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "Access-Control-Allow-Origin": {
+                "$ref": "#/components/headers/Access-Control-Allow-Origin"
+              }
+            }
           },
           "415": {
-            "description": "Unsupported Media Type"
+            "description": "Unsupported Media Type",
+            "headers": {
+              "X-Rate-Limit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-Rate-Limit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "Access-Control-Allow-Origin": {
+                "$ref": "#/components/headers/Access-Control-Allow-Origin"
+              }
+            }
           },
           "500": {
             "description": "Server Errors"
@@ -202,7 +387,18 @@
       "options": {
         "responses": {
           "200": {
-            "description": "success"
+            "description": "success",
+            "headers": {
+              "X-Rate-Limit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-Rate-Limit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "Access-Control-Allow-Origin": {
+                "$ref": "#/components/headers/Access-Control-Allow-Origin"
+              }
+            }
           }
         }
       },
@@ -212,19 +408,63 @@
             "description": "Informational responses"
           },
           "200": {
-            "description": "Success"
+            "description": "Success",
+            "headers": {
+              "X-Rate-Limit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-Rate-Limit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "Access-Control-Allow-Origin": {
+                "$ref": "#/components/headers/Access-Control-Allow-Origin"
+              }
+            }
           },
           "300": {
             "description": "Redirection"
           },
           "400": {
-            "description": "Client Errors"
+            "description": "Client Errors",
+            "headers": {
+              "X-Rate-Limit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-Rate-Limit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "Access-Control-Allow-Origin": {
+                "$ref": "#/components/headers/Access-Control-Allow-Origin"
+              }
+            }
           },
           "406": {
-            "description": "Not Acceptable"
+            "description": "Not Acceptable",
+            "headers": {
+              "X-Rate-Limit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-Rate-Limit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "Access-Control-Allow-Origin": {
+                "$ref": "#/components/headers/Access-Control-Allow-Origin"
+              }
+            }
           },
           "415": {
-            "description": "Unsupported Media Type"
+            "description": "Unsupported Media Type",
+            "headers": {
+              "X-Rate-Limit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-Rate-Limit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "Access-Control-Allow-Origin": {
+                "$ref": "#/components/headers/Access-Control-Allow-Origin"
+              }
+            }
           },
           "500": {
             "description": "Server Errors"
@@ -239,6 +479,17 @@
         "responses": {
           "200": {
             "description": "success",
+            "headers": {
+              "X-Rate-Limit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-Rate-Limit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "Access-Control-Allow-Origin": {
+                "$ref": "#/components/headers/Access-Control-Allow-Origin"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {}
@@ -246,19 +497,47 @@
             }
           },
           "406": {
-            "description": "Not Acceptable"
+            "description": "Not Acceptable",
+            "headers": {
+              "X-Rate-Limit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-Rate-Limit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "Access-Control-Allow-Origin": {
+                "$ref": "#/components/headers/Access-Control-Allow-Origin"
+              }
+            }
           },
           "415": {
-            "description": "Unsupported Media Type"
+            "description": "Unsupported Media Type",
+            "headers": {
+              "X-Rate-Limit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-Rate-Limit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "Access-Control-Allow-Origin": {
+                "$ref": "#/components/headers/Access-Control-Allow-Origin"
+              }
+            }
           },
           "429": {
             "description": "Too Many Requests",
             "headers": {
-              "X-RateLimit-Limit": {
+              "X-Rate-Limit-Limit": {
                 "$ref": "#/components/headers/X-RateLimit-Limit"
               },
-              "X-RateLimit-Remaining": {
+              "X-Rate-Limit-Remaining": {
                 "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "Access-Control-Allow-Origin": {
+                "$ref": "#/components/headers/Access-Control-Allow-Origin"
+              },
+              "Retry-After": {
+                "$ref": "#/components/headers/Retry-After"
               }
             }
           }
@@ -307,6 +586,17 @@
           "application/json": {
             "schema": {}
           }
+        },
+        "headers": {
+          "X-Rate-Limit-Limit": {
+            "$ref": "#/components/headers/X-RateLimit-Limit"
+          },
+          "X-Rate-Limit-Remaining": {
+            "$ref": "#/components/headers/X-RateLimit-Remaining"
+          },
+          "Access-Control-Allow-Origin": {
+            "$ref": "#/components/headers/Access-Control-Allow-Origin"
+          }
         }
       },
       "429": {
@@ -340,7 +630,8 @@
             "type": "object",
             "properties": {
               "param1": {
-                "type": "string"
+                "type": "string",
+                "maxLength": 1000
               }
             }
           },
@@ -403,10 +694,12 @@
             "maxLength": 512
           },
           "Referer": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 512
           },
           "Sec-Fetch-Dest": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 512
           },
           "Sec-Fetch-Mode": {
             "type": "string",
@@ -444,15 +737,37 @@
       "X-RateLimit-Limit": {
         "description": "Request limit per hour",
         "schema": {
-          "type": "integer"
+          "type": "integer",
+          "format": "int32",
+          "minimum": 1,
+          "maximum": 100000
         },
         "example": 100
       },
       "X-RateLimit-Remaining": {
         "schema": {
-          "type": "integer"
+          "type": "integer",
+          "format": "int32",
+          "minimum": 1,
+          "maximum": 100000
         },
         "example": 94
+      },
+      "Access-Control-Allow-Origin": {
+        "description": "Specifies which origins are allowed to access the resource",
+        "schema": {
+          "type": "string",
+          "maxLength": 512
+        }
+      },
+      "Retry-After": {
+        "description": "The number of seconds to wait before making a new request",
+        "schema": {
+          "type": "integer",
+          "format": "int32",
+          "minimum": 1,
+          "maximum": 100000
+        }
       }
     },
     "parameters": {},

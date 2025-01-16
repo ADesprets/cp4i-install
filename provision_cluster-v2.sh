@@ -136,20 +136,50 @@ function install_keycloak() {
   decho 3 "F:IN :install_keycloak"
 
   mylog info "==== Installing Redhat Openshift Keycloak." 1>&2
-  mylog info "TO BE DONE" 1>&2
-#  export MY_NAMESPACE=$MY_GITOPS_NAMESPACE
-#  envsubst <"${MY_RESOURCESDIR}namespace.yaml" | oc apply -f - || exit 1
-#
-#  local lf_operator_name="$MY_GITOPS_OPERATORGROUP"
-#  local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-#  local lf_operator_chl=$MY_GITOPS_CHL
-#  local lf_strategy="Automatic"
-#  local lf_catalog_source_name="redhat-operators"
-#  local lf_wait_for_state=true
-#  local lf_csv_name=$MY_GITOPS_CASE
-#  decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
-#  create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_wait_for_state}" "${lf_csv_name}"
-#
+  create_namespace ${MY_KEYCLOAK_NAMESPACE} "${MY_KEYCLOAK_NAMESPACE} project" "For Keycloak"
+
+  # Operator group for Keycloak in single namespace
+  local lf_type="OperatorGroup"
+  local lf_cr_name="${MY_KEYCLOAK_OPERATORGROUP}"
+  local lf_yaml_file="${MY_RESOURCESDIR}operator-group-single.yaml"
+  local lf_namespace=$MY_KEYCLOAK_NAMESPACE
+  mylog check "Checking $lf_type $lf_cr_name in $lf_namespace" 1>&2
+  if oc get "$lf_type" -n "$lf_namespace" "$lf_cr_name" >/dev/null 2>&1; then
+    mylog ok
+  else
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
+  fi
+
+  # Create a subscription for Keycloak Operator
+  local lf_operator_name="$MY_KEYCLOAK_CASE"
+  local lf_operator_namespace=$MY_KEYCLOAK_NAMESPACE
+  local lf_operator_chl=$MY_KEYCLOAK_CHL
+  local lf_strategy="Automatic"
+  local lf_catalog_source_name="redhat-operators"
+  local lf_wait_for_state=true
+  local lf_csv_name=$MY_KEYCLOAK_CASE
+  mylog check "Checking subscription $lf_operator_name in $lf_namespace" 1>&2
+  if oc get subscription -n "$lf_namespace" "$lf_operator_name" >/dev/null 2>&1; then
+    mylog ok
+  else
+    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_wait_for_state}\" \"${lf_csv_name}\""
+    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_wait_for_state}" "${lf_csv_name}"
+  fi
+
+#  if $; then
+#    mylog info "HOLD PLACE"
+#  else
+#    # Creating  instance
+#    local lf_file="${MY_OPERANDSDIR}APIC-Capability.yaml"
+#    local lf_ns="${MY_OC_PROJECT}"
+#    local lf_path="{.status.phase}"
+#    local lf_resource="$MY_APIC_INSTANCE_NAME"
+#    local lf_state="Ready"
+#    local lf_type="APIConnectCluster"
+#    local lf_wait_for_state=true
+#    create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
+#  fi
+  
   decho 3 "F:OUT:install_keycloak"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
 }
@@ -161,29 +191,103 @@ function install_sftp() {
   decho 3 "F:IN :install_sftp"
 
   mylog info "==== Installing an SFTP server." 1>&2
-  mylog info "IN PROGRESS" 1>&2
 
   create_namespace ${MY_SFTP_SERVER_NAMESPACE} "${MY_SFTP_SERVER_NAMESPACE} project" "For SFTP server"
 
-  # Create configmap with users
-  mylog check "Checking ConfigMap for credential ${MY_SFTP_SERVER_NAMESPACE}-sftp-creds" 1>&2
-  if oc get configmap -n ${MY_SFTP_SERVER_NAMESPACE} "${MY_SFTP_SERVER_NAMESPACE}-sftp-creds" >/dev/null 2>&1; then
+  # Create secret with users
+  mylog check "Checking Secret for credential ${MY_SFTP_SERVER_NAMESPACE}-sftp-creds-secret" 1>&2
+  if oc get secret -n ${MY_SFTP_SERVER_NAMESPACE} "${MY_SFTP_SERVER_NAMESPACE}-sftp-creds-secret" >/dev/null 2>&1; then
     mylog ok
   else
     generate_password 32
     adapt_file ${MY_SFTP_SCRIPTDIR}config/ ${MY_SFTP_GEN_CUSTOMDIR}config/ users.conf
     unset $USER_PASSWORD_GEN
-    oc -n $MY_SFTP_SERVER_NAMESPACE create configmap ${MY_SFTP_SERVER_NAMESPACE}-sftp-creds --from-file=${MY_SFTP_GEN_CUSTOMDIR}config/users.conf
+    oc -n $MY_SFTP_SERVER_NAMESPACE create secret generic "${MY_SFTP_SERVER_NAMESPACE}-sftp-creds-secret" --from-file=${MY_SFTP_GEN_CUSTOMDIR}config/users.conf
   fi
 
   # Create configmap with SSH keys
-  ssh-keygen -t ed25519 -f ssh_host_ed25519_key < /dev/null
-  ssh-keygen -t rsa -b 4096 -f ssh_host_rsa_key < /dev/null
-  
+  mylog check "Checking ConfigMap for ssh keys ${MY_SFTP_SERVER_NAMESPACE}-ssh-conf-cm" 1>&2
+  if oc get configmap -n ${MY_SFTP_SERVER_NAMESPACE} "${MY_SFTP_SERVER_NAMESPACE}-ssh-conf-cm" >/dev/null 2>&1; then
+    mylog ok
+  else
+    ssh-keygen -t ed25519 -f ${MY_SFTP_GEN_CUSTOMDIR}config/ssh_host_ed25519_key < /dev/null
+    ssh-keygen -t rsa -b 4096 -f ${MY_SFTP_GEN_CUSTOMDIR}config/ssh_host_rsa_key < /dev/null
+    adapt_file ${MY_SFTP_SCRIPTDIR}config/ ${MY_SFTP_GEN_CUSTOMDIR}config/ sshd_config
+    oc -n $MY_SFTP_SERVER_NAMESPACE create configmap ${MY_SFTP_SERVER_NAMESPACE}-ssh-conf-cm \
+      --from-file=${MY_SFTP_GEN_CUSTOMDIR}config/ssh_host_ed25519_key \
+      --from-file=${MY_SFTP_GEN_CUSTOMDIR}config/ssh_host_ed25519_key.pub \
+      --from-file=${MY_SFTP_GEN_CUSTOMDIR}config/ssh_host_rsa_key \
+      --from-file=${MY_SFTP_GEN_CUSTOMDIR}config/ssh_host_rsa_key.pub \
+      --from-file=${MY_SFTP_GEN_CUSTOMDIR}config/sshd_config
+  fi
 
-  decho 3 "F:OUT:install_sftp"
+  # Create PVC
+  export VAR_PVC_NAME="${MY_SFTP_SERVER_NAMESPACE}-sftp-pvc"
+  export VAR_PVC_NAMESPACE=$MY_SFTP_SERVER_NAMESPACE
+  export VAR_PVC_STORAGE_CLASS=$MY_FILE_STORAGE_CLASS
+  mylog check "Checking Persistent Volume Claim $VAR_PVC_NAME" 1>&2
+  if oc -n $MY_SFTP_SERVER_NAMESPACE get pvc "$VAR_PVC_NAME" >/dev/null 2>&1; then
+    mylog ok
+  else
+ 	  adapt_file ${MY_RESOURCESDIR} ${MY_SFTP_GEN_CUSTOMDIR}config/ pvc.yaml
+	  oc -n ${MY_SFTP_SERVER_NAMESPACE} create -f ${MY_SFTP_GEN_CUSTOMDIR}config/pvc.yaml
+	  wait_for_state "$VAR_PVC_NAME status.phase is Bound" "Bound" "oc -n ${MY_SFTP_SERVER_NAMESPACE} get pvc $VAR_PVC_NAME -o jsonpath='{.status.phase}'"
+  fi
+
+  # Check security context constraint
+  mylog check "Security Context Constraint anyuid" 1>&2
+  if oc get SecurityContextConstraints anyuid >/dev/null 2>&1; then
+    mylog ok
+  else
+    oc adm policy add-scc-to-user anyuid -z default
+    wait 10
+    oc patch scc anyuid --type=merge --patch '{"users": ["system:serviceaccount:sftp:default\n"]}'
+    oc patch scc anyuid --type=merge --patch '{"allowedCapabilities":["SYS_CHROOT\n"]}'
+  fi
+
+  # Create deployment including the resources generated
+  mylog check "Checking Deployment ${MY_SFTP_SERVER_NAMESPACE}-sftp-server" 1>&2
+  if oc -n ${MY_SFTP_SERVER_NAMESPACE} get deployment "${MY_SFTP_SERVER_NAMESPACE}-sftp-server" >/dev/null 2>&1; then
+    mylog ok
+  else
+    adapt_file ${MY_SFTP_SCRIPTDIR}config/ ${MY_SFTP_GEN_CUSTOMDIR}config/ sftp_dep.yaml
+    # oc -n  ${MY_SFTP_SERVER_NAMESPACE} new-app atmoz/sftp:alpine
+    local lf_type="Deployment"
+    local lf_cr_name="${MY_SFTP_SERVER_NAMESPACE}-sftp-server"
+    local lf_yaml_file="${MY_SFTP_GEN_CUSTOMDIR}config/sftp_dep.yaml"
+    local lf_namespace="${MY_SFTP_SERVER_NAMESPACE}"
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}" 
+  fi
+
+  # Create the service to expose the SFTP server
+  mylog check "Checking Service $MY_SFTP_SERVER_NAMESPACE-sftp-service" 1>&2
+  if oc -n ${MY_SFTP_SERVER_NAMESPACE} get service "$MY_SFTP_SERVER_NAMESPACE-sftp-service" >/dev/null 2>&1; then
+    mylog ok
+  else
+    adapt_file ${MY_SFTP_SCRIPTDIR}config/ ${MY_SFTP_GEN_CUSTOMDIR}config/ sftp_svc.yaml
+    # oc -n  ${MY_SFTP_SERVER_NAMESPACE} new-app atmoz/sftp:alpine
+    local lf_type="Service"
+    local lf_cr_name="$MY_SFTP_SERVER_NAMESPACE-sftp-service"
+    local lf_yaml_file="${MY_SFTP_GEN_CUSTOMDIR}config/sftp_svc.yaml"
+    local lf_namespace="${MY_SFTP_SERVER_NAMESPACE}"
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}" 
+  fi
+
+  # Create the route to expose the SFTP server
+  mylog check "Checking Route $MY_SFTP_SERVER_NAMESPACE-sftp-route" 1>&2
+  if oc -n ${MY_SFTP_SERVER_NAMESPACE} get route "$MY_SFTP_SERVER_NAMESPACE-sftp-route" >/dev/null 2>&1; then
+    mylog ok
+  else
+    adapt_file ${MY_SFTP_SCRIPTDIR}config/ ${MY_SFTP_GEN_CUSTOMDIR}config/ sftp_route.yaml
+    local lf_type="Route"
+    local lf_cr_name="$MY_SFTP_SERVER_NAMESPACE-sftp-route"
+    local lf_yaml_file="${MY_SFTP_GEN_CUSTOMDIR}config/sftp_route.yaml"
+    local lf_namespace="${MY_SFTP_SERVER_NAMESPACE}"
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}" 
+  fi
+
+  decho 3 "F:OUT :install_sftp"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER - $SC_SPACES_INCR))
-
 }
 
 ################################################
@@ -195,8 +299,8 @@ function install_gitops() {
   # https://docs.openshift.com/gitops/1.12/installing_gitops/installing-openshift-gitops.html
 
   mylog info "==== Installing Redhat Openshift GitOps." 1>&2
-  export MY_NAMESPACE=$MY_GITOPS_NAMESPACE
-  envsubst <"${MY_RESOURCESDIR}namespace.yaml" | oc apply -f - || exit 1
+
+  create_namespace ${MY_GITOPS_NAMESPACE} "${MY_GITOPS_NAMESPACE} project" "For GitOps"
 
   local lf_operator_name="$MY_GITOPS_OPERATORGROUP"
   local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
@@ -487,10 +591,11 @@ function install_oadp() {
 
   mylog info "==== Redhat Openshift OADP." 1>&2
   # OpenShift restricts creating namespaces with the openshift- prefix via oc create namespace. 
+  # AD]20250115: Not sure if this is still true
   # However, you can bypass this limitation using oc apply:
-  # create_namespace $MY_OADP_NAMESPACE $MY_OADP_NAMESPACE "For OpenShift API for Data Protection"
-  export MY_NAMESPACE=$MY_OADP_NAMESPACE
-  envsubst <"${MY_RESOURCESDIR}namespace.yaml" | oc apply -f - || exit 1
+  create_namespace $MY_OADP_NAMESPACE $MY_OADP_NAMESPACE "For OpenShift API for Data Protection"
+  # export MY_NAMESPACE=$MY_OADP_NAMESPACE
+  # envsubst <"${MY_RESOURCESDIR}namespace.yaml" | oc apply -f - || exit 1
 
   # Operator group for OADP in single namespace
   local lf_type="OperatorGroup"
@@ -693,13 +798,15 @@ function install_lic_srv() {
     lf_resource="$MY_LICENSE_SERVER_REPORTER_INSTANCE_NAME"
     lf_state="Ready"
     lf_type="IBMLicenseServiceReporter"
-    lf_wait_for_state=false
+    mylog warn "Saad: Check that it is working to wait for the state, if not we need a temporisation" 1>&2
+    lf_wait_for_state=true
     create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
-
+    
     # Add license service to the reporter
-    # oc get routes -n ibm-licensing | grep ibm-license-service-reporter | awk '{print $2}'
     mylog info "Add license service to the reporter" 1>&2
+    decho 3 "oc -n ${MY_LICENSE_SERVER_NAMESPACE} get Route -o=jsonpath='{.items[?(@.metadata.name==\"ibm-license-service-reporter\")].spec.host}'"
     lf_licensing_service_reporter_url=$(oc -n ${MY_LICENSE_SERVER_NAMESPACE} get Route -o=jsonpath='{.items[?(@.metadata.name=="ibm-license-service-reporter")].spec.host}')
+    decho 4 "License Service Reporter URL: $lf_licensing_service_reporter_url"
     oc -n $MY_LICENSE_SERVER_NAMESPACE patch IBMLicensing instance --type merge --patch "{\"spec\":{\"sender\":{\"reporterSecretToken\":\"ibm-license-service-reporter-token\",\"reporterURL\":\"https://$lf_licensing_service_reporter_url/\",\"clusterID\":\"MyClusterTest1\",\"clusterName\":\"MyClusterTest1\"}}}"
   fi
 
@@ -721,12 +828,13 @@ function install_fs() {
 
   mylog info "==== IBM Common Services." 1>&2
   # ibm-cp-common-services
-  check_add_cs_ibm_pak $MY_COMMONSERVICES_CASE amd64 $MY_COMMONSERVICES_VERSION
+  check_add_cs_ibm_pak $MY_COMMONSERVICES_CASE amd64
 
   lf_catalogsource_namespace=$MY_CATALOGSOURCES_NAMESPACE
   lf_catalogsource_name="opencloud-operators"
   lf_catalogsource_dspname="IBMCS Operators"
-  lf_catalogsource_image="icr.io/cpopen/ibm-common-service-catalog:4.3"
+  # lf_catalogsource_image="icr.io/cpopen/ibm-common-service-catalog:4.3"
+  lf_catalogsource_image="icr.io/cpopen/ibm-common-service-catalog:latest"
   lf_catalogsource_publisher="IBM"
   lf_catalogsource_interval="45m"
   decho 3 "create_catalogsource \"${lf_catalogsource_namespace}\" \"${lf_catalogsource_name}\" \"${lf_catalogsource_dspname}\" \"${lf_catalogsource_image}\" \"${lf_catalogsource_publisher}\" \"${lf_catalogsource_interval}\""
@@ -2355,7 +2463,6 @@ function install_part() {
   install_logging_viaq
   install_oadp
   install_pipelines
-
   
   #SB]20241121 install other useful tools
   install_mailhog
@@ -2578,21 +2685,13 @@ function main() {
 ################################################################################################
 # Start of the script main entry
 ################################################################################################
-# @param sc_properties_file: file path and name of the properties file
-# @param MY_OC_PROJECT: namespace where to create the operators and capabilities
-# @param sc_cluster_name: name of the cluster
-# example of invocation: ./provision_cluster-v2.sh private/my-cp4i.properties sbtest cp4i-sb-cluster
-# other example: ./provision_cluster-v2.sh script-parameters.properties cp4i sb20240102
-# other example: ./provision_cluster-v2.sh script-parameters.properties cp4i ad202341
 # other example: ./provision_cluster-v2.sh --all
 # other example: ./provision_cluster-v2.sh --call <function_name>
-
 
 #
 export ADEBUG=1
 export TECHZONE=true
 export TRACELEVEL=4
-
 
 # SB]20240404 Global Index sequence for incremental output for each function call
 export SC_SPACES_COUNTER=0
@@ -2608,7 +2707,7 @@ sc_lib_file=./lib.sh
 # MAINSCRIPTDIR=$(dirname "$0")/
 MAINSCRIPTDIR=${PWD}/
 
-trap 'display_access_info' EXIT
+# toto trap 'display_access_info' EXIT
 # load helper functions
 . ${sc_lib_file}
 
