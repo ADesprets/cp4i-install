@@ -3,8 +3,8 @@ kind: Route
 metadata:
   annotations:
     cert-manager.io/issuer-kind: Issuer
-    cert-manager.io/issuer: ${MY_CLUSTER_ISSUER}
-    cert-manager.io/issuer-name: ${MY_CLUSTER_ISSUER}
+#    cert-manager.io/issuer: ${MY_ISSUER}
+    cert-manager.io/issuer-name: ${MY_ISSUER}
     haproxy.router.openshift.io/balance: random
     haproxy.router.openshift.io/disable_cookies: "true"
     haproxy.router.openshift.io/hsts_header: max-age=31536000;includeSubDomains;preload
@@ -12,7 +12,7 @@ metadata:
     haproxy.router.openshift.io/timeout-tunnel: 5d
   name: graphql-to-graph-server
 spec:
-  host: graphql.zen.apps.${MY_CLUSTER_DOMAIN}
+  host: graphql.apps.${MY_CLUSTER_DOMAIN}
   path: /
   port:
     targetPort: stepzen-graph-server
@@ -32,8 +32,8 @@ kind: Route
 metadata:
   annotations:
     cert-manager.io/issuer-kind: Issuer
-    cert-manager.io/issuer: ${MY_CLUSTER_ISSUER}
-    cert-manager.io/issuer-name: ${MY_CLUSTER_ISSUER}
+#    cert-manager.io/issuer: ${MY_ISSUER}
+    cert-manager.io/issuer-name: ${MY_ISSUER}
     haproxy.router.openshift.io/balance: random
     haproxy.router.openshift.io/disable_cookies: "true"
     haproxy.router.openshift.io/hsts_header: max-age=31536000;includeSubDomains;preload
@@ -41,7 +41,7 @@ metadata:
     haproxy.router.openshift.io/timeout-tunnel: 5d
   name: graphql-to-graph-server-subscriptions
 spec:
-  host: graphql.zen.apps.${MY_CLUSTER_DOMAIN}
+  host: graphql.apps.${MY_CLUSTER_DOMAIN}
   path: /stepzen-subscriptions/
   port:
     targetPort: stepzen-graph-server-subscription

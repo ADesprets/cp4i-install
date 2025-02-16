@@ -8,7 +8,7 @@ spec:
     accept: true
     license: $MY_EGW_LIC
     metric: VIRTUAL_PROCESSOR_CORE
-    use: $MY_EG_LIC_USAGE
+    use: $MY_EGW_LIC_USAGE
   managerEndpoint: $MY_EEM_MANAGER_GATEWAY_ROUTE
   gatewayGroupName: $MY_EGW_INSTANCE_GRP_NAME
   gatewayID: $MY_EGW_INSTANCE_NAME

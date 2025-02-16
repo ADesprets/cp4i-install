@@ -191,7 +191,7 @@ function create_oc_qmgr () {
   cat  ${lf_tmpl_file} | envsubst > ${lf_gen_file}
  
   ##-- Creating MQ instances
-  mylog "info" "Creating   : ${QMGR}/QueueManager"
+  mylog "info" "Creating   : QueueManager ${QMGR} using ${lf_tmpl_file} template"
 
   # Check if the resource already exists
   if oc get -n ${MY_OC_PROJECT} -f ${lf_gen_file} >/dev/null 2>&1; then

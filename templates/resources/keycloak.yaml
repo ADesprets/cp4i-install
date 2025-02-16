@@ -1,8 +1,23 @@
-apiVersion: cp4i.ibm.com/v1
-kind: Cp4iServicesBinding
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
 metadata:
-  name: manual-binding-for-iam
-  namespace: $MY_OC_PROJECT
+  name: ${MY_KEYCLOAK_NAME}
+  namespace: ${MY_KEYCLOAK_NAMESPACE}
 spec:
-  integrationKeycloak:
-    enabled: true
+  instances: 1
+#  externalAccess:
+#    enabled: true
+#    tlsSecret: ${MY_KEYCLOAK_TLS_SECRET}  # Secret managed by cert-manager
+  db:
+    vendor: postgres
+    host: ${MY_POSTGRESQL_HOSTNAME} # an example "${MY_POSTGRESQL_CLUSTER}-rw.${MY_POSTGRESQL_NAMESPACE}.svc.cluster.local"
+    usernameSecret:
+      name: ${MY_KEYCLOAK_DB_SECRET}
+      key: username
+    passwordSecret:
+      name: ${MY_KEYCLOAK_DB_SECRET}
+      key: password
+  http:
+    tlsSecret: ${MY_KEYCLOAK_TLS_SECRET} # Secret managed by cert-manager
+  hostname:
+    hostname: keycloak.apps.${MY_CLUSTER_DOMAIN}

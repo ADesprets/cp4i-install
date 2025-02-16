@@ -11,8 +11,7 @@ scriptdir=${PWD}/
 . "${scriptdir}"lib.sh
 
 # assumptions on the name of the file
-read_config_file "${scriptdir}cp4i.properties"
-# . "${scriptdir}cp4i.properties"
+read_config_file "${scriptdir}properties/cp4i.properties"
 
 # read_config_file "${MY_EEM_GEN_CUSTOMDIR}scripts/eem.properties"
 
@@ -45,9 +44,9 @@ else
     lf_operator_namespace=$MY_OC_PROJECT
     lf_type="Secret"
     lf_cr_name=$EEM_APIC_INGRESS_CA_CERT_SECRET_NAME
-    lf_yaml_file="${MY_EEM_GEN_CUSTOMDIR}config/apim-cpd.yaml"
+    lf_yaml_file="apim-cpd.yaml"
     decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_operator_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_operator_namespace}"
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${MY_EEM_SCRIPTDIR}config/" "${MY_EEM_GEN_CUSTOMDIR}config/" "$lf_yaml_file" "${lf_operator_namespace}"
 
     # 4) Update cp4i-eem CRD
     # spec.manager

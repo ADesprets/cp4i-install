@@ -129,3 +129,41 @@ kubectl create configmap my-config --from-literal=key1=value1 --from-literal=key
 
 
 sftp -P 30122 sftpsysadmin@sftp-route-sftp.apps.677651fd23fb424f7dff4a9f.ocp.techzone.ibm.com
+
+
+Without mounting the PV
+/ # ls -ld /home/sftpsysadmin/upload/
+drwxr-xr-x    2 sftpsysadmin users           23 Jan 14 13:48 /home/sftpsysadmin/upload/
+
+When adding the storage
+ls -ld /home/sftpsysadmin/upload/
+drwxr-xr-x    2 root     root             0 Jan 14 13:04 /home/sftpsysadmin/upload/
+
+[/usr/local/bin/create-sftp-user] Parsing user data: "sftpsysadmin:4vEz*kmPcP+a&n%#3)RBG)2y8EI*xuTJ:1001:101:upload"
+[/usr/local/bin/create-sftp-user] Directory already exists: /home/sftpsysadmin/upload
+chmod: /etc/ssh/ssh_host_ed25519_key: Read-only file system
+chmod: /etc/ssh/ssh_host_rsa_key: Read-only file system
+[/entrypoint] Executing sshd
+Server listening on 0.0.0.0 port 22.
+Server listening on :: port 22.
+
+/ # cat /etc/passwd
+root:x:0:0:root:/root:/bin/sh
+bin:x:1:1:bin:/bin:/sbin/nologin
+daemon:x:2:2:daemon:/sbin:/sbin/nologin
+...
+sftpsysadmin:x:1001:101::/home/sftpsysadmin:/bin/ash
+
+/ # cat /etc/group
+cat /etc/group
+root:x:0:root
+bin:x:1:root,bin,daemon
+daemon:x:2:root,bin,daemon
+sys:x:3:root,bin
+adm:x:4:root,daemon
+...
+dialout:x:20:root
+ftp:x:21:
+sshd:x:22:
+...
+group_101:x:101:

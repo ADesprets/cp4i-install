@@ -5,6 +5,7 @@
 # @param mail_server_ip: IP of the mail server, example: 
 # @param mail_server_ip: Port of the mail server, example: 2525
 function create_mail_server() {
+  trace_in 3 create_mail_server  
   local mail_server_ip=$1
   local mail_server_port=$2
 
@@ -38,6 +39,8 @@ function create_mail_server() {
   -H "authorization: Bearer $access_token" \
   -H "content-type: application/json"\
   --data "{\"mail_server_url\":$mailServerUrl,\"email_sender\":{\"name\":\"APIC Administrator\",\"address\":\"$APIC_ADMIN_EMAIL\"}}");
+
+  trace_out 3 create_mail_server  
 }
 
 ################################################
@@ -47,6 +50,8 @@ function create_mail_server() {
 # @param org_owner_pwd: The password of the owner of the organisation
 # @param org_owner_email: The email of the owner of the organisation
 function create_org() {
+  trace_in 3 create_org  
+
   local org_name=$1
   local org_owner_id=$2
   local org_owner_pwd=$3
@@ -102,11 +107,14 @@ function create_org() {
     mylog info "$org_name already exists, use it."
   fi
 
+  trace_out 3 create_org
 }
 
 ################################################
 # Create the topology (check if needed for cp4i installation)
 function create_topology() {
+  trace_in 3 create_topology
+
   local lf_integration_url=$1
 
   # should increase idempotence
@@ -186,6 +194,8 @@ function create_topology() {
   --data "{\"title\":\"API Portal Service\",\"name\":\"portal-service\",\"endpoint\":\"https://$EP_PADMIN\",\"web_endpoint_base\":\"https://$EP_PORTAL\",\"visibility\":{\"group_urls\":null,\"org_urls\":null,\"type\":\"public\"}}");
 
   decho 5 "createPortal: $createPortal"
+
+  trace_out 3 create_topology 
 }
 
 ################################################
@@ -193,6 +203,8 @@ function create_topology() {
 # catalogs specifications of the 3 catalogs are hard coded
 # @param org_name: The name of the organisation.
 function create_catalog() {
+  trace_in 3 create_catalog
+
   local org_name=$(echo "$1" | awk '{print tolower($0)}')
 
 # decho 3 "url: ${PLATFORM_API_URL}api/orgs/$org_name/catalogs and token: $amToken"
@@ -243,12 +255,15 @@ for index in ${!catalog_name[@]}
        --data-binary "{\"portal\": {\"endpoint\": \"https://$EP_PORTAL/$org_name/${catalog_name[$index]}\",\"portal_service_url\": \"$portalServiceURL\", \"type\": \"drupal\"},\"application_lifecycle\": {} }" | jq .portal.endpoint);
       # mylog info "Portal endpoint for: "${catalog_summary[$index]}": $res"
     done
+  trace_out 3 create_catalog
 }
 
 ################################################
 # Create resources
 # @param lf_integration_url
 function create_apic_resources() {
+  trace_in 3 create_apic_resources
+
   local lf_cm_token=$1
   local lf_am_token=$2
   # local org=$3
@@ -360,12 +375,15 @@ function create_apic_resources() {
       --data-binary "@${MY_APIC_GEN_CUSTOMDIR}config/ConfiguredOAuthProvider_res.json"
   fi
 
+  trace_out 3 create_apic_resources
 }
 
 ################################################
 # Load an API
 # @param org_name: The name of the organisation.
 function load_apis () {
+  trace_in 3 load_apis
+
   local platform_api_url=$1
   local apic_provider_org=$2
   local token=$3
@@ -373,8 +391,8 @@ function load_apis () {
 # First set the variables needed to adapt each file
 
 # Definition of all the API, the order is important betwen the two arrays
-api_names=("ping-api" "ibm-sample-order-api" "stock" "fakeauthenticationurl" "takeoff" "landings" "taxi-locator" "taxi-messaging" "swaggerpetstoreopenapi-3-0" "swagger-petstore" "httpbin")
-api_files=("ping-api_1.0.0.json" "ibm-sample-order-api_1.0.0.json" "stock_1.0.0.json" "fakeauthenticationurl_1.0.0.json" "takeoff_1.0.0.json" "landings_2.0.0.json" "taxi-locator_1.0.0.json" "taxi-messaging_1.0.0.json" "swaggerpetstoreopenapi-3-0_1.0.11.json" "swagger-petstore_1.0.6.json" "httpbin-1.0.0.json")
+api_names=("ping-api" "ibm-sample-order-api" "stock" "fakeauthenticationurl" "takeoff" "landings" "taxi-locator" "taxi-messaging" "swaggerpetstoreopenapi-3-0" "swagger-petstore" "httpbin" "SIM Swap")
+api_files=("ping-api_1.0.0.json" "ibm-sample-order-api_1.0.0.json" "stock_1.0.0.json" "fakeauthenticationurl_1.0.0.json" "takeoff_1.0.0.json" "landings_2.0.0.json" "taxi-locator_1.0.0.json" "taxi-messaging_1.0.0.json" "swaggerpetstoreopenapi-3-0_1.0.11.json" "swagger-petstore_1.0.6.json" "httpbin-1.0.0.json" "SIM_Swap-1.0.0.json")
 
 for index in ${!api_names[@]}
   do
@@ -396,12 +414,15 @@ for index in ${!api_names[@]}
       mylog info "${api_names[$index]} API already exists, do not load it."
     fi
   done
+  trace_out 3 load_apis
 }
 
 
 ################################################
 # Init APIC variables
 function init_apic_variables() {
+  trace_in 3 init_apic_variables
+
   # Retrieve the various routes for APIC components
   # API Manager URL
   EP_API=$(oc -n ${apic_project} get route "${APIC_INSTANCE_NAME}-mgmt-platform-api" -o jsonpath="{.spec.host}")
@@ -442,13 +463,16 @@ function init_apic_variables() {
   APIC_INSTANCE=$(oc -n "${apic_project}" get apiconnectcluster -o=jsonpath='{.items[0].metadata.name}')
   
   PLATFORM_API_URL=$(oc -n "${apic_project}" get apiconnectcluster "${APIC_INSTANCE_NAME}" -o=jsonpath='{.status.endpoints[?(@.name=="platformApi")].uri}')
-  
+
+  trace_out 3 init_apic_variables
+ 
 }
 
 ################################################
 # Download toolkit
 # @param
 function download_tools () {
+  trace_in 3 download_tools
   # APIC_NAMESPACE=$(oc get apiconnectcluster -A -o jsonpath='{..namespace}')
   local apic_instance=$(oc -n "${apic_project}" get apiconnectcluster -o=jsonpath='{.items[0].metadata.name}')
   local lf_file2download
@@ -484,11 +508,15 @@ function download_tools () {
 
   toolkit_creds_url="${PLATFORM_API_URL}api/cloud/settings/toolkit-credentials"
   mylog info "To set the credential run the cmd apic client-creds:set <creds.json file>" 1>&2
+
+  trace_out 3 download_tools
 }
 
 #######################################################
 # Create Cloud Manager token (its name is access_token)
 function create_cm_token(){
+  trace_in 3 create_cm_token
+
   APIC_CRED=$(oc -n "${apic_project}" get secret ${APIC_INSTANCE_NAME}-mgmt-cli-cred -o jsonpath='{.data.credential\.json}' | base64 --decode)
   APIC_APIKEY=$(curl -ks --fail -X POST "${PLATFORM_API_URL}"cloud/api-keys -H "Authorization: Bearer ${ZEN_TOKEN}" -H "Accept: application/json" -H "Content-Type: application/json" -d '{"client_type":"toolkit","description":"Tookit API key"}' | jq -r .api_key)
   decho 3 "APIC_APIKEY: ${APIC_APIKEY}"
@@ -521,6 +549,8 @@ function create_cm_token(){
   fi
   
   decho 3 "access_token: ${access_token}"
+
+  trace_out 3 create_cm_token
 }
 
 #######################################################

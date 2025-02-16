@@ -2,8 +2,7 @@ apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
   annotations:
-    cert-manager.io/issuer-kind: Issuer
-#    cert-manager.io/issuer: ${MY_ISSUER}
+    cert-manager.io/issuer-kind: ClusterIssuer
     cert-manager.io/issuer-name: ${MY_ISSUER}
     haproxy.router.openshift.io/balance: random
     haproxy.router.openshift.io/disable_cookies: "true"

@@ -40,7 +40,7 @@ function compile_code() {
 function was_build_image() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
   decho 3 "F:IN:was_build_image"
-  $MY_CONTAINER_ENGINE build -t ${MY_WLA_APP_NAME_VERSION} .
+  $MY_CONTAINER_ENGINE build -t ${MY_WASLIBERTY_APP_NAME_VERSION} .
   decho 3 "F:OUT:was_build_image"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
 }
@@ -72,9 +72,9 @@ function push_image_to_registry() {
   decho 3 "F:IN:push_image_to_registry"
   
   #	tag the local image with details of image registry
-  decho 3 "CMD: $MY_CONTAINER_ENGINE tag ${MY_WLA_APP_NAME_VERSION} ${IMAGE_REGISTRY_HOST}/${MY_BACKEND_NAMESPACE}/${MY_WLA_APP_NAME_VERSION}"
-  $MY_CONTAINER_ENGINE tag ${MY_WLA_APP_NAME_VERSION} ${IMAGE_REGISTRY_HOST}/${MY_BACKEND_NAMESPACE}/${MY_WLA_APP_NAME_VERSION}
-  $MY_CONTAINER_ENGINE push ${IMAGE_REGISTRY_HOST}/${MY_BACKEND_NAMESPACE}/${MY_WLA_APP_NAME_VERSION}
+  decho 3 "CMD: $MY_CONTAINER_ENGINE tag ${MY_WASLIBERTY_APP_NAME_VERSION} ${IMAGE_REGISTRY_HOST}/${MY_BACKEND_NAMESPACE}/${MY_WASLIBERTY_APP_NAME_VERSION}"
+  $MY_CONTAINER_ENGINE tag ${MY_WASLIBERTY_APP_NAME_VERSION} ${IMAGE_REGISTRY_HOST}/${MY_BACKEND_NAMESPACE}/${MY_WASLIBERTY_APP_NAME_VERSION}
+  $MY_CONTAINER_ENGINE push ${IMAGE_REGISTRY_HOST}/${MY_BACKEND_NAMESPACE}/${MY_WASLIBERTY_APP_NAME_VERSION}
     
   decho 3 "F:OUT:push_image_to_registry"
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
@@ -86,12 +86,12 @@ function push_image_to_registry() {
 function create_application() {
   SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
   decho 3 "F:IN:create_application"
-    mylog info "Application:version ${MY_WLA_APP_NAME_VERSION}"
+    mylog info "Application:version ${MY_WASLIBERTY_APP_NAME_VERSION}"
     # Creating APIC instance
     lf_file="${MY_OPERANDSDIR}WAS-WLApp.yaml"
     lf_ns="${MY_BACKEND_NAMESPACE}"
     lf_path="{.status.phase}"
-    lf_resource="$MY_WLA_APP_NAME"
+    lf_resource="$MY_WASLIBERTY_APP_NAME"
     lf_state="Ready"
     lf_type="WebSphereLibertyApplication"
     lf_wait_for_state=false

@@ -6,13 +6,13 @@ metadata:
     app.kubernetes.io/instance: ibmlicenseservicereporter-instance
     app.kubernetes.io/name: ibmlicenseservicereporter
     app.kubernetes.io/part-of: ibm-license-service-reporter-operator
-  name: ${MY_LICENSE_SERVER_REPORTER_INSTANCE_NAME}
-  namespace: ${MY_LICENSE_SERVER_NAMESPACE}
+  name: ${MY_LICENSE_SERVICE_REPORTER_INSTANCE_NAME}
+  namespace: ${MY_LICENSE_SERVICE_NAMESPACE}
 spec:
   license:
     accept: true
   authentication:
     useradmin:
       enabled: true
-  version: ${MY_LICENSE_SERVER_REPORTER_VERSION}      
+  version: ${MY_LICENSE_SERVICE_REPORTER_VERSION}      
   storageClass: ${MY_BLOCK_STORAGE_CLASS}

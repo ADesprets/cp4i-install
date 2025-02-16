@@ -1,0 +1,7 @@
+apiVersion: project.openshift.io/v1
+kind: Project
+metadata:
+  name: $MY_PROJECT
+  annotations:
+    openshift.io/description: $MY_PROJECT_DESCRIPTION
+    openshift.io/display-name: $MY_PROJECT_DISPLAYNAME

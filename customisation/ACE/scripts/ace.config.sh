@@ -43,7 +43,7 @@ function create_ace_config_barauth () {
   check_file_exist $lf_in_file
 
   # Generate ace barauth config
-  mylog "info" "Creating   : ace config barauth"
+  mylog "info" "Creating : ace config barauth"
   cat ${lf_in_file} | envsubst > ${lf_gen_file}
 
   # Check if the resource already exists

@@ -103,30 +103,3 @@ spec:
     kind: Deployment
     name: introspection
   targetCPUUtilizationPercentage: 80
----
-apiVersion: route.openshift.io/v1
-kind: Route
-metadata:
-  annotation:
-    haproxy.router.openshift.io/hsts_header: max-age=31536000;preload
-    haproxy.router.openshift.io/pod-concurrent-connections: 500
-    haproxy.router.openshift.io/timeout: 5m
-    haproxy.router.openshift.io/timeout-tunnel: 5d
-  annotations:
-    cert-manager.io/issuer-kind: ClusterIssuer
-    cert-manager.io/issuer-name: ${MY_CLUSTER_ISSUER}
-  labels:
-    route: stepzen-service
-  name: introspection
-spec:
-  host: stepzen-introspection.apps.${MY_CLUSTER_DOMAIN}
-  port:
-    targetPort: introspection-port
-  tls:
-    insecureEdgeTerminationPolicy: None
-    termination: edge
-  to:
-    kind: Service
-    name: introspection-nodeport
-    weight: 100
-  wildcardPolicy: None

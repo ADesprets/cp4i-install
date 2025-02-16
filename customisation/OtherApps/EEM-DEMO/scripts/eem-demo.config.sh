@@ -7,7 +7,7 @@ MAINSCRIPTDIR="${scriptdir}../../../"
 # load helper functions
 . "${MAINSCRIPTDIR}"lib.sh
 
-read_config_file "${MAINSCRIPTDIR}cp4i.properties"
+read_config_file "${MAINSCRIPTDIR}properties/cp4i.properties"
 read_config_file "${configdir}eem-demo.properties"
 
 CreateNameSpace ${eem-demo_project}
@@ -42,9 +42,7 @@ SECONDS=0
 			envsubst < "${MY_YAMLDIR}config/Import.tmpl" > "${MY_YAMLDIR}config/Import.ldiff"
 			$MY_LDAP_COMMAND -H ldap://$hostname:$port -D "$ldap_admin_dn" -w "$ldap_admin_password" -f ${MY_YAMLDIR}kube_resources/ldap-users.ldif
 
-			mylog info "You can search entries with the following command: "
-			# ldapmodify -H ldap://$hostname:$port -D "$ldap_admin_dn" -w admin -f ${MY_LDAPDIR}Import.ldiff
-			# ldapsearch -H ldap://${host}:${port} -x -D "$ldap_admin_dn" -w "$ldap_admin_password" -b "$ldap_base_dn" -s sub -a always -z 1000 "(objectClass=*)"
+			#mylog info "You can search entries with the following command: "
 		fi
 	fi
 

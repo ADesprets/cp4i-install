@@ -49,7 +49,7 @@ spec:
           eventstreams.production.type: CloudPakForIntegrationNonProduction
           productID: 2a79e49111f44ec3acd89608e56138f5
           productName: IBM Event Streams for Non Production
-          productVersion: 11.5.2
+          productVersion: 11.6.0
           productMetric: VIRTUAL_PROCESSOR_CORE
           productChargedContainers: ${MY_ES_KAFKA_CONNECT_INSTANCE_NAME}-connect
           cloudpakId: c8b82d189e7545f0892db9ef2731b90d

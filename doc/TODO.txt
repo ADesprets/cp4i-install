@@ -93,3 +93,42 @@ Stucture
 			D:\CurrentProjects\CP4I\Installation\cp4i-install\customisation\ACE\scripts\barfiles\HTTPEchoApp\tmpl\barauth.yaml
 			D:\CurrentProjects\CP4I\Installation\cp4i-install\customisation\ACE\scripts\barfiles\HTTPEchoApp\tmpl\integrationruntime.yaml
 			D:\CurrentProjects\CP4I\Installation\cp4i-install\customisation\ACE\scripts\barfiles\HTTPEchoApp\tmpl\serverconf.yaml
+
+
+Customisation
+Open SVC
+Latency between DCs
+
+LDAP Sur MQ
+
+Keycloak
+openidConnectServer-1.0 pour implémenter un provider OIDC. Je te mets un exemple que j'ai voulu tester avec event streams et keycloak.
+L'avantage avec Liberty est que tu peux simuler un OIDC réel.
+
+Retour Franck
+
+IBM Cloud
+	Create openshift sur IBM Cloud only
+TechZoneOpenShift
+	UPI (config)
+	GitOps avec Argo CD
+Montpellier
+	OpenShift fourni par Mop
+
+Changer le README
+Clair sur périmètre où on l'install, ce qu'on ne veut pas traiter
+Positionner par rapport à d'autres outils
+
+Différentiateur au dela du produit de base.
+
+- Se préparer à faire un POC IBM
+	TechZone + CP4I (mais vide)
+- Faire un travail chez un client
+
+Cloud Pak Deployer Frank K.
+	Dur à débuger, plus professionel
+	
+Voir comment on peut complémenter l'existant et s'intègre avec l'existant.
+
+Attention au script versus Ansible (best practices)
+Tim Wigly (integration)

@@ -1,4 +1,4 @@
-﻿apiVersion: events.ibm.com/v1beta1
+apiVersion: events.ibm.com/v1beta1
 kind: EventEndpointManagement
 metadata:
   name: production-manager

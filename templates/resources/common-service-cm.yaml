@@ -8,6 +8,6 @@ data:
    namespaceMapping:
    - requested-from-namespace:
      - $MY_OC_PROJECT
-     - $MY_LICENSE_SERVER_NAMESPACE
+     - $MY_LICENSE_SERVICE_NAMESPACE
      map-to-common-service-namespace: $MY_COMMONSERVICES_NAMESPACE
    defaultCsNs: $MY_COMMONSERVICES_NAMESPACE

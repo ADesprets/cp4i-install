@@ -10,7 +10,7 @@
       "app.kubernetes.io/part-of": "$MY_ROUTE_PARTOF"
     },
     "name": "$MY_ROUTE_NAME",
-    "namespace": "$MY_NAMESPACE"
+    "namespace": "$MY_PROJECT"
   },
   "spec": {
     "host": "$MY_ROUTE_HOST",

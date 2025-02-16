@@ -13,7 +13,7 @@ scriptdir=${PWD}/
 . "${scriptdir}"lib.sh
 
 # assumptions on the name of the file
-read_config_file "${scriptdir}cp4i.properties"
+read_config_file "${scriptdir}properties/cp4i.properties"
 
 local lf_namespace lf_issuername lf_root_cert_name lf_tls_label1 lf_tls_certname
 

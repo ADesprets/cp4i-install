@@ -280,9 +280,12 @@ sc_clnt="clnt1"
 . "${MAINSCRIPTDIR}"lib.sh
 
 # load config file
+read_config_file "${MAINSCRIPTDIR}properties/cp4i.properties"
 read_config_file "${CONFIGDIR}mq.properties"
 
-create_namespace ${MY_MQ_DEMO_NAMESPACE} "${MY_MQ_DEMO_NAMESPACE} project" "For MQ native HA and clustering demonstration"
+local lf_working_directory="${MY_MQ_GEN_CUSTOMDIR}"
+
+create_project "${MY_MQ_DEMO_NAMESPACE}" "${MY_MQ_DEMO_NAMESPACE} project" "For MQ native HA and clustering demonstration" $lf_working_directory
 
 # Create the certificates/secrets required for MQ Configuration
 lf_namespace=${MY_MQ_DEMO_NAMESPACE}
@@ -307,115 +310,97 @@ export QMGR2=$(echo "${QMGR2}" | tr '[:upper:]' '[:lower:]')
 export QMGR_UC1=$(echo "${QMGR1}" | tr '[:lower:]' '[:upper:]')
 export QMGR_UC2=$(echo "${QMGR2}" | tr '[:lower:]' '[:upper:]')
 
-# Create ConfigMap ini for QM
-adapt_file ${MY_MQ_SCRIPTDIR}config/demo/ ${MY_MQ_GEN_CUSTOMDIR}config/ qms.ini.yaml
+local lf_source_directory="${MY_MQ_SCRIPTDIR}config/demo/"
+local lf_target_directory="${MY_MQ_GEN_CUSTOMDIR}config/demo/"
 
+# Create ConfigMap ini for QM
 lf_namespace=$MY_MQ_DEMO_NAMESPACE
 lf_type="ConfigMap"
 lf_cr_name=${MY_MQ_DEMO_NAMESPACE}-${MQ_CLUSTERNAME}-ini
-lf_yaml_file="${MY_MQ_GEN_CUSTOMDIR}config/qms.ini.yaml"
+lf_yaml_file="qms.ini.yaml"
 decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
+check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
 
 # Create ConfigMap MQSC common part for QM
-adapt_file ${MY_MQ_SCRIPTDIR}config/demo/ ${MY_MQ_GEN_CUSTOMDIR}config/ queuedefs.cluster.mqsc.yaml
-
 lf_namespace=$MY_MQ_DEMO_NAMESPACE
 lf_type="ConfigMap"
 lf_cr_name=${MY_MQ_DEMO_NAMESPACE}-${MQ_CLUSTERNAME}-mqsc-common
-lf_yaml_file="${MY_MQ_GEN_CUSTOMDIR}config/queuedefs.cluster.mqsc.yaml"
+lf_yaml_file="queuedefs.cluster.mqsc.yaml"
 decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
+check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
 
 export QMGR=$QMGR1
 # Create ConfigMap MQSC Channels for QM1
-adapt_file ${MY_MQ_SCRIPTDIR}config/demo/ ${MY_MQ_GEN_CUSTOMDIR}config/ channels.mqsc.qm1.yaml
 
 lf_namespace=$MY_MQ_DEMO_NAMESPACE
 lf_type="ConfigMap"
 lf_cr_name="${MY_MQ_DEMO_NAMESPACE}-${MQ_CLUSTERNAME}-mqsc-${QMGR}"
-lf_yaml_file="${MY_MQ_GEN_CUSTOMDIR}config/channels.mqsc.qm1.yaml"
+lf_yaml_file="channels.mqsc.qm1.yaml"
 decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
+check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
 
 # Create ConfigMap for web access
-adapt_file ${MY_MQ_SCRIPTDIR}config/demo/ ${MY_MQ_GEN_CUSTOMDIR}config/ qm.webaccess.yaml
-
 lf_namespace=$MY_MQ_DEMO_NAMESPACE
 lf_type="ConfigMap"
 lf_cr_name="${MY_MQ_DEMO_NAMESPACE}-${QMGR}-mywebconfig"
-lf_yaml_file="${MY_MQ_GEN_CUSTOMDIR}config/qm.webaccess.yaml"
+lf_yaml_file="qm.webaccess.yaml"
 decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
+check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
 
 # Create QM
-adapt_file ${MY_MQ_SCRIPTDIR}config/demo/ ${MY_MQ_GEN_CUSTOMDIR}config/ qmgr.yaml
-
 lf_namespace=$MY_MQ_DEMO_NAMESPACE
 lf_type="QueueManager"
 lf_cr_name="${MY_MQ_DEMO_NAMESPACE}-$QMGR"
-lf_yaml_file="${MY_MQ_GEN_CUSTOMDIR}config/qmgr.yaml"
+lf_yaml_file="qmgr.yaml"
 decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
-
-adapt_file ${MY_MQ_SCRIPTDIR}config/demo/ ${MY_MQ_GEN_CUSTOMDIR}config/ channels.mqsc.qm2.yaml
+check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
 
 export QMGR=$QMGR2
 lf_namespace=$MY_MQ_DEMO_NAMESPACE
 lf_type="ConfigMap"
 lf_cr_name="${MY_MQ_DEMO_NAMESPACE}-${MQ_CLUSTERNAME}-mqsc-${QMGR}"
-lf_yaml_file="${MY_MQ_GEN_CUSTOMDIR}config/channels.mqsc.qm2.yaml"
+lf_yaml_file="channels.mqsc.qm2.yaml"
 decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
+check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
 
 # Create ConfigMap for web access
-adapt_file ${MY_MQ_SCRIPTDIR}config/demo/ ${MY_MQ_GEN_CUSTOMDIR}config/ qm.webaccess.yaml
-
 lf_namespace=$MY_MQ_DEMO_NAMESPACE
 lf_type="ConfigMap"
 lf_cr_name="${MY_MQ_DEMO_NAMESPACE}-${QMGR}-mywebconfig"
-lf_yaml_file="${MY_MQ_GEN_CUSTOMDIR}config/qm.webaccess.yaml"
+lf_yaml_file="qm.webaccess.yaml"
 decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
+check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
 
 # Create QM
-adapt_file ${MY_MQ_SCRIPTDIR}config/demo/ ${MY_MQ_GEN_CUSTOMDIR}config/ qmgr.yaml
-
 lf_namespace=$MY_MQ_DEMO_NAMESPACE
 lf_type="QueueManager"
 lf_cr_name="${MY_MQ_DEMO_NAMESPACE}-$QMGR"
-lf_yaml_file="${MY_MQ_GEN_CUSTOMDIR}config/qmgr.yaml"
+lf_yaml_file="qmgr.yaml"
 decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
+check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
 
 # Create CCDT
-adapt_file ${MY_MQ_SCRIPTDIR}config/demo/ ${MY_MQ_GEN_CUSTOMDIR}config/ ccdt.yaml
-
 lf_namespace=$MY_MQ_DEMO_NAMESPACE
 lf_type="QueueManager"
 lf_cr_name="${MY_MQ_DEMO_NAMESPACE}-$QMGR"
-lf_yaml_file="${MY_MQ_GEN_CUSTOMDIR}config/ccdt.yaml"
+lf_yaml_file="ccdt.yaml"
 decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
+check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
 
 # Provides access to ccdt to application through http
-adapt_file ${MY_MQ_SCRIPTDIR}config/demo/ ${MY_MQ_GEN_CUSTOMDIR}config/ ccdt-http-access-dep.yaml
-
 lf_namespace=$MY_MQ_DEMO_NAMESPACE
 lf_type="Deployment"
 lf_cr_name="${MY_MQ_DEMO_NAMESPACE}-ccdt-http-access"
-lf_yaml_file="${MY_MQ_GEN_CUSTOMDIR}config/ccdt-http-access-dep.yaml"
+lf_yaml_file="ccdt-http-access-dep.yaml"
 decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
-
-adapt_file ${MY_MQ_SCRIPTDIR}config/demo/ ${MY_MQ_GEN_CUSTOMDIR}config/ ccdt-http-access-svc.yaml
+check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
 
 lf_namespace=$MY_MQ_DEMO_NAMESPACE
 lf_type="Service"
 lf_cr_name="${MY_MQ_DEMO_NAMESPACE}-ccdt-http-access"
-lf_yaml_file="${MY_MQ_GEN_CUSTOMDIR}config/ccdt-http-access-svc.yaml"
+lf_yaml_file="ccdt-http-access-svc.yaml"
 decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_yaml_file}" "${lf_namespace}"
+check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
 
 duration=$SECONDS
 ending=$(date);

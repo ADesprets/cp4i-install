@@ -10,7 +10,6 @@ Manque DP capabilities
 
 D:.
 │   .gitignore
-│   cp4i.properties
 │   delete-all.sh
 │   lib.sh
 │   LICENSE
@@ -22,6 +21,8 @@ D:.
 │       Import.ldiff
 │       Import.tmpl
 ├───private
+├───properties
+│       cp4i.properties
 ├───resources
 │       design.drawio
 │       structure.txt

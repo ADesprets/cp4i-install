@@ -69,8 +69,10 @@ spec:
     resources:
       limits:
         cpu: 500m
+        memory: 1Gi
       requests:
         cpu: 500m
+        memory: 1Gi
     storage:
       queueManager:
         type: ephemeral
@@ -80,14 +82,7 @@ spec:
       - configMap:
           name: ${QMGR}-mqsc-cm
           items:
-            - ${QMGR}.mqsc   
-  template:
-    pod:
-      containers:
-        - env:
-            - name: MQSNOAUT
-              value: 'yes'
-          name: qmgr
+            - ${QMGR}.mqsc
   version: $MY_MQ_VERSION
   web:
     console:

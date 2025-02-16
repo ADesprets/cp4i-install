@@ -1,24 +1,42 @@
-apiVersion: logging.openshift.io/v1
-kind: ClusterLogging
+apiVersion: observability.openshift.io/v1
+kind: ClusterLogForwarder
 metadata:
   name: $MY_RHOL_INSTANCE_NAME
   namespace: $MY_LOGGING_NAMESPACE
 spec:
-  collection:
-    type: vector
-  logStore:
-    lokistack:
-      name: $MY_LOKI_INSTANCE_NAME
-    retentionPolicy:
-      application:
-        maxAge: 2d
-      audit:
-        maxAge: 7d
-      infra:
-        maxAge: 2d
-    type: lokistack
+  serviceAccount: 
+    name: $MY_LOGGING_COLLECTOR_SA
+  outputs:
+    - name: loki-output
+      type: lokiStack
+      lokiStack:
+        target:
+          name: $MY_LOKI_INSTANCE_NAME
+          namespace: $MY_LOGGING_NAMESPACE
+        authentication:
+          token:
+            from: serviceAccount
+      tls:
+        ca:
+          key: service-ca.crt
+          configMapName: openshift-service-ca.crt            
+  pipelines:
+    - name: application-logs
+      inputRefs:
+        - application
+      outputRefs:
+        - loki-output
+    - name: infrastructure-logs
+      inputRefs:
+        - infrastructure
+      outputRefs:
+        - loki-output
+    - name: audit-logs
+      inputRefs:
+        - audit
+      outputRefs:
+        - loki-output
   visualization:
     ocpConsole:
       logsLimit: 15
-    type: ocp-console
-  managementState: Managed
+

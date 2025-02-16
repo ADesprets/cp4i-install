@@ -1,4 +1,4 @@
-<mxfile host="Electron" modified="2025-01-09T13:25:55.492Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/24.4.0 Chrome/120.0.6099.109 Electron/28.1.0 Safari/537.36" etag="lFVE_uoZOlY_AGCW3GKe" version="24.4.0" type="device" pages="8">
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/26.0.9 Chrome/128.0.6613.186 Electron/32.2.5 Safari/537.36" version="26.0.9" pages="9">
   <diagram id="tJqLn7msZHwJoY5_B4Vj" name="Capabilities">
     <mxGraphModel dx="1840" dy="1089" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
       <root>
@@ -825,6 +825,89 @@
         </mxCell>
         <mxCell id="oZSlx2BBRSYbhyja9S7Y-29" value="worker" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;" parent="1" vertex="1">
           <mxGeometry x="700" y="400" width="120" height="36.2204" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="0AyQdWfguZbnSDKuPsRJ" name="MQ JWT">
+    <mxGraphModel dx="1430" dy="825" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="4UZhzCgLdHTaJtpBOjvQ-4" value="ConfigMap&lt;div&gt;mq-uniform-cluster-qm1-mqsc-cm&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="160" y="443.28999999999996" width="187.0075" height="45.2755" as="geometry" />
+        </mxCell>
+        <mxCell id="4UZhzCgLdHTaJtpBOjvQ-6" value="ConfigMap&lt;div&gt;index-html-configmap&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="330" y="636" width="187.0075" height="45.2755" as="geometry" />
+        </mxCell>
+        <mxCell id="4UZhzCgLdHTaJtpBOjvQ-7" value="&lt;div&gt;Namespace&lt;/div&gt;&lt;div&gt;cp4i&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="412" y="50" width="120" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="4UZhzCgLdHTaJtpBOjvQ-8" value="&lt;div&gt;Route&lt;/div&gt;&lt;div&gt;qmgr-demo-tls-route&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="160" y="706" width="120" height="45.2755" as="geometry" />
+        </mxCell>
+        <mxCell id="4UZhzCgLdHTaJtpBOjvQ-9" value="&lt;div&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;Service&lt;/span&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;qmgr-demo-ibm-mq&lt;br&gt;&lt;/span&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="160" y="653" width="120" height="45.2755" as="geometry" />
+        </mxCell>
+        <mxCell id="4UZhzCgLdHTaJtpBOjvQ-10" value="&lt;div&gt;Deployment&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;nginx-deployment&lt;br&gt;&lt;/span&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="160" y="600" width="120" height="45.2755" as="geometry" />
+        </mxCell>
+        <mxCell id="4UZhzCgLdHTaJtpBOjvQ-11" value="uses" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="4UZhzCgLdHTaJtpBOjvQ-12" target="4UZhzCgLdHTaJtpBOjvQ-33">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="4UZhzCgLdHTaJtpBOjvQ-12" value="MQ Client&lt;div&gt;App1&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="350" y="117.35999999999999" width="108.2675" height="45.2755" as="geometry" />
+        </mxCell>
+        <mxCell id="4UZhzCgLdHTaJtpBOjvQ-41" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="4UZhzCgLdHTaJtpBOjvQ-16" target="4UZhzCgLdHTaJtpBOjvQ-40">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="4UZhzCgLdHTaJtpBOjvQ-16" value="QueueManager&lt;br&gt;&lt;div&gt;QM1&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="261" y="293.28999999999996" width="187.0075" height="98.425" as="geometry" />
+        </mxCell>
+        <mxCell id="4UZhzCgLdHTaJtpBOjvQ-24" value="uses" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="4UZhzCgLdHTaJtpBOjvQ-16" target="4UZhzCgLdHTaJtpBOjvQ-4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="4UZhzCgLdHTaJtpBOjvQ-25" value="For Client (ccdt.json)" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontFamily=Helvetica;fontSize=11;fontColor=default;labelBackgroundColor=default;" vertex="1" parent="1">
+          <mxGeometry x="330.98" y="616.71" width="185.04" height="16.29" as="geometry" />
+        </mxCell>
+        <mxCell id="4UZhzCgLdHTaJtpBOjvQ-26" value="Defines the cluster with QM1 and QM2, type uniform" style="text;html=1;align=center;verticalAlign=top;whiteSpace=wrap;rounded=0;fontFamily=Helvetica;fontSize=11;fontColor=default;labelBackgroundColor=default;" vertex="1" parent="1">
+          <mxGeometry x="363.98425" y="503.28999999999996" width="185.039" height="67.3227" as="geometry" />
+        </mxCell>
+        <mxCell id="4UZhzCgLdHTaJtpBOjvQ-27" value="Defines channels and (CLUSRCVR/CLUSSDR)" style="text;html=1;align=center;verticalAlign=top;whiteSpace=wrap;rounded=0;fontFamily=Helvetica;fontSize=11;fontColor=default;labelBackgroundColor=default;" vertex="1" parent="1">
+          <mxGeometry x="160.00424999999996" y="503.28999999999996" width="185.039" height="67.3227" as="geometry" />
+        </mxCell>
+        <mxCell id="4UZhzCgLdHTaJtpBOjvQ-31" value="Repository&lt;div&gt;(Master)&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="276.14" y="348.35" width="70.866" height="36.2204" as="geometry" />
+        </mxCell>
+        <mxCell id="4UZhzCgLdHTaJtpBOjvQ-33" value="ConfigMap / file/....&lt;div&gt;(CCDT)&lt;br&gt;&lt;div&gt;mq-demo-mqsc&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="540" y="110" width="130" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="4UZhzCgLdHTaJtpBOjvQ-34" value="Queue&lt;div&gt;APPQ1&lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="370" y="348.35" width="70.866" height="36.2204" as="geometry" />
+        </mxCell>
+        <mxCell id="4UZhzCgLdHTaJtpBOjvQ-37" value="put" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="4UZhzCgLdHTaJtpBOjvQ-12" target="4UZhzCgLdHTaJtpBOjvQ-34">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="4UZhzCgLdHTaJtpBOjvQ-38" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;dashed=1;" edge="1" parent="1" source="4UZhzCgLdHTaJtpBOjvQ-39" target="4UZhzCgLdHTaJtpBOjvQ-31">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="4UZhzCgLdHTaJtpBOjvQ-39" value="Contient les definitions des QMs&lt;div&gt;Chanels (SRD,RCV, transmit queue)&lt;/div&gt;&lt;div&gt;Permet la création d&#39;objets automatiquement au sein des clusters&amp;nbsp;&lt;/div&gt;" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="10" y="330" width="210" height="71.46" as="geometry" />
+        </mxCell>
+        <mxCell id="4UZhzCgLdHTaJtpBOjvQ-40" value="ConfigMap&lt;div&gt;qmjwks-ini-cm&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="390" y="443.29" width="120" height="45.28" as="geometry" />
+        </mxCell>
+        <mxCell id="4UZhzCgLdHTaJtpBOjvQ-44" value="invoke HTTPS" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="4UZhzCgLdHTaJtpBOjvQ-45" target="4UZhzCgLdHTaJtpBOjvQ-43">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="4UZhzCgLdHTaJtpBOjvQ-42" value="QueueManager&lt;br&gt;&lt;div&gt;QM1&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="740" y="280.29" width="130" height="98.43" as="geometry" />
+        </mxCell>
+        <mxCell id="4UZhzCgLdHTaJtpBOjvQ-43" value="Key provider&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;(KeyCloak)&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="990" y="293.28999999999996" width="130" height="98.43" as="geometry" />
+        </mxCell>
+        <mxCell id="4UZhzCgLdHTaJtpBOjvQ-45" value="JWT code" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="810" y="323.005" width="50" height="39" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

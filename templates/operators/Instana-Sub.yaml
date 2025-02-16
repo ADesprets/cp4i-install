@@ -8,5 +8,5 @@ spec:
   installPlanApproval: Manual
   name: instana-agent-operator
   source: $MY_CATALOG_SOURCE_NAME
-  #sourceNamespace: openshift-marketplace
+  #sourceNamespace: $MY_CATALOGSOURCES_NAMESPACE
   #startingCSV: instana-agent-operator.v2.0.10

@@ -84,3 +84,24 @@ Documents:
 Operator scripts:
 
 * https://github.com/IBM/datapower-operator-scripts/
+
+ ``` bash
+/datapower
+├── domain1
+│   ├── config
+│   └── local
+├── domain2
+│   ├── config
+│   └── local
+└── templates
+
+temporary:///
+  gitops/
+    config/
+      in/           # On gitops-read, location to put configuration. Watched by configuration sequence.
+      out/          # On gitops-write, location to put templated configuration to be committed to Git.
+      staging/      # Location to put the source from Git to resolve any templated fields.
+    templates/
+      in/           # Location to put templates from Git. Watched by configuration sequence.
+      out/          # On gitops-write-template, location to put templates to be committed to Git.
+```
