@@ -45,8 +45,8 @@ else
     lf_type="Secret"
     lf_cr_name=$EEM_APIC_INGRESS_CA_CERT_SECRET_NAME
     lf_yaml_file="apim-cpd.yaml"
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\" \"${lf_operator_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${MY_EEM_SCRIPTDIR}config/" "${MY_EEM_GEN_CUSTOMDIR}config/" "$lf_yaml_file" "${lf_operator_namespace}"
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${MY_EEM_SCRIPTDIR}config/" "${MY_EEM_GEN_CUSTOMDIR}config/" "$lf_yaml_file"
 
     # 4) Update cp4i-eem CRD
     # spec.manager

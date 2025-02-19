@@ -4,8 +4,8 @@
 # Ensure internal registry is available
 ################################################
 function prepare_internal_registry() {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho 3 "F:IN:prepare_internal_registry"
+  trace_in 3 prepare_internal_registry
+
   # Expose service using default route
   oc patch configs.imageregistry.operator.openshift.io/cluster --patch '{"spec":{"defaultRoute":true}}' --type=merge
 
@@ -18,39 +18,37 @@ function prepare_internal_registry() {
   # For Ubuntu:  update-ca-certificates / For Mac: / For RH: update-ca-trust / For Windows: 
   # sudo update-ca-trust enable
 
-  decho 3 "F:OUT:prepare_internal_registry"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
+  trace_out 3 prepare_internal_registry
 }
 
 ################################################
 # Compile code
 ################################################
 function compile_code() {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho 3 "F:IN:compile_code"
+  trace_in 3 compile_code
+
   mvn clean install
   # $MY_CONTAINER_ENGINE build -t basicjaxrs:1.0 .
-  decho 3 "F:OUT:compile_code"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
+
+  trace_out 3 compile_code
 }
 
 ################################################
 # Build docker image
 ################################################
 function was_build_image() {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho 3 "F:IN:was_build_image"
+  trace_in 3 was_build_image
+
   $MY_CONTAINER_ENGINE build -t ${MY_WASLIBERTY_APP_NAME_VERSION} .
-  decho 3 "F:OUT:was_build_image"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
+
+  trace_out 3 was_build_image
 }
 
 ################################################
 # Login to internal registry
 ################################################
 function login_to_registry() {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho 3 "F:IN:login_to_registry"
+  trace_in 3 login_to_registry
 
   decho 3 "Internal image registry host: $IMAGE_REGISTRY_HOST"
   local lf_cluster_server=$(oc whoami --show-server)
@@ -60,45 +58,52 @@ function login_to_registry() {
   local lf_token=$(oc whoami -t)
   docker login -u kubeadmin -p $lf_token $IMAGE_REGISTRY_HOST
   
-  decho 3 "F:OUT:login_to_registry"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
+  trace_out 3 login_to_registry
 }
 
 ################################################
 # Push image to internal registry
 ################################################
 function push_image_to_registry() {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho 3 "F:IN:push_image_to_registry"
+  trace_in 3 push_image_to_registry
   
   #	tag the local image with details of image registry
   decho 3 "CMD: $MY_CONTAINER_ENGINE tag ${MY_WASLIBERTY_APP_NAME_VERSION} ${IMAGE_REGISTRY_HOST}/${MY_BACKEND_NAMESPACE}/${MY_WASLIBERTY_APP_NAME_VERSION}"
   $MY_CONTAINER_ENGINE tag ${MY_WASLIBERTY_APP_NAME_VERSION} ${IMAGE_REGISTRY_HOST}/${MY_BACKEND_NAMESPACE}/${MY_WASLIBERTY_APP_NAME_VERSION}
   $MY_CONTAINER_ENGINE push ${IMAGE_REGISTRY_HOST}/${MY_BACKEND_NAMESPACE}/${MY_WASLIBERTY_APP_NAME_VERSION}
     
-  decho 3 "F:OUT:push_image_to_registry"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
+  trace_out 3 push_image_to_registry
 }
 
 ################################################
 # Create application from image
 ################################################
 function create_application() {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho 3 "F:IN:create_application"
-    mylog info "Application:version ${MY_WASLIBERTY_APP_NAME_VERSION}"
-    # Creating APIC instance
-    lf_file="${MY_OPERANDSDIR}WAS-WLApp.yaml"
-    lf_ns="${MY_BACKEND_NAMESPACE}"
-    lf_path="{.status.phase}"
-    lf_resource="$MY_WASLIBERTY_APP_NAME"
-    lf_state="Ready"
-    lf_type="WebSphereLibertyApplication"
-    lf_wait_for_state=false
-    create_operand_instance "${lf_file}" "${lf_ns}" "${lf_path}" "${lf_resource}" "${lf_state}" "${lf_type}" "${lf_wait_for_state}"
+  trace_in 3 create_application
+
+  mylog info "Application:version ${MY_WASLIBERTY_APP_NAME_VERSION}"
+
+  local lf_working_directory="${MY_WASLIBERTY_WORKINGDIR}"
+  check_directory_exist_create "${lf_working_directory}"
+
+  local lf_namespace=$MY_BACKEND_NAMESPACE
+
+  local lf_type="WebSphereLibertyApplication"
+  local lf_cr_name="${MY_WASLIBERTY_APP_NAME}"
+  local lf_source_directory="${MY_OPERANDSDIR}"
+  local lf_target_directory="${lf_working_directory}"
+  local lf_yaml_file="WAS-WLApp.yaml"
+
+  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
   
-  decho 3 "F:OUT:create_application"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
+  local lf_cr_name=$(oc -n $lf_namespace get $lf_type -o jsonpath="{.items[0].metadata.name}")
+  local lf_path="{.status.phase}"
+  local lf_state="Ready"
+  decho 3 "wait_for_state \"$lf_type $lf_cr_name is $lf_state\" \"$lf_state\" \"oc -n $lf_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'\""
+  wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $lf_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
+  
+  trace_out 3 create_application
 }
 
 ################################################################################################

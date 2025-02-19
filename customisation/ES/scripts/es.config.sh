@@ -15,6 +15,9 @@ read_config_file "${scriptdir}properties/cp4i.properties"
 
 read_config_file "${MY_ES_GEN_CUSTOMDIR}config/es.properties"
 
+echo "es_project: $es_project"
+echo "MY_OC_PROJECT: $MY_OC_PROJECT"
+
 # Creation of the Topics used for taxi demo
 SECONDS=0
 mylog info "Creating topics"
@@ -32,16 +35,16 @@ do
     export es_spec_topic_replica=${topic_replicas[$index]}
 
     # CRD described at https://ibm.github.io/event-automation/es/reference/api-reference-es/
-    check_create_oc_yaml "KafkaTopic" "${es_topic_name}" "${MY_ES_SCRIPTDIR}config/" "${MY_ES_GEN_CUSTOMDIR}config/" "topic.yaml" $es_project
+    check_create_oc_yaml "KafkaTopic" "${es_topic_name}" "${MY_ES_SCRIPTDIR}config/" "${MY_ES_GEN_CUSTOMDIR}config/" "topic.yaml"
     # check_resource_availability "KafkaTopic" "${es_topic_name}" $es_project
     # wait_for_state KafkaTopic "${es_topic_name}" "Ready" '.status.phase' $es_project
 done
 
 # Creation of a Kafka user
-check_create_oc_yaml "KafkaUser" "${es_topic_name}" "${MY_ES_SCRIPTDIR}config/" "${MY_ES_GEN_CUSTOMDIR}config/" "es-admin-user.yaml" $es_project
-check_create_oc_yaml "KafkaUser" "${es_topic_name}" "${MY_ES_SCRIPTDIR}config/" "${MY_ES_GEN_CUSTOMDIR}config/" "es-all-access-user.yaml" $es_project
-check_create_oc_yaml "KafkaUser" "${es_topic_name}" "${MY_ES_SCRIPTDIR}config/" "${MY_ES_GEN_CUSTOMDIR}config/" "kafka-connect-credentials.yaml" $es_project
-check_create_oc_yaml "KafkaUser" "${es_topic_name}" "${MY_ES_SCRIPTDIR}config/" "${MY_ES_GEN_CUSTOMDIR}config/" "kafka-user1.yaml" $es_project
+check_create_oc_yaml "KafkaUser" "es-admin" "${MY_ES_SCRIPTDIR}config/" "${MY_ES_GEN_CUSTOMDIR}config/" "es-admin-user.yaml"
+check_create_oc_yaml "KafkaUser" "es-all-access" "${MY_ES_SCRIPTDIR}config/" "${MY_ES_GEN_CUSTOMDIR}config/" "es-all-access-user.yaml"
+check_create_oc_yaml "KafkaUser" "kafka-connect-credentials" "${MY_ES_SCRIPTDIR}config/" "${MY_ES_GEN_CUSTOMDIR}config/" "kafka-connect-credentials.yaml"
+check_create_oc_yaml "KafkaUser" "kafka-user1" "${MY_ES_SCRIPTDIR}config/" "${MY_ES_GEN_CUSTOMDIR}config/" "kafka-user1.yaml"
 
 # TODO Wanted to separate things for best practice, but not done yet
 # https://github.com/IBM/kafka-connect-loosehangerjeans-source/tree/main
@@ -53,14 +56,14 @@ check_create_oc_yaml "KafkaUser" "${es_topic_name}" "${MY_ES_SCRIPTDIR}config/" 
 # Create KafkaConnect and KafkaConnector in $ES_APPS_PROJECT project
 mylog info "Create Kafka Connect for datagen, and MQ connectors"
  
-check_create_oc_yaml "KafkaConnect" "${MY_ES_KAFKA_CONNECT_INSTANCE_NAME}" "${MY_ES_SCRIPTDIR}config/" "${MY_ES_GEN_CUSTOMDIR}" "KConnect.yaml" $es_project
+check_create_oc_yaml "KafkaConnect" "${MY_ES_KAFKA_CONNECT_INSTANCE_NAME}" "${MY_ES_SCRIPTDIR}config/" "${MY_ES_GEN_CUSTOMDIR}" "KConnect.yaml"
 
 # TODO check for the TLS configuration: https://ibm.github.io/event-automation/es/connecting/mq/#configuration-options
 
 mylog info "Create Kafka Connectors for datagen and MQ connectors"
-check_create_oc_yaml "KafkaConnector" "datagen" "${MY_ES_SCRIPTDIR}config/" "${MY_ES_GEN_CUSTOMDIR}config/" "KConnector_datagen.yaml" $es_project
-check_create_oc_yaml "KafkaConnector" "mqsync" "${MY_ES_SCRIPTDIR}config/" "${MY_ES_GEN_CUSTOMDIR}config/" "KConnector_MQ_sink.yaml" $es_project
-check_create_oc_yaml "KafkaConnector" "mqsource" "${MY_ES_SCRIPTDIR}config/" "${MY_ES_GEN_CUSTOMDIR}config/" "KConnector_MQ_source.yaml" $es_project
+check_create_oc_yaml "KafkaConnector" "datagen" "${MY_ES_SCRIPTDIR}config/" "${MY_ES_GEN_CUSTOMDIR}config/" "KConnector_datagen.yaml"
+check_create_oc_yaml "KafkaConnector" "mqsync" "${MY_ES_SCRIPTDIR}config/" "${MY_ES_GEN_CUSTOMDIR}config/" "KConnector_MQ_sink.yaml"
+check_create_oc_yaml "KafkaConnector" "mqsource" "${MY_ES_SCRIPTDIR}config/" "${MY_ES_GEN_CUSTOMDIR}config/" "KConnector_MQ_source.yaml"
 
 duration=$SECONDS
 mylog info "Configuration for EventStreams took $duration seconds to execute." 1>&2

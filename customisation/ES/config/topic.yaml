@@ -5,6 +5,7 @@ metadata:
     eventstreams.ibm.com/cluster: ${es_instance}
     app.kubernetes.io/instance: ${es_instance}
   name: ${es_topic_name}
+  namespace: ${MY_OC_PROJECT}
 spec:
   config:
     min.insync.replicas: "1"

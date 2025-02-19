@@ -557,6 +557,8 @@ function create_cm_token(){
 # Create API Manager token for the org 
 # todo : think about params
 function create_am_token(){
+  trace_in 3 create_am_token
+
   # get token for the API Manager for 
   amToken=$(curl -sk --fail -X POST "${PLATFORM_API_URL}api/token" \
    -H 'Content-Type: application/json' \
@@ -570,6 +572,8 @@ function create_am_token(){
     mylog error "Error with login -> $retVal" 1>&2
     exit 1
   fi
+
+  trace_out 3 create_am_token
 }
 
 ################################################################################################

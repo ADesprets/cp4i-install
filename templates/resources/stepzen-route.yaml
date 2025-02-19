@@ -11,6 +11,7 @@ metadata:
     haproxy.router.openshift.io/timeout: 30s
     haproxy.router.openshift.io/timeout-tunnel: 5d
   name: stepzen-to-graph-server
+  namespace: $MY_APIC_GRAPHQL_NAMESPACE
 spec:
   host: stepzen.apps.${MY_CLUSTER_DOMAIN}
   port:

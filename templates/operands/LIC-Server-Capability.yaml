@@ -1,11 +1,11 @@
-kind: IBMLicensing
 apiVersion: operator.ibm.com/v1alpha1
+kind: IBMLicensing
 metadata:
   labels:
     app.kubernetes.io/instance: ibm-licensing-operator
     app.kubernetes.io/managed-by: ibm-licensing-operator
     app.kubernetes.io/name: ibm-licensing
-  name: $my_ibm_lic_srv_instance_name
+  name: $MY_LICENSE_SERVICE_INSTANCE_NAME
 spec:
   version: $MY_LICSRV_VERSION
   apiSecretToken: ibm-licensing-token

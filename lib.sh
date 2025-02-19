@@ -1,119 +1,4 @@
 ################################################
-# Get resource from packagemanifest using path
-# @param 1: project
-# @param 2: operator
-# @param 3: catalogsource
-function get_defautchannel() {
-  trace_in 5 get_defautchannel
-
-  local lf_in_project=$1
-  local lf_in_operator=$2
-  local lf_in_catalogsource=$3
-
-  decho 5 "lf_in_project=$lf_in_project|lf_in_operator=$lf_in_operator|lf_in_catalogsource=$lf_in_catalogsource"
-  #local lf_resource=$(oc -n $lf_in_project get packagemanifest -o json | jq -r ".items[] | select(.metadata.name==\"$lf_in_operator\" and .status.catalogSource==\"$lf_in_catalogsource\") | $lf_in_path")
-  #local lf_resource=$(oc -n $lf_in_project get packagemanifest -o json | jq -r ".items[] | select(.metadata.name==$lf_in_operator and .status.catalogSource==$lf_in_catalogsource) | $lf_in_path")
-  #local lf_resource=$(oc -n $lf_in_project get packagemanifest -o json | jq -r --arg operator "$lf_in_operator" --arg catalogsource "$lf_in_catalogsource" --arg path "$lf_in_path" '.items[] | select(.metadata.name==$operator and .status.catalogSource==$catalogsource) | $path')
-  local lf_resource=$(oc -n "$lf_in_project" get packagemanifest -o json | jq -r \
-  --arg operator "$lf_in_operator" \
-  --arg catalogsource "$lf_in_catalogsource" \
-  '.items[] | select(.metadata.name==$operator and .status.catalogSource==$catalogsource) | .status.defaultChannel')
-  decho 5 "lf_resource=$lf_resource"
-
-  if [ -z "$lf_resource" ]; then
-    mylog error "No resource at path $lf_in_path found in pakagemanifest $lf_in_operator"
-    trace_out 5 get_resource_v2
-    return 1
-  fi
-
-  decho 3 "lf_resource=$lf_resource"
-  export VAR_RESOURCE=$lf_resource
-
-  trace_out 5 get_defautchannel
-}
-
-################################################
-# Get resource from packagemanifest using path
-# @param 1: project
-# @param 2: operator
-# @param 3: catalogsource
-# @param 4: jsonpath
-function get_resource_v2() {
-  trace_in 5 get_resource_v2
-
-  local lf_in_project="$1"
-  local lf_in_operator="$2"
-  local lf_in_catalogsource="$3"
-  local lf_in_path="$4"
-  
-  decho 5 "lf_in_project=$lf_in_project|lf_in_operator=$lf_in_operator|lf_in_catalogsource=$lf_in_catalogsource|lf_in_path=$lf_in_path"
-  #local lf_resource=$(oc -n $lf_in_project get packagemanifest -o json | jq -r ".items[] | select(.metadata.name==\"$lf_in_operator\" and .status.catalogSource==\"$lf_in_catalogsource\") | $lf_in_path")
-  #local lf_resource=$(oc -n $lf_in_project get packagemanifest -o json | jq -r ".items[] | select(.metadata.name==$lf_in_operator and .status.catalogSource==$lf_in_catalogsource) | $lf_in_path")
-  local lf_resource=$(oc -n $lf_in_project get packagemanifest -o json | jq -r --arg operator "$lf_in_operator" --arg catalogsource "$lf_in_catalogsource" --arg path "$lf_in_path" '.items[] | select(.metadata.name==$operator and .status.catalogSource==$catalogsource) | $path')
-  #local lf_resource=$(oc -n $lf_in_project get packagemanifest -o json | jq -r \
-  #--arg operator "$lf_in_operator" \
-  #--arg catalogsource "$lf_in_catalogsource" \
-  #--arg path "$lf_in_path" \
-  #'.items[] | select(.metadata.name==$operator and .status.catalogSource==$catalogsource) | $path')
-
-
-  if [ -z "$lf_resource" ]; then
-    mylog error "No resource at path $lf_in_path found in pakagemanifest $lf_in_operator"
-    trace_out 5 get_resource_v2
-    return 1
-  fi
-
-  decho 3 "lf_resource=$lf_resource"
-  export VAR_RESOURCE=$lf_resource
-
-  trace_out 5 get_resource_v2
-}
-
-################################################
-# Get resource from packagemanifest using path
-# @param 1: project
-# @param 2: operator
-# @param 3: jsonpath
-function get_resource() {
-  trace_in 5 get_resource
-
-  local lf_in_project="$1"
-  local lf_in_operator="$2"
-  local lf_in_path="$3"
-  
-  local lf_resource=$(oc -n $lf_in_project get packagemanifest $lf_in_operator -o json | jq -r "$lf_in_path")
-
-  if [ -z "$lf_resource" ]; then
-    mylog error "No resource at path $lf_in_path found in pakagemanifest $lf_in_operator"
-    return 1
-  fi
-  export VAR_RESOURCE=$lf_resource
-
-  trace_out 5 get_resource
-}
-
-################################################
-# Get current csv from packagemanifest using path
-# @param 1: project
-# @param 2: operator
-function get_current_csv() {
-  trace_in 5 get_current_csv
-
-  local lf_in_project="$1"
-  local lf_in_operator="$2"
-  local lf_in_path="$3"
-
-  local lf_resource=$(oc -n $lf_in_project get packagemanifest $lf_in_operator -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
-  if [ -z "$lf_resource" ]; then
-    mylog error "No resource at path $lf_in_path found in pakagemanifest $lf_in_operator"
-    return 1
-  fi
-  export VAR_RESOURCE=$lf_resource
-
-  trace_out 5 get_current_csv
-}
-
-################################################
 # append text to the beginning of the file 
 # 
 function prepend_to_file() {
@@ -359,8 +244,8 @@ function save_certificate() {
   local lf_data_normalised=$(sed 's/\./\\./g' <<< ${lf_in_data_name})
 
   mylog info "Save certificate ${lf_in_secret_name} to ${lf_in_destination_path}${lf_in_secret_name}.${lf_in_data_name}.pem"
-  decho 6 "oc -n cp4i get secret ${lf_in_secret_name} -o jsonpath=\"{.data.$lf_data_normalised}\""
-  local lf_cert=$(oc -n cp4i get secret ${lf_in_secret_name} -o jsonpath="{.data.$lf_data_normalised}")
+  decho 6 "oc -n $lf_in_ns get secret ${lf_in_secret_name} -o jsonpath=\"{.data.$lf_data_normalised}\""
+  local lf_cert=$(oc -n $lf_in_ns get secret ${lf_in_secret_name} -o jsonpath="{.data.$lf_data_normalised}")
 
   local lf_apply_cmd="echo $lf_cert | base64 --decode > ${lf_in_destination_path}${lf_in_secret_name}.${lf_in_data_name}.pem"
   local lf_delete_cmd="rm ${lf_in_destination_path}${lf_in_secret_name}.${lf_in_data_name}.pem"
@@ -617,10 +502,10 @@ function check_resource_exist() {
   local lf_in_name=$2
 
   # check resource exist
-  local res
+  local lf_res
   
-  res=$(oc get $lf_in_type $lf_in_name --ignore-not-found=true -o jsonpath='{.metadata.name}')
-  if test -z $res; then
+  lf_res=$(oc get $lf_in_type $lf_in_name --ignore-not-found=true -o jsonpath='{.metadata.name}')
+  if test -z $lf_res; then
     mylog error "Resource $lf_in_name of type $lf_in_type does not exist, exiting."
     return 1
   fi
@@ -827,7 +712,6 @@ function add_ibm_entitlement() {
 # @param 3: dir: the source directory example: "${subscriptionsdir}"
 # @param 4: dir: the target directory example: "${workingdir}apic/"
 # @param 5: yaml: the file with the definition of the resource, example: "Navigator-Sub.yaml"
-# @param 6: ns: name space where the resource is created, example: $MY_OPERATORS_NAMESPACE
 function check_create_oc_yaml() {
   trace_in 3 check_create_oc_yaml
 
@@ -836,7 +720,6 @@ function check_create_oc_yaml() {
   local lf_in_source_directory="$3"
   local lf_in_target_directory="$4"
   local lf_in_yaml_file="$5"
-  local lf_in_namespace="$6"
 
   local lf_newer lf_source_yaml_file lf_target_yaml_file lf_apply_cmd lf_delete_cmd
 
@@ -846,51 +729,13 @@ function check_create_oc_yaml() {
   check_file_exist "${lf_source_yaml_file}"
   adapt_file $lf_in_source_directory $lf_in_target_directory $lf_in_yaml_file
 
-  if [ -z "$lf_in_namespace" ]; then
-    mylog check "Checking ${lf_in_type} ${lf_in_cr_name}"
-    decho 3 "oc get ${lf_in_type} ${lf_in_cr_name}"
-    if oc get ${lf_in_type} ${lf_in_cr_name} >/dev/null 2>&1; then
-      is_cr_newer $lf_in_type $lf_in_cr_name $lf_source_yaml_file
-      lf_newer=$?
-      if [ $lf_newer -eq 1 ]; then
-        mylog info "OK: Custom Resource $lf_in_cr_name is newer than file $lf_source_yaml_file"
-      else
-        lf_apply_cmd="oc apply -f  $lf_target_yaml_file"
-        lf_delete_cmd="oc delete -f  $lf_target_yaml_file"
-        append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
-        prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
-        oc apply -f  $lf_target_yaml_file || exit 1
-      fi
-    else
-      lf_apply_cmd="oc apply -f  $lf_target_yaml_file"
-      lf_delete_cmd="oc delete -f  $lf_target_yaml_file"
-      append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
-      prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
-      oc apply -f  $lf_target_yaml_file || exit 1
-    fi
-  else
-    mylog check "Checking ${lf_in_type} ${lf_in_cr_name} in ${lf_in_namespace} project"
-    decho 3 "oc -n ${lf_in_namespace} get ${lf_in_type} ${lf_in_cr_name}"
-    if oc -n ${lf_in_namespace} get ${lf_in_type} ${lf_in_cr_name} >/dev/null 2>&1; then
-      is_cr_newer $lf_in_type $lf_in_cr_name $lf_source_yaml_file $lf_in_namespace
-      lf_newer=$?
-      if [ $lf_newer -eq 1 ]; then
-        mylog info "OK: Custom Resource $lf_in_cr_name is newer than file $lf_source_yaml_file"
-      else      
-        lf_apply_cmd="oc apply -f  $lf_target_yaml_file"
-        lf_delete_cmd="oc delete -f  $lf_target_yaml_file"
-        append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
-        prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
-        oc apply -f  $lf_target_yaml_file || exit 1
-      fi
-    else
-        lf_apply_cmd="oc apply -f  $lf_target_yaml_file"
-        lf_delete_cmd="oc delete -f  $lf_target_yaml_file"
-        append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
-        prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
-        oc apply -f  $lf_target_yaml_file || exit 1
-    fi
-  fi
+  mylog check "Creating or Updating ${lf_in_cr_name}/${lf_in_type}"
+  lf_apply_cmd="oc apply -f $lf_target_yaml_file"
+  lf_delete_cmd="oc delete -f $lf_target_yaml_file"
+  append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
+  prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
+
+  oc apply -f $lf_target_yaml_file || exit 1
 
   trace_out 3 check_create_oc_yaml
 }
@@ -902,19 +747,21 @@ function provision_persistence_openldap() {
   trace_in 3 provision_persistence_openldap
 
   local lf_in_namespace="$1"
+
   # handle persitence for Openldap
   # only check one, assume that if one is created the other one is also created (short cut to optimize time)
   mylog check "Checking persistent volume claim for LDAP in ${lf_in_namespace}"
-  if oc -n ${lf_in_namespace} get "PersistentVolumeClaim" "pvc-ldap-main" >/dev/null 2>&1; then mylog ok; else
-    
-    adapt_file "${MY_YAMLDIR}ldap/" $MY_WORKINGDIR "ldap-pvc.main.yaml"
-    oc -n ${lf_in_namespace} apply -f ${MY_WORKINGDIR}ldap-pvc.main.yaml
-    wait_for_state "pvc pvc-ldap-main status.phase is Bound" "Bound" "oc -n ${lf_in_namespace} get pvc pvc-ldap-main -o jsonpath='{.status.phase}'"
 
-    adapt_file "${MY_YAMLDIR}ldap/" $MY_WORKINGDIR "ldap-pvc.config.yaml"
-    oc -n ${lf_in_namespace} apply -f ${MY_WORKINGDIR}ldap-pvc.config.yaml
-    wait_for_state "pvc pvc-ldap-config status.phase is Bound" "Bound" "oc -n ${lf_in_namespace} get pvc pvc-ldap-config -o jsonpath='{.status.phase}'"
-  fi
+  export MY_PROJECT=$lf_in_namespace
+
+  adapt_file "${MY_YAMLDIR}ldap/" $MY_LDAP_WORKINGDIR "ldap-pvc.main.yaml"
+  oc apply -f "${MY_LDAP_WORKINGDIR}ldap-pvc.main.yaml" || exit 1
+  wait_for_state "pvc pvc-ldap-main status.phase is Bound" "Bound" "oc -n ${lf_in_namespace} get pvc pvc-ldap-main -o jsonpath='{.status.phase}'"
+
+  adapt_file "${MY_YAMLDIR}ldap/" $MY_LDAP_WORKINGDIR "ldap-pvc.config.yaml"
+  unset MY_PROJECT
+  oc apply -f "${MY_LDAP_WORKINGDIR}ldap-pvc.config.yaml" || exit 1
+  wait_for_state "pvc pvc-ldap-config status.phase is Bound" "Bound" "oc -n ${lf_in_namespace} get pvc pvc-ldap-config -o jsonpath='{.status.phase}'"
 
   trace_out 3 provision_persistence_openldap
 }
@@ -1312,24 +1159,11 @@ function check_add_cs_ibm_pak() {
   local lf_catalogsource=$(yq "select(.spec.displayName == \"$lf_display_name\") | .metadata.name" $lf_file | head -n 1)
   decho 3 "lf_catalogsource=$lf_catalogsource"
   export VAR_CATALOG_SOURCE=$lf_catalogsource
-  if oc get $lf_type $lf_catalogsource -n $MY_CATALOGSOURCES_NAMESPACE >/dev/null 2>&1; then
-    is_cr_newer $lf_type $lf_catalogsource $lf_file $MY_CATALOGSOURCES_NAMESPACE
-    if [ $? -eq 1 ]; then
-      mylog info "Custom Resource $lf_catalogsource exists in ns $MY_CATALOGSOURCES_NAMESPACE and is newer than file $lf_file"
-    else
-      local lf_apply_cmd="oc apply -f $lf_file"
-      local lf_delete_cmd="oc delete -f $lf_file"
-      append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
-      prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
-      oc apply -f $lf_file
-    fi
-  else
-    local lf_apply_cmd="oc apply -f $lf_file"
-    local lf_delete_cmd="oc delete -f $lf_file"
-    append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
-    prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
-    oc apply -f $lf_file
-  fi
+  local lf_apply_cmd="oc apply -f $lf_file"
+  local lf_delete_cmd="oc delete -f $lf_file"
+  append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
+  prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
+  oc apply -f $lf_file || exit 1
 
   trace_out 3 check_add_cs_ibm_pak
 }
@@ -1341,9 +1175,8 @@ function check_add_cs_ibm_pak() {
 # @param 3: Operator channel
 # @param 4: Control of the upgrade in the subscription, automatic or manual
 # @param 5: name of the source catalog
-# @param 6: Wait for the of subscription to be ready
-# @param 7: csv Operator channel
-# @param 8: working directory
+# @param 6: csv Operator channel
+# @param 7: working directory
 
 function create_operator_subscription() {
   trace_in 3 create_operator_subscription
@@ -1357,7 +1190,8 @@ function create_operator_subscription() {
   local lf_in_csv_name=$6
   local lf_in_workingdir=$7
 
-  local lf_file lf_path lf_resource lf_state lf_type
+  local lf_file lf_path lf_resource lf_state lf_type 
+
   check_directory_exist ${MY_OPERATORSDIR}
 
   #SECONDS=0
@@ -1367,9 +1201,8 @@ function create_operator_subscription() {
   local lf_source_directory="${MY_OPERATORSDIR}"
   local lf_target_directory="${lf_in_workingdir}"
   local lf_yaml_file="subscription.yaml"
-  local lf_namespace="${MY_OPERATOR_NAMESPACE}"
-  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}" 
+  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
 
   lf_type="clusterserviceversion"
   wait_for_resource $lf_type $lf_in_csv_name $MY_OPERATOR_NAMESPACE
@@ -1380,7 +1213,7 @@ function create_operator_subscription() {
   lf_type="clusterserviceversion"
   lf_path="{.status.phase}"
   lf_state="Succeeded"
-  wait_for_state "$lf_type $lf_resource $lf_path is $lf_state" "$lf_state" "oc -n $lf_namespace get $lf_type $lf_resource -o jsonpath='$lf_path'"
+  wait_for_state "$lf_type $lf_resource $lf_path is $lf_state" "$lf_state" "oc -n $MY_OPERATOR_NAMESPACE get $lf_type $lf_resource -o jsonpath='$lf_path'"
 
   unset MY_OPERATOR_NAME MY_OPERATOR_NAMESPACE MY_OPERATOR_CHL MY_STRATEGY MY_CATALOG_SOURCE_NAME
 
@@ -1503,50 +1336,50 @@ function create_certificate_chain() {
   export TLS_CA_ISSUER_NAME=${lf_in_namespace}-${lf_in_issuername}-ca
   export TLS_NAMESPACE=${lf_in_namespace}
 
-    # For Self-signed Certificate and Root Certificate
+  adapt_file ${MY_TLS_SCRIPTDIR}config/ ${MY_TLS_GEN_CUSTOMDIR}config/ Issuer_ca.yaml
+
+  # For Self-signed Certificate and Root Certificate
   export TLS_ROOT_CERT_NAME=${lf_in_namespace}-${lf_in_root_cert_name}-ca
   export TLS_LABEL1=${lf_in_tls_label1}
   export TLS_CERT_ISSUER_NAME=${lf_in_namespace}-${lf_in_issuername}-tls
 
-    # For TLS Certificate
+  adapt_file ${MY_TLS_SCRIPTDIR}config/ ${MY_TLS_GEN_CUSTOMDIR}config/ CACertificate.yaml
+  adapt_file ${MY_TLS_SCRIPTDIR}config/ ${MY_TLS_GEN_CUSTOMDIR}config/ Issuer_non_ca.yaml
+
+  # For TLS Certificate
   export TLS_CERT_NAME=${lf_in_namespace}-${lf_in_tls_certname}-tls
   export TLS_INGRESS=$(oc get ingresses.config/cluster -o jsonpath='{.spec.domain}')
 
-  lf_source_directory="${MY_TLS_SCRIPTDIR}config/"
-  lf_target_directory="${MY_TLS_GEN_CUSTOMDIR}config/"
+  adapt_file ${MY_TLS_SCRIPTDIR}config/ ${MY_TLS_GEN_CUSTOMDIR}config/ TLSCertificate.yaml
 
   # Create both Issuers and both Certificates
   lf_type="Issuer"
   lf_cr_name=${lf_in_namespace}-${lf_in_issuername}-ca
-  echo "lf_source_directory: ${lf_source_directory}, lf_target_directory: ${lf_target_directory}"
+  lf_source_directory="${MY_TLS_GEN_CUSTOMDIR}config/"
+  lf_target_directory="${lf_in_workingdir}"
   lf_yaml_file="Issuer_ca.yaml"
-  lf_namespace=${lf_in_namespace}
-  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
 
-  # adapt_file ${MY_TLS_SCRIPTDIR}config/ ${MY_TLS_GEN_CUSTOMDIR}config/ CACertificate.yaml
   lf_type="Certificate"
   lf_cr_name=${lf_in_namespace}-${lf_issuer_cert_name}-ca
   lf_yaml_file="CACertificate.yaml"
-  lf_namespace=${lf_in_namespace}
-  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
 
-  # adapt_file ${MY_TLS_SCRIPTDIR}config/ ${MY_TLS_GEN_CUSTOMDIR}config/ Issuer_non_ca.yaml
   lf_type="Issuer"
   lf_cr_name=${lf_in_namespace}-${lf_in_issuername}-tls
   lf_yaml_file="Issuer_non_ca.yaml"
-  lf_namespace=${lf_in_namespace}
-  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
 
-  # adapt_file ${MY_TLS_SCRIPTDIR}config/ ${MY_TLS_GEN_CUSTOMDIR}config/ TLSCertificate.yaml
   lf_type="Certificate"
   lf_cr_name=${lf_in_namespace}-${lf_in_tls_certname}-tls
   lf_yaml_file="TLSCertificate.yaml"
-  lf_namespace=${lf_in_namespace}
-  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
+  
+  unset TLS_CA_ISSUER_NAME TLS_NAMESPACE TLS_ROOT_CERT_NAME TLS_LABEL1 TLS_INGRESS
 
   trace_out 3 create_certificate_chain
 }
@@ -1814,9 +1647,8 @@ function create_postgresql_db() {
   local lf_source_directory="${MY_RESOURCESDIR}"
   local lf_target_directory="${lf_working_directory}"
   local lf_yaml_file="secret.yaml"
-  local lf_namespace=$MY_POSTGRESQL_NAMESPACE
-  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
   unset MY_SECRET_NAME MY_PROJECT MY_SECRET_TYPE MY_USERNAME MY_PASSWORD
 
   # PostGreSQL DB
@@ -1832,9 +1664,8 @@ function create_postgresql_db() {
   local lf_source_directory="${MY_RESOURCESDIR}"
   local lf_target_directory="${lf_working_directory}"
   local lf_yaml_file="postgresql-cluster.yaml"
-  local lf_namespace=$MY_POSTGRESQL_NAMESPACE
-  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}" 
+  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
   unset MY_POSTGRESQL_CLUSTER MY_POSTGRESQL_DATABASE MY_POSTGRESQL_USER MY_POSTGRESQL_SECRET MY_POSTGRESQL_DESCRIPTION MY_POSTGRESQL_IMAGE_NAME
 
   #local lf_resource=$(oc -n $lf_namespace get $lf_type -o json | jq -r --arg my_resource "$lf_cr_name" '.items[0].metadata | select (.name | contains ($my_resource)).name')

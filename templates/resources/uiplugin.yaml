@@ -1,7 +1,8 @@
 apiVersion: observability.openshift.io/v1alpha1
 kind: UIPlugin
 metadata:
-  name: $MY_LOGGING_NAMESPACE
+  name: logging
+  namespace: $MY_LOGGING_NAMESPACE
 spec:
   type: Logging
   logging:

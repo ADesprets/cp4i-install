@@ -6,6 +6,7 @@ metadata:
     app.kubernetes.io/instance: ${es_instance}
     eventstreams.ibm.com/cluster: ${es_instance}
   name: kafka-user1
+  namespace: ${MY_OC_PROJECT}
 spec:
   authentication:
     type: tls

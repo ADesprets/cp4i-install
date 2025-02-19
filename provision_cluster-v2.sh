@@ -3,7 +3,10 @@
 # Laurent 2021
 # Updated July 2023 Saad / Arnauld
 ################################################
-# @param $1 
+# @param $1 cp4i properties file path (ex : ./cp4.properties)
+# @param $2 cp4i versions file path (ex : ./versions/cp4-16.1.0.properties)
+# @param $3 namespace
+# @param $4 cluster_name
 ################################################
 
 ################################################
@@ -28,20 +31,19 @@ function install_keycloak() {
     local lf_source_directory="${MY_RESOURCESDIR}"
     local lf_target_directory="${lf_working_directory}"
     local lf_yaml_file="operator-group-single.yaml"
-    local lf_namespace="${MY_KEYCLOAK_NAMESPACE}"
     export MY_OPERATORGROUP=$lf_cr_name
-    export MY_PROJECT=$lf_namespace  
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}" 
+    export MY_PROJECT=$MY_KEYCLOAK_NAMESPACE  
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
     unset MY_OPERATORGROUP MY_PROJECT
   
     # Create a subscription object for Keycloak Operator
     local lf_operator_name="$MY_KEYCLOAK_OPERATOR"
     local lf_operator_namespace=$MY_KEYCLOAK_NAMESPACE
-    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.defaultChannel')
+    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
     local lf_strategy="Automatic"
-    local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.catalogSource')
-    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
+    local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
     local lf_work_dir=$lf_working_directory
     decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\" "
     create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
@@ -133,16 +135,16 @@ function create_keycloak_instance() {
   local lf_target_directory="${lf_working_directory}"
   local lf_yaml_file="keycloak.yaml"
   local lf_namespace=$lf_in_keycloak_namespace
-  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}" 
+  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
   unset MY_KEYCLOAK_NAME MY_KEYCLOAK_NAMESPACE MY_POSTGRESQL_HOSTNAME MY_KEYCLOAK_DB_SECRET MY_KEYCLOAK_TLS_SECRET MY_CLUSTER_DOMAIN
 
   #local lf_cr_name=$(oc -n $lf_namespace get $lf_type -o json | jq -r --arg my_resource "$lf_cr_name" '.items[0].metadata | select (.name | contains ($my_resource)).name')
   local lf_cr_name=$(oc -n $lf_namespace get $lf_type -o jsonpath="{.items[0].metadata.name}")
   local lf_path="{.status.conditions[0].type}"
   local lf_state="Ready"
-  decho 3 "wait_for_state \"$lf_type $lf_cr_name is $lf_state\" \"$lf_state\" \"oc -n $lf_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'\""
-  wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $lf_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
+  decho 3 "wait_for_state \"$lf_type $lf_cr_name is $lf_state\" \"$lf_state\" \"oc -n $MY_KEYCLOAK_NAMESPACE get $lf_type $lf_cr_name -o jsonpath='$lf_path'\""
+  wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $MY_KEYCLOAK_NAMESPACE get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
 
   trace_out 3 create_keycloak_instance
 }
@@ -163,7 +165,7 @@ function install_sftp() {
   
     # Create secret with users
     mylog check "Checking Secret for credential ${MY_SFTP_SERVER_NAMESPACE}-sftp-creds-secret" 1>&2
-    if oc get secret -n ${MY_SFTP_SERVER_NAMESPACE} "${MY_SFTP_SERVER_NAMESPACE}-sftp-creds-secret" >/dev/null 2>&1; then
+    if oc -n ${MY_SFTP_SERVER_NAMESPACE} get secret "${MY_SFTP_SERVER_NAMESPACE}-sftp-creds-secret" >/dev/null 2>&1; then
       mylog ok
     else
       generate_password 32
@@ -179,7 +181,7 @@ function install_sftp() {
   
     # Create configmap with SSH keys
     mylog check "Checking ConfigMap for ssh keys ${MY_SFTP_SERVER_NAMESPACE}-ssh-conf-cm" 1>&2
-    if oc get configmap -n ${MY_SFTP_SERVER_NAMESPACE} "${MY_SFTP_SERVER_NAMESPACE}-ssh-conf-cm" >/dev/null 2>&1; then
+    if oc -n ${MY_SFTP_SERVER_NAMESPACE} get configmap "${MY_SFTP_SERVER_NAMESPACE}-ssh-conf-cm" >/dev/null 2>&1; then
       mylog ok
     else
       ssh-keygen -t ed25519 -f ${MY_SFTP_GEN_CUSTOMDIR}config/ssh_host_ed25519_key < /dev/null
@@ -212,11 +214,11 @@ function install_sftp() {
       mylog ok
     else
    	  adapt_file ${MY_RESOURCESDIR} ${MY_SFTP_GEN_CUSTOMDIR}config/ pvc.yaml
-      local lf_apply_cmd="oc -n ${MY_SFTP_SERVER_NAMESPACE} create -f ${MY_SFTP_GEN_CUSTOMDIR}config/pvc.yaml"
-      local lf_delete_cmd="oc -n ${MY_SFTP_SERVER_NAMESPACE} delete pvc $VAR_PVC_NAME"
+      local lf_apply_cmd="oc apply -f ${MY_SFTP_GEN_CUSTOMDIR}config/pvc.yaml"
+      local lf_delete_cmd="oc delete pvc $VAR_PVC_NAME"
       append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
       prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
-  	  oc -n ${MY_SFTP_SERVER_NAMESPACE} create -f ${MY_SFTP_GEN_CUSTOMDIR}config/pvc.yaml
+  	  oc apply -f ${MY_SFTP_GEN_CUSTOMDIR}config/pvc.yaml
   	  wait_for_state "$VAR_PVC_NAME status.phase is Bound" "Bound" "oc -n ${MY_SFTP_SERVER_NAMESPACE} get pvc $VAR_PVC_NAME -o jsonpath='{.status.phase}'"
     fi
   
@@ -257,9 +259,8 @@ function install_sftp() {
       local lf_source_directory="${MY_SFTP_GEN_CUSTOMDIR}config/"
       local lf_target_directory="${lf_working_directory}"
       local lf_yaml_file="sftp_dep.yaml"
-      local lf_namespace="${MY_SFTP_SERVER_NAMESPACE}"
-      decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-      check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}" 
+      decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+      check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
     fi
   
     # Create the service to expose the SFTP server
@@ -274,9 +275,8 @@ function install_sftp() {
       local lf_source_directory="${MY_SFTP_GEN_CUSTOMDIR}config/"
       local lf_target_directory="${lf_working_directory}"
       local lf_yaml_file="sftp_svc.yaml"
-      local lf_namespace="${MY_SFTP_SERVER_NAMESPACE}"
-      decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-      check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+      decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+      check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
     fi
   
     # Create the route to expose the SFTP server
@@ -290,9 +290,8 @@ function install_sftp() {
       local lf_source_directory="${MY_SFTP_GEN_CUSTOMDIR}config/"
       local lf_target_directory="${lf_working_directory}"
       local lf_yaml_file="sftp_route.yaml"
-      local lf_namespace="${MY_SFTP_SERVER_NAMESPACE}"
-      decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-      check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+      decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+      check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
     fi
     mylog info "Installation of sftp took $SECONDS seconds." 1>&2
   fi
@@ -316,10 +315,10 @@ function install_gitops() {
     # Namespace openshift-gitops-operator does not exist and will be created.
     local lf_operator_name="$MY_GITOPS_OPERATOR"
     local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.defaultChannel')
+    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
     local lf_strategy="Automatic"
-    local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.catalogSource')
-    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
+    local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
     local lf_work_dir=$lf_working_directory
     decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
     create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
@@ -374,26 +373,20 @@ function install_logging_loki() {
     local lf_namespace="openshift-operators-redhat"
     export MY_OPERATORGROUP=$lf_cr_name
     export MY_PROJECT=$lf_namespace  
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
     unset MY_OPERATORGROUP MY_PROJECT
 
     # Create a subscription object for Loki Operator (because there are two loki-operator : community and Redhat, so the command to get the chl is different) 
     local lf_operator_name=$MY_LOKI_OPERATOR
     local lf_operator_namespace="openshift-operators-redhat"
-    local lf_operator_chl=$(oc get packagemanifest -n $MY_CATALOGSOURCES_NAMESPACE -o json | jq -r '.items[] | select(.metadata.name=="loki-operator" and .status.catalogSource=="redhat-operators") | .status.defaultChannel')
+    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest -o json | jq -r '.items[] | select(.metadata.name=="loki-operator" and .status.catalogSource=="redhat-operators") | .status.defaultChannel')
     local lf_strategy="Automatic"
     local lf_catalog_source_name="redhat-operators"
-    local lf_csv_name=$(oc get packagemanifest -n $MY_CATALOGSOURCES_NAMESPACE -o json | jq -r '.items[] | select(.metadata.name=="loki-operator" and .status.catalogSource=="redhat-operators") | .status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest -o json | jq -r '.items[] | select(.metadata.name=="loki-operator" and .status.catalogSource=="redhat-operators") | .status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
     local lf_work_dir=$lf_working_directory
     decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
     create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
-
-    # Create a namespace object for Red Hat Openshift Logging Operator
-    create_project "${MY_LOGGING_NAMESPACE}" "${MY_LOGGING_NAMESPACE} project" "For Red Hat Openshift Logging Operator" $lf_working_directory
-    oc patch namespace ${MY_LOGGING_NAMESPACE} -p '{"metadata": {"annotations": {"openshift.io/node-selector": ""}}}'
-    oc patch namespace ${MY_LOGGING_NAMESPACE} -p '{"metadata": {"labels": {"openshift.io/cluster-logging": "true"}}}'
-    oc patch namespace ${MY_LOGGING_NAMESPACE} -p '{"metadata": {"labels": {"openshift.io/cluster-monitoring": "true"}}}'
 
     # Create an OperatorGroup object for Red Hat Openhsift Logging Operator
     local lf_type="OperatorGroup"
@@ -404,17 +397,17 @@ function install_logging_loki() {
     local lf_namespace=$MY_LOGGING_NAMESPACE
     export MY_OPERATORGROUP=$lf_cr_name
     export MY_PROJECT=$lf_namespace  
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
     unset MY_OPERATORGROUP MY_PROJECT
     
     # Create a subscription object for Red Hat Openshift Logging Operator
     local lf_operator_name=$MY_LOGGING_OPERATOR
     local lf_operator_namespace="${MY_LOGGING_NAMESPACE}"
-    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.defaultChannel')
+    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
     local lf_strategy="Automatic"
     local lf_catalog_source_name="redhat-operators"
-    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
     local lf_work_dir=$lf_working_directory
     decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
     create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
@@ -426,9 +419,8 @@ function install_logging_loki() {
     local lf_source_directory="${MY_RESOURCESDIR}"
     local lf_target_directory="${lf_working_directory}"
     local lf_yaml_file="objectbucketclaim.yaml"
-    local lf_namespace=$MY_LOGGING_NAMESPACE
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
 
     # get the needed parameters to create the object storage secret
     export MY_LOKI_ACCESS_KEY_ID=$(oc -n openshift-storage get secret rook-ceph-object-user-ocs-storagecluster-cephobjectstore-noobaa-ceph-objectstore-user -o jsonpath='{.data.AccessKey}'| base64 --decode)
@@ -441,9 +433,8 @@ function install_logging_loki() {
     local lf_source_directory="${MY_RESOURCESDIR}"
     local lf_target_directory="${lf_working_directory}"
     local lf_yaml_file="loki-secret.yaml"
-    local lf_namespace="${MY_LOGGING_NAMESPACE}"
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
     unset MY_LOKI_ACCESS_KEY_ID MY_LOKI_ACCESS_KEY_SECRET MY_LOKI_ENDPOINT
 
     # Create a LokiStack instance
@@ -452,14 +443,13 @@ function install_logging_loki() {
     local lf_source_directory="${MY_OPERANDSDIR}"
     local lf_target_directory=$lf_working_directory
     local lf_yaml_file="Loki-Capability.yaml"
-    local lf_namespace=$MY_LOGGING_NAMESPACE
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
 
     local lf_path="{.status.conditions[0].type}"
     local lf_state="Ready"
     #local lf_wait_for_state=true
-    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $lf_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
+    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $MY_LOGGING_NAMESPACE get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
 
     # SB]20241204 Configuring LokiStack log store
     # https://docs.openshift.com/container-platform/4.16/observability/logging/log_storage/cluster-logging-loki.html
@@ -515,11 +505,11 @@ function install_logging_loki() {
 #...
 #---
     # Create a service account for the collector
-    local lf_apply_cmd="oc create sa $MY_LOGGING_COLLECTOR_SA -n $MY_LOGGING_NAMESPACE"
-    local lf_delete_cmd="oc delete sa $MY_LOGGING_COLLECTOR_SA -n $MY_LOGGING_NAMESPACE"
+    local lf_apply_cmd="oc -n $MY_LOGGING_NAMESPACE create sa $MY_LOGGING_COLLECTOR_SA"
+    local lf_delete_cmd="oc -n $MY_LOGGING_NAMESPACE delete sa $MY_LOGGING_COLLECTOR_SA"
     append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
     prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
-    oc create sa $MY_LOGGING_COLLECTOR_SA -n $MY_LOGGING_NAMESPACE
+    oc -n $MY_LOGGING_NAMESPACE create sa $MY_LOGGING_COLLECTOR_SA
 
     # Allow the collector’s service account to write data to the LokiStack CR
     local lf_apply_cmd="oc adm policy add-cluster-role-to-user logging-collector-logs-writer -z $MY_LOGGING_COLLECTOR_SA"
@@ -539,33 +529,32 @@ function install_logging_loki() {
     local lf_delete_cmd="oc adm policy remove-cluster-role-from-user collect-application-logs -z $MY_LOGGING_COLLECTOR_SA"
     append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
     prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
-    oc adm policy add-cluster-role-to-user collect-application-logs -z $MY_LOGGING_COLLECTOR_SA -n $MY_LOGGING_NAMESPACE
+    oc -n $MY_LOGGING_NAMESPACE adm policy add-cluster-role-to-user collect-application-logs -z $MY_LOGGING_COLLECTOR_SA
 
     local lf_apply_cmd="oc adm policy add-cluster-role-to-user collect-audit-logs -z $MY_LOGGING_COLLECTOR_SA"
     local lf_delete_cmd="oc adm policy remove-cluster-role-from-user collect-audit-logs -z $MY_LOGGING_COLLECTOR_SA"
     append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
     prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
-    oc adm policy add-cluster-role-to-user collect-audit-logs -z $MY_LOGGING_COLLECTOR_SA -n $MY_LOGGING_NAMESPACE
+    oc -n $MY_LOGGING_NAMESPACE adm policy add-cluster-role-to-user collect-audit-logs -z $MY_LOGGING_COLLECTOR_SA
 
     local lf_apply_cmd="oc adm policy add-cluster-role-to-user collect-infrastructure-logs -z $MY_LOGGING_COLLECTOR_SA"
     local lf_delete_cmd="oc adm policy remove-cluster-role-from-user collect-infrastructure-logs -z $MY_LOGGING_COLLECTOR_SA"
     append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
     prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
-    oc adm policy add-cluster-role-to-user collect-infrastructure-logs -z $MY_LOGGING_COLLECTOR_SA -n $MY_LOGGING_NAMESPACE
+    oc -n $MY_LOGGING_NAMESPACE adm policy add-cluster-role-to-user collect-infrastructure-logs -z $MY_LOGGING_COLLECTOR_SA
 
-    export VAR_LOKI_HOST=$(oc get route $MY_LOKI_INSTANCE_NAME -n $MY_LOGGING_NAMESPACE -o jsonpath='{.spec.host}')
+    export VAR_LOKI_HOST=$(oc -n $MY_LOGGING_NAMESPACE get route $MY_LOKI_INSTANCE_NAME -o jsonpath='{.spec.host}')
     local lf_type="ClusterLogForwarder"
     local lf_cr_name="$MY_RHOL_INSTANCE_NAME"
     local lf_source_directory="${MY_OPERANDSDIR}"
     local lf_target_directory=$lf_working_directory
     local lf_yaml_file="Rhol-Loki-Capability.yaml"
-    local lf_namespace=$MY_LOGGING_NAMESPACE
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
     unset VAR_LOKI_HOST
     local lf_path='{.status.conditions[?(@.type=="Ready")].status}'
     local lf_state="True"
-    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $lf_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
+    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $MY_LOGGING_NAMESPACE get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
     
     # Create a UIPlugin CR to enable the Log section in the Observe tab
     decho 3 "install_openshift_monitoring create the UI plugin"
@@ -574,9 +563,8 @@ function install_logging_loki() {
     local lf_source_directory="${MY_RESOURCESDIR}"
     local lf_target_directory="${lf_working_directory}"
     local lf_yaml_file="uiplugin.yaml"
-    local lf_namespace=$MY_LOGGING_NAMESPACE
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
 
     # Fine grained access for Loki logs
     # https://docs.openshift.com/container-platform/4.16/observability/logging/log_storage/cluster-logging-loki.html#logging-loki-log-access_cluster-logging-loki
@@ -616,11 +604,11 @@ function install_cluster_observability() {
     check_directory_exist_create "${lf_working_directory}"
 
     # Create a service account for the collector
-    local lf_apply_cmd="oc create sa $MY_LOGGING_COLLECTOR_SA -n $MY_LOGGING_NAMESPACE"
-    local lf_delete_cmd="oc delete sa $MY_LOGGING_COLLECTOR_SA -n $MY_LOGGING_NAMESPACE"
+    local lf_apply_cmd="oc -n $MY_LOGGING_NAMESPACE create sa $MY_LOGGING_COLLECTOR_SA"
+    local lf_delete_cmd="oc -n $MY_LOGGING_NAMESPACE delete sa $MY_LOGGING_COLLECTOR_SA"
     append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
     prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
-    oc create sa $MY_LOGGING_COLLECTOR_SA -n $MY_LOGGING_NAMESPACE
+    oc -n $MY_LOGGING_NAMESPACE create sa $MY_LOGGING_COLLECTOR_SA
 
     # Create a ClusterRole for the collector
     local lf_apply_cmd="oc apply -f ${MY_RESOURCESDIR}collector-ClusterRole.yaml"
@@ -643,9 +631,8 @@ function install_cluster_observability() {
     local lf_source_directory="${MY_RESOURCESDIR}"
     local lf_target_directory="${lf_working_directory}"
     local lf_yaml_file="role_binding.yaml"
-    local lf_namespace=$MY_LOGGING_NAMESPACE
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
 
     # Install the Cluster Observability Operator
     # https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html-single/cluster_observability_operator/index#cluster-observability-operator-overview
@@ -653,10 +640,10 @@ function install_cluster_observability() {
     # Create a subscription object for Cluster Observability Operator
     local lf_operator_name="$MY_COO_OPERATOR"
     local lf_operator_namespace="$MY_OPERATORS_NAMESPACE"
-    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.defaultChannel')
+    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
     local lf_strategy="Automatic"
-    local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.catalogSource')
-    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
+    local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
     local lf_work_dir=$lf_working_directory
     decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
     create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
@@ -682,11 +669,11 @@ function install_logging_otel() {
     check_directory_exist_create "${lf_working_directory}"
 
     # Create a service account for the collector
-    local lf_apply_cmd="oc create sa $MY_LOGGING_COLLECTOR_SA -n $MY_LOGGING_NAMESPACE"
-    local lf_delete_cmd="oc delete sa $MY_LOGGING_COLLECTOR_SA -n $MY_LOGGING_NAMESPACE"
+    local lf_apply_cmd="oc -n $MY_LOGGING_NAMESPACE create sa $MY_LOGGING_COLLECTOR_SA"
+    local lf_delete_cmd="oc -n $MY_LOGGING_NAMESPACE delete sa $MY_LOGGING_COLLECTOR_SA"
     append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
     prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
-    oc create sa $MY_LOGGING_COLLECTOR_SA -n $MY_LOGGING_NAMESPACE
+    oc -n $MY_LOGGING_NAMESPACE create sa $MY_LOGGING_COLLECTOR_SA
 
     # Allow the collector’s service account to write data to the LokiStack CR
     local lf_apply_cmd="oc adm policy add-cluster-role-to-user logging-collector-logs-writer -z $MY_LOGGING_COLLECTOR_SA"
@@ -727,9 +714,8 @@ function install_logging_otel() {
     local lf_source_directory="${MY_RESOURCESDIR}"
     local lf_target_directory="${lf_working_directory}"
     local lf_yaml_file="uiplugin.yaml"
-    local lf_namespace=$MY_LOGGING_NAMESPACE
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
 
     # Create a ClusterLogForwarder CR to configure log forwarding
     local lf_type="ClusterLogForwarder"
@@ -737,9 +723,8 @@ function install_logging_otel() {
     local lf_source_directory="${MY_RESOURCESDIR}"
     local lf_target_directory="${lf_working_directory}"
     local lf_yaml_file="clusterlogforwarder-otel.yaml"
-    local lf_namespace=$MY_LOGGING_NAMESPACE
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
 
     # Bind the ClusterRole to the service account
     local lf_apply_cmd="oc adm policy add-cluster-role-to-user logging-collector-logs-writer -z $MY_LOGGING_COLLECTOR_SA"
@@ -767,7 +752,7 @@ function install_cluster_monitoring() {
   if $MY_CLUSTER_MONITORING; then
     SECONDS=0
 
-    local lf_working_directory="${MY_OPENSHIFT_MONITORING_WORKINGDIR}"
+    local lf_working_directory="${MY_MONITORING_WORKINGDIR}"
     check_directory_exist_create "${lf_working_directory}"
 
     create_project "${MY_OPENSHIFT_MONITORING_NAMESPACE}" "${MY_OPENSHIFT_MONITORING_NAMESPACE} project" "For Openshift monitoring" $lf_working_directory
@@ -781,9 +766,8 @@ function install_cluster_monitoring() {
     local lf_source_directory="${MY_RESOURCESDIR}"
     local lf_target_directory="${lf_working_directory}"
     local lf_yaml_file="monitoring-cm.yaml"
-    local lf_namespace=$MY_OPENSHIFT_MONITORING_NAMESPACE
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
     unset MY_MONITORING_CM_NAME MY_MONITORING_NAMESPACE
 
     # Enable monitoring for user-defines projects
@@ -792,11 +776,11 @@ function install_cluster_monitoring() {
     # This action creates a prometheus-operated service in the openshift-user-workload-monitoring namespace.
     #export MY_MONITORING_CM_NAME="user-workload-monitoring-config"
     #export MY_MONITORING_NAMESPACE="openshift-user-workload-monitoring"
-    local lf_apply_cmd="oc patch configmap ${MY_MONITORING_CM_NAME} -n $MY_OPENSHIFT_MONITORING_NAMESPACE --type=merge --patch '{\"data\":{\"config.yaml\":\"enableUserWorkload: true\n\"}}'"
-    local lf_delete_cmd="oc patch configmap ${MY_MONITORING_CM_NAME} -n $MY_OPENSHIFT_MONITORING_NAMESPACE --type=merge --patch '{\"data\":{\"config.yaml\":\"enableUserWorkload: false\n\"}}'"
+    local lf_apply_cmd="oc -n $MY_OPENSHIFT_MONITORING_NAMESPACE patch configmap ${MY_MONITORING_CM_NAME} --type=merge --patch '{\"data\":{\"config.yaml\":\"enableUserWorkload: true\n\"}}'"
+    local lf_delete_cmd="oc -n $MY_OPENSHIFT_MONITORING_NAMESPACE patch configmap ${MY_MONITORING_CM_NAME} --type=merge --patch '{\"data\":{\"config.yaml\":\"enableUserWorkload: false\n\"}}'"
     append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
     prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
-    oc patch configmap ${MY_MONITORING_CM_NAME} -n $MY_OPENSHIFT_MONITORING_NAMESPACE --type=merge --patch '{"data":{"config.yaml":"enableUserWorkload: true\n"}}'
+    oc -n $MY_OPENSHIFT_MONITORING_NAMESPACE patch configmap ${MY_MONITORING_CM_NAME} --type=merge --patch '{"data":{"config.yaml":"enableUserWorkload: true\n"}}'
 
     # Granting users permissions for core platform monitoring
 
@@ -831,19 +815,18 @@ function install_oadp() {
     local lf_source_directory="${MY_RESOURCESDIR}"
     local lf_target_directory="${lf_working_directory}"
     local lf_yaml_file="operator-group-single.yaml"
-    local lf_namespace="${MY_OADP_NAMESPACE}"
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
     unset MY_OPERATORGROUP MY_PROJECT
 
 
     # Create a subscription object for OADP Operator
     local lf_operator_name="${MY_OADP_OPERATOR}"
     local lf_operator_namespace=$MY_OADP_NAMESPACE
-    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.defaultChannel')
+    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
     local lf_strategy="Automatic"
-    local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.catalogSource')
-    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
+    local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
     local lf_work_dir=$lf_working_directory
     decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
     create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
@@ -870,10 +853,10 @@ function install_pipelines() {
     # Create a subscription object for pipelines Operator
     local lf_operator_name="$MY_PIPELINES_OPERATOR"
     local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.defaultChannel')
+    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
     local lf_strategy="Automatic"
-    local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.catalogSource')
-    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
+    local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
     local lf_work_dir=$lf_working_directory
     decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
     create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
@@ -979,18 +962,17 @@ function install_cert_manager() {
     local lf_source_directory="${MY_RESOURCESDIR}"
     local lf_target_directory="${lf_working_directory}"
     local lf_yaml_file="operator-group-cert-manager.yaml"
-    local lf_namespace="${MY_CERTMANAGER_OPERATOR_NAMESPACE}"
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
     unset MY_OPERATORGROUP MY_PROJECT
   
     # Create a subscription object for cert manager Operator
     local lf_operator_name="${MY_CERTMANAGER_OPERATOR}"
     local lf_operator_namespace=$MY_CERTMANAGER_OPERATOR_NAMESPACE
-    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.defaultChannel')
+    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
     local lf_strategy="Automatic"
-    local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.catalogSource')
-    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
+    local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
     local lf_work_dir=$lf_working_directory
     decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
     create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
@@ -1021,6 +1003,10 @@ function install_lic_svc() {
     check_add_cs_ibm_pak $MY_LICENSE_SERVICE_CASE amd64
     wait_for_resource "packagemanifest" "${MY_LICENSE_SERVICE_OPERATOR}" $MY_CATALOGSOURCES_NAMESPACE
 
+    # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
+    local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
+    unset VAR_CATALOG_SOURCE
+
     export MY_OPERATORGROUP="${MY_LICENSE_SERVICE_OPERATORGROUP}"
     export MY_PROJECT="${MY_LICENSE_SERVICE_NAMESPACE}"
 
@@ -1029,18 +1015,18 @@ function install_lic_svc() {
     local lf_source_directory="${MY_RESOURCESDIR}"
     local lf_target_directory="${lf_working_directory}"
     local lf_yaml_file="operator-group-single.yaml"
-    local lf_namespace=$MY_LICENSE_SERVICE_NAMESPACE
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
     unset MY_OPERATORGROUP MY_PROJECT
 
     # Create a subscription object for license service Operator
     local lf_operator_name="${MY_LICENSE_SERVICE_OPERATOR}"
     local lf_operator_namespace=$MY_LICENSE_SERVICE_NAMESPACE
-    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.defaultChannel')
+    #local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
+    local lf_operator_chl=$(oc get packagemanifest -o json | jq -r --arg op "$lf_operator_name" --arg cs "$lf_catalog_source_name" '.items[] | select(.metadata.name==$op and .status.catalogSource==$cs) | .status.defaultChannel')
     local lf_strategy="Automatic"
-    local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.catalogSource')
-    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
+    #local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
+    local lf_csv_name=$(oc get packagemanifest -o json | jq -r --arg op "$lf_operator_name" --arg cs "$lf_catalog_source_name" '.items[] | select(.metadata.name==$op and .status.catalogSource==$cs) | .status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
     local lf_work_dir=$lf_working_directory
     decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
     create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
@@ -1087,6 +1073,10 @@ function install_lic_reporter_svc() {
     check_add_cs_ibm_pak $MY_LICENSE_SERVICE_REPORTER_CASE amd64
     wait_for_resource "packagemanifest" "${MY_LICENSE_SERVICE_REPORTER_OPERATOR}" $MY_CATALOGSOURCES_NAMESPACE
 
+    # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
+    local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
+    unset VAR_CATALOG_SOURCE
+
     # Operator group for License Service Reporter in single namespace
     export MY_OPERATORGROUP="${MY_LICENSE_SERVICE_REPORTER_OPERATORGROUP}"
     export MY_PROJECT="${MY_LICENSE_SERVICE_REPORTER_NAMESPACE}"
@@ -1096,18 +1086,17 @@ function install_lic_reporter_svc() {
     local lf_source_directory="${MY_RESOURCESDIR}"
     local lf_target_directory="${lf_working_directory}"
     local lf_yaml_file="operator-group-single.yaml"
-    local lf_namespace="${MY_LICENSE_SERVICE_REPORTER_NAMESPACE}"
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
     unset MY_OPERATORGROUP MY_PROJECT
 
     # Create a subscription object for license service reporter Operator
     local lf_operator_name="${MY_LICENSE_SERVICE_REPORTER_OPERATOR}"
     local lf_operator_namespace=$MY_LICENSE_SERVICE_NAMESPACE
-    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.defaultChannel')
+    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
     local lf_strategy="Automatic"
-    local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.catalogSource')
-    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
+    #local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
     local lf_work_dir=$lf_working_directory
     decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
     create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
@@ -1115,21 +1104,20 @@ function install_lic_reporter_svc() {
 
     mylog info "Creating the License Service Reporter instance" 1>&2
     mylog warn "Saad: Check that it is working to wait for the state, if not we need a temporisation" 1>&2
-    export MY_LICENSE_SERVICE_REPORTER_VERSION=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSVDesc.version')
+    export MY_LICENSE_SERVICE_REPORTER_VERSION=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSVDesc.version')
     # Creating Creating the License Service Reporter instance 
     local lf_type="IBMLicenseServiceReporter"
     local lf_cr_name="$MY_LICENSE_SERVICE_REPORTER_INSTANCE_NAME"
     local lf_source_directory="${MY_OPERANDSDIR}"
     local lf_target_directory=$lf_working_directory
     local lf_yaml_file="LIC-Reporter-Capability.yaml"
-    local lf_namespace="${MY_LICENSE_SERVICE_NAMESPACE}"
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
 
     local lf_path="{.status.LicenseServiceReporterPods[-1].phase}"
     local lf_state="Running"
     #local lf_wait_for_state=true
-    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $lf_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
+    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $MY_LICENSE_SERVICE_REPORTER_NAMESPACE get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
 
 
     # Add license service to the reporter
@@ -1188,12 +1176,16 @@ function install_fs() {
     unset VAR_APP_VERSION
     wait_for_resource "packagemanifest" "${MY_COMMONSERVICES_OPERATOR}" $MY_CATALOGSOURCES_NAMESPACE
 
+    # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
+    local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
+    unset VAR_CATALOG_SOURCE
+
     # Create a subscription object for common services Operator
     local lf_operator_name="${MY_COMMONSERVICES_OPERATOR}"
     local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.defaultChannel')
+    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
     local lf_strategy="Automatic"
-    local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.catalogSource')
+    #local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
     local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
     local lf_work_dir=$lf_working_directory
     decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
@@ -1210,9 +1202,8 @@ function install_fs() {
     local lf_source_directory="${MY_RESOURCESDIR}"
     local lf_target_directory="${lf_working_directory}"
     local lf_yaml_file="foundational-services-cr.yaml"
-    local lf_namespace="${MY_OPERATORS_NAMESPACE}"
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
 
     mylog info "Installation of foundational services took $SECONDS seconds." 1>&2
   fi
@@ -1299,6 +1290,10 @@ function install_wasliberty() {
     check_add_cs_ibm_pak $MY_WASLIBERTY_OPERATOR amd64
     wait_for_resource "packagemanifest" "${MY_WASLIBERTY_OPERATOR}" $MY_CATALOGSOURCES_NAMESPACE
 
+    # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
+    local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
+    unset VAR_CATALOG_SOURCE
+
     # Operator group for WAS Liberty in single namespace
     export MY_OPERATORGROUP="${MY_WASLIBERTY_OPERATORGROUP}"
     export MY_PROJECT="${MY_BACKEND_NAMESPACE}" 
@@ -1308,18 +1303,17 @@ function install_wasliberty() {
     local lf_source_directory="${MY_RESOURCESDIR}"
     local lf_target_directory="${lf_working_directory}"
     local lf_yaml_file="operator-group-single.yaml"
-    local lf_namespace="${MY_BACKEND_NAMESPACE}"
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
     unset MY_OPERATORGROUP MY_PROJECT
 
     # Creating WebSphere Liberty operator subscription
     local lf_operator_name="${MY_WASLIBERTY_OPERATOR}"
     local lf_operator_namespace=$MY_BACKEND_NAMESPACE
-    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.defaultChannel')
+    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
     local lf_strategy="Automatic"
-    local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.catalogSource')
-    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
+    #local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
     local lf_work_dir=$lf_working_directory
     decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
     create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
@@ -1352,13 +1346,17 @@ function install_navigator() {
     unset VAR_APP_VERSION
     wait_for_resource "packagemanifest" "${MY_NAVIGATOR_OPERATOR}" $MY_CATALOGSOURCES_NAMESPACE
 
+    # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
+    local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
+    unset VAR_CATALOG_SOURCE
+
     # Creating Navigator operator subscription
     local lf_operator_name="$MY_NAVIGATOR_OPERATOR"
     local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.defaultChannel')
+    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
     local lf_strategy="Automatic"
-    local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.catalogSource')
-    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
+    #local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
     local lf_work_dir=$lf_working_directory
     decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
     create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
@@ -1378,14 +1376,13 @@ function install_navigator() {
     local lf_source_directory="${MY_OPERANDSDIR}"
     local lf_target_directory=$lf_working_directory
     local lf_yaml_file="Navigator-Capability.yaml"
-    local lf_namespace="${MY_OC_PROJECT}"
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
 
     local lf_path="{.status.conditions[0].type}"
     local lf_state="Ready"
     #local lf_wait_for_state=true
-    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $lf_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
+    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $MY_OC_PROJECT get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
 
     mylog info "Installation of navigator took $SECONDS seconds." 1>&2
   fi
@@ -1409,13 +1406,17 @@ function install_assetrepo() {
     check_add_cs_ibm_pak $MY_ASSETREPO_OPERATOR amd64
     wait_for_resource "packagemanifest" "${MY_ASSETREPO_OPERATOR}" $MY_CATALOGSOURCES_NAMESPACE
 
+    # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
+    local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
+    unset VAR_CATALOG_SOURCE
+
     # Creating Asset Repository operator subscription
     local lf_operator_name=$MY_ASSETREPO_OPERATOR
     local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.defaultChannel')
+    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
     local lf_strategy="Automatic"
-    local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.catalogSource')
-    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
+    #local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
     local lf_work_dir=$lf_working_directory
     decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
     create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
@@ -1434,14 +1435,13 @@ function install_assetrepo() {
       local lf_source_directory="${MY_OPERANDSDIR}"
       local lf_target_directory=$lf_working_directory
       local lf_yaml_file="AR-Capability.yaml"
-      local lf_namespace="${MY_OC_PROJECT}"
-      decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-      check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+      decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+      check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
 
       local lf_path="{.status.phase}"
       local lf_state="Ready"
       #local lf_wait_for_state=true
-      wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $lf_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
+      wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $MY_OC_PROJECT get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
     fi
 
     mylog info "Installation of asset repository took $SECONDS seconds." 1>&2
@@ -1468,9 +1468,8 @@ function install_intassembly() {
     local lf_source_directory="${MY_OPERANDSDIR}"
     local lf_target_directory=$lf_working_directory
     local lf_yaml_file="IntegrationAssembly-Capability.yaml"
-    local lf_namespace="${MY_OC_PROJECT}"
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
 
     local lf_path="{.status.conditions[0].type}"
     local lf_state="Ready"
@@ -1503,13 +1502,17 @@ function install_ace() {
     unset VAR_APP_VERSION
     wait_for_resource "packagemanifest" "${MY_ACE_OPERATOR}" $MY_CATALOGSOURCES_NAMESPACE
 
+    # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
+    local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
+    unset VAR_CATALOG_SOURCE
+
     # Creating ACE operator subscription
     local lf_operator_name="$MY_ACE_OPERATOR"
     local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.defaultChannel')
+    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
     local lf_strategy="Automatic"
-    local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.catalogSource')
-    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
+    #local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
     local lf_work_dir=$lf_working_directory
     decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
     create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
@@ -1520,14 +1523,13 @@ function install_ace() {
     local lf_source_directory="${MY_OPERANDSDIR}"
     local lf_target_directory=$lf_working_directory
     local lf_yaml_file="ACE-SwitchServer-Capability.yaml"
-    local lf_namespace="${MY_OC_PROJECT}"
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
 
     local lf_path="{.status.conditions[0].type}"
     local lf_state="Ready"
     #local lf_wait_for_state=true
-    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $lf_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
+    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $MY_OC_PROJECT get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
 
     # Creating ACE Dashboard instance
     local lf_type="Dashboard"
@@ -1535,14 +1537,13 @@ function install_ace() {
     local lf_source_directory="${MY_OPERANDSDIR}"
     local lf_target_directory=$lf_working_directory
     local lf_yaml_file="ACE-Dashboard-Capability.yaml"
-    local lf_namespace="${MY_OC_PROJECT}"
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
 
     local lf_path="{.status.conditions[0].type}"
     local lf_state="Ready"
     #local lf_wait_for_state=true
-    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $lf_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
+    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $MY_OC_PROJECT get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
 
     # Creating ACE Designer instance
     local lf_type="DesignerAuthoring"
@@ -1550,14 +1551,13 @@ function install_ace() {
     local lf_source_directory="${MY_OPERANDSDIR}"
     local lf_target_directory=$lf_working_directory
     local lf_yaml_file="ACE-Designer-Capability.yaml"
-    local lf_namespace="${MY_OC_PROJECT}"
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
 
     local lf_path="{.status.conditions[0].type}"
     local lf_state="Ready"
     #local lf_wait_for_state=true
-    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $lf_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
+    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $MY_OC_PROJECT get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
 
     mylog info "Installation of ace took $SECONDS seconds." 1>&2
   fi
@@ -1585,13 +1585,17 @@ function install_apic() {
     unset VAR_APP_VERSION
     wait_for_resource "packagemanifest" "${MY_APIC_OPERATOR}" $MY_CATALOGSOURCES_NAMESPACE
 
+    # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
+    local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
+    unset VAR_CATALOG_SOURCE
+
     # Creating APIC operator subscription
     local lf_operator_name="$MY_APIC_OPERATOR"
     local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.defaultChannel')
+    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
     local lf_strategy="Automatic"
-    local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.catalogSource')
-    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
+    #local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
     local lf_work_dir=$lf_working_directory
     decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
     create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
@@ -1605,14 +1609,13 @@ function install_apic() {
       local lf_source_directory="${MY_OPERANDSDIR}"
       local lf_target_directory=$lf_working_directory
       local lf_yaml_file="APIC-Capability.yaml"
-      local lf_namespace="${MY_OC_PROJECT}"
-      decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-      check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+      decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+      check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
 
       local lf_path="{.status.phase}"
       local lf_state="Ready"
       #local lf_wait_for_state=true
-      wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $lf_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
+      wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $MY_OC_PROJECT get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
     fi
 
     #AD/SB]20240703 enable the Gateway Cluster webGui Management and add webgui-port to set it accessible
@@ -1637,9 +1640,8 @@ function install_apic() {
     local lf_source_directory="${MY_RESOURCESDIR}"
     local lf_target_directory="${lf_working_directory}"
     local lf_yaml_file="route.yaml"
-    local lf_namespace="${MY_OC_PROJECT}"
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
     unset MY_PROJECT MY_ROUTE_NAME MY_ROUTE_BALANCE MY_ROUTE_INSTANCE MY_ROUTE_PARTOF MY_ROUTE_HOST MY_ROUTE_PORT MY_ROUTE_SERVICE
 
     save_certificate ${MY_OC_PROJECT} cp4i-apic-ingress-ca ca.crt ${MY_WORKINGDIR}
@@ -1733,9 +1735,8 @@ function install_apic_graphql() {
     local lf_source_directory="${MY_RESOURCESDIR}"
     local lf_target_directory="${lf_working_directory}"
     local lf_yaml_file="stepzen.yaml"
-    local lf_namespace=$MY_APIC_GRAPHQL_NAMESPACE
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}" 
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
 
     #local lf_cr_name=$(oc -n $lf_namespace get $lf_type -o json | jq -r --arg my_resource "$lf_cr_name" '.items[0].metadata | select (.name | contains ($my_resource)).name')
     lf_type="StepZenGraphServer"
@@ -1745,7 +1746,7 @@ function install_apic_graphql() {
 
     lf_cr_name=$(oc -n $lf_namespace get $lf_type -o jsonpath="{.items[0].metadata.name}")
     decho 3 "wait_for_state \"$lf_type $lf_cr_name is $lf_state\" \"$lf_state\" \"oc -n $lf_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'\""
-    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $lf_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
+    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $MY_APIC_GRAPHQL_NAMESPACE get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
 
     # Creating APIC Graphql route
     # first create a cluster issuer (this creates a simple self-signed issuer for the root certificate)
@@ -1781,11 +1782,11 @@ function install_apic_graphql() {
     # Then Install OpenShift Route Support for cert-manager (openshift-routes).
     # ATTENTION REVOIR le namespace : c'est cert-manager et non pas cert-manager-namespace (https://github.com/cert-manager/openshift-routes?tab=readme-ov-file)
     # https://github.com/cert-manager/openshift-routes
-    local lf_apply_cmd="helm install openshift-routes -n cert-manager oci://ghcr.io/cert-manager/charts/openshift-routes"
-    local lf_delete_cmd="helm uninstall openshift-routes -n cert-manager"
+    local lf_apply_cmd="helm -n cert-manager install openshift-routes oci://ghcr.io/cert-manager/charts/openshift-routes"
+    local lf_delete_cmd="helm -n cert-manager uninstall openshift-routes"
     append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
     prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
-    helm install openshift-routes -n cert-manager oci://ghcr.io/cert-manager/charts/openshift-routes
+    helm -n cert-manager install openshift-routes oci://ghcr.io/cert-manager/charts/openshift-routes
     #oc -n cert-manager apply -f <(helm template openshift-routes -n cert-manager oci://ghcr.io/cert-manager/charts/openshift-routes --set omitHelmLabels=true)
 
     # Set up a stepzen-graph-server route for the stepzen account. This is the "root" account of the API Connect Graphql service, 
@@ -1796,9 +1797,8 @@ function install_apic_graphql() {
     local lf_source_directory="${MY_RESOURCESDIR}"
     local lf_target_directory="${lf_working_directory}"
     local lf_yaml_file="stepzen-route.yaml"
-    local lf_namespace=$MY_APIC_GRAPHQL_NAMESPACE
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"     
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
 
     # Set up stepzen-graph-server and stepzen-graph-server-subscriptions routes for the graphql account.
     # This is the default account for serving application requests.
@@ -1851,13 +1851,17 @@ function install_es() {
     unset VAR_APP_VERSION
     wait_for_resource "packagemanifest" "${MY_ES_OPERATOR}" $MY_CATALOGSOURCES_NAMESPACE
 
+    # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
+    local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
+    unset VAR_CATALOG_SOURCE
+
     # Creating EventStreams operator subscription
     local lf_operator_name="$MY_ES_OPERATOR"
     local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.defaultChannel')
+    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
     local lf_strategy="Automatic"
-    local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.catalogSource')
-    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
+    #local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
     local lf_work_dir=$lf_working_directory
     decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
     create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
@@ -1868,14 +1872,13 @@ function install_es() {
     local lf_source_directory="${MY_OPERANDSDIR}"
     local lf_target_directory=$lf_working_directory
     local lf_yaml_file="ES-Capability.yaml"
-    local lf_namespace="${MY_OC_PROJECT}"
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
 
     local lf_path="{.status.phase}"
     local lf_state="Ready"
     #local lf_wait_for_state=true
-    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $lf_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
+    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $MY_OC_PROJECT get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
     
     mylog info "Installation of event streams took $SECONDS seconds." 1>&2
   fi
@@ -1904,13 +1907,17 @@ function install_eem() {
     check_add_cs_ibm_pak $MY_EEM_OPERATOR amd64
     wait_for_resource "packagemanifest" "${MY_EEM_OPERATOR}" $MY_CATALOGSOURCES_NAMESPACE
 
+    # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
+    local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
+    unset VAR_CATALOG_SOURCE
+
     # Creating Event Endpoint Management operator subscription
     local lf_operator_name="${MY_EEM_OPERATOR}"
     local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.defaultChannel')
+    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
     local lf_strategy="Automatic"
-    local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.catalogSource')
-    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
+    #local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
     local lf_work_dir=$lf_working_directory
     decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
     create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
@@ -1933,14 +1940,13 @@ function install_eem() {
     local lf_source_directory="${MY_OPERANDSDIR}"
     local lf_target_directory=$lf_working_directory
     local lf_yaml_file="EEM-Capability.yaml"
-    local lf_namespace="${MY_OC_PROJECT}"
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
 
     local lf_path="{.status.conditions[0].type}"
     local lf_state="Ready"
     #local lf_wait_for_state=true
-    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $lf_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
+    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $MY_OC_PROJECT get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
 
     ## Creating EEM users and roles
     if $MY_KEYCLOAK_INTEGRATION; then
@@ -2001,14 +2007,13 @@ function install_egw() {
     local lf_source_directory="${MY_OPERANDSDIR}"
     local lf_target_directory=$lf_working_directory
     local lf_yaml_file="EG-Capability.yaml"
-    local lf_namespace="${MY_OC_PROJECT}"
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
 
     local lf_path="{.status.conditions[0].type}"
     local lf_state="Ready"
     #local lf_wait_for_state=true
-    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $lf_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
+    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $MY_OC_PROJECT get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
     
     mylog info "Installation of event gateway took $SECONDS seconds." 1>&2
   fi
@@ -2035,13 +2040,17 @@ function install_ep() {
     check_add_cs_ibm_pak $MY_EP_OPERATOR amd64
     wait_for_resource "packagemanifest" "${MY_EP_OPERATOR}" $MY_CATALOGSOURCES_NAMESPACE
 
+    # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
+    local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
+    unset VAR_CATALOG_SOURCE
+
     ## Creating Event processing operator subscription
     local lf_operator_name="$MY_EP_OPERATOR"
     local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.defaultChannel')
+    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
     local lf_strategy="Automatic"
-    local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.catalogSource')
-    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
+    #local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
     local lf_work_dir=$lf_working_directory
     decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
     create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
@@ -2072,14 +2081,13 @@ function install_ep() {
     local lf_source_directory="${MY_OPERANDSDIR}"
     local lf_target_directory=$lf_working_directory
     local lf_yaml_file="EP-Capability.yaml"
-    local lf_namespace="${MY_OC_PROJECT}"
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
 
     local lf_path="{.status.phase}"
     local lf_state="Running"
     #local lf_wait_for_state=true
-    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $lf_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
+    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $MY_OC_PROJECT get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
 
     # generate properties files
     adapt_file ${MY_EP_SCRIPTDIR}config/ ${MY_EP_GEN_CUSTOMDIR}config/ user-credentials.yaml
@@ -2127,6 +2135,10 @@ function install_flink() {
     check_add_cs_ibm_pak $MY_FLINK_OPERATOR amd64
     wait_for_resource "packagemanifest" "${MY_FLINK_OPERATOR}" $MY_CATALOGSOURCES_NAMESPACE
 
+    # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
+    local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
+    unset VAR_CATALOG_SOURCE
+
     ## SB]20231020 For Flink and Event processing install the operator with the following command :
     ## https://ibm.github.io/event-automation/ep/installing/installing/, Chapter : Install the operator by using the CLI (oc ibm-pak)
     ## event flink
@@ -2134,10 +2146,10 @@ function install_flink() {
     ## Creating Event processing operator subscription
     local lf_operator_name="$MY_FLINK_OPERATOR"
     local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.defaultChannel')
+    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
     local lf_strategy="Automatic"
-    local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.catalogSource')
-    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
+    #local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
     local lf_work_dir=$lf_working_directory
     decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
     create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
@@ -2150,14 +2162,13 @@ function install_flink() {
     local lf_source_directory="${MY_OPERANDSDIR}"
     local lf_target_directory=$lf_working_directory
     local lf_yaml_file="EA-Flink-PVC.yaml"
-    local lf_namespace="${MY_OC_PROJECT}"
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
 
     local lf_path="{.status.phase}"
     local lf_state="Bound"
     #local lf_wait_for_state=true
-    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $lf_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
+    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $MY_OC_PROJECT get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
 
     #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
     if [ -z "$MY_FLINK_VERSION" ]; then
@@ -2173,14 +2184,13 @@ function install_flink() {
     local lf_source_directory="${MY_OPERANDSDIR}"
     local lf_target_directory=$lf_working_directory
     local lf_yaml_file="EA-Flink-Capability.yaml"
-    local lf_namespace="${MY_OC_PROJECT}"
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
 
     local lf_path="{.status.lifecycleState}-{.status.jobManagerDeploymentStatus}"
     local lf_state="STABLE-READY"
     #local lf_wait_for_state=true
-    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $lf_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
+    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $MY_OC_PROJECT get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
     
     mylog info "Installation of flink took $SECONDS seconds." 1>&2
   fi
@@ -2209,13 +2219,17 @@ function install_hsts() {
     check_add_cs_ibm_pak $MY_HSTS_OPERATOR amd64
     wait_for_resource "packagemanifest" "${MY_HSTS_OPERATOR}" $MY_CATALOGSOURCES_NAMESPACE
 
+    # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
+    local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
+    unset VAR_CATALOG_SOURCE
+
     # Creating Aspera HSTS operator subscription
     local lf_operator_name="${MY_HSTS_OPERATOR}" 
     local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.defaultChannel')
+    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
     local lf_strategy="Automatic"
-    local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.catalogSource')
-    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
+    #local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
     local lf_work_dir=$lf_working_directory
     decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
     create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
@@ -2226,14 +2240,13 @@ function install_hsts() {
     local lf_source_directory="${MY_OPERANDSDIR}"
     local lf_target_directory=$lf_working_directory
     local lf_yaml_file="AsperaHSTS-Capability.yaml"
-    local lf_namespace="${MY_OC_PROJECT}"
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
 
     local lf_path="{.status.conditions[0].type}"
     local lf_state="Ready"
     #local lf_wait_for_state=true
-    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $lf_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
+    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $MY_OC_PROJECT get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
     
     mylog info "Installation of aspera hsts took $SECONDS seconds." 1>&2
   fi
@@ -2261,13 +2274,17 @@ function install_mq() {
     unset VAR_APP_VERSION
     wait_for_resource "packagemanifest" "${MY_MQ_OPERATOR}" $MY_CATALOGSOURCES_NAMESPACE
 
+    # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
+    local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
+    unset VAR_CATALOG_SOURCE
+
     # Creating MQ operator subscription
     local lf_operator_name="$MY_MQ_OPERATOR"
     local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.defaultChannel')
+    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
     local lf_strategy="Automatic"
-    local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.catalogSource')
-    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
+    #local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
     local lf_work_dir=$lf_working_directory
     decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
     create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
@@ -2281,14 +2298,13 @@ function install_mq() {
       local lf_source_directory="${MY_OPERANDSDIR}"
       local lf_target_directory=$lf_working_directory
       local lf_yaml_file="MessagingServer-Capability.yaml"
-      local lf_namespace="${MY_OC_PROJECT}"
-      decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-      check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+      decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+      check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
 
       local lf_path="{.status.conditions[0].type}"
       local lf_state="Ready"
       #local lf_wait_for_state=true
-      wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $lf_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
+      wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $MY_OC_PROJECT get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
     fi
     
     mylog info "Installation of mq took $SECONDS seconds." 1>&2
@@ -2332,10 +2348,10 @@ function install_instana() {
     # Create a subscription object for instana Operator
     local lf_operator_name="$MY_INSTANA_OPERATOR"
     local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
-    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.defaultChannel')
+    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
     local lf_strategy="Automatic"
-    local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.catalogSource')
-    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
+    local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
     local lf_work_dir=$lf_working_directory
     decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
     create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
@@ -2346,14 +2362,13 @@ function install_instana() {
     local lf_source_directory="${MY_OPERANDSDIR}"
     local lf_target_directory=$lf_working_directory
     local lf_yaml_file="Instana-Agent-CloudIBM-Capability.yaml"
-    local lf_namespace="${MY_INSTANA_AGENT_NAMESPACE}"
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
 
     local lf_path="{.status.numberReady}"
     local lf_state="$MY_CLUSTER_WORKERS"
     #local lf_wait_for_state=true
-    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $lf_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
+    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $MY_INSTANA_AGENT_NAMESPACE get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
     
     mylog info "Installation of instana took $SECONDS seconds." 1>&2
   fi
@@ -2380,7 +2395,6 @@ function install_postgresql() {
     # add catalog sources using ibm_pak plugin
     check_add_cs_ibm_pak $MY_POSTGRESQL_CASE amd64
     wait_for_resource "packagemanifest" "${MY_POSTGRESQL_OPERATOR}" $MY_CATALOGSOURCES_NAMESPACE
-    #local lf_catalog_source_name=$VAR_CATALOG_SOURCE
 
     # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
     local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
@@ -2401,9 +2415,8 @@ function install_postgresql() {
     local lf_source_directory="${MY_RESOURCESDIR}"
     local lf_target_directory="${lf_working_directory}"
     local lf_yaml_file="operator-group-single.yaml"
-    local lf_namespace="${MY_POSTGRESQL_NAMESPACE}"
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
     unset MY_OPERATORGROUP MY_PROJECT
 
     # Creating EDB Postgres for Kubernetes operator subscription
@@ -2411,9 +2424,9 @@ function install_postgresql() {
     local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     lf_operator_chl=$(oc get packagemanifest -o json | jq -r --arg op $lf_operator_name --arg cs $lf_catalog_source_name '.items[] | select(.metadata.name==$op and .status.catalogSource==$cs) | .status.defaultChannel')
     local lf_strategy="Automatic"
-    #local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status.catalogSource')
-    #local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name  -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
-    local lf_csv_name=$(oc get packagemanifest -o json | jq -r --arg op "$lf_operator_name" --arg cs "$lf_catalog_source_name" '.items[] | select(.metadata.name==$op and .status.catalogSource==$cs) | .status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
+    #local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
+    #local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
+    lf_csv_name=$(oc get packagemanifest -o json | jq -r --arg op "$lf_operator_name" --arg cs "$lf_catalog_source_name" '.items[] | select(.metadata.name==$op and .status.catalogSource==$cs) | .status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
     local lf_work_dir=$lf_working_directory
     decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\""
     create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
@@ -2539,9 +2552,8 @@ function customise_es() {
     local lf_source_directory="${MY_RESOURCESDIR}"
     local lf_target_directory="${lf_working_directory}"
     local lf_yaml_file="openshift-monitoring-cm.yaml"
-    local lf_namespace="${MY_OPENSHIFT_MONITORING_NAMESPACE}"
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
 
     . ${MY_ES_SCRIPTDIR}scripts/es.config.sh
   fi
@@ -2636,7 +2648,7 @@ function customise_mq() {
 
     # launch custom script
     mylog info "Customise MQ (mq.config.sh)."
-   # . ${MY_MQ_SCRIPTDIR}scripts/mq.config.sh -i ${sc_properties_file} ${MY_MQ_INSTANCE_NAME}
+    . ${MY_MQ_SCRIPTDIR}scripts/mq.config.sh -i ${sc_properties_file} ${MY_MQ_INSTANCE_NAME}
     mylog info "Customise MQ (mq.demo.config.sh)."
     . ${MY_MQ_SCRIPTDIR}scripts/mq.demo.config.sh -i ${sc_properties_file} ${MY_MQ_INSTANCE_NAME}
 
@@ -2704,9 +2716,8 @@ function create_postgresql_db() {
   local lf_source_directory="${MY_RESOURCESDIR}"
   local lf_target_directory="${lf_working_directory}"
   local lf_yaml_file="secret.yaml"
-  local lf_namespace=$MY_POSTGRESQL_NAMESPACE
-  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}" 
+  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
   unset MY_SECRET_NAME MY_PROJECT MY_SECRET_TYPE MY_USERNAME MY_PASSWORD
 
   # get the Postgresql image name version
@@ -2718,15 +2729,14 @@ function create_postgresql_db() {
   local lf_source_directory="${MY_RESOURCESDIR}"
   local lf_target_directory="${lf_working_directory}"
   local lf_yaml_file="postgresql-cluster.yaml"
-  local lf_namespace=$MY_POSTGRESQL_NAMESPACE
 
   export MY_POSTGRESQL_CLUSTER="${lf_in_cluster_name}"
   export MY_POSTGRESQL_DATABASE="${lf_in_db_name}"
   export MY_POSTGRESQL_USER="${lf_in_db_username}"
   export MY_POSTGRESQL_SECRET="${lf_in_secret_name}"
   export MY_POSTGRESQL_DESCRIPTION="${lf_in_db_description}"
-  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}" 
+  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
   unset MY_POSTGRESQL_CLUSTER MY_POSTGRESQL_DATABASE MY_POSTGRESQL_USER MY_POSTGRESQL_SECRET
 
   #local lf_cr_name=$(oc -n $lf_namespace get $lf_type -o json | jq -r --arg my_resource "$lf_cr_name" '.items[0].metadata | select (.name | contains ($my_resource)).name')
@@ -2734,7 +2744,7 @@ function create_postgresql_db() {
   local lf_path="{.status.conditions[0].type}"
   local lf_state="Ready"
   decho 3 "wait_for_state \"$lf_type $lf_cr_name is $lf_state\" \"$lf_state\" \"oc -n $lf_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'\""
-  wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $lf_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
+  wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $MY_POSTGRESQL_NAMESPACE get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
 
   # Authorize superuser access
   oc -n $lf_namespace patch $lf_type $lf_cr_name --type=merge -p '{"spec":{"enableSuperuserAccess":true}}' #| awk '{printf "%*s%s\n", NR * $SC_SPACES_COUNTER, "", $0}'
@@ -2944,6 +2954,13 @@ function install_needed_resources_part() {
   add_ibm_entitlement $MY_OC_PROJECT $MY_CONTAINER_ENGINE
   add_ibm_entitlement $MY_OPERATORS_NAMESPACE $MY_CONTAINER_ENGINE
 
+  # Create a namespace object for Red Hat Openshift Logging Operator 5 I put it here because it's used by loki and observability)
+  create_project "${MY_LOGGING_NAMESPACE}" "${MY_LOGGING_NAMESPACE} project" "For Red Hat Openshift Logging Operator" $lf_working_directory
+  oc patch namespace ${MY_LOGGING_NAMESPACE} -p '{"metadata": {"annotations": {"openshift.io/node-selector": ""}}}'
+  oc patch namespace ${MY_LOGGING_NAMESPACE} -p '{"metadata": {"labels": {"openshift.io/cluster-logging": "true"}}}'
+  oc patch namespace ${MY_LOGGING_NAMESPACE} -p '{"metadata": {"labels": {"openshift.io/cluster-monitoring": "true"}}}'
+
+
   trace_out 3 install_needed_resources_part
 }
 
@@ -3069,9 +3086,8 @@ function test_keycloak() {
   local lf_source_directory="${MY_RESOURCESDIR}"
   local lf_target_directory="${lf_working_directory}"
   local lf_yaml_file="secret.yaml"
-  local lf_namespace="${MY_KEYCLOAK_NAMESPACE}"
-  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
   unset MY_SECRET_NAME MY_PROJECT MY_SECRET_TYPE MY_USERNAME MY_PASSWORD
   
   # Creating keycloak route
@@ -3092,9 +3108,8 @@ function test_keycloak() {
   local lf_source_directory="${MY_RESOURCESDIR}"
   local lf_target_directory="${lf_working_directory}"
   local lf_yaml_file="keycloak-csr.yaml"
-  local lf_namespace=$MY_KEYCLOAK_NAMESPACE
-  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\" \"${lf_namespace}\""
-  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}" "${lf_namespace}"
+  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
 
   create_keycloak_instance "keycloak" "${MY_KEYCLOAK_NAMESPACE}" "keycloak-postgresql-cluster" "keycloak-pg-password" "${MY_KEYCLOAK_TLS_SECRET}"
 
@@ -3340,8 +3355,8 @@ read_config_file "$sc_parameters"
 read_config_file "$sc_properties_file"
 
 # files containing the list of  executed commands
-sc_install_executed_commands_file="${MY_WORKINGDIR}install_executed_commands.sh"
-sc_uninstall_executed_commands_file="${MY_WORKINGDIR}uninstall_executed_commands.sh"
+sc_install_executed_commands_file="./install_executed_commands.sh"
+sc_uninstall_executed_commands_file="./uninstall_executed_commands.sh"
 cat /dev/null > $sc_install_executed_commands_file
 cat /dev/null > $sc_uninstall_executed_commands_file
 

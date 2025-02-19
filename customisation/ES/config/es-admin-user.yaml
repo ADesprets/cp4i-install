@@ -2,6 +2,7 @@ apiVersion: eventstreams.ibm.com/v1beta2
 kind: KafkaUser
 metadata:
   name: es-admin
+  namespace: ${MY_OC_PROJECT}
   labels:
     app.kubernetes.io/instance: ${es_instance}
     eventstreams.ibm.com/cluster: ${es_instance}
