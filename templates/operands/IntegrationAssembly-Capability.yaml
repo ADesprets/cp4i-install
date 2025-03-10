@@ -1,0 +1,24 @@
+apiVersion: integration.ibm.com/v1beta1
+kind: IntegrationAssembly
+metadata:
+  name: $MY_INTASSEMBLY_INSTANCE_NAME
+  namespace: $MY_OC_PROJECT
+  labels:
+    backup.integration.ibm.com/component: IntegrationAssembly    
+spec:
+  version: $MY_NAVIGATOR_VERSION
+  license:
+    accept: true
+    license: $MY_CP4I_LIC
+    use: $MY_INTASSEMBLY_LIC_USAGE
+  storage:
+    readWriteOnce:
+      class: $MY_BLOCK_STORAGE_CLASS
+  managedInstances:
+    list:
+    - kind: QueueManager
+      metadata:
+        name: qm1
+    - kind: EventStreams
+      metadata:
+        name: es1

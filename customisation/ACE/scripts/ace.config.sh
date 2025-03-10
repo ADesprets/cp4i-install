@@ -145,10 +145,10 @@ for sc_barfiledir in ${BARFILESDIR}*; do
   read_config_file "${CONFIGDIR}ace.properties"
 
   check_directory_exist_create  "${MY_ACE_GEN_CUSTOMDIR}generated/${MY_ACE_BAR_NAME}"
-  sc_generateddir="${MY_ACE_GEN_CUSTOMDIR}generated/${MY_ACE_BAR_NAME}/"
+  sc_ace_custom_gendir="${MY_ACE_GEN_CUSTOMDIR}generated/${MY_ACE_BAR_NAME}/"
 
-  check_directory_exist_create  "${sc_generateddir}yaml"
-  sc_generatedyamldir="${sc_generateddir}yaml/"
+  check_directory_exist_create  "${sc_ace_custom_gendir}yaml"
+  sc_generatedyamldir="${sc_ace_custom_gendir}yaml/"
 
   # Process all the configuration types before creating the IntegrationRuntime (ex: IntegrationServer)
   for sc_configfile in "${CONFIGURATIONTYPESDIR}"*; do

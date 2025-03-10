@@ -10,6 +10,719 @@
 ################################################
 
 ################################################
+# Keycloak: Get keycloak data (admin, password and host)
+function get_keycloak_infos() {
+  trace_in 3 get_keycloak_infos
+
+  local lf_in_keycloak_user=$1
+
+  if [ $# -ne 1 ] || { [ "$lf_in_keycloak_user" != "$MY_KEYCLOAK_USERNAME" ] && [ "$lf_in_keycloak_user" != "$MY_KEYCLOAK_CP4I_USERNAME" ]; }; then 
+    mylog error "you have to provide the username which must be: $MY_KEYCLOAK_USERNAME or $MY_KEYCLOAK_CP4I_USERNAME"
+    trace_out 3 get_keycloak_infos
+    exit  1
+  fi
+
+  # get and export keycloak infos
+  if [ -z $VAR_KEYCLOAK_ADMIN ] || [ -z $VAR_KEYCLOAK_ADMIN_PASSWORD ] || [ -z $VAR_KEYCLOAK_HOST ]; then
+    case "${lf_in_keycloak_user}" in
+      admin)
+        export VAR_KEYCLOAK_ADMIN_PASSWORD=$(oc -n $MY_COMMONSERVICES_NAMESPACE get secret cs-keycloak-initial-admin -o jsonpath='{.data.password}' | base64 --decode)
+        local lf_keycloak_realm=$MY_KEYCLOAK_MASTER_REALM
+        ;;
+      integration-admin)
+        export VAR_KEYCLOAK_ADMIN_PASSWORD=$(oc -n $MY_COMMONSERVICES_NAMESPACE get secret integration-admin-initial-temporary-credentials -o jsonpath='{.data.password}' | base64 --decode)
+        local lf_keycloak_realm=$MY_KEYCLOAK_CP4I_REALM
+        ;;
+    esac
+    export VAR_KEYCLOAK_ADMIN=$lf_in_keycloak_user
+    export VAR_KEYCLOAK_HOST=$(oc -n $MY_COMMONSERVICES_NAMESPACE get route keycloak -o jsonpath='{.spec.host}')
+    export VAR_KEYCLOAK_ACCESS_TOKEN=$(curl -s -X POST "https://${VAR_KEYCLOAK_HOST}/realms/${lf_keycloak_realm}/protocol/openid-connect/token" \
+                                               -H "Content-Type: application/x-www-form-urlencoded" \
+                                               -d "username=${VAR_KEYCLOAK_ADMIN}" \
+                                               -d "password=${VAR_KEYCLOAK_ADMIN_PASSWORD}" \
+                                               -d "grant_type=password" \
+                                               -d "client_id=${MY_KEYCLOAK_ADMIN_CLI_CLIENT}" 2> /dev/null | jq -r .access_token) 
+    export VAR_KEYCLOAK_USER_UUID=$(curl -s -X GET "https://${VAR_KEYCLOAK_HOST}/admin/realms/${lf_keycloak_realm}/users" \
+                                            -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN" \
+                                            -H "Content-Type: application/json" | jq -r --arg username "$lf_in_keycloak_user" '.[] | select(.username == $username) | .id')
+  fi
+
+  if [ -z $VAR_KEYCLOAK_ACCESS_TOKEN ] || 
+     [ -z $VAR_KEYCLOAK_ADMIN ] || \
+     [ -z $VAR_KEYCLOAK_ADMIN_PASSWORD ] || \
+     [ -z $VAR_KEYCLOAK_HOST ] || \
+     [ -z $VAR_KEYCLOAK_USER_UUID ]; then
+    mylog error "One of the following important keycloak values missing (access token, admin, admin password, host, user id)"
+    trace_out 3 get_keycloak_infos
+    exit  1
+  else
+    decho 4 "VAR_KEYCLOAK_ACCESS_TOKEN=$VAR_KEYCLOAK_ACCESS_TOKEN"
+    decho 4 "VAR_KEYCLOAK_ADMIN=$VAR_KEYCLOAK_ADMIN"
+    decho 4 "VAR_KEYCLOAK_ADMIN_PASSWORD=$VAR_KEYCLOAK_ADMIN_PASSWORD"
+    decho 4 "VAR_KEYCLOAK_HOST=$VAR_KEYCLOAK_HOST"
+    decho 4 "VAR_KEYCLOAK_USER_UUID=$VAR_KEYCLOAK_USER_UUID"
+  fi 
+
+  trace_out 3 get_keycloak_infos
+}
+
+################################################
+# Get the keycloak secret
+# @param 1: the keycloak realm 
+# @param 2: the keycloak client
+# @param 3: username
+################################################
+function get_keycloak_secret() {
+  trace_in 3 get_keycloak_secret
+
+  local lf_in_keycloak_realm=$1
+  local lf_in_keycloak_client=$2
+  local lf_in_keycloak_user=$3
+
+  if [ $# -ne 3 ]; then 
+    mylog error "you have to provide 3 parameters : the keycloak realm, the keycloak client and username"
+    trace_out 3 get_keycloak_secret
+    exit  1
+  fi
+  
+  # get keycloak infos
+  if [ -z $VAR_KEYCLOAK_ADMIN ] || [ -z $VAR_KEYCLOAK_ADMIN_PASSWORD ] || [ -z $VAR_KEYCLOAK_HOST ] || [ -z $VAR_KEYCLOAK_ACCESS_TOKEN ]; then
+    get_keycloak_infos $lf_in_keycloak_user
+  fi
+
+  local lf_keycloak_secret=$(curl -s -X GET "https://${VAR_KEYCLOAK_HOST}/admin/realms/${lf_in_keycloak_realm}/clients?clientId=${lf_in_keycloak_client}" \
+                                 -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN" | \
+                                  jq -r '.[] | .secret')
+
+  #local lf_keycloak_secret=$(curl -s -X GET "https://${VAR_KEYCLOAK_HOST}/admin/realms/${lf_in_keycloak_realm}/clients" \
+  #                                   -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN" \
+  #                                   -H "Content-Type: application/json" | jq -r --arg clientId "$lf_in_keycloak_client" '.[] | select(.clientId == $clientId) | .secret')
+
+  if [ -z $lf_keycloak_secret ]; then
+    mylog error "keycloak secret not found for client $lf_in_keycloak_client in realm $lf_in_keycloak_realm"
+    trace_out 3 get_keycloak_secret
+    exit  1
+  else
+    export VAR_KEYCLOAK_SECRET=$lf_keycloak_secret
+  fi
+
+  trace_out 3 get_keycloak_secret
+}
+
+################################################
+# Get the keycloak roles for a given user
+# @param 1: the keycloak realm 
+# @param 2: the keycloak client
+# @param 3: username
+################################################
+function get_keycloak_roles() {
+  trace_in 3 get_keycloak_roles
+
+  local lf_in_keycloak_realm=$1
+  local lf_in_keycloak_client=$2
+  local lf_in_keycloak_user=$3
+
+  local lf_in_client_id="4a26d44e-7e50-4bc7-a57d-a61e57ee984a"
+
+  if [ $# -ne 3 ]; then 
+    mylog error "you have to provide 3 parameters : the keycloak realm, the keycloak client and username"
+    trace_out 3 get_keycloak_roles
+    exit  1
+  fi
+  
+  # get keycloak infos
+  if [ -z $VAR_KEYCLOAK_ADMIN ] || [ -z $VAR_KEYCLOAK_ADMIN_PASSWORD ] || [ -z $VAR_KEYCLOAK_HOST ] || [ -z $VAR_KEYCLOAK_ACCESS_TOKEN ]; then
+    get_keycloak_infos $lf_in_keycloak_user
+  fi
+
+  # get the client_uuid
+  local lf_client_uuid=$(curl -s -X GET "https://${VAR_KEYCLOAK_HOST}/admin/realms/${lf_in_keycloak_realm}/clients?clientId=${lf_in_keycloak_client}" \
+                                 -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN" | \
+                                 jq -r '.[] | .id')
+
+  mylog info "Roles for user $lf_in_keycloak_user in realm $lf_in_keycloak_realm"
+  curl -s -X GET "https://${VAR_KEYCLOAK_HOST}/admin/realms/${lf_in_keycloak_realm}/clients/${lf_client_uuid}/roles" \
+          -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN"
+
+  trace_out 3 get_keycloak_roles
+}
+
+################################################
+# Get Get group hierarchy
+# @param 1: the keycloak realm 
+################################################
+function get_keycloak_groups() {
+  trace_in 3 get_keycloak_groups
+
+  local lf_in_keycloak_realm=$1
+  local lf_in_keycloak_user=$2
+
+  if [ $# -ne 2 ]; then 
+    mylog error "you have to provide two parameters : the keycloak realm, the keycloak user"
+    trace_out 3 get_keycloak_groups
+    exit  1
+  fi
+  
+  # get keycloak infos
+  if [ -z $VAR_KEYCLOAK_ADMIN ] || [ -z $VAR_KEYCLOAK_ADMIN_PASSWORD ] || [ -z $VAR_KEYCLOAK_HOST ] || [ -z $VAR_KEYCLOAK_ACCESS_TOKEN ]; then
+    get_keycloak_infos $lf_in_keycloak_user
+  fi
+
+  mylog info "Groups in realm $lf_in_keycloak_realm"
+  curl -s -X GET "https://${VAR_KEYCLOAK_HOST}/admin/realms/${lf_in_keycloak_realm}/groups" \
+          -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN"
+
+  trace_out 3 get_keycloak_groups
+}
+
+################################################
+# Get Get group hierarchy
+# @param 1: the keycloak realm 
+################################################
+function get_keycloak_required_actions() {
+  trace_in 3 get_keycloak_required_actions
+
+  local lf_in_keycloak_realm=$1
+  local lf_in_keycloak_user=$2
+
+  if [ $# -ne 2 ]; then 
+    mylog error "you have to provide two parameters : the keycloak realm, the keycloak user"
+    trace_out 3 get_keycloak_required_actions
+    exit  1
+  fi
+  
+  # get keycloak infos
+  if [ -z $VAR_KEYCLOAK_ADMIN ] || [ -z $VAR_KEYCLOAK_ADMIN_PASSWORD ] || [ -z $VAR_KEYCLOAK_HOST ] || [ -z $VAR_KEYCLOAK_ACCESS_TOKEN ]; then
+    get_keycloak_infos $lf_in_keycloak_user
+  fi
+
+  mylog info "Groups in realm $lf_in_keycloak_realm"
+  curl -s -X GET "https://${VAR_KEYCLOAK_HOST}/admin/realms/${lf_in_keycloak_realm}/groups" \
+          -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN"
+
+  trace_out 3 get_keycloak_required_actions
+}
+
+################################################
+# Keycloak: Get keycloak realms
+function get_keycloak_realms() {
+  trace_in 3 get_keycloak_realms
+
+  local lf_keycloak_access_token
+  
+  # get keycloak infos
+  if [ -z $VAR_KEYCLOAK_ADMIN ] || [ -z $VAR_KEYCLOAK_ADMIN_PASSWORD ] || [ -z $VAR_KEYCLOAK_HOST ] || [ -z $VAR_KEYCLOAK_ACCESS_TOKEN ]; then
+    get_keycloak_infos $MY_KEYCLOAK_USERNAME
+  fi
+
+# Get Realms resources
+  curl -s -X GET "https://${VAR_KEYCLOAK_HOST}/admin/realms" \
+          -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN" \
+          -H "Content-Type: application/json" | jq -r '.[].realm'
+
+  trace_out 3 get_keycloak_realms
+}
+
+################################################
+# Keycloak: Get resources
+# @param 1: realm
+# @param 2: username
+################################################
+function get_keycloak_resources() {
+  trace_in 3 get_keycloak_resources
+
+  local lf_in_keycloak_realm=$1
+  local lf_in_keycloak_user=$2
+
+  if [ $# -ne 2 ]; then 
+    mylog error "you have to provide 2 parameters : the realm id and the username"
+    trace_out 3 get_keycloak_resources
+    exit  1
+  fi
+
+  local lf_working_directory="${MY_KEYCLOAK_WORKINGDIR}${lf_in_keycloak_realm}.${lf_in_keycloak_user}/"
+  check_directory_exist_create "${lf_working_directory}"
+
+  if [ -z $VAR_KEYCLOAK_ADMIN ] || [ -z $VAR_KEYCLOAK_ADMIN_PASSWORD ] || [ -z $VAR_KEYCLOAK_HOST ] || [ -z $VAR_KEYCLOAK_ACCESS_TOKEN ]; then
+    get_keycloak_infos $lf_in_keycloak_user
+  fi
+
+  # Get Realms resources
+  curl -s -X GET "https://${VAR_KEYCLOAK_HOST}/admin/realms" \
+       -H "Authorization: Bearer $lf_keycloak_access_token" \
+       -H "Content-Type: application/json" | jq  > "${lf_working_directory}realms.json"
+
+  curl -s -X GET "https://${VAR_KEYCLOAK_HOST}/admin/realms/${lf_in_keycloak_realm}" \
+       -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN" \
+       -H "Content-Type: application/json" | jq  > "${lf_working_directory}${lf_in_keycloak_realm}.json"
+
+  local lf_file="${MY_KEYCLOAK_DIR}keycloak-resources.txt"
+  while IFS= read -r line || [[ -n $line ]]; do
+    # Trim leading and trailing whitespace
+    local lf_trimmed_line=$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+
+    # Replace '/' with '_' to create the filename
+    local lf_filename=$(echo "$lf_trimmed_line" | tr '/' '_')
+    curl -s -X GET "https://${VAR_KEYCLOAK_HOST}/admin/realms/${lf_in_keycloak_realm}/$lf_trimmed_line" \
+         -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN" \
+         -H "Content-Type: application/json" | jq  > "${lf_working_directory}${lf_filename}.json"
+  done < "$lf_file"
+
+  trace_out 3 get_keycloak_resources
+}
+
+################################################
+# Patch the keycloak client to update redirectUris
+# @param 1: the type of the resource 
+# @param 2: the resource providing the new value for redirectUris
+# @param 3: the keycloak realm used for this resource
+# @param 4: the keycloak client
+# @param 5: the username
+# @param 6: the namespace of the resource
+################################################
+function patch_keycloak_client() {
+  trace_in 3 patch_keycloak_client
+
+  local lf_in_cr_type=$1
+  local lf_in_cr_name=$2
+  local lf_in_keycloak_realm=$3
+  local lf_in_keycloak_client=$4
+  local lf_in_keycloak_user=$5
+  local lf_in_namespace=$6
+
+  if [ $# -ne 6 ]; then 
+    mylog error "you have to provide 6 parameters : the resource type, the resource name, the keycloak realm, the keycloak client, the username and the namespace"
+    trace_out 3 patch_keycloak_client
+    exit  1
+  fi
+  
+  # get keycloak infos
+  if [ -z $VAR_KEYCLOAK_ADMIN ] || [ -z $VAR_KEYCLOAK_ADMIN_PASSWORD ] || [ -z $VAR_KEYCLOAK_HOST ] || [ -z $VAR_KEYCLOAK_ACCESS_TOKEN ]; then
+    get_keycloak_infos $lf_in_keycloak_user
+  fi
+
+  # patch the keycloak client to add redirectUris
+  local lf_ep_ui=$(oc -n $lf_in_namespace get $lf_in_cr_type $lf_in_cr_name -o json | jq -r '.status.endpoints[] | select(.name == "ui") | .uri')
+  local lf_ep_ui_login="${lf_ep_ui}/login"
+  local lf_ep_ui_logout="${lf_ep_ui}/logout"
+  #local lf_ep_ui_login="${lf_ep_ui}/auth/callback"
+  #local lf_ep_ui_logout="${lf_ep_ui}/auth/logout/callback"
+  local lf_ep_ui_weborigins="${lf_ep_ui}"
+  #local lf_ep_ui_oauth_call_back="${lf_ep_ui}/oauth/callback"
+
+  decho 3 "lf_ep_ui=$lf_ep_ui"
+  decho 3 "lf_ep_ui_login=$lf_ep_ui_login"
+  decho 3 "lf_ep_ui_logout=$lf_ep_ui_logout"
+  decho 3 "lf_ep_ui_weborigins=$lf_ep_ui_weborigins"
+
+  # get the cient uuid
+  #local lf_client_uuid=$(curl -s -X GET "https://${VAR_KEYCLOAK_HOST}/admin/realms/${lf_in_keycloak_realm}/clients?clientId=${lf_in_keycloak_client}" \
+  #                               -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN" | \
+  #                               jq -r '.[] | .id')
+
+  local lf_client_uuid=$(curl -s -X GET "https://${VAR_KEYCLOAK_HOST}/admin/realms/${lf_in_keycloak_realm}/clients" \
+                                 -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN" | \
+                                 jq -r --argjson key \"$lf_in_keycloak_client\" '.[] | select(.clientId == $key) | .id')
+
+  decho 3 "lf_client_uuid=$lf_client_uuid"
+  # retrieve existing client configuration
+  local lf_client_data=$(curl -s -X GET "https://${VAR_KEYCLOAK_HOST}/admin/realms/${lf_in_keycloak_realm}/clients/${lf_client_uuid}" \
+                                 -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN")
+  
+  # update redirectUris and send the patch request
+  local lf_updated_redirect_uris=$(echo "$lf_client_data" | jq --arg new_uri "$lf_ep_ui_login" '.redirectUris = [$new_uri]')
+  local lf_updated_redirect_uris=$(echo "$lf_updated_redirect_uris" | jq --arg new_uri "$lf_ep_ui_logout" '.redirectUris += [$new_uri]')
+  #local lf_updated_redirect_uris=$(echo "$lf_client_data" | jq --arg new_uri "$lf_ep_ui_oauth_call_back" '.redirectUris = [$new_uri]')
+
+  decho 3 "lf_updated_redirect_uris=$lf_updated_redirect_uris"
+
+  curl -s -X PUT "https://${VAR_KEYCLOAK_HOST}/admin/realms/${lf_in_keycloak_realm}/clients/${lf_client_uuid}" \
+          -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d "$lf_updated_redirect_uris"
+
+  # verification
+  curl -s -X GET "https://${VAR_KEYCLOAK_HOST}/admin/realms/${lf_in_keycloak_realm}/clients/${lf_client_uuid}" \
+          -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN" | jq '.redirectUris'
+
+  local lf_updated_weborigins=$(echo "$lf_client_data" | jq --arg new_weborigins "$lf_ep_ui_weborigins" '.webOrigins = [$new_weborigins]')
+  curl -s -X PUT "https://${VAR_KEYCLOAK_HOST}/admin/realms/${lf_in_keycloak_realm}/clients/${lf_client_uuid}" \
+          -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d "$lf_updated_redirect_uris"
+
+  # verification
+  curl -s -X GET "https://${VAR_KEYCLOAK_HOST}/admin/realms/${lf_in_keycloak_realm}/clients/${lf_client_uuid}" \
+          -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN" | jq '.webOrigins'
+
+  trace_out 3 patch_keycloak_client
+}
+
+################################################
+# Patch the keycloak client to update redirectUris
+# @param 1: keycloak client attribute
+# @param 2: value
+# @param 3: the keycloak realm used for this resource
+# @param 4: the keycloak client
+# @param 5: the username
+################################################
+function patch_keycloak_client_attribute() {
+  trace_in 3 patch_keycloak_client_attribute
+
+  local lf_in_attribute=$1
+  local lf_in_value=$2
+  local lf_in_keycloak_realm=$3
+  local lf_in_keycloak_client=$4
+  local lf_in_keycloak_user=$5
+
+  if [ $# -ne 5 ]; then 
+    mylog error "you have to provide 5 parameters : the keycloak client attribute, the new value, the keycloak realm, the keycloak client, the username"
+    trace_out 3 patch_keycloak_client_attribute
+    exit  1
+  fi
+  
+  # get keycloak infos
+  if [ -z $VAR_KEYCLOAK_ADMIN ] || [ -z $VAR_KEYCLOAK_ADMIN_PASSWORD ] || [ -z $VAR_KEYCLOAK_HOST ] || [ -z $VAR_KEYCLOAK_ACCESS_TOKEN ]; then
+    get_keycloak_infos $lf_in_keycloak_user
+  fi
+
+  # get the cient uuid
+  local lf_client_uuid=$(curl -s -X GET "https://${VAR_KEYCLOAK_HOST}/admin/realms/${lf_in_keycloak_realm}/clients?clientId=${lf_in_keycloak_client}" \
+                                 -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN" | \
+                                 jq -r '.[] | .id')
+  decho 3 "lf_client_uuid=$lf_client_uuid"
+
+  # retrieve existing client configuration
+  local lf_client_data=$(curl -s -X GET "https://${VAR_KEYCLOAK_HOST}/admin/realms/${lf_in_keycloak_realm}/clients/${lf_client_uuid}" \
+                                 -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN")
+  
+  decho 3 "lf_client_data=$lf_client_data"
+
+  # update attribute send the patch request
+  local lf_updated_attribute=$(echo "$lf_client_data" | jq -r --argjson key \"$lf_in_attribute\" --argjson value \"$lf_in_value\" '.[$key] = $value')
+  decho 3 "lf_updated_attribute=$lf_updated_attribute"
+
+  decho 3 "Updating keycloak client $lf_client_uuid, attribute $lf_in_attribute with value $lf_in_value"
+  curl -s -X PUT "https://${VAR_KEYCLOAK_HOST}/admin/realms/${lf_in_keycloak_realm}/clients/${lf_client_uuid}" \
+          -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d "$lf_updated_attribute"
+
+  # verification
+  decho 3 "Checking Updated keycloak client $lf_client_uuid, attribute $lf_in_attribute has new value $lf_in_value"
+  curl -s -X GET "https://${VAR_KEYCLOAK_HOST}/admin/realms/${lf_in_keycloak_realm}/clients/${lf_client_uuid}" \
+          -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN" | jq --arg key $lf_in_attribute '.[$key]'
+
+  trace_out 3 patch_keycloak_client_attribute
+}
+
+################################################
+# Create keycloak client
+# @param 1 : the keycloak realm
+# @param 2 : the keycloak client id
+# @param 3 : username
+function create_keycloak_client() {
+  trace_in 3 create_keycloak_client
+
+  local lf_in_keycloak_realm=$1
+  local lf_in_keycloak_client=$2
+  local lf_in_keycloak_user=$3
+
+  if [ $# -ne 3 ]; then 
+    mylog error "you have to provide 3 parameters: keycloak realm id, client id and username"
+    trace_out 3 create_keycloak_client
+    exit  1
+  fi
+
+  # get keycloak infos
+  if [ -z $VAR_KEYCLOAK_ADMIN ] || [ -z $VAR_KEYCLOAK_ADMIN_PASSWORD ] || [ -z $VAR_KEYCLOAK_HOST ] || [ -z $VAR_KEYCLOAK_ACCESS_TOKEN ]; then
+    get_keycloak_infos $lf_in_keycloak_user
+  fi
+
+  # SB]20250221 : I have to check if the user has the role to view/manage clients in keycloak
+
+  # check if client exists 
+  local lf_keycloak_client=$(curl -s -X GET "https://${VAR_KEYCLOAK_HOST}/admin/realms/${lf_in_keycloak_realm}/clients?clientId=${lf_in_keycloak_client}" \
+                                     -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN" | \
+                                      jq -r '.[] | .clientId')
+
+  #local lf_keycloak_client=$(curl -s -X GET "https://${VAR_KEYCLOAK_HOST}/admin/realms/${lf_in_keycloak_realm}/clients" \
+  #                                   -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN" \
+  #                                   -H "Content-Type: application/json" | \
+  #                                   jq -r --arg clientId "$lf_in_keycloak_client" '.[] | select(.clientId == $clientId)')
+  
+  decho 3 "lf_keycloak_client=$lf_keycloak_client"
+  if [ -z "$lf_keycloak_client" ]; then
+    # Create a keycloak client
+    export MY_KEYCLOAK_CLIENT_ID=$lf_in_keycloak_client
+    export MY_KEYCLOAK_DESCRIPTION="keycloak Client for $lf_in_keycloak_client in realm $lf_in_keycloak_realm"
+    adapt_file $MY_KEYCLOAK_DIR $MY_KEYCLOAK_WORKINGDIR keycloak-client.json
+    unset MY_KEYCLOAK_CLIENT_ID MY_KEYCLOAK_DESCRIPTION
+    curl -s -X POST "https://${VAR_KEYCLOAK_HOST}/admin/realms/${lf_in_keycloak_realm}/clients" \
+            -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d @${MY_KEYCLOAK_WORKINGDIR}keycloak-client.json
+  else
+    mylog info "keycloak client : $lf_in_keycloak_client already exists"
+  fi
+
+  trace_out 3 create_keycloak_client
+}
+
+################################################
+# Create a keycloak client using a json file
+# @param 1 : the keycloak realm
+# @param 2 : keycloak username
+# @param 3 : the json file
+function create_keycloak_client_from_file() {
+  trace_in 3 create_keycloak_client_from_file
+
+  local lf_in_keycloak_realm=$1
+  local lf_in_keycloak_user=$2
+  local lf_in_file=$3
+
+  if [ $# -ne 3 ]; then 
+    mylog error "you have to provide 3 parameters: keycloak realm id, keycloak user and the json file"
+    trace_out 3 create_keycloak_client_from_file
+    exit  1
+  fi
+
+  check_file_exist $lf_in_file
+
+  # get keycloak infos
+  if [ -z $VAR_KEYCLOAK_ADMIN ] || [ -z $VAR_KEYCLOAK_ADMIN_PASSWORD ] || [ -z $VAR_KEYCLOAK_HOST ] || [ -z $VAR_KEYCLOAK_ACCESS_TOKEN ]; then
+    get_keycloak_infos $lf_in_keycloak_user
+  fi
+
+  local lf_create_response=$(curl -s -X POST "https://${VAR_KEYCLOAK_HOST}/admin/realms/${lf_in_keycloak_realm}/clients" \
+                                      -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN" \
+                                      -H "Content-Type: application/json" \
+                                      -d @${lf_in_file})
+
+  if [ -z "$lf_create_response" ]; then
+    mylog info "New keycloak client created successfully"
+    #local lf_new_client_uuid=$(curl -s -X GET "https://${VAR_KEYCLOAK_HOST}/admin/realms/${lf_in_keycloak_realm}/clients?clientId=${lf_in_keycloak_client_new}" \
+    #                                    -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN" \
+    #                                    -H "Content-Type: application/json")
+    #curl -s -X PUT "https://${VAR_KEYCLOAK_HOST}/admin/realms/${lf_in_keycloak_realm}/clients?clientId=${lf_new_client_uuid}" \
+    #        -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN" \
+    #        -H "Content-Type: application/json" \
+    #        --data '{"alwaysDisplayInConsole": true, "enabled": true})'
+  else
+    mylog error "Failed to create the new client. Response: $lf_create_response"
+    exit 1
+  fi
+
+  trace_out 3 create_keycloak_client_from_file
+}
+
+################################################
+# Duplicate an existing keycloak client
+# @param 1 : the keycloak realm
+# @param 2 : the keycloak cient id to duplicate
+# @param 3 : the keycloak client id (the new one)
+# @param 4 : username
+function duplicate_keycloak_client() {
+  trace_in 3 duplicate_keycloak_client
+
+  local lf_in_keycloak_realm=$1
+  local lf_in_keycloak_client_existing=$2
+  local lf_in_keycloak_client_new=$3
+  local lf_in_keycloak_user=$4
+
+  if [ $# -ne 4 ]; then 
+    mylog error "you have to provide 4 parameters: keycloak realm id, existing keycloak client id, new keycloak client id  and username"
+    trace_out 3 duplicate_keycloak_client
+    exit  1
+  fi
+
+  # get keycloak infos
+  if [ -z $VAR_KEYCLOAK_ADMIN ] || [ -z $VAR_KEYCLOAK_ADMIN_PASSWORD ] || [ -z $VAR_KEYCLOAK_HOST ] || [ -z $VAR_KEYCLOAK_ACCESS_TOKEN ]; then
+    get_keycloak_infos $lf_in_keycloak_user
+  fi
+
+  # check if client exists                                
+  local lf_keycloak_data_client_existing=$(curl -s -X GET "https://${VAR_KEYCLOAK_HOST}/admin/realms/${lf_in_keycloak_realm}/clients?clientId=${lf_in_keycloak_client_existing}" \
+                                                   -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN" \
+                                                   -H "Content-Type: application/json")
+  
+  decho 3 "lf_keycloak_data_client_existing=$lf_keycloak_data_client_existing"
+  if [ -z "$lf_keycloak_data_client_existing" ]; then
+    mylog error "No existing keycloak client : $lf_in_keycloak_client_existing"
+    exit 1
+  else
+    # Duplicate keycloak client
+    #local lf_new_keycloak_data_client=$(echo "$lf_keycloak_data_client_existing" | jq -r --arg newClientId "$lf_in_keycloak_client_new" '
+    #                                                                                           .clientId = $newClientId | 
+    #                                                                                           .name = $newClientId |
+    #                                                                                           del(.id)|
+    #                                                                                           del(.secret) |
+    #                                                                                           del(.attributes["client.secret.creation.time"]) |
+    #                                                                                           .protocolMappers |= map(del(.id))'
+    #                                    )
+    local lf_new_keycloak_data_client=$(echo "$lf_keycloak_data_client_existing" | \
+                                        jq '.[0] | del(.id, .secret, .registrationAccessToken, .clientAuthenticatorType, .attributes["client.secret.creation.time"], .protocolMappers)
+                                                 | .clientId = "'"$lf_in_keycloak_client_new"'"'
+                                       )
+    decho 3 "lf_new_keycloak_data_client=$lf_new_keycloak_data_client"
+    echo "$lf_new_keycloak_data_client" > ${MY_KEYCLOAK_WORKINGDIR}keycloak-client-New.json
+
+    curl -s -X POST "https://${VAR_KEYCLOAK_HOST}/admin/realms/${lf_in_keycloak_realm}/clients" \
+            -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d @${MY_KEYCLOAK_WORKINGDIR}keycloak-client-New.json
+    exit 0
+    
+    local lf_create_response=$(curl -s -X POST "https://${VAR_KEYCLOAK_HOST}/admin/realms/${lf_in_keycloak_realm}/clients" \
+                                       -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN" \
+                                       -H "Content-Type: application/json" \
+                                       -d "$lf_new_keycloak_data_client")
+
+    if [ -z "$lf_create_response" ]; then
+      mylog info "New keycloak client created successfully"
+      local lf_new_client_uuid=$(curl -s -X GET "https://${VAR_KEYCLOAK_HOST}/admin/realms/${lf_in_keycloak_realm}/clients?clientId=${lf_in_keycloak_client_new}" \
+                                          -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN" \
+                                          -H "Content-Type: application/json")
+      curl -s -X PUT "https://${VAR_KEYCLOAK_HOST}/admin/realms/${lf_in_keycloak_realm}/clients?clientId=${lf_new_client_uuid}" \
+              -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN" \
+              -H "Content-Type: application/json" \
+              --data '{"alwaysDisplayInConsole": true, "enabled": true})'
+    else
+      mylog error "Failed to create the new client. Response: $lf_create_response"
+      exit 1
+    fi
+  fi
+
+  trace_out 3 duplicate_keycloak_client
+}
+
+################################################
+# Delete keycloak client
+# @param 1 : the keycloak realm
+# @param 2 : the keycloak client id
+# @param 3 : username
+function delete_keycloak_client() {
+  trace_in 3 delete_keycloak_client
+
+  local lf_in_keycloak_realm=$1
+  local lf_in_keycloak_client=$2
+  local lf_in_keycloak_user=$3
+
+  if [ $# -ne 3 ]; then 
+    mylog error "you have to provide 3 parameters: keycloak realm id, client id and username"
+    trace_out 3 delete_keycloak_client
+    exit  1
+  fi
+
+  # get keycloak infos
+  if [ -z $VAR_KEYCLOAK_ADMIN ] || [ -z $VAR_KEYCLOAK_ADMIN_PASSWORD ] || [ -z $VAR_KEYCLOAK_HOST ] || [ -z $VAR_KEYCLOAK_ACCESS_TOKEN ]; then
+    get_keycloak_infos $lf_in_keycloak_user
+  fi
+
+  # SB]20250221 : I have to check if the user has the role to view/manage clients in keycloak
+
+  # check if client exists  
+  local lf_keycloak_client=$(curl -s -X GET "https://${VAR_KEYCLOAK_HOST}/admin/realms/${lf_in_keycloak_realm}/clients?clientId=${lf_in_keycloak_client}" \
+                                     -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN" | \
+                                      jq -r '.[] | .clientId')
+
+  #local lf_keycloak_client=$(curl -s -X GET "https://${VAR_KEYCLOAK_HOST}/admin/realms/${lf_in_keycloak_realm}/clients" \
+  #                                   -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN" \
+  #                                   -H "Content-Type: application/json" | \
+  #                                   jq -r --arg clientId "$lf_in_keycloak_client" '.[] | select(.clientId == $clientId)')
+  
+  decho 4 "lf_keycloak_client=$lf_keycloak_client"
+  if [ -z "$lf_keycloak_client" ]; then
+    mylog info "keycloak client : $lf_in_keycloak_client already deleted"
+  else
+    # get the client_uuid
+    local lf_client_uuid=$(curl -s -X GET "https://${VAR_KEYCLOAK_HOST}/admin/realms/${lf_in_keycloak_realm}/clients?clientId=${lf_in_keycloak_client}" \
+                                   -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN" | \
+                                    jq -r '.[] | .id')
+
+    curl -s -X DELETE "https://${VAR_KEYCLOAK_HOST}/admin/realms/${lf_in_keycloak_realm}/clients/${lf_client_uuid}" \
+            -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN" \
+            -H "Content-Type: application/json"
+  fi
+
+  trace_out 3 delete_keycloak_client
+}
+
+#################################################
+# Keycloak: Get keycloak data (admin, password and host)
+# @param 1: the username
+function keycloak_test() {
+  trace_in 3 keycloak_test
+
+  local lf_in_keycloak_user=$1
+
+  if [ $# -ne 1 ]; then 
+    mylog error "you have to provide : the username"
+    trace_out 3 keycloak_test
+    exit  1
+  fi
+
+
+  if [ -z $VAR_KEYCLOAK_ADMIN ] || [ -z $VAR_KEYCLOAK_ADMIN_PASSWORD ] || [ -z $VAR_KEYCLOAK_HOST ]; then
+    get_keycloak_infos $lf_in_keycloak_user
+  fi
+
+  curl -s -X GET "https://$VAR_KEYCLOAK_HOST/admin/realms/cloudpak/clients" \
+          -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN" \
+          -H "Content-Type: application/json" | jq > ./clients2.json
+
+  curl -s -X GET "https://$VAR_KEYCLOAK_HOST/admin/realms/cloudpak/users" \
+          -H "Authorization: Bearer $VAR_KEYCLOAK_ACCESS_TOKEN" \
+          -H "Content-Type: application/json" | jq > ./users2.json
+
+  create_keycloak_client $MY_KEYCLOAK_CP4I_REALM $MY_EP_KEYCLOAK_CLIENTID $MY_KEYCLOAK_CP4I_USERNAME
+
+  trace_out 3 keycloak_test
+}
+
+################################################
+# Create keycloak instance
+function create_keycloak_instance() {
+  trace_in 3 create_keycloak_instance
+
+  # create_keycloak_instance
+  local lf_in_keycloak_name=$1
+  local lf_in_keycloak_namespace=$2
+  local lf_in_postgresql_cluster=$3
+  local lf_in_keycloak_db_secret=$4
+  local lf_in_keycloak_tls_secret=$5
+
+  local lf_working_directory="${MY_KEYCLOAK_WORKINGDIR}"
+  check_directory_exist_create "${lf_working_directory}"
+
+  export MY_KEYCLOAK_NAME=$lf_in_keycloak_name
+  export MY_KEYCLOAK_NAMESPACE=$lf_in_keycloak_namespace
+  export MY_POSTGRES_HOSTNAME="${lf_in_postgresql_cluster}-rw.${MY_POSTGRES_NAMESPACE}.svc.cluster.local"
+  export MY_KEYCLOAK_DB_SECRET=$lf_in_keycloak_db_secret
+  export MY_KEYCLOAK_TLS_SECRET=$lf_in_keycloak_tls_secret
+  export MY_CLUSTER_DOMAIN=$(oc get dns cluster -o jsonpath='{.spec.baseDomain}')
+
+  local lf_type="Keycloak"
+  local lf_cr_name="${lf_in_keycloak_name}"
+  local lf_source_directory="${MY_RESOURCESDIR}"
+  local lf_target_directory="${lf_working_directory}"
+  local lf_yaml_file="keycloak.yaml"
+  local lf_namespace=$lf_in_keycloak_namespace
+  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
+  unset MY_KEYCLOAK_NAME MY_KEYCLOAK_NAMESPACE MY_POSTGRES_HOSTNAME MY_KEYCLOAK_DB_SECRET MY_KEYCLOAK_TLS_SECRET MY_CLUSTER_DOMAIN
+
+  #local lf_cr_name=$(oc -n $lf_namespace get $lf_type -o json | jq -r --arg my_resource "$lf_cr_name" '.items[0].metadata | select (.name | contains ($my_resource)).name')
+  local lf_cr_name=$(oc -n $lf_namespace get $lf_type -o jsonpath="{.items[0].metadata.name}")
+  local lf_path="{.status.conditions[0].type}"
+  local lf_state="Ready"
+  decho 3 "wait_for_state \"$lf_type $lf_cr_name is $lf_state\" \"$lf_state\" \"oc -n $MY_KEYCLOAK_NAMESPACE get $lf_type $lf_cr_name -o jsonpath='$lf_path'\""
+  wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $MY_KEYCLOAK_NAMESPACE get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
+
+  trace_out 3 create_keycloak_instance
+}
+
+################################################
 # Install Keycloak
 # 20250117 : I'll follow the steps from the documentation:
 # https://docs.redhat.com/en/documentation/red_hat_build_of_keycloak/26.0/html/operator_guide/index
@@ -44,109 +757,13 @@ function install_keycloak() {
     local lf_strategy="Automatic"
     local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
     local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
-    local lf_work_dir=$lf_working_directory
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\" "
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
+    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_working_directory}\" "
+    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_working_directory}"
   
     mylog info "Installation of keycloak took $SECONDS seconds." 1>&2
   fi
 
   trace_out 3 install_keycloak
-}
-
-################################################
-# Create keycloak client
-function create_keycloak_client() {
-  trace_in 3 create_keycloak_client
-
-  local lf_keycloak_admin
-  local lf_keycloak_admin_passwordkeycloak_access_token
-  local lf_keycloak_host
-  local lf_keycloak_access_token
-  local lf_keycloak_refresh_token
-  local lf_keycloak_client
-  
-  # get keycloak infos
-  lf_keycloak_admin=$(oc -n $MY_COMMONSERVICES_NAMESPACE get secret cs-keycloak-initial-admin -o jsonpath='{.data.username}' | base64 --decode)
-  lf_keycloak_admin_password=$(oc -n $MY_COMMONSERVICES_NAMESPACE get secret cs-keycloak-initial-admin -o jsonpath='{.data.password}' | base64 --decode)
-  lf_keycloak_host=$(oc -n $MY_COMMONSERVICES_NAMESPACE get route keycloak -o jsonpath='{.spec.host}')
-
-  local lf_keycloak_access_token=$(curl -X POST "https://${lf_keycloak_host}/realms/master/protocol/openid-connect/token" \
-                                        -H "Content-Type: application/x-www-form-urlencoded" \
-                                        -d "username=${lf_keycloak_admin}" \
-                                        -d "password=${lf_keycloak_admin_password}" \
-                                        -d "grant_type=password" \
-                                        -d "client_id=admin-cli" 2> /dev/null | jq -r .access_token)
-
-  decho 3 "lf_keycloak_admin=$lf_keycloak_admin|lf_keycloak_admin_password=$lf_keycloak_admin_password"
-  decho 3 "lf_keycloak_access_token=$lf_keycloak_access_token"
-  # Create a keycloak client
-  curl -X POST "https://${lf_keycloak_host}/admin/realms/master/clients" \
-       -H "Authorization: Bearer $lf_keycloak_access_token" \
-       -H "Content-Type: application/json" \
-       -d '{
-             "clientId": "'"${MY_KEYCLOAK_CLIENT}"'",
-             "enabled": true,
-             "redirectUris": ["https://my-app.example.com/callback"],
-             "publicClient": false,
-             "protocol": "openid-connect"
-         }'
-  # Get the created client
-  lf_keycloak_client=$(curl -X GET "https://${lf_keycloak_host}/admin/realms/master/clients" \
-                            -H "Authorization: Bearer $lf_keycloak_access_token" \
-                            -H "Content-Type: application/json" | jq --arg clientId "$MY_KEYCLOAK_CLIENT" '.[] | select (.clientId == $clientId)' )
-                                             
-
-  # SB]20240612 prise en compte de l'existence ou non de la variable portant la version
-  if [ -z "$lf_keycloak_client" ]; then
-    mylog info "no keycloak client created"
-  else
-    decho 3 "lf_keycloak_client=$lf_keycloak_client"
-  fi
-  
-  trace_out 3 create_keycloak_client
-}
-
-################################################
-# Create keycloak instance
-function create_keycloak_instance() {
-  trace_in 3 create_keycloak_instance
-
-  # create_keycloak_instance
-  local lf_in_keycloak_name=$1
-  local lf_in_keycloak_namespace=$2
-  local lf_in_postgresql_cluster=$3
-  local lf_in_keycloak_db_secret=$4
-  local lf_in_keycloak_tls_secret=$5
-
-  local lf_working_directory="${MY_KEYCLOAK_WORKINGDIR}"
-  check_directory_exist_create "${lf_working_directory}"
-
-  export MY_KEYCLOAK_NAME=$lf_in_keycloak_name
-  export MY_KEYCLOAK_NAMESPACE=$lf_in_keycloak_namespace
-  export MY_POSTGRESQL_HOSTNAME="${lf_in_postgresql_cluster}-rw.${MY_POSTGRESQL_NAMESPACE}.svc.cluster.local"
-  export MY_KEYCLOAK_DB_SECRET=$lf_in_keycloak_db_secret
-  export MY_KEYCLOAK_TLS_SECRET=$lf_in_keycloak_tls_secret
-  export MY_CLUSTER_DOMAIN=$(oc get dns cluster -o jsonpath='{.spec.baseDomain}')
-
-  local lf_type="Keycloak"
-  local lf_cr_name="${lf_in_keycloak_name}"
-  local lf_source_directory="${MY_RESOURCESDIR}"
-  local lf_target_directory="${lf_working_directory}"
-  local lf_yaml_file="keycloak.yaml"
-  local lf_namespace=$lf_in_keycloak_namespace
-  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
-  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
-  unset MY_KEYCLOAK_NAME MY_KEYCLOAK_NAMESPACE MY_POSTGRESQL_HOSTNAME MY_KEYCLOAK_DB_SECRET MY_KEYCLOAK_TLS_SECRET MY_CLUSTER_DOMAIN
-
-  #local lf_cr_name=$(oc -n $lf_namespace get $lf_type -o json | jq -r --arg my_resource "$lf_cr_name" '.items[0].metadata | select (.name | contains ($my_resource)).name')
-  local lf_cr_name=$(oc -n $lf_namespace get $lf_type -o jsonpath="{.items[0].metadata.name}")
-  local lf_path="{.status.conditions[0].type}"
-  local lf_state="Ready"
-  decho 3 "wait_for_state \"$lf_type $lf_cr_name is $lf_state\" \"$lf_state\" \"oc -n $MY_KEYCLOAK_NAMESPACE get $lf_type $lf_cr_name -o jsonpath='$lf_path'\""
-  wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $MY_KEYCLOAK_NAMESPACE get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
-
-  trace_out 3 create_keycloak_instance
 }
 
 ################################################
@@ -214,12 +831,14 @@ function install_sftp() {
       mylog ok
     else
    	  adapt_file ${MY_RESOURCESDIR} ${MY_SFTP_GEN_CUSTOMDIR}config/ pvc.yaml
-      local lf_apply_cmd="oc apply -f ${MY_SFTP_GEN_CUSTOMDIR}config/pvc.yaml"
-      local lf_delete_cmd="oc delete pvc $VAR_PVC_NAME"
-      append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
-      prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
-  	  oc apply -f ${MY_SFTP_GEN_CUSTOMDIR}config/pvc.yaml
-  	  wait_for_state "$VAR_PVC_NAME status.phase is Bound" "Bound" "oc -n ${MY_SFTP_SERVER_NAMESPACE} get pvc $VAR_PVC_NAME -o jsonpath='{.status.phase}'"
+      if $MY_APPLY_FLAG; then 
+        local lf_apply_cmd="oc apply -f ${MY_SFTP_GEN_CUSTOMDIR}config/pvc.yaml"
+        local lf_delete_cmd="oc delete pvc $VAR_PVC_NAME"
+        append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
+        prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
+  	    oc apply -f ${MY_SFTP_GEN_CUSTOMDIR}config/pvc.yaml
+  	    wait_for_state "$VAR_PVC_NAME status.phase is Bound" "Bound" "oc -n ${MY_SFTP_SERVER_NAMESPACE} get pvc $VAR_PVC_NAME -o jsonpath='{.status.phase}'"
+      fi
     fi
   
     # Check security context constraint
@@ -319,9 +938,8 @@ function install_gitops() {
     local lf_strategy="Automatic"
     local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
     local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
-    local lf_work_dir=$lf_working_directory
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
+    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_working_directory}\""
+    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_working_directory}"
 
     mylog info "Installation of gitops took $SECONDS seconds." 1>&2
   fi
@@ -384,9 +1002,8 @@ function install_logging_loki() {
     local lf_strategy="Automatic"
     local lf_catalog_source_name="redhat-operators"
     local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest -o json | jq -r '.items[] | select(.metadata.name=="loki-operator" and .status.catalogSource=="redhat-operators") | .status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
-    local lf_work_dir=$lf_working_directory
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
+    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_working_directory}\""
+    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_working_directory}"
 
     # Create an OperatorGroup object for Red Hat Openhsift Logging Operator
     local lf_type="OperatorGroup"
@@ -408,9 +1025,8 @@ function install_logging_loki() {
     local lf_strategy="Automatic"
     local lf_catalog_source_name="redhat-operators"
     local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
-    local lf_work_dir=$lf_working_directory
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
+    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_working_directory}\""
+    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_working_directory}"
 
     # create an ObjectBucketClaim in openshift-logging namespace
     # https://docs.openshift.com/container-platform/4.16/observability/logging/log_storage/installing-log-storage.html#logging-loki-storage-odf_installing-log-storage
@@ -462,11 +1078,11 @@ function install_logging_loki() {
     oc adm groups new cluster-admin
 
     # add the desired user to the cluster-admin group
-    local lf_apply_cmd="oc adm groups add-users cluster-admin $MY_USER"
-    local lf_delete_cmd="oc adm groups remove-users cluster-admin $MY_USER"
+    local lf_apply_cmd="oc adm groups add-users cluster-admin $MY_USER_EMAIL"
+    local lf_delete_cmd="oc adm groups remove-users cluster-admin $MY_USER_EMAIL"
     append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
     prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
-    oc adm groups add-users cluster-admin $MY_USER
+    oc adm groups add-users cluster-admin $MY_USER_EMAIL
 
     # add the cluster-admin user role to the cluster-admin group
     local lf_apply_cmd="oc adm policy add-cluster-role-to-group cluster-admin cluster-admin"
@@ -482,7 +1098,7 @@ function install_logging_loki() {
     #            Checking ClusterLogging instance in openshift-logging project...                CMD: oc -n openshift-logging get ClusterLogging instance
     #error: resource mapping not found for name: "instance" namespace: "openshift-logging" from "/home/saad/Mywork/Git/202500204-cp4i-install/working/LOKI/Rhol-Loki-Capability.yaml": no matches for kind "ClusterLogging" in version "logging.openshift.io/v1"
     #ensure CRDs are installed first
-    # J'ai fini par trouver cec : https://github.com/openshift/cluster-logging-operator/blob/master/docs/administration/upgrade/v6.0_changes.adoc#the-main-change-highlights-are
+    # J'ai fini par trouver ceci : https://github.com/openshift/cluster-logging-operator/blob/master/docs/administration/upgrade/v6.0_changes.adoc#the-main-change-highlights-are
     # 
     # 
 
@@ -603,26 +1219,28 @@ function install_cluster_observability() {
     local lf_working_directory="${MY_COO_WORKINGDIR}"
     check_directory_exist_create "${lf_working_directory}"
 
-    # Create a service account for the collector
-    local lf_apply_cmd="oc -n $MY_LOGGING_NAMESPACE create sa $MY_LOGGING_COLLECTOR_SA"
-    local lf_delete_cmd="oc -n $MY_LOGGING_NAMESPACE delete sa $MY_LOGGING_COLLECTOR_SA"
-    append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
-    prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
-    oc -n $MY_LOGGING_NAMESPACE create sa $MY_LOGGING_COLLECTOR_SA
+    if $MY_APPLY_FLAG; then 
+      # Create a service account for the collector
+      local lf_apply_cmd="oc -n $MY_LOGGING_NAMESPACE create sa $MY_LOGGING_COLLECTOR_SA"
+      local lf_delete_cmd="oc -n $MY_LOGGING_NAMESPACE delete sa $MY_LOGGING_COLLECTOR_SA"
+      append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
+      prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
+      oc -n $MY_LOGGING_NAMESPACE create sa $MY_LOGGING_COLLECTOR_SA
 
-    # Create a ClusterRole for the collector
-    local lf_apply_cmd="oc apply -f ${MY_RESOURCESDIR}collector-ClusterRole.yaml"
-    local lf_delete_cmd="oc delete -f ${MY_RESOURCESDIR}collector-ClusterRole.yaml"
-    append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
-    prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
-    oc apply -f "${MY_RESOURCESDIR}collector-ClusterRole.yaml"
+      # Create a ClusterRole for the collector
+      local lf_apply_cmd="oc apply -f ${MY_RESOURCESDIR}collector-ClusterRole.yaml"
+      local lf_delete_cmd="oc delete -f ${MY_RESOURCESDIR}collector-ClusterRole.yaml"
+      append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
+      prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
+      oc apply -f "${MY_RESOURCESDIR}collector-ClusterRole.yaml"
 
-    # Bind the ClusterRole to the service account
-    local lf_apply_cmd="oc adm policy add-cluster-role-to-user logging-collector-logs-writer -z $MY_LOGGING_COLLECTOR_SA"
-    local lf_delete_cmd="oc adm policy remove-cluster-role-from-user logging-collector-logs-writer -z $MY_LOGGING_COLLECTOR_SA"
-    append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
-    prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
-    oc adm policy add-cluster-role-to-user logging-collector-logs-writer -z $MY_LOGGING_COLLECTOR_SA
+      # Bind the ClusterRole to the service account
+      local lf_apply_cmd="oc adm policy add-cluster-role-to-user logging-collector-logs-writer -z $MY_LOGGING_COLLECTOR_SA"
+      local lf_delete_cmd="oc adm policy remove-cluster-role-from-user logging-collector-logs-writer -z $MY_LOGGING_COLLECTOR_SA"
+      append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
+      prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
+      oc adm policy add-cluster-role-to-user logging-collector-logs-writer -z $MY_LOGGING_COLLECTOR_SA
+    fi
 
     # SB]20241203 https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/logging/logging-6-0#cluster-role-binding-for-your-service-account
     # Create a ClusterRoleBinding for the service account
@@ -644,9 +1262,8 @@ function install_cluster_observability() {
     local lf_strategy="Automatic"
     local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
     local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
-    local lf_work_dir=$lf_working_directory
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
+    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_working_directory}\""
+    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_working_directory}"
     
     mylog info "Installation of observability $SECONDS seconds." 1>&2
   fi
@@ -752,7 +1369,7 @@ function install_cluster_monitoring() {
   if $MY_CLUSTER_MONITORING; then
     SECONDS=0
 
-    local lf_working_directory="${MY_MONITORING_WORKINGDIR}"
+    local lf_working_directory="${MY_OPENSHIFT_MONITORING_WORKINGDIR}"
     check_directory_exist_create "${lf_working_directory}"
 
     create_project "${MY_OPENSHIFT_MONITORING_NAMESPACE}" "${MY_OPENSHIFT_MONITORING_NAMESPACE} project" "For Openshift monitoring" $lf_working_directory
@@ -769,6 +1386,8 @@ function install_cluster_monitoring() {
     decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
     check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
     unset MY_MONITORING_CM_NAME MY_MONITORING_NAMESPACE
+
+    wait_for_resource "ConfigMap" "${MY_MONITORING_CM_NAME}" $MY_MONITORING_NAMESPACE
 
     # Enable monitoring for user-defines projects
     # If you enable monitoring for user-defined projects, the user-workload-monitoring-config ConfigMap object is created by default.
@@ -827,9 +1446,8 @@ function install_oadp() {
     local lf_strategy="Automatic"
     local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
     local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
-    local lf_work_dir=$lf_working_directory
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
+    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_working_directory}\""
+    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_working_directory}"
 
     mylog info "Installation of oadp took $SECONDS seconds." 1>&2
   fi
@@ -857,9 +1475,8 @@ function install_pipelines() {
     local lf_strategy="Automatic"
     local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
     local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
-    local lf_work_dir=$lf_working_directory
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
+    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_working_directory}\""
+    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_working_directory}"
   
     mylog info "Installation of pipelines took $SECONDS seconds." 1>&2
   fi
@@ -972,10 +1589,9 @@ function install_cert_manager() {
     local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
     local lf_strategy="Automatic"
     local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
-    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
-    local lf_work_dir=$lf_working_directory
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')    
+    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_working_directory}\""
+    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_working_directory}"
   
     mylog info "Installation of cert manager took $SECONDS seconds." 1>&2
   fi
@@ -1001,6 +1617,11 @@ function install_lic_svc() {
     create_project "$MY_LICENSE_SERVICE_NAMESPACE"  "${MY_LICENSE_SERVICE_NAMESPACE} project" "For License Server deployment" $lf_working_directory
 
     check_add_cs_ibm_pak $MY_LICENSE_SERVICE_CASE amd64
+    if [ -z "$MY_LICENSE_SERVICE_VERSION" ]; then
+      export MY_LICENSE_SERVICE_VERSION=$VAR_APP_VERSION
+      unset VAR_APP_VERSION
+    fi
+
     wait_for_resource "packagemanifest" "${MY_LICENSE_SERVICE_OPERATOR}" $MY_CATALOGSOURCES_NAMESPACE
 
     # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
@@ -1022,14 +1643,11 @@ function install_lic_svc() {
     # Create a subscription object for license service Operator
     local lf_operator_name="${MY_LICENSE_SERVICE_OPERATOR}"
     local lf_operator_namespace=$MY_LICENSE_SERVICE_NAMESPACE
-    #local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
     local lf_operator_chl=$(oc get packagemanifest -o json | jq -r --arg op "$lf_operator_name" --arg cs "$lf_catalog_source_name" '.items[] | select(.metadata.name==$op and .status.catalogSource==$cs) | .status.defaultChannel')
     local lf_strategy="Automatic"
-    #local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
     local lf_csv_name=$(oc get packagemanifest -o json | jq -r --arg op "$lf_operator_name" --arg cs "$lf_catalog_source_name" '.items[] | select(.metadata.name==$op and .status.catalogSource==$cs) | .status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
-    local lf_work_dir=$lf_working_directory
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
+    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_working_directory}\""
+    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_working_directory}"
 
     local lf_cr_name=$(oc -n $lf_operator_namespace get IBMLicensing -o jsonpath='{.items[0].metadata.name}')
     decho 3 "lf_cr_name=$lf_cr_name"
@@ -1071,6 +1689,11 @@ function install_lic_reporter_svc() {
     create_project "$MY_LICENSE_SERVICE_REPORTER_NAMESPACE" "${MY_LICENSE_SERVICE_REPORTER_NAMESPACE} project" "For License Service Reporter deployment" $lf_working_directory
 
     check_add_cs_ibm_pak $MY_LICENSE_SERVICE_REPORTER_CASE amd64
+    if [ -z "$MY_LICENSE_SERVICE_REPORTER_VERSION" ]; then
+      export MY_LICENSE_SERVICE_REPORTER_VERSION=$VAR_APP_VERSION
+      unset VAR_APP_VERSION
+    fi
+
     wait_for_resource "packagemanifest" "${MY_LICENSE_SERVICE_REPORTER_OPERATOR}" $MY_CATALOGSOURCES_NAMESPACE
 
     # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
@@ -1092,14 +1715,12 @@ function install_lic_reporter_svc() {
 
     # Create a subscription object for license service reporter Operator
     local lf_operator_name="${MY_LICENSE_SERVICE_REPORTER_OPERATOR}"
-    local lf_operator_namespace=$MY_LICENSE_SERVICE_NAMESPACE
+    local lf_operator_namespace=$MY_LICENSE_SERVICE_REPORTER_NAMESPACE
     local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
     local lf_strategy="Automatic"
-    #local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
-    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
-    local lf_work_dir=$lf_working_directory
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')    
+    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_working_directory}\""
+    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_working_directory}"
     
 
     mylog info "Creating the License Service Reporter instance" 1>&2
@@ -1123,8 +1744,8 @@ function install_lic_reporter_svc() {
     # Add license service to the reporter
     # oc get routes -n ibm-licensing | grep ibm-license-service-reporter | awk '{print $2}'
     mylog info "Add license service to the reporter" 1>&2
-    decho 3 "oc -n ${MY_LICENSE_SERVICE_NAMESPACE} get Route -o=jsonpath='{.items[?(@.metadata.name==\"ibm-license-service-reporter\")].spec.host}'"
-    lf_licensing_service_reporter_url=$(oc -n ${MY_LICENSE_SERVICE_NAMESPACE} get Route -o=jsonpath='{.items[?(@.metadata.name=="ibm-license-service-reporter")].spec.host}')
+    decho 3 "oc -n ${MY_LICENSE_SERVICE_REPORTER_NAMESPACE} get Route -o=jsonpath='{.items[?(@.metadata.name==\"ibm-license-service-reporter\")].spec.host}'"
+    lf_licensing_service_reporter_url=$(oc -n ${MY_LICENSE_SERVICE_REPORTER_NAMESPACE} get Route -o=jsonpath='{.items[?(@.metadata.name=="ibm-license-service-reporter")].spec.host}')
     decho 4 "License Service Reporter URL: $lf_licensing_service_reporter_url"
     oc -n $MY_LICENSE_SERVICE_NAMESPACE patch IBMLicensing instance --type merge --patch "{\"spec\":{\"sender\":{\"reporterSecretToken\":\"ibm-license-service-reporter-token\",\"reporterURL\":\"https://$lf_licensing_service_reporter_url/\",\"clusterID\":\"MyClusterTest1\",\"clusterName\":\"MyClusterTest1\"}}}"
 
@@ -1172,8 +1793,11 @@ function install_fs() {
 
     # ibm-cp-common-services
     check_add_cs_ibm_pak $MY_COMMONSERVICES_CASE amd64 $MY_COMMONSERVICES_VERSION
-    export MY_COMMONSERVICES_VERSION=$VAR_APP_VERSION
-    unset VAR_APP_VERSION
+    if [ -z "$MY_COMMONSERVICES_VERSION" ]; then
+      export MY_COMMONSERVICES_VERSION=$VAR_APP_VERSION
+      unset VAR_APP_VERSION
+    fi
+
     wait_for_resource "packagemanifest" "${MY_COMMONSERVICES_OPERATOR}" $MY_CATALOGSOURCES_NAMESPACE
 
     # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
@@ -1184,13 +1808,10 @@ function install_fs() {
     local lf_operator_name="${MY_COMMONSERVICES_OPERATOR}"
     local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
-    local lf_strategy="Automatic"
-    #local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
-    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
-    local lf_work_dir=$lf_working_directory
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
-    
+    local lf_strategy="Automatic"    
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')    
+    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_working_directory}\""
+    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_working_directory}"
 
     ## Setting hardware  Accept the license to use foundational services by adding spec.license.accept: true in the spec section.
     #accept_license_fs $MY_OPERATORS_NAMESPACE
@@ -1247,23 +1868,25 @@ function install_openliberty() {
     if oc -n ${MY_BACKEND_NAMESPACE} get ${lf_octype} ${lf_name} >/dev/null 2>&1; then
       mylog ok
     else
-      local lf_apply_cmd="oc apply --server-side -f ${MY_OPENLIBERTY_GEN_CUSTOMDIR}config/openliberty-app-crd.yaml"
-      local lf_delete_cmd="oc delete --server-side -f ${MY_OPENLIBERTY_GEN_CUSTOMDIR}config/openliberty-app-crd.yaml"
-      append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
-      prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
-      oc apply --server-side -f ${MY_OPENLIBERTY_GEN_CUSTOMDIR}config/openliberty-app-crd.yaml
-
-      local lf_apply_cmd="oc apply -f ${MY_OPENLIBERTY_GEN_CUSTOMDIR}config/openliberty-app-rbac-watch-all.yaml"
-      local lf_delete_cmd="oc delete -f ${MY_OPENLIBERTY_GEN_CUSTOMDIR}config/openliberty-app-rbac-watch-all.yaml"
-      append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
-      prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
-      oc apply -f ${MY_OPENLIBERTY_GEN_CUSTOMDIR}config/openliberty-app-rbac-watch-all.yaml
-
-      local lf_apply_cmd="oc -n ${MY_BACKEND_NAMESPACE} apply -f ${MY_OPENLIBERTY_GEN_CUSTOMDIR}config/openliberty-app-operator.yaml"
-      local lf_delete_cmd="oc -n ${MY_BACKEND_NAMESPACE} delete -f ${MY_OPENLIBERTY_GEN_CUSTOMDIR}config/openliberty-app-operator.yaml"
-      append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
-      prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
-      oc -n ${MY_BACKEND_NAMESPACE} apply -f ${MY_OPENLIBERTY_GEN_CUSTOMDIR}config/openliberty-app-operator.yaml
+      if $MY_APPLY_FLAG; then     
+        local lf_apply_cmd="oc apply --server-side -f ${MY_OPENLIBERTY_GEN_CUSTOMDIR}config/openliberty-app-crd.yaml"
+        local lf_delete_cmd="oc delete --server-side -f ${MY_OPENLIBERTY_GEN_CUSTOMDIR}config/openliberty-app-crd.yaml"
+        append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
+        prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
+        oc apply --server-side -f ${MY_OPENLIBERTY_GEN_CUSTOMDIR}config/openliberty-app-crd.yaml
+  
+        local lf_apply_cmd="oc apply -f ${MY_OPENLIBERTY_GEN_CUSTOMDIR}config/openliberty-app-rbac-watch-all.yaml"
+        local lf_delete_cmd="oc delete -f ${MY_OPENLIBERTY_GEN_CUSTOMDIR}config/openliberty-app-rbac-watch-all.yaml"
+        append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
+        prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
+        oc apply -f ${MY_OPENLIBERTY_GEN_CUSTOMDIR}config/openliberty-app-rbac-watch-all.yaml
+  
+        local lf_apply_cmd="oc -n ${MY_BACKEND_NAMESPACE} apply -f ${MY_OPENLIBERTY_GEN_CUSTOMDIR}config/openliberty-app-operator.yaml"
+        local lf_delete_cmd="oc -n ${MY_BACKEND_NAMESPACE} delete -f ${MY_OPENLIBERTY_GEN_CUSTOMDIR}config/openliberty-app-operator.yaml"
+        append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
+        prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
+        oc -n ${MY_BACKEND_NAMESPACE} apply -f ${MY_OPENLIBERTY_GEN_CUSTOMDIR}config/openliberty-app-operator.yaml
+      fi
     fi
 
     mylog info "Installation of openliberty took $SECONDS seconds." 1>&2
@@ -1288,6 +1911,11 @@ function install_wasliberty() {
 
     # add catalog sources using ibm_pak plugin
     check_add_cs_ibm_pak $MY_WASLIBERTY_OPERATOR amd64
+    if [ -z "$MY_WASLIBERTY_VERSION" ]; then
+      export MY_WASLIBERTY_VERSION=$VAR_APP_VERSION
+      unset VAR_APP_VERSION
+    fi
+
     wait_for_resource "packagemanifest" "${MY_WASLIBERTY_OPERATOR}" $MY_CATALOGSOURCES_NAMESPACE
 
     # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
@@ -1312,11 +1940,9 @@ function install_wasliberty() {
     local lf_operator_namespace=$MY_BACKEND_NAMESPACE
     local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
     local lf_strategy="Automatic"
-    #local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
-    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
-    local lf_work_dir=$lf_working_directory
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')    
+    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_working_directory}\""
+    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_working_directory}"
     
 
     mylog info "Installation of was liberty took $SECONDS seconds." 1>&2
@@ -1342,8 +1968,11 @@ function install_navigator() {
 
     # add catalog sources using ibm_pak plugin
     check_add_cs_ibm_pak $MY_NAVIGATOR_OPERATOR amd64
-    export MY_MSGSRV_VERSION=$VAR_APP_VERSION
-    unset VAR_APP_VERSION
+    if [ -z "$MY_MSGSRV_VERSION" ]; then
+      export MY_MSGSRV_VERSION=$VAR_APP_VERSION
+      unset VAR_APP_VERSION
+    fi
+
     wait_for_resource "packagemanifest" "${MY_NAVIGATOR_OPERATOR}" $MY_CATALOGSOURCES_NAMESPACE
 
     # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
@@ -1355,11 +1984,9 @@ function install_navigator() {
     local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
     local lf_strategy="Automatic"
-    #local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
-    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
-    local lf_work_dir=$lf_working_directory
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')    
+    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_working_directory}\""
+    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_working_directory}"
     
   fi
 
@@ -1404,6 +2031,11 @@ function install_assetrepo() {
 
     # add catalog sources using ibm_pak plugin
     check_add_cs_ibm_pak $MY_ASSETREPO_OPERATOR amd64
+    if [ -z "$MY_ASSETREPO_VERSION" ]; then
+      export MY_ASSETREPO_VERSION=$VAR_APP_VERSION
+      unset VAR_APP_VERSION
+    fi
+
     wait_for_resource "packagemanifest" "${MY_ASSETREPO_OPERATOR}" $MY_CATALOGSOURCES_NAMESPACE
 
     # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
@@ -1415,11 +2047,9 @@ function install_assetrepo() {
     local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
     local lf_strategy="Automatic"
-    #local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
-    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
-    local lf_work_dir=$lf_working_directory
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')    
+    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_working_directory}\""
+    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_working_directory}"
     
 
     if $MY_ASSETREPO_INSTANCE; then
@@ -1474,7 +2104,7 @@ function install_intassembly() {
     local lf_path="{.status.conditions[0].type}"
     local lf_state="Ready"
     #local lf_wait_for_state=true
-    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $lf_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
+    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $MY_OC_PROJECT get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
 
     mylog info "Installation of integration assembly took $SECONDS seconds." 1>&2
   fi
@@ -1498,8 +2128,11 @@ function install_ace() {
 
     # add catalog sources using ibm_pak plugin
     check_add_cs_ibm_pak $MY_ACE_OPERATOR amd64
-    export MY_ACE_VERSION=$VAR_APP_VERSION
-    unset VAR_APP_VERSION
+    if [ -z "$MY_ACE_VERSION" ]; then
+      export MY_ACE_VERSION=$VAR_APP_VERSION
+      unset VAR_APP_VERSION
+    fi
+
     wait_for_resource "packagemanifest" "${MY_ACE_OPERATOR}" $MY_CATALOGSOURCES_NAMESPACE
 
     # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
@@ -1511,11 +2144,9 @@ function install_ace() {
     local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
     local lf_strategy="Automatic"
-    #local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
-    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
-    local lf_work_dir=$lf_working_directory
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')    
+    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_working_directory}\""
+    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_working_directory}"
     
     # Creating ACE Switch Server instance (used for callable flows)
     local lf_type="SwitchServer"
@@ -1581,8 +2212,11 @@ function install_apic() {
 
     # add catalog sources using ibm_pak plugin
     check_add_cs_ibm_pak $MY_APIC_OPERATOR amd64
-    export MY_APIC_VERSION=$VAR_APP_VERSION
-    unset VAR_APP_VERSION
+    if [ -z "$MY_APIC_VERSION" ]; then
+      export MY_APIC_VERSION=$VAR_APP_VERSION
+      unset VAR_APP_VERSION
+    fi
+
     wait_for_resource "packagemanifest" "${MY_APIC_OPERATOR}" $MY_CATALOGSOURCES_NAMESPACE
 
     # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
@@ -1594,11 +2228,9 @@ function install_apic() {
     local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
     local lf_strategy="Automatic"
-    #local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
-    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
-    local lf_work_dir=$lf_working_directory
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')    
+    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_working_directory}\""
+    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_working_directory}"
     
     if $MY_APIC_BY_COMPONENT; then
       mylog info "HOLD PLACE"
@@ -1666,32 +2298,32 @@ function install_apic_graphql() {
 
     mylog info "==== Installing CP4I APIC Graphql." 1>&2
 
-    # Create the apic_graphql working directory if it does not exist
-    local lf_working_directory="${MY_APIC_GRAPHQL_WORKINGDIR}"
-    check_directory_exist_create "${lf_working_directory}"
-  
-    # create a PostgreSQL database for the APIC Graphql
-    create_postgresql_db "apic-graphql-cluster" "apic-graphql-db" "apic-graphql-pg-user" "apic-graphql-pg-password" "apic-graphql-pg-secret" "apic graphql pg database"
-
-    # Create namespace for IBM Stepzen.
-    create_project "$MY_APIC_GRAPHQL_NAMESPACE" "$MY_APIC_GRAPHQL_NAMESPACE project" "For IBM Stepzen instances and create custom API" $lf_working_directory
-    add_ibm_entitlement $MY_APIC_GRAPHQL_NAMESPACE $MY_CONTAINER_ENGINE
-
-    local lf_namespace="${MY_APIC_GRAPHQL_NAMESPACE}"
     local lf_postgresql_host lf_dsn lf_type lf_cr_name
     local lf_case_version lf_tgz_file lf_deploy_dir
     local lf_path lf_state lf_cr_name lf_url
 
+    # Create the apic_graphql working directory if it does not exist
+    local lf_working_directory="${MY_APIC_GRAPHQL_WORKINGDIR}"
+    check_directory_exist_create "${lf_working_directory}"
+  
+    # Create namespace for IBM Stepzen.
+    local lf_namespace="${MY_APIC_GRAPHQL_NAMESPACE}"
+    create_project "$lf_namespace" "$lf_namespace project" "For IBM Stepzen instances and create custom API" $lf_working_directory
+    add_ibm_entitlement $lf_namespace $MY_CONTAINER_ENGINE
+
+    # create a PostgreSQL database for the APIC Graphql
+    create_edb_postgres_db "apic-graphql-cluster" "apic-graphql-db" "apic-graphql-pg-user" "apic-graphql-pg-password" "apic-graphql-pg-secret" "apic graphql pg database" $MY_APIC_GRAPHQL_NAMESPACE $lf_working_directory
+
     # create a generic secret for the PostgreSQL server
     # there are three postgresql services : 
-    # - ${MY_POSTGRESQL_CLUSTER}-r"  : for read-only workloads across all nodes
-    # - ${MY_POSTGRESQL_CLUSTER}-ro" : for read-only workloads on replicas only
-    # - ${MY_POSTGRESQL_CLUSTER}-rw" : for read-write workloads on the primary node
+    # - ${VAR_POSTGRES_CLUSTER}-r"  : for read-only workloads across all nodes
+    # - ${VAR_POSTGRES_CLUSTER}-ro" : for read-only workloads on replicas only
+    # - ${VAR_POSTGRES_CLUSTER}-rw" : for read-write workloads on the primary node
 
-    lf_postgresql_host="${MY_POSTGRESQL_CLUSTER}-rw.${MY_POSTGRESQL_NAMESPACE}.svc.cluster.local"
-    lf_dsn="postgresql://${MY_POSTGRESQL_USER}:${MY_POSTGRESQL_PASSWORD}@${lf_postgresql_host}/${MY_POSTGRESQL_DATABASE}"
+    lf_postgresql_host="${VAR_POSTGRES_CLUSTER}-rw.${MY_POSTGRES_NAMESPACE}.svc.cluster.local"
+    lf_dsn="postgresql://${VAR_POSTGRES_USER}:${VAR_POSTGRES_PASSWORD}@${lf_postgresql_host}/${VAR_POSTGRES_DATABASE}"
     lf_type="Secret"
-    lf_cr_name="${MY_POSTGRESQL_DSN_PASSWORD}"
+    lf_cr_name="${MY_POSTGRES_DSN_PASSWORD}"
     if oc -n ${lf_namespace} get ${lf_type} ${lf_cr_name} >/dev/null 2>&1; then
       mylog info "Custom Resource $lf_type/$lf_cr_name already exists"
     else
@@ -1712,21 +2344,23 @@ function install_apic_graphql() {
     fi    
     
     # Apply the operator manifest files to the cluster
-    lf_deploy_dir="${lf_working_directory}${MY_APIC_GRAPHQL_CASE}/inventory/stepzenGraphOperator/files/deploy/"
-    decho 3 "Applying the operator manifest files to the cluster : crd.yaml." 1>&2
-    local lf_apply_cmd="oc -n ${lf_namespace} apply -f ${lf_deploy_dir}crd.yaml"
-    local lf_delete_cmd="oc -n ${lf_namespace} delete -f ${lf_deploy_dir}crd.yaml"
-    append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
-    prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
-    oc -n ${lf_namespace} apply -f ${lf_deploy_dir}crd.yaml
-
-    decho 3 "Applying the operator manifest files to the cluster : operator.yaml." 1>&2
-    local lf_apply_cmd="oc -n ${lf_namespace} apply -f ${lf_deploy_dir}operator.yaml"
-    local lf_delete_cmd="oc -n ${lf_namespace} delete -f ${lf_deploy_dir}operator.yaml"
-    append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
-    prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
-    oc -n ${lf_namespace} apply -f ${lf_deploy_dir}operator.yaml
-    sleep 10
+    if $MY_APPLY_FLAG; then 
+      lf_deploy_dir="${lf_working_directory}${MY_APIC_GRAPHQL_CASE}/inventory/stepzenGraphOperator/files/deploy/"
+      decho 3 "Applying the operator manifest files to the cluster : crd.yaml." 1>&2
+      local lf_apply_cmd="oc -n ${lf_namespace} apply -f ${lf_deploy_dir}crd.yaml"
+      local lf_delete_cmd="oc -n ${lf_namespace} delete -f ${lf_deploy_dir}crd.yaml"
+      append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
+      prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
+      oc -n ${lf_namespace} apply -f ${lf_deploy_dir}crd.yaml
+  
+      decho 3 "Applying the operator manifest files to the cluster : operator.yaml." 1>&2
+      local lf_apply_cmd="oc -n ${lf_namespace} apply -f ${lf_deploy_dir}operator.yaml"
+      local lf_delete_cmd="oc -n ${lf_namespace} delete -f ${lf_deploy_dir}operator.yaml"
+      append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
+      prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
+      oc -n ${lf_namespace} apply -f ${lf_deploy_dir}operator.yaml
+      sleep 10
+    fi
 
     # Configuring APIC Graphql
     decho 3 "Configuring APIC Graphql." 1>&2
@@ -1769,25 +2403,28 @@ function install_apic_graphql() {
 
     # Add the certificate csr for routes (following chatgpt advice)
     adapt_file ${MY_RESOURCESDIR} ${MY_WORKINGDIR} stepzen-graphql-csr.yaml
-    local lf_apply_cmd="oc apply -f ${MY_WORKINGDIR}stepzen-graphql-csr.yaml"
-    local lf_delete_cmd="oc delete -f ${MY_WORKINGDIR}stepzen-graphql-csr.yaml"
-    append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
-    prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
-    if ! oc apply -f "${MY_WORKINGDIR}stepzen-graphql-csr.yaml" ; then
-      unset MY_CLUSTER_DOMAIN
-      trace_out 3 install_apic_graphql
-      exit 1
+    if $MY_APPLY_FLAG; then 
+      local lf_apply_cmd="oc apply -f ${MY_WORKINGDIR}stepzen-graphql-csr.yaml"
+      local lf_delete_cmd="oc delete -f ${MY_WORKINGDIR}stepzen-graphql-csr.yaml"
+      append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
+      prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
+  
+      if ! oc apply -f "${MY_WORKINGDIR}stepzen-graphql-csr.yaml" ; then
+        unset MY_CLUSTER_DOMAIN
+        trace_out 3 install_apic_graphql
+        exit 1
+      fi
+  
+      # Then Install OpenShift Route Support for cert-manager (openshift-routes).
+      # ATTENTION REVOIR le namespace : c'est cert-manager et non pas cert-manager-namespace (https://github.com/cert-manager/openshift-routes?tab=readme-ov-file)
+      # https://github.com/cert-manager/openshift-routes
+      local lf_apply_cmd="helm -n cert-manager install openshift-routes oci://ghcr.io/cert-manager/charts/openshift-routes"
+      local lf_delete_cmd="helm -n cert-manager uninstall openshift-routes"
+      append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
+      prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
+      helm -n cert-manager install openshift-routes oci://ghcr.io/cert-manager/charts/openshift-routes
+      #oc -n cert-manager apply -f <(helm template openshift-routes -n cert-manager oci://ghcr.io/cert-manager/charts/openshift-routes --set omitHelmLabels=true)
     fi
-
-    # Then Install OpenShift Route Support for cert-manager (openshift-routes).
-    # ATTENTION REVOIR le namespace : c'est cert-manager et non pas cert-manager-namespace (https://github.com/cert-manager/openshift-routes?tab=readme-ov-file)
-    # https://github.com/cert-manager/openshift-routes
-    local lf_apply_cmd="helm -n cert-manager install openshift-routes oci://ghcr.io/cert-manager/charts/openshift-routes"
-    local lf_delete_cmd="helm -n cert-manager uninstall openshift-routes"
-    append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
-    prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
-    helm -n cert-manager install openshift-routes oci://ghcr.io/cert-manager/charts/openshift-routes
-    #oc -n cert-manager apply -f <(helm template openshift-routes -n cert-manager oci://ghcr.io/cert-manager/charts/openshift-routes --set omitHelmLabels=true)
 
     # Set up a stepzen-graph-server route for the stepzen account. This is the "root" account of the API Connect Graphql service, 
     # which is used to host endpoints that modify the metadata database but does not serve application requests. 
@@ -1846,9 +2483,15 @@ function install_es() {
     check_directory_exist_create "${lf_working_directory}"
 
     # add catalog sources using ibm_pak plugin
+    # SB]20250221 : problem with IBM Eventstreams, the command oc ibm-pak list does not return the "latest" version of the pak
+    # this command used in lib.sh to return the latest version of the pak: lf_app_version=$(oc ibm-pak list --case-name $lf_in_case_name -o json | jq --arg v "$lf_in_case_version" '.versions[$v].appVersion')
+    # when used with "latest" returns null, so we need to set the version of the pak in the variable MY_ES_VERSION
     check_add_cs_ibm_pak $MY_ES_OPERATOR amd64
-    export MY_ES_VERSION=$VAR_APP_VERSION
-    unset VAR_APP_VERSION
+    if [ -z "$MY_ES_VERSION" ]; then
+      export MY_ES_VERSION=$VAR_APP_VERSION
+      unset VAR_APP_VERSION
+    fi
+
     wait_for_resource "packagemanifest" "${MY_ES_OPERATOR}" $MY_CATALOGSOURCES_NAMESPACE
 
     # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
@@ -1860,11 +2503,9 @@ function install_es() {
     local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
     local lf_strategy="Automatic"
-    #local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
-    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
-    local lf_work_dir=$lf_working_directory
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')    
+    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_working_directory}\""
+    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_working_directory}"
     
     # Creating Event Streams instance
     local lf_type="EventStreams"
@@ -1879,6 +2520,9 @@ function install_es() {
     local lf_state="Ready"
     #local lf_wait_for_state=true
     wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $MY_OC_PROJECT get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
+
+    # Creating Event Streams Service Account associated with the ES instance to enable monitoring
+    oc -n $MY_OC_PROJECT adm policy add-cluster-role-to-user cluster-monitoring-view -z $MY_ES_SERVICE_ACCOUNT_NAME
     
     mylog info "Installation of event streams took $SECONDS seconds." 1>&2
   fi
@@ -1905,6 +2549,11 @@ function install_eem() {
     ## to get the name of the pak to use : oc ibm-pak list
     ## https://ibm.github.io/event-automation/eem/installing/installing/, chapter : Install the operator by using the CLI (oc ibm-pak)
     check_add_cs_ibm_pak $MY_EEM_OPERATOR amd64
+    if [ -z "$MY_EEM_VERSION" ]; then
+      export MY_EEM_VERSION=$VAR_APP_VERSION
+      unset VAR_APP_VERSION
+    fi
+
     wait_for_resource "packagemanifest" "${MY_EEM_OPERATOR}" $MY_CATALOGSOURCES_NAMESPACE
 
     # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
@@ -1916,19 +2565,16 @@ function install_eem() {
     local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
     local lf_strategy="Automatic"
-    #local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
-    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
-    local lf_work_dir=$lf_working_directory
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')    
+    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_working_directory}\""
+    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_working_directory}"
     
-
     #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
     if [ -z "$MY_EEM_VERSION" ]; then
       export MY_EEM_VERSION=$(oc ibm-pak list -o json | jq  --arg case "$MY_EEM_OPERATOR" '.[] | select (.name == $case ) | .latestAppVersion')
     fi
 
-    # Creating EventEndpointManager instance (Event Processing)
+    # Creating EventEndpointManager instance (Event Endpoint Manager)
     if $MY_KEYCLOAK_INTEGRATION; then
       export MY_EEM_AUTH_TYPE=INTEGRATION_KEYCLOAK
     else
@@ -2031,14 +2677,22 @@ function install_ep() {
     SECONDS=0
     
     local lf_varb64
-    mylog info "==== Installing CP4I Event Processing." 1>&2
+    echo "==== Installing CP4I Event Processing." 1>&2
 
     local lf_working_directory="${MY_EP_WORKINGDIR}"
     check_directory_exist_create "${lf_working_directory}"
 
     # add catalog sources using ibm_pak plugin
     check_add_cs_ibm_pak $MY_EP_OPERATOR amd64
+    if [ -z "$MY_EP_VERSION" ]; then
+      export MY_EP_VERSION=$VAR_APP_VERSION
+      unset VAR_APP_VERSION
+    fi
+
+    decho 3 "MY_EP_VERSION=$MY_EP_VERSION"
     wait_for_resource "packagemanifest" "${MY_EP_OPERATOR}" $MY_CATALOGSOURCES_NAMESPACE
+    # We have to wait for the packagemanifest to be ready before creating the subscription even if the wait_for_resource returns a value !!!
+    sleep 10
 
     # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
     local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
@@ -2049,18 +2703,10 @@ function install_ep() {
     local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
     local lf_strategy="Automatic"
-    #local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
-    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
-    local lf_work_dir=$lf_working_directory
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')    
+    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_working_directory}\""
+    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_working_directory}"
     
-
-    #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
-    if [ -z "$MY_EP_VERSION" ]; then
-      export MY_EP_VERSION=$(oc ibm-pak list -o json | jq  --arg case "$MY_EP_OPERATOR" '.[] | select (.name == $case ) | .latestAppVersion')
-    fi
-
     ## SB]20231023 to check the status of Event processing : https://ibm.github.io/event-automation/ep/installing/post-installation/
     ## The Status column displays the current state of the EventProcessing custom resource.
     ## When the Event Processing instance is ready, the phase displays Phase: Running.
@@ -2070,46 +2716,110 @@ function install_ep() {
 
     # 20241127 : Problem The EventProcessing "cp4i-ep" is invalid: spec.authoring.authConfig.authType: Unsupported value: "INTEGRATION_KEYCLOAK": supported values: "LOCAL", "OIDC"
     # so use LOCAL or OIDC
+    # https://ibm.github.io/event-automation/ep/security/managing-access/
     if $MY_KEYCLOAK_INTEGRATION; then
       export MY_EP_AUTH_TYPE=OIDC
+      local lf_yaml_file="EP-Capability-oidc.yaml"
+      
+      export MY_EP_KEYCLOAK_CLIENTID=$(echo -n "$MY_EP_KEYCLOAK_CLIENTID")
+
+      create_keycloak_client $MY_KEYCLOAK_CP4I_REALM $MY_EP_KEYCLOAK_CLIENTID $MY_KEYCLOAK_USERNAME
+      get_keycloak_secret $MY_KEYCLOAK_CP4I_REALM $MY_EP_KEYCLOAK_CLIENTID $MY_KEYCLOAK_USERNAME
+      #create_keycloak_client $MY_KEYCLOAK_MASTER_REALM $MY_EP_KEYCLOAK_CLIENTID $MY_KEYCLOAK_USERNAME
+      #get_keycloak_secret $MY_KEYCLOAK_MASTER_REALM $MY_EP_KEYCLOAK_CLIENTID $MY_KEYCLOAK_USERNAME
+
+      decho 3 "VAR_KEYCLOAK_SECRET=$VAR_KEYCLOAK_SECRET"
+      export VAR_CLIENTID=$(echo $MY_EP_KEYCLOAK_CLIENTID | base64 -w0)
+      export VAR_EP_KEYCLOAK_SECRETKEY=$(echo $VAR_KEYCLOAK_SECRET | base64 -w0)
+      
+      adapt_file $MY_EP_DIR $MY_EP_WORKINGDIR ep-secret.yaml
+      local lf_apply_cmd="oc apply -f ${MY_EP_WORKINGDIR}ep-secret.yaml"
+      local lf_delete_cmd="oc delete -f ${MY_EP_WORKINGDIR}ep-secret.yaml"
+      append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
+      prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
+      if $MY_APPLY_FLAG; then
+        $lf_apply_cmd
+      fi
+
+      local lf_type="EventProcessing"
+      local lf_cr_name="$MY_EP_INSTANCE_NAME"
+      local lf_source_directory="${MY_OPERANDSDIR}"
+      local lf_target_directory=$lf_working_directory
+      decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+      check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
+  
+      # wait for eventprocessing secrets to be ready
+      wait_for_resource "secret" "${MY_EP_INSTANCE_NAME}-ibm-ep-user-roles" $MY_OC_PROJECT
+
+      # generate properties files
+      #adapt_file ${MY_EP_SCRIPTDIR}config/ ${MY_EP_GEN_CUSTOMDIR}config/ user-credentials.yaml
+      adapt_file ${MY_EP_SCRIPTDIR}config/ ${MY_EP_GEN_CUSTOMDIR}config/ user-roles.yaml
+  
+      # user roles
+      lf_varb64=$(cat "${MY_EP_GEN_CUSTOMDIR}config/user-roles.yaml" | base64 -w0)
+      local lf_apply_cmd="oc -n $MY_OC_PROJECT patch secret ${MY_EP_INSTANCE_NAME}-ibm-ep-user-roles --type=json -p '[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$lf_varb64\"}]'"
+      local lf_delete_cmd="oc -n $MY_OC_PROJECT patch secret ${MY_EP_INSTANCE_NAME}-ibm-ep-user-roles --type=json -p '[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"\"}]'"
+      append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
+      prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
+      if $MY_APPLY_FLAG; then
+        oc -n $MY_OC_PROJECT patch secret ${MY_EP_INSTANCE_NAME}-ibm-ep-user-roles --type=merge -p "{\"data\":{\"user-mapping.json\":\"$lf_varb64\"}}"
+  
+        local lf_path="{.status.phase}"
+        local lf_state="Running"
+        wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $MY_OC_PROJECT get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
+  
+        # patch the keycloak client to add redirectUris
+        patch_keycloak_client EventProcessing $lf_cr_name $MY_KEYCLOAK_CP4I_REALM $MY_EP_KEYCLOAK_CLIENTID $MY_KEYCLOAK_USERNAME $MY_OC_PROJECT
+  
+      fi
+
     else
       export MY_EP_AUTH_TYPE=LOCAL
+      local lf_yaml_file="EP-Capability.yaml"
+
+      local lf_type="EventProcessing"
+      local lf_cr_name="$MY_EP_INSTANCE_NAME"
+      local lf_source_directory="${MY_OPERANDSDIR}"
+      local lf_target_directory=$lf_working_directory
+      decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+      check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
+  
+      # wait for eventprocessing secrets to be ready
+      wait_for_resource "secret" "${MY_EP_INSTANCE_NAME}-ibm-ep-user-roles" $MY_OC_PROJECT
+      wait_for_resource "secret" "${MY_EP_INSTANCE_NAME}-ibm-ep-user-credentials" $MY_OC_PROJECT
+
+      # generate properties files
+      adapt_file ${MY_EP_SCRIPTDIR}config/ ${MY_EP_GEN_CUSTOMDIR}config/ user-credentials.yaml
+      adapt_file ${MY_EP_SCRIPTDIR}config/ ${MY_EP_GEN_CUSTOMDIR}config/ user-roles.yaml
+  
+      # user credentials
+      local lf_varb64=$(cat "${MY_EP_GEN_CUSTOMDIR}config/user-credentials.yaml" | base64 -w0)
+      #local lf_apply_cmd="oc -n $MY_OC_PROJECT patch secret ${MY_EP_INSTANCE_NAME}-ibm-ep-user-credentials --type='json' -p '[{\"op\" : \"replace\" ,\"path\" : \"/data/user-credentials.json\" ,\"value\" : \"$lf_varb64\"}]'"
+      local lf_apply_cmd="oc -n $MY_OC_PROJECT patch secret ${MY_EP_INSTANCE_NAME}-ibm-ep-user-credentials --type=merge -p \"{\"op\": \"replace\", \"path\": \"/data/user-mapping.json\", \"value\": \"$lf_varb64\"}\""
+      local lf_delete_cmd="oc -n $MY_OC_PROJECT patch secret ${MY_EP_INSTANCE_NAME}-ibm-ep-user-credentials --type='json' -p '[{\"op\" : \"replace\" ,\"path\" : \"/data/user-credentials.json\" ,\"value\" : \"\"}]'"
+      append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
+      prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
+      if $MY_APPLY_FLAG; then
+        #oc -n $MY_OC_PROJECT patch secret ${MY_EP_INSTANCE_NAME}-ibm-ep-user-roles --type=merge -p "{\"op\": \"replace\", \"path\": \"/data/user-mapping.json\", \"value\": \"$lf_varb64\"}"
+        oc -n $MY_OC_PROJECT patch secret ${MY_EP_INSTANCE_NAME}-ibm-ep-user-credentials --type=merge -p "{\"data\":{\"user-mapping.json\":\"$lf_varb64\"}}"
+      fi
+  
+      # user roles
+      lf_varb64=$(cat "${MY_EP_GEN_CUSTOMDIR}config/user-roles.yaml" | base64 -w0)
+      local lf_apply_cmd="oc -n $MY_OC_PROJECT patch secret ${MY_EP_INSTANCE_NAME}-ibm-ep-user-roles --type=json -p '[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$lf_varb64\"}]'"
+      local lf_delete_cmd="oc -n $MY_OC_PROJECT patch secret ${MY_EP_INSTANCE_NAME}-ibm-ep-user-roles --type=json -p '[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"\"}]'"
+      append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
+      prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
+      if $MY_APPLY_FLAG; then
+        oc -n $MY_OC_PROJECT patch secret ${MY_EP_INSTANCE_NAME}-ibm-ep-user-roles --type=merge -p "{\"data\":{\"user-mapping.json\":\"$lf_varb64\"}}"
+  
+        local lf_path="{.status.phase}"
+        local lf_state="Running"
+        wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $MY_OC_PROJECT get $lf_type $lf_cr_name -o jsonpath='$lf_path'"  
+      fi
     fi
 
-    local lf_type="EventProcessing"
-    local lf_cr_name="$MY_EP_INSTANCE_NAME"
-    local lf_source_directory="${MY_OPERANDSDIR}"
-    local lf_target_directory=$lf_working_directory
-    local lf_yaml_file="EP-Capability.yaml"
-    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
-    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
-
-    local lf_path="{.status.phase}"
-    local lf_state="Running"
-    #local lf_wait_for_state=true
-    wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $MY_OC_PROJECT get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
-
-    # generate properties files
-    adapt_file ${MY_EP_SCRIPTDIR}config/ ${MY_EP_GEN_CUSTOMDIR}config/ user-credentials.yaml
-    adapt_file ${MY_EP_SCRIPTDIR}config/ ${MY_EP_GEN_CUSTOMDIR}config/ user-roles.yaml
-
-    # user credentials
-    local lf_varb64=$(cat "${MY_EP_GEN_CUSTOMDIR}config/user-credentials.yaml" | base64 -w0)
-    local lf_apply_cmd="oc -n $MY_OC_PROJECT patch secret ${MY_EP_INSTANCE_NAME}-ibm-ep-user-credentials --type='json' -p '[{\"op\" : \"replace\" ,\"path\" : \"/data/user-credentials.json\" ,\"value\" : \"$lf_varb64\"}]'"
-    local lf_delete_cmd="oc -n $MY_OC_PROJECT patch secret ${MY_EP_INSTANCE_NAME}-ibm-ep-user-credentials --type='json' -p '[{\"op\" : \"replace\" ,\"path\" : \"/data/user-credentials.json\" ,\"value\" : \"\"}]'"
-    append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
-    prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
-    oc -n $MY_OC_PROJECT patch secret "${MY_EP_INSTANCE_NAME}-ibm-ep-user-credentials" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-credentials.json\" ,\"value\" : \"$lf_varb64\"}]"
-
-    # user roles
-    lf_varb64=$(cat "${MY_EP_GEN_CUSTOMDIR}config/user-roles.yaml" | base64 -w0)
-    local lf_apply_cmd="oc -n $MY_OC_PROJECT patch secret ${MY_EP_INSTANCE_NAME}-ibm-ep-user-roles --type='json' -p '[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$lf_varb64\"}]'"
-    local lf_delete_cmd="oc -n $MY_OC_PROJECT patch secret ${MY_EP_INSTANCE_NAME}-ibm-ep-user-roles --type='json' -p '[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"\"}]'"
-    append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
-    prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
-    oc -n $MY_OC_PROJECT patch secret "${MY_EP_INSTANCE_NAME}-ibm-ep-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$lf_varb64\"}]"
-    
-    mylog info "Installation of evebt processing took $SECONDS seconds." 1>&2
+    mylog info "Installation of event processing took $SECONDS seconds." 1>&2
   fi
 
   trace_out 3 install_ep
@@ -2133,7 +2843,14 @@ function install_flink() {
     ## https://ibm.github.io/event-automation/ep/installing/installing/, Chapter Applying catalog sources to your cluster
     # event flink
     check_add_cs_ibm_pak $MY_FLINK_OPERATOR amd64
+    if [ -z "$MY_FLINK_VERSION" ]; then
+      export MY_FLINK_VERSION=$VAR_APP_VERSION
+      unset VAR_APP_VERSION
+    fi
+
     wait_for_resource "packagemanifest" "${MY_FLINK_OPERATOR}" $MY_CATALOGSOURCES_NAMESPACE
+    # We have to wait for the packagemanifest to be ready before creating the subscription even if the wait_for_resource returns a value !!!
+    sleep 10
 
     # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
     local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
@@ -2148,13 +2865,10 @@ function install_flink() {
     local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
     local lf_strategy="Automatic"
-    #local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
-    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
-    local lf_work_dir=$lf_working_directory
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')    
+    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_working_directory}\""
+    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_working_directory}"
     
-
     ## Creation of Event automation Flink PVC and instance
     # Even if it's a pvc we use the same generic function
     local lf_type="PersistentVolumeClaim"
@@ -2199,6 +2913,17 @@ function install_flink() {
 }
 
 ################################################
+# Install bboth flink and Event processing in this order
+function install_flink_ep() {
+  trace_in 3 install_flink_ep
+
+  install_flink
+  install_ep
+
+  trace_out 3 install_flink_ep
+}
+
+################################################
 # Install Aspera HSTS
 function install_hsts() {
   trace_in 3 install_hsts
@@ -2217,6 +2942,11 @@ function install_hsts() {
 
     # add catalog sources using ibm_pak plugin
     check_add_cs_ibm_pak $MY_HSTS_OPERATOR amd64
+    if [ -z "$MY_HSTS_VERSION" ]; then
+      export MY_HSTS_VERSION=$VAR_APP_VERSION
+      unset VAR_APP_VERSION
+    fi
+
     wait_for_resource "packagemanifest" "${MY_HSTS_OPERATOR}" $MY_CATALOGSOURCES_NAMESPACE
 
     # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
@@ -2228,11 +2958,9 @@ function install_hsts() {
     local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
     local lf_strategy="Automatic"
-    #local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
-    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
-    local lf_work_dir=$lf_working_directory
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')    
+    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_working_directory}\""
+    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_working_directory}"
     
 
     local lf_type="IbmAsperaHsts"
@@ -2270,8 +2998,11 @@ function install_mq() {
 
     # add catalog sources using ibm_pak plugin
     check_add_cs_ibm_pak $MY_MQ_OPERATOR amd64
-    export MY_MQ_VERSION=$VAR_APP_VERSION
-    unset VAR_APP_VERSION
+    if [ -z "$MY_MQ_VERSION" ]; then
+      export MY_MQ_VERSION=$VAR_APP_VERSION
+      unset VAR_APP_VERSION
+    fi
+
     wait_for_resource "packagemanifest" "${MY_MQ_OPERATOR}" $MY_CATALOGSOURCES_NAMESPACE
 
     # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
@@ -2283,11 +3014,9 @@ function install_mq() {
     local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
     local lf_strategy="Automatic"
-    #local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
-    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
-    local lf_work_dir=$lf_working_directory
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')    
+    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_working_directory}\""
+    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_working_directory}"
     
 
     # Use the new CRD MessagingServer(available since CP4I 16.1.0-SC2) 
@@ -2351,10 +3080,9 @@ function install_instana() {
     local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
     local lf_strategy="Automatic"
     local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
-    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
-    local lf_work_dir=$lf_working_directory
-    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_work_dir}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')    
+    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_working_directory}\""
+    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_working_directory}"
 
     # Creating Instana agent
     local lf_type="daemonset"
@@ -2389,29 +3117,34 @@ function install_postgresql() {
 
     mylog info "==== Installing PostGreSQL." 1>&2
 
-    local lf_working_directory="${MY_POSTGRESQL_WORKINGDIR}"
+    local lf_working_directory="${MY_POSTGRES_WORKINGDIR}"
     check_directory_exist_create "${lf_working_directory}"
 
     # add catalog sources using ibm_pak plugin
-    check_add_cs_ibm_pak $MY_POSTGRESQL_CASE amd64
-    wait_for_resource "packagemanifest" "${MY_POSTGRESQL_OPERATOR}" $MY_CATALOGSOURCES_NAMESPACE
+    check_add_cs_ibm_pak $MY_POSTGRES_CASE amd64
+    if [ -z "$MY_POSTGRES_VERSION" ]; then
+      export MY_POSTGRES_VERSION=$VAR_APP_VERSION
+      unset VAR_APP_VERSION
+    fi
+
+    wait_for_resource "packagemanifest" "${MY_POSTGRES_OPERATOR}" $MY_CATALOGSOURCES_NAMESPACE
 
     # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
     local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
     unset VAR_CATALOG_SOURCE
 
     # export this variable to be used in the postgresql database creation (choose the correct image)
-    export MY_POSTGRESQL_CATALOGSOURCE_NAME=$lf_catalog_source_name
+    export MY_POSTGRES_CATALOGSOURCE_NAME=$lf_catalog_source_name
 
     # Create namespace for PostGreSQL.
-    create_project "$MY_POSTGRESQL_NAMESPACE" "$MY_POSTGRESQL_NAMESPACE project" "For PostGreSQL" $lf_working_directory
+    create_project "$MY_POSTGRES_NAMESPACE" "$MY_POSTGRES_NAMESPACE project" "For PostGreSQL" $lf_working_directory
 
     # Operator group for PostGreSQL in single namespace (TODO should it be operators.coreos.com/v1 instead of operators.coreos.com/v1alpha2)
-    export MY_OPERATORGROUP="${MY_POSTGRESQL_OPERATORGROUP}"
-    export MY_PROJECT="${MY_POSTGRESQL_NAMESPACE}"
+    export MY_OPERATORGROUP="${MY_POSTGRES_OPERATORGROUP}"
+    export MY_PROJECT="${MY_POSTGRES_NAMESPACE}"
 
     local lf_type="OperatorGroup"
-    local lf_cr_name="${MY_POSTGRESQL_OPERATORGROUP}"
+    local lf_cr_name="${MY_POSTGRES_OPERATORGROUP}"
     local lf_source_directory="${MY_RESOURCESDIR}"
     local lf_target_directory="${lf_working_directory}"
     local lf_yaml_file="operator-group-single.yaml"
@@ -2420,22 +3153,68 @@ function install_postgresql() {
     unset MY_OPERATORGROUP MY_PROJECT
 
     # Creating EDB Postgres for Kubernetes operator subscription
-    local lf_operator_name=$MY_POSTGRESQL_OPERATOR
+    local lf_operator_name=$MY_POSTGRES_OPERATOR
     local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
     lf_operator_chl=$(oc get packagemanifest -o json | jq -r --arg op $lf_operator_name --arg cs $lf_catalog_source_name '.items[] | select(.metadata.name==$op and .status.catalogSource==$cs) | .status.defaultChannel')
     local lf_strategy="Automatic"
-    #local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
-    #local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
-    lf_csv_name=$(oc get packagemanifest -o json | jq -r --arg op "$lf_operator_name" --arg cs "$lf_catalog_source_name" '.items[] | select(.metadata.name==$op and .status.catalogSource==$cs) | .status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
-    local lf_work_dir=$lf_working_directory
+    lf_csv_name=$(oc get packagemanifest -o json | jq -r --arg op "$lf_operator_name" --arg cs "$lf_catalog_source_name" '.items[] | select(.metadata.name==$op and .status.catalogSource==$cs) | .status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')    
     decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\""
-    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_work_dir}"
+    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_working_directory}"
     
     
     mylog info "Installation of postgresql took $SECONDS seconds." 1>&2
   fi
 
   trace_out 3 install_postgresql
+}
+
+################################################
+# SB]20250227 https://www.enterprisedb.com/docs/postgres_for_kubernetes/latest/openshift/
+# 
+function install_edb_postgres() {
+  trace_in 3 install_edb_postgres
+
+  if $MY_EDB_POSTGRESQL; then
+    SECONDS=0
+
+    mylog info "==== Installing EDB PostGreSQL." 1>&2
+
+    local lf_working_directory="${MY_EDB_POSTGRES_WORKINGDIR}"
+    check_directory_exist_create "${lf_working_directory}"
+
+    # Create namespace for EDB PostGreSQL.
+    create_project "$MY_EDB_POSTGRES_NAMESPACE" "$MY_EDB_POSTGRES_NAMESPACE project" "For EDB PostGreSQL" $lf_working_directory
+
+    # Operator group for EDB Postgres in all namespaces
+    local lf_type="OperatorGroup"
+    local lf_cr_name="${MY_EDB_POSTGRES_OPERATORGROUP}"
+    local lf_source_directory="${MY_RESOURCESDIR}"
+    local lf_target_directory="${lf_working_directory}"
+    local lf_yaml_file="operator-group-single.yaml"
+    local lf_namespace=${MY_EDB_POSTGRES_NAMESPACE}
+    export MY_OPERATORGROUP=$lf_cr_name
+    export MY_PROJECT=$lf_namespace  
+    decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+    check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
+    unset MY_OPERATORGROUP MY_PROJECT
+
+    # export this variable to be used in the postgresql database creation (choose the correct image)
+    # export MY_POSTGRES_CATALOGSOURCE_NAME=$lf_catalog_source_name
+
+    # Create a subscription object for EDB Postgres for Kubernetes operator
+    local lf_operator_name="$MY_EDB_POSTGRES_OPERATORGROUP"
+    local lf_operator_namespace=$MY_OPERATORS_NAMESPACE
+    local lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.defaultChannel')
+    local lf_strategy="Automatic"
+    local lf_catalog_source_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status.catalogSource')
+    local lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $lf_operator_name -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')    
+    decho 3 "create_operator_subscription \"${lf_operator_name}\" \"${lf_operator_namespace}\" \"${lf_operator_chl}\" \"${lf_strategy}\" \"${lf_catalog_source_name}\" \"${lf_csv_name}\" \"${lf_working_directory}\" "
+    create_operator_subscription "${lf_operator_name}" "${lf_operator_namespace}" "${lf_operator_chl}" "${lf_strategy}" "${lf_catalog_source_name}" "${lf_csv_name}" "${lf_working_directory}"
+    
+    mylog info "Installation of edb postgresql took $SECONDS seconds." 1>&2
+  fi
+
+  trace_out 3 install_edb_postgres
 }
 
 ################################################
@@ -2648,7 +3427,8 @@ function customise_mq() {
 
     # launch custom script
     mylog info "Customise MQ (mq.config.sh)."
-    . ${MY_MQ_SCRIPTDIR}scripts/mq.config.sh -i ${sc_properties_file} ${MY_MQ_INSTANCE_NAME}
+    #. ${MY_MQ_SCRIPTDIR}scripts/mq.config.sh -i ${sc_properties_file} ${MY_MQ_INSTANCE_NAME}
+    . ${MY_MQ_SCRIPTDIR}scripts/mq.config-v3.sh --all 
     mylog info "Customise MQ (mq.demo.config.sh)."
     . ${MY_MQ_SCRIPTDIR}scripts/mq.demo.config.sh -i ${sc_properties_file} ${MY_MQ_INSTANCE_NAME}
 
@@ -2680,18 +3460,11 @@ function customise_instana() {
 # @param 4: postgresql database password
 # @param 5: postgresql secret name
 # @param 6: postgresql database description
+# @param 7: namespace
+# @param 8: working directory
 # 
-function create_postgresql_db() {
-  trace_in 3 create_postgresql_db
-
-  # local lf_in_cluster_name=$1 : pas besoin utiliser le cluster : MY_POSTGRESQL_CLUSTER
-  # local lf_in_namespace=$ : pas besoin utiliser le ns : MY_POSTGRESQL_NAMESPACE
-
-  local lf_working_directory="${MY_POSTGRESQL_WORKINGDIR}"
-  check_directory_exist_create "${lf_working_directory}"
-
-  create_project "$MY_POSTGRESQL_NAMESPACE" "PostGreSQL" "PostGreSQL DB namespace" $lf_working_directory
-  add_ibm_entitlement "$MY_POSTGRESQL_NAMESPACE" $MY_CONTAINER_ENGINE
+function create_postgres_db() {
+  trace_in 3 create_postgres_db
 
   local lf_in_cluster_name=$1
   local lf_in_db_name=$2
@@ -2699,6 +3472,13 @@ function create_postgresql_db() {
   local lf_in_db_password=$4
   local lf_in_secret_name=$5
   local lf_in_db_description=$6
+  local lf_in_namespace=$7
+  local lf_in_workdir=$8
+
+  check_directory_exist_create "${lf_in_workdir}"
+
+  create_project "$lf_in_namespace" "PostGreSQL" "PostGreSQL DB namespace"
+  add_ibm_entitlement "$lf_in_namespace" $MY_CONTAINER_ENGINE
 
   # Create a PostGreSQL DB secret
   local lf_username=$(echo -n "${lf_in_db_username}" | base64 -w0)
@@ -2706,7 +3486,7 @@ function create_postgresql_db() {
   local lf_secret_type="Opaque"
 
   export MY_SECRET_NAME=$lf_in_secret_name
-  export MY_PROJECT=$MY_POSTGRESQL_NAMESPACE
+  export MY_PROJECT=$lf_in_namespace
   export MY_SECRET_TYPE=$lf_secret_type
   export MY_USERNAME=$lf_username
   export MY_PASSWORD=$lf_password
@@ -2714,40 +3494,43 @@ function create_postgresql_db() {
   local lf_type="Secret"
   local lf_cr_name="${lf_in_secret_name}"
   local lf_source_directory="${MY_RESOURCESDIR}"
-  local lf_target_directory="${lf_working_directory}"
+  local lf_target_directory="${lf_in_workdir}"
   local lf_yaml_file="secret.yaml"
   decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
   check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
   unset MY_SECRET_NAME MY_PROJECT MY_SECRET_TYPE MY_USERNAME MY_PASSWORD
 
-  # get the Postgresql image name version
-
-
   # PostGreSQL DB
+  export VAR_POSTGRES_CLUSTER="${lf_in_cluster_name}"
+  export VAR_POSTGRES_DATABASE="${lf_in_db_name}"
+  export VAR_POSTGRES_USER="${lf_in_db_username}"
+  export VAR_POSTGRES_SECRET="${lf_in_secret_name}"
+  export VAR_POSTGRES_DATABASE_DESCRIPTION="${lf_in_db_description}"
+
+  # the following command to be used with ibm postgres
+  # export VAR_POSTGRES_IMAGE_NAME=$(oc get packagemanifests -n $MY_CATALOGSOURCES_NAMESPACE --selector=$MY_POSTGRES_CATALOGSOURCE_NAME -o json | jq --arg channel "$MY_POSTGRES_CHL" '.items[].status.channels[] | select(.name == $channel)' | jq -r '.currentCSVDesc.relatedImages[]   | select(startswith("icr.io/cpopen/edb/postgresql:"))' | sort -V | tail -n 1)
+
+  # and this with EDB Postgres
+  export VAR_POSTGRES_IMAGE_NAME=$(oc get packagemanifests -n $MY_CATALOGSOURCES_NAMESPACE --selector=$MY_POSTGRES_CATALOGSOURCE_NAME -o json | jq --arg channel "$MY_POSTGRES_CHL" '.items[].status.channels[] | select(.name == $channel)' | jq -r '.currentCSVDesc.relatedImages[]')
+
   local lf_type="Cluster"
   local lf_cr_name="${lf_in_cluster_name}"
   local lf_source_directory="${MY_RESOURCESDIR}"
-  local lf_target_directory="${lf_working_directory}"
-  local lf_yaml_file="postgresql-cluster.yaml"
-
-  export MY_POSTGRESQL_CLUSTER="${lf_in_cluster_name}"
-  export MY_POSTGRESQL_DATABASE="${lf_in_db_name}"
-  export MY_POSTGRESQL_USER="${lf_in_db_username}"
-  export MY_POSTGRESQL_SECRET="${lf_in_secret_name}"
-  export MY_POSTGRESQL_DESCRIPTION="${lf_in_db_description}"
+  local lf_target_directory="${lf_in_workdir}"
+  local lf_yaml_file="postgres-cluster.yaml"
   decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
   check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
-  unset MY_POSTGRESQL_CLUSTER MY_POSTGRESQL_DATABASE MY_POSTGRESQL_USER MY_POSTGRESQL_SECRET
+  unset VAR_POSTGRES_CLUSTER VAR_POSTGRES_DATABASE VAR_POSTGRES_USER VAR_POSTGRES_SECRET VAR_POSTGRES_DATABASE_DESCRIPTION VAR_POSTGRES_IMAGE_NAME
 
-  #local lf_cr_name=$(oc -n $lf_namespace get $lf_type -o json | jq -r --arg my_resource "$lf_cr_name" '.items[0].metadata | select (.name | contains ($my_resource)).name')
-  local lf_cr_name=$(oc -n $lf_namespace get $lf_type -o jsonpath="{.items[0].metadata.name}")
+  #local lf_cr_name=$(oc -n $lf_in_namespace get $lf_type -o json | jq -r --arg my_resource "$lf_cr_name" '.items[0].metadata | select (.name | contains ($my_resource)).name')
+  local lf_cr_name=$(oc -n $lf_in_namespace get $lf_type -o jsonpath="{.items[0].metadata.name}")
   local lf_path="{.status.conditions[0].type}"
   local lf_state="Ready"
-  decho 3 "wait_for_state \"$lf_type $lf_cr_name is $lf_state\" \"$lf_state\" \"oc -n $lf_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'\""
-  wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $MY_POSTGRESQL_NAMESPACE get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
+  decho 3 "wait_for_state \"$lf_type $lf_cr_name is $lf_state\" \"$lf_state\" \"oc -n $lf_in_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'\""
+  wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $lf_in_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
 
   # Authorize superuser access
-  oc -n $lf_namespace patch $lf_type $lf_cr_name --type=merge -p '{"spec":{"enableSuperuserAccess":true}}' #| awk '{printf "%*s%s\n", NR * $SC_SPACES_COUNTER, "", $0}'
+  oc -n $lf_in_namespace patch $lf_type $lf_cr_name --type=merge -p '{"spec":{"enableSuperuserAccess":true}}' | awk '{printf "%*s%s\n", NR * $SC_SPACES_COUNTER, "", $0}'
 
   # Here after how to check the status of the PostGreSQL DB and connect to it
   # oc run pg-check --image=postgres:15 --restart=Never -- sleep 3600
@@ -2755,9 +3538,97 @@ function create_postgresql_db() {
   # psql -h <postgresql_svc> -U <postgres_user> -d <database_name> // password is asked
   # \q to quit
 
-  trace_out 3 create_postgresql_db
+  trace_out 3 create_postgres_db
 }
 
+################################################
+# Create a PostGreSQL DB
+# @param 1: postgresql cluster name
+# @param 2: postgresql database name
+# @param 3: postgresql database username
+# @param 4: postgresql database password
+# @param 5: postgresql secret name
+# @param 6: postgresql database description
+# @param 7: namespace
+# @param 8: working directory
+# 
+function create_edb_postgres_db() {
+  trace_in 3 create_edb_postgres_db
+
+  local lf_in_cluster_name=$1
+  local lf_in_db_name=$2
+  local lf_in_db_username=$3
+  local lf_in_db_password=$4
+  local lf_in_secret_name=$5
+  local lf_in_db_description=$6
+  local lf_in_namespace=$7
+  local lf_in_workdir=$8
+
+  check_directory_exist_create "${lf_in_workdir}"
+
+  create_project "$lf_in_namespace" "PostGreSQL" "PostGreSQL DB namespace"
+
+  # Create a PostGreSQL DB secret
+  local lf_username=$(echo -n "${lf_in_db_username}" | base64 -w0)
+  local lf_password=$(echo -n "${lf_in_db_password}" | base64 -w0)
+  local lf_secret_type="Opaque"
+
+  export MY_SECRET_NAME=$lf_in_secret_name
+  export MY_PROJECT=$lf_in_namespace
+  export MY_SECRET_TYPE=$lf_secret_type
+  export MY_USERNAME=$lf_username
+  export MY_PASSWORD=$lf_password
+  
+  local lf_type="Secret"
+  local lf_cr_name="${lf_in_secret_name}"
+  local lf_source_directory="${MY_RESOURCESDIR}"
+  local lf_target_directory="${lf_in_workdir}"
+  local lf_yaml_file="secret.yaml"
+  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
+  unset MY_SECRET_NAME MY_PROJECT MY_SECRET_TYPE MY_USERNAME MY_PASSWORD
+
+  # PostGreSQL DB
+  export VAR_POSTGRES_CLUSTER="${lf_in_cluster_name}"
+  export VAR_POSTGRES_DATABASE="${lf_in_db_name}"
+  export VAR_POSTGRES_USER="${lf_in_db_username}"
+  export VAR_POSTGRES_SECRET="${lf_in_secret_name}"
+  export VAR_POSTGRES_DATABASE_DESCRIPTION="${lf_in_db_description}"
+  export VAR_POSTGRES_NAMESPACE=$lf_in_namespace
+
+  # the following command to be used with ibm postgres
+  # export VAR_POSTGRES_IMAGE_NAME=$(oc get packagemanifests -n $MY_CATALOGSOURCES_NAMESPACE --selector=$MY_POSTGRES_CATALOGSOURCE_NAME -o json | jq --arg channel "$MY_POSTGRES_CHL" '.items[].status.channels[] | select(.name == $channel)' | jq -r '.currentCSVDesc.relatedImages[]   | select(startswith("icr.io/cpopen/edb/postgresql:"))' | sort -V | tail -n 1)
+
+  # and this with EDB Postgres
+  export VAR_POSTGRES_IMAGE_NAME=$(oc get packagemanifests -n $MY_CATALOGSOURCES_NAMESPACE --selector=$MY_POSTGRES_CATALOGSOURCE_NAME -o json | jq --arg channel "$MY_POSTGRES_CHL" '.items[].status.channels[] | select(.name == $channel)' | jq -r '.currentCSVDesc.relatedImages[]')
+
+  local lf_type="Cluster"
+  local lf_cr_name="${lf_in_cluster_name}"
+  local lf_source_directory="${MY_RESOURCESDIR}"
+  local lf_target_directory="${lf_in_workdir}"
+  local lf_yaml_file="edb-postgres-cluster.yaml"
+  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
+  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
+  unset VAR_POSTGRES_CLUSTER VAR_POSTGRES_DATABASE VAR_POSTGRES_USER VAR_POSTGRES_SECRET VAR_POSTGRES_DATABASE_DESCRIPTION VAR_POSTGRES_IMAGE_NAME
+
+  #local lf_cr_name=$(oc -n $lf_in_namespace get $lf_type -o json | jq -r --arg my_resource "$lf_cr_name" '.items[0].metadata | select (.name | contains ($my_resource)).name')
+  #local lf_cr_name=$(oc -n $lf_in_namespace get $lf_type -o jsonpath="{.items[0].metadata.name}")
+  local lf_path='{.status.conditions[?(@.type=="Ready")].status}'
+  local lf_state="True"
+  decho 3 "wait_for_state \"$lf_type $lf_cr_name is $lf_state\" \"$lf_state\" \"oc -n $lf_in_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'\""
+  wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $lf_in_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
+
+  # Authorize superuser access
+  oc -n $lf_in_namespace patch $lf_type $lf_cr_name --type=merge -p '{"spec":{"enableSuperuserAccess":true}}' | awk '{printf "%*s%s\n", NR * $SC_SPACES_COUNTER, "", $0}'
+
+  # Here after how to check the status of the PostGreSQL DB and connect to it
+  # oc run pg-check --image=postgres:15 --restart=Never -- sleep 3600
+  # oc exec -it pg-check -- bash
+  # psql -h <postgresql_svc> -U <postgres_user> -d <database_name> // password is asked
+  # \q to quit
+
+  trace_out 3 create_edb_postgres_db
+}
 
 ################################################
 # Display information to access CP4I
@@ -2808,7 +3679,7 @@ function display_access_info() {
     lf_gtw_url=$(oc -n $MY_OC_PROJECT get GatewayCluster -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].status.endpoints[?(@.name=="gateway")].uri}')
     mylog info "APIC Gateway endpoint: ${lf_gtw_url}"
     lf_gtw_webconsole_url=$(oc -n $MY_OC_PROJECT get Route ${MY_APIC_INSTANCE_NAME}-gw-webconsole -o=jsonpath='{.spec.host}')
-    mylog info "APIC Gateway web console endpoint: ${lf_gtw_webconsole_url}"
+    mylog info "APIC Gateway web console endpoint: https://${lf_gtw_webconsole_url}"
     echo "<DT><A HREF=\"https://${lf_gtw_webconsole_url}\">APIC Gateway Web Console</A>" >> ${MY_WORKINGDIR}/bookmarks.html
     lf_apic_gtw_admin_pwd_secret_name=$(oc -n $MY_OC_PROJECT get GatewayCluster -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].spec.adminUser.secretName}')
     lf_cm_admin_pwd=$(oc -n $MY_OC_PROJECT get secret ${lf_apic_gtw_admin_pwd_secret_name} -o jsonpath={.data.password} | base64 -d)
@@ -2891,7 +3762,7 @@ function display_access_info() {
     fi
     lf_mq_admin_url=$(oc -n $MY_OC_PROJECT get QueueManager $MY_MQ_INSTANCE_NAME -o jsonpath='{.status.adminUiUrl}')
     mylog info "MQ Management Console : ${lf_mq_admin_url}"
-    echo  "<DT><A HREF=\"https://${lf_mq_admin_url}\">MQ Management Console</A>" >> ${MY_WORKINGDIR}/bookmarks.html
+    echo  "<DT><A HREF=\"${lf_mq_admin_url}\">MQ Management Console</A>" >> ${MY_WORKINGDIR}/bookmarks.html
   fi
 
   local lf_was_liberty_app_demo_url
@@ -2908,10 +3779,10 @@ function display_access_info() {
     echo "<DT><A HREF=\"https://${lf_licensing_service_url}\">Licensing Service</A>" >> ${MY_WORKINGDIR}/bookmarks.html
     lf_licensing_secret_token=$(oc -n ${MY_LICENSE_SERVICE_NAMESPACE} get secret ibm-licensing-token -o jsonpath='{.data.token}' | base64 -d)
     mylog info "Licensing service token: ${lf_licensing_secret_token}"
-    lf_licensing_service_reporter_url=$(oc -n ${MY_LICENSE_SERVICE_NAMESPACE} get Route ibm-lsr-console -o=jsonpath='{.status.ingress[0].host}')
+    lf_licensing_service_reporter_url=$(oc -n ${MY_LICENSE_SERVICE_REPORTER_NAMESPACE} get Route ibm-lsr-console -o=jsonpath='{.status.ingress[0].host}')
     mylog info "Licensing service reporter console endpoint: https://${lf_licensing_service_reporter_url}/license-service-reporter/"
     echo "<DT><A HREF=\"https://${lf_licensing_service_reporter_url}/license-service-reporter/\">Licensing Service Reporter</A>" >> ${MY_WORKINGDIR}/bookmarks.html
-    lf_licensing_reporter_password=$(oc -n ${MY_LICENSE_SERVICE_NAMESPACE} get secret ibm-license-service-reporter-credentials -o jsonpath='{.data.password}' | base64 -d)
+    lf_licensing_reporter_password=$(oc -n ${MY_LICENSE_SERVICE_REPORTER_NAMESPACE} get secret ibm-license-service-reporter-credentials -o jsonpath='{.data.password}' | base64 -d)
     mylog info "Licensing service reporter credential: license-administrator/${lf_licensing_reporter_password}"
   fi
 
@@ -2977,6 +3848,7 @@ function install_part() {
   install_oadp
   install_gitops
   install_pipelines
+  # Need to executed before install_logging_loki (important when using call function)
   install_cluster_observability
   install_logging_loki
   
@@ -3005,15 +3877,16 @@ function install_part() {
   install_es
   install_eem
   install_egw
-  #create_keycloak_client
-  install_ep
-  install_flink
+  # https://ibm.github.io/event-automation/ep/installing/overview/, there is an installation order, flink then event processing
+  # so we created a function to call them in the right order
+  install_flink_ep
+
   install_hsts
   install_mq
   
   install_instana
   
-  #install_postgresql
+  install_postgresql
   
   install_apic_graphql
 
@@ -3067,7 +3940,7 @@ function test_keycloak() {
 
   # Start installation capabilities
   install_postgresql
-  create_postgresql_db "keycloak-postgresql-cluster" "keycloak-db" "keycloak-pg-user" "keycloak-pg-password" "keycloak-pg-secret"
+  create_edb_postgres_db "keycloak-postgresql-cluster" "keycloak-db" "keycloak-pg-user" "keycloak-pg-password" "keycloak-pg-secret" "keycloak pg database" $MY_KEYCLOAK_NAMESPACE $lf_working_directory
   install_keycloak
 
   # create keycloak tls secret
@@ -3117,83 +3990,24 @@ function test_keycloak() {
 }
 
 ################################################
-# Keycloak: Get an Admin Access Token
-function get_access_token() {
-  trace_in 3 get_access_token
+# ephemeral function to test some features
+# here we will test keycloak configuration
+# which needs :
+# - installation of keycloak operator and operand
+# - installation of PostgreSQL operator and creation of a database
+# - setting up TLS Certificate and associated keys
+#
+function test_edb_postgres() {
+  trace_in 3 test_edb_postgres
 
-  local lf_keycloak_admin
-  local lf_keycloak_admin_password
-  local lf_keycloak_host
-  local lf_keycloak_access_token
-  
-  # get keycloak infos
-  lf_keycloak_admin=$(oc -n $MY_COMMONSERVICES_NAMESPACE get secret cs-keycloak-initial-admin -o jsonpath='{.data.username}' | base64 --decode)
-  lf_keycloak_admin_password=$(oc -n $MY_COMMONSERVICES_NAMESPACE get secret cs-keycloak-initial-admin -o jsonpath='{.data.password}' | base64 --decode)
-  lf_keycloak_host=$(oc -n $MY_COMMONSERVICES_NAMESPACE get route keycloak -o jsonpath='{.spec.host}')
-
-  local lf_keycloak_access_token=$(curl -X POST "https://${lf_keycloak_host}/realms/master/protocol/openid-connect/token" \
-                                        -H "Content-Type: application/x-www-form-urlencoded" \
-                                        -d "username=${lf_keycloak_admin}" \
-                                        -d "password=${lf_keycloak_admin_password}" \
-                                        -d "grant_type=password" \
-                                        -d "client_id=admin-cli" 2> /dev/null | jq -r .access_token)
-
-  decho 3 "lf_keycloak_admin=$lf_keycloak_admin|lf_keycloak_admin_password=$lf_keycloak_admin_password|lf_keycloak_access_token=$lf_keycloak_access_token"
-  export MY_ACCESS_TOKEN=$lf_keycloak_access_token  
-  trace_out 3 get_access_token
-}
-
-################################################
-# Keycloak: Get resources
-function get_keycloak_resources() {
-  trace_in 3 get_keycloak_resources
-
-  local lf_in_keycloak_realm=$1
-
-  local lf_working_directory="${MY_KEYCLOAK_WORKINGDIR}${lf_in_keycloak_realm}/"
+  local lf_working_directory="${MY_EDB_POSTGRES_WORKINGDIR}"
   check_directory_exist_create "${lf_working_directory}"
 
-  local lf_keycloak_admin
-  local lf_keycloak_admin_password
-  local lf_keycloak_host
-  local lf_keycloak_access_token
-  local lf_keycloak_refresh_token
-  local lf_keycloak_client
-  
-  # get keycloak infos
-  lf_keycloak_admin=$(oc -n $MY_COMMONSERVICES_NAMESPACE get secret cs-keycloak-initial-admin -o jsonpath='{.data.username}' | base64 --decode)
-  lf_keycloak_admin_password=$(oc -n $MY_COMMONSERVICES_NAMESPACE get secret cs-keycloak-initial-admin -o jsonpath='{.data.password}' | base64 --decode)
-  lf_keycloak_host=$(oc -n $MY_COMMONSERVICES_NAMESPACE get route keycloak -o jsonpath='{.spec.host}')
-
-  local lf_keycloak_access_token=$(curl -X POST "https://${lf_keycloak_host}/realms/master/protocol/openid-connect/token" \
-                                        -H "Content-Type: application/x-www-form-urlencoded" \
-                                        -d "username=${lf_keycloak_admin}" \
-                                        -d "password=${lf_keycloak_admin_password}" \
-                                        -d "grant_type=password" \
-                                        -d "client_id=admin-cli" 2> /dev/null | jq -r .access_token)
-
-# Get Realms resources
-  curl -s -X GET "https://${lf_keycloak_host}/admin/realms" \
-       -H "Authorization: Bearer $lf_keycloak_access_token" \
-       -H "Content-Type: application/json" | jq  > "${lf_working_directory}realms.json"
-
-  curl -s -X GET "https://${lf_keycloak_host}/admin/realms/${lf_in_keycloak_realm}" \
-       -H "Authorization: Bearer $lf_keycloak_access_token" \
-       -H "Content-Type: application/json" | jq  > "${lf_working_directory}${lf_in_keycloak_realm}.json"
-
-  local lf_file="${MY_RESOURCESDIR}keycloak-resources.txt"
-  while IFS= read -r line || [[ -n $line ]]; do
-    # Trim leading and trailing whitespace
-    local lf_trimmed_line=$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-
-    # Replace '/' with '_' to create the filename
-    local lf_filename=$(echo "$lf_trimmed_line" | tr '/' '_')
-    curl -s -X GET "https://${lf_keycloak_host}/admin/realms/${lf_in_keycloak_realm}/$lf_trimmed_line" \
-         -H "Authorization: Bearer $lf_keycloak_access_token" \
-         -H "Content-Type: application/json" | jq  > "${lf_working_directory}${lf_filename}.json"
-  done < "$lf_file"
-
-  trace_out 3 get_keycloak_resources
+  # Start installation capabilities
+  #install_postgresql
+  create_edb_postgres_db "test-pg-cluster" "test-pg-db" "test-pg-user" "test-pg-password" "test-pg-secret" "test pg database" $MY_EDB_POSTGRES_NAMESPACE $lf_working_directory
+ 
+  trace_out 3 test_edb_postgres
 }
 
 ################################################
@@ -3240,7 +4054,7 @@ function process_calls() {
         if [ "$lf_func" = "main" ] || [ "$lf_func" = "process_calls" ]; then
           mylog error "Functions 'main', 'process_calls' cannot be called."
           trace_out 3 process_calls
-          return 1
+          exit  1
         fi
         #install_needed_resources_part
         $lf_func $lf_params
@@ -3250,7 +4064,7 @@ function process_calls() {
         mylog info "Available functions are:"
         mylog info "$lf_list"
         trace_out 3 process_calls
-        return 1
+        exit  1
       fi
     done
 
@@ -3270,7 +4084,7 @@ function main() {
 
   if [[ $# -eq 0 ]]; then
     mylog error "No arguments provided. Use --all or --call function_name parameters, function_name parameters, ...."
-    return 1
+    exit  1
   fi
 
   # Main script logic
@@ -3295,7 +4109,7 @@ function main() {
       *)
         mylog error "Invalid option '$1'. Use --all or --call function_name parameters, function_name parameters, ...."
         trace_out 3 main
-        return 1
+        exit  1
         ;;
       esac
   done
@@ -3308,7 +4122,7 @@ function main() {
     else
       mylog error "No function to call. Use --call function_name parameters, function_name parameters, ...."
       trace_out 3 main
-      return 1
+      exit  1
     fi
   fi
 

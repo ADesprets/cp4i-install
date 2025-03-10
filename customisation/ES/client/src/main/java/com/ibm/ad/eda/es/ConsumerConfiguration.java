@@ -46,10 +46,11 @@ public class ConsumerConfiguration {
         // username=\"token\" password=\"%s\";", args.apikey));
 
         ClassLoader classLoader = ConsumerConfiguration.class.getClassLoader();
-        File certPemFile = new File(classLoader.getResource("cp4i-es-cert.pem").getFile());
+        File certPemFile = new File(classLoader.getResource("es-cert.p12").getFile());
 
         configs.put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, certPemFile.getAbsolutePath());
-        configs.put(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PEM");
+        configs.put(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, "SsmWqwkTMwtB");
+        configs.put(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PKCS12");
         configs.put(SslConfigs.SSL_PROTOCOL_CONFIG, "TLSv1.2");
         configs.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SASL_SSL");
         // configs.put(SaslConfigs.SASL_MECHANISM, "OAUTHBEARER");
@@ -58,7 +59,7 @@ public class ConsumerConfiguration {
         // "org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required
         // grant_type=\"urn:ibm:params:oauth:grant-type:apikey\" apikey=\"%s\";",
         // args.apikey));
-        String saslJaasConfig = "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"es-admin\" password=\"RPMF7RjbNr8q2WHVqnW7JhcCiZSK0Aag\";";
+        String saslJaasConfig = "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"es-admin\" password=\"QjsGoBIKQIuIOsdYkUj2dRsbH9vEY7m4\";";
         configs.put(SaslConfigs.SASL_JAAS_CONFIG, saslJaasConfig);
         // configs.put(SaslConfigs.SASL_JAAS_CONFIG,
         // String.format("org.apache.kafka.common.security.plain.PlainLoginModule

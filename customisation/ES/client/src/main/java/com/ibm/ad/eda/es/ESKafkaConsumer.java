@@ -28,6 +28,12 @@ import org.apache.kafka.common.errors.WakeupException;
  * This is a very simple kafka consumer for an Event Streams instance. It uses
  * an apache kafka consumer client to read and print messages. The consumer runs
  * until the program is stopped with a ctrl-C.
+ * To run this class, you will need to set: 
+ * - The certificate es-cert.p12 located in customisation\ES\client\src\main\resources\es-cert.p12
+ * copy D:\CurrentProjects\CP4I\Installation\cp4i-install\tmp\es-cert.p12 D:\CurrentProjects\CP4I\Installation\cp4i-install\customisation\ES\client\src\main\resources\es-cert.p12
+ * - The trust store password defined in ConsumerConfiguration (line 52)
+ * - The credentials defined in ConsumerConfiguration (line 62)
+ * - The broker host defined in launch.json
  */
 public class ESKafkaConsumer {
     // When using a kafka consumer client, we must close the client when we are done

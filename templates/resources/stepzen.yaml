@@ -6,7 +6,7 @@ metadata:
 spec:
   license:
     accept: true
-  controlDatabaseSecret: ${MY_POSTGRESQL_DSN_PASSWORD}
+  controlDatabaseSecret: ${MY_POSTGRES_DSN_PASSWORD}
 #  imagePullSecrets:
 #    - ibm-entitlement-key  
   graphServer:

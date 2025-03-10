@@ -1,0 +1,24 @@
+apiVersion: events.ibm.com/v1beta1
+kind: EventProcessing
+metadata:
+  name: ${MY_EP_INSTANCE_NAME}
+  namespace: ${MY_OC_PROJECT}
+spec:
+  license:
+    accept: true
+    license: $MY_EP_LIC
+    use: $MY_EP_LIC_USAGE
+  flink:
+    endpoint: ${MY_FLINK_INSTANCE_NAME}-rest.${MY_OC_PROJECT}.svc.cluster.local:8081
+  authoring:
+    authConfig:
+      authType: $MY_EP_AUTH_TYPE
+      oidcConfig:
+        clientIDKey: client-id
+        clientSecretKey: client-secret
+        discovery: true
+        secretName: $MY_EP_KEYCLOAK_SECRET
+        site: https://${VAR_KEYCLOAK_HOST}/realms/${MY_KEYCLOAK_CP4I_REALM}
+    storage:
+      type: persistent-claim
+      storageClassName: $MY_FILE_STORAGE_CLASS

@@ -6,11 +6,26 @@
     "configurations": [
         {
             "type": "java",
+            "name": "SampleApplication",
+            "request": "launch",
+            "mainClass": "com.ibm.ad.client.SampleApplication",
+            "projectName": "asyncapi"
+        },
+        {
+            "type": "java",
             "name": "ESKafkaConsumer",
             "request": "launch",
             "mainClass": "com.ibm.ad.eda.es.ESKafkaConsumer",
             "projectName": "esclient",
-            "args": "-a apikey -b cp4i-es-kafka-bootstrap-cp4i.apps.66d5d603d361e1cd7ea1cfc0.ocp.techzone.ibm.com:443 -t LH.ORDERS -g cg1 -c true -l true -o latest"
+            "args": "-a apikey -b cp4i-es-kafka-bootstrap-cp4i.apps.67ae0126c733f6fb2846efe2.eu1.techzone.ibm.com:443 -t LH.ORDERS -g cg1 -c true -l true -o latest"
+        },
+        {
+            "type": "java",
+            "name": "ESKafkaProducer",
+            "request": "launch",
+            "mainClass": "com.ibm.ad.eda.es.ESKafkaProducer",
+            "projectName": "esclient",
+            "args": "-a apikey -b cp4i-es-kafka-bootstrap-cp4i.apps.67ae0126c733f6fb2846efe2.eu1.techzone.ibm.com:443 -t LH.ORDERS -g cg1 -c true -l true -o latest"
         }
     ]
 }

@@ -21,8 +21,8 @@ function create_ca_tls () {
   # Result: Two PEM files are created
   #   - ca-crt.pem : certificate file, which can be publicly distributed. 
   #   - ca-key.pem : the paired private key file, It should be kept securely.
-  openssl genrsa -des3 -passout file:${PASSPHRASE_FILE} -out "${sc_ca_crtdir}ca-key.pem" ${KEY_SIZE}
-  openssl req -new -x509 -days ${VALIDITY_DAYS} -passin file:${PASSPHRASE_FILE} -subj "${SUBJECT}" -key "${sc_ca_crtdir}ca-key.pem" -out "${sc_ca_crtdir}ca-crt.pem"
+  openssl genrsa -des3 -passout file:${PASSPHRASE_FILE} -out "${sc_qmgr_ca_crtdir}ca-key.pem" ${KEY_SIZE}
+  openssl req -new -x509 -days ${VALIDITY_DAYS} -passin file:${PASSPHRASE_FILE} -subj "${SUBJECT}" -key "${sc_qmgr_ca_crtdir}ca-key.pem" -out "${sc_qmgr_ca_crtdir}ca-crt.pem"
 
   trace_out 3 create_ca_tls
 }
@@ -33,16 +33,16 @@ function create_ca_tls () {
 function create_qmgr_ca_tls () {
   trace_in 3 create_qmgr_ca_tls
 
-  local lf_crt_file="${sc_srv_crtdir}qmgr-crt.pem"
-  local lf_csr_file="${sc_srv_crtdir}qmgr-req.pem"
-  local lf_key_file="${sc_srv_crtdir}qmgr-key.pem"
+  local lf_crt_file="${sc_qmgr_srv_crtdir}qmgr-crt.pem"
+  local lf_csr_file="${sc_qmgr_srv_crtdir}qmgr-req.pem"
+  local lf_key_file="${sc_qmgr_srv_crtdir}qmgr-key.pem"
   local lf_subject=${SUBJECT_SRV}
   
   # Generate the CSR for the enity (qmgr|client)
   openssl req -new -newkey rsa:${KEY_SIZE} -nodes -passout file:${PASSPHRASE_FILE} -subj "${lf_subject}" -keyout ${lf_key_file} -out ${lf_csr_file}
 
   # Generate the entity (qmgr|client) certificate signed by the CA
-  openssl x509 -req -days ${VALIDITY_DAYS} -passin file:${PASSPHRASE_FILE} -in ${lf_csr_file} -out ${lf_crt_file} -CA "${sc_ca_crtdir}ca-crt.pem" -CAkey "${sc_ca_crtdir}ca-key.pem"
+  openssl x509 -req -days ${VALIDITY_DAYS} -passin file:${PASSPHRASE_FILE} -in ${lf_csr_file} -out ${lf_crt_file} -CA "${sc_qmgr_ca_crtdir}ca-crt.pem" -CAkey "${sc_qmgr_ca_crtdir}ca-key.pem"
 
   trace_out 3 create_qmgr_ca_tls
 }
@@ -56,8 +56,8 @@ function create_clnt_kdb () {
   mylog "info" "Creating   : client key database for $sc_clnt to use with MQSSLKEYR env variable."
 
   case $KEYDB_TYPE in
-    cms)  local lf_clnt_keydb="${sc_clnt_crtdir}${sc_clnt}-keystore.kdb";;
-    pkcs12) local lf_clnt_keydb="${sc_clnt_crtdir}${sc_clnt}-keystore.p12";;
+    cms)  local lf_clnt_keydb="${sc_qmgr_clnt_crtdir}${sc_clnt}-keystore.kdb";;
+    pkcs12) local lf_clnt_keydb="${sc_qmgr_clnt_crtdir}${sc_clnt}-keystore.p12";;
   esac  
 
   # Create the client1 key database:
@@ -74,11 +74,11 @@ function add_qmgr_crt_2_clnt_kdb () {
 
   mylog "info" "Adding     : qmgr certificate to the client key database"
 
-  local lf_srv_crt="${sc_srv_crtdir}qmgr-crt.pem"
+  local lf_srv_crt="${sc_qmgr_srv_crtdir}qmgr-crt.pem"
 
   case $KEYDB_TYPE in
-    cms)  local lf_clnt_keydb="${sc_clnt_crtdir}${sc_clnt}-keystore.kdb";;
-    pkcs12) local lf_clnt_keydb="${sc_clnt_crtdir}${sc_clnt}-keystore.p12";;
+    cms)  local lf_clnt_keydb="${sc_qmgr_clnt_crtdir}${sc_clnt}-keystore.kdb";;
+    pkcs12) local lf_clnt_keydb="${sc_qmgr_clnt_crtdir}${sc_clnt}-keystore.p12";;
   esac  
 
   #decho 3 "lf_clnt_keydb=$lf_clnt_keydb|lf_srv_crt=$lf_srv_crt"
@@ -105,11 +105,11 @@ function add_qmgr_crt_2_clnt_kdb () {
 function add_ca_crt_2_clnt_kdb () {
   trace_in 3 add_ca_crt_2_clnt_kdb
 
-  local lf_ca_crt="${sc_ca_crtdir}ca-crt.pem"
+  local lf_ca_crt="${sc_qmgr_ca_crtdir}ca-crt.pem"
 
   case $KEYDB_TYPE in
-    cms)  local lf_clnt_keydb="${sc_clnt_crtdir}${sc_clnt}-keystore.kdb";;
-    pkcs12) local lf_clnt_keydb="${sc_clnt_crtdir}${sc_clnt}-keystore.p12";;
+    cms)  local lf_clnt_keydb="${sc_qmgr_clnt_crtdir}${sc_clnt}-keystore.kdb";;
+    pkcs12) local lf_clnt_keydb="${sc_qmgr_clnt_crtdir}${sc_clnt}-keystore.p12";;
   esac  
                                         
   # In order for the cert validation chain to work, we also import the CA cert. 
@@ -167,9 +167,9 @@ function create_oc_qmgr () {
   
   local lf_tmpl_file="${TMPLYAMLDIR}qmgr_tmpl-v2.yaml"
   local lf_gen_file="${sc_generatedyamldir}qmgr.yaml"
-  local lf_srv_crt="${sc_srv_crtdir}qmgr-crt.pem"
-  local lf_srv_key="${sc_srv_crtdir}qmgr-key.pem"
-  local lf_ca_crt="${sc_ca_crtdir}ca-crt.pem"	
+  local lf_srv_crt="${sc_qmgr_srv_crtdir}qmgr-crt.pem"
+  local lf_srv_key="${sc_qmgr_srv_crtdir}qmgr-key.pem"
+  local lf_ca_crt="${sc_qmgr_ca_crtdir}ca-crt.pem"	
 
   export B64_CA_CRT=$(encode_b64_file $lf_ca_crt)  
   export B64_QMGR_CRT=$(encode_b64_file $lf_srv_crt)
@@ -228,7 +228,7 @@ function create_helper_scripts () {
   mylog "info" "Helper scripts in ${sc_generatedshdir} directory"
 
   export MQ_GEN_CCDT_DIR=${sc_generatedjsondir}
-  export MQ_GEN_KDB=${sc_clnt_crtdir}${sc_clnt}-keystore.kdb
+  export MQ_GEN_KDB=${sc_qmgr_clnt_crtdir}${sc_clnt}-keystore.kdb
 
   adapt_file ${MQ_TMPLSHDIR} ${sc_generatedshdir} run-qm-client-put.sh
   adapt_file ${MQ_TMPLSHDIR} ${sc_generatedshdir} run-qm-client-browse.sh
@@ -281,25 +281,25 @@ export CLNT1="${sc_clnt}"
 read_config_file "${CONFIGDIR}mq.properties"
 
 check_directory_exist_create  "${MY_MQ_GEN_CUSTOMDIR}generated/${QMGR}"
-sc_generateddir="${MY_MQ_GEN_CUSTOMDIR}generated/${QMGR}/"
+sc_qmgr_custom_gendir="${MY_MQ_GEN_CUSTOMDIR}generated/${QMGR}/"
 
-check_directory_exist_create  "${sc_generateddir}json"
-sc_generatedjsondir="${sc_generateddir}json/"
+check_directory_exist_create  "${sc_qmgr_custom_gendir}json"
+sc_generatedjsondir="${sc_qmgr_custom_gendir}json/"
 
-check_directory_exist_create  "${sc_generateddir}sh"
-sc_generatedshdir="${sc_generateddir}sh/"
+check_directory_exist_create  "${sc_qmgr_custom_gendir}sh"
+sc_generatedshdir="${sc_qmgr_custom_gendir}sh/"
 
-check_directory_exist_create  "${sc_generateddir}yaml"
-sc_generatedyamldir="${sc_generateddir}yaml/"
+check_directory_exist_create  "${sc_qmgr_custom_gendir}yaml"
+sc_generatedyamldir="${sc_qmgr_custom_gendir}yaml/"
 
-check_directory_exist_create  "${sc_generateddir}tls/ca"
-sc_ca_crtdir="${sc_generateddir}tls/ca/"
+check_directory_exist_create  "${sc_qmgr_custom_gendir}tls/ca"
+sc_qmgr_ca_crtdir="${sc_qmgr_custom_gendir}tls/ca/"
 
-check_directory_exist_create  "${sc_generateddir}tls/${sc_clnt}"
-sc_clnt_crtdir="${sc_generateddir}tls/${sc_clnt}/"
+check_directory_exist_create  "${sc_qmgr_custom_gendir}tls/${sc_clnt}"
+sc_qmgr_clnt_crtdir="${sc_qmgr_custom_gendir}tls/${sc_clnt}/"
 
-check_directory_exist_create  "${sc_generateddir}tls/qmgr"
-sc_srv_crtdir="${sc_generateddir}tls/qmgr/"
+check_directory_exist_create  "${sc_qmgr_custom_gendir}tls/qmgr"
+sc_qmgr_srv_crtdir="${sc_qmgr_custom_gendir}tls/qmgr/"
 
 # CCDT tmpl file
 sc_ccdt_tmpl_file="${TMPLJSONDIR}ccdt_tmpl.json";

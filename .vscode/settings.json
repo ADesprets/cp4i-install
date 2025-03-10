@@ -5,5 +5,10 @@
             "command": "liberty:dev",
             "debug": false
         }
-    ]
+    ],
+    {
+        "java.project.referencedLibraries": [
+            "customisation/ES/client/lib/kafka-clients-3.4.0.jar"
+        ]
+    }
 }

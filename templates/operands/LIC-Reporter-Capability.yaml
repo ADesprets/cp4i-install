@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/name: ibmlicenseservicereporter
     app.kubernetes.io/part-of: ibm-license-service-reporter-operator
   name: ${MY_LICENSE_SERVICE_REPORTER_INSTANCE_NAME}
-  namespace: ${MY_LICENSE_SERVICE_NAMESPACE}
+  namespace: ${MY_LICENSE_SERVICE_REPORTER_NAMESPACE}
 spec:
   license:
     accept: true

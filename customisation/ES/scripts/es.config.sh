@@ -15,9 +15,6 @@ read_config_file "${scriptdir}properties/cp4i.properties"
 
 read_config_file "${MY_ES_GEN_CUSTOMDIR}config/es.properties"
 
-echo "es_project: $es_project"
-echo "MY_OC_PROJECT: $MY_OC_PROJECT"
-
 # Creation of the Topics used for taxi demo
 SECONDS=0
 mylog info "Creating topics"
@@ -62,8 +59,8 @@ check_create_oc_yaml "KafkaConnect" "${MY_ES_KAFKA_CONNECT_INSTANCE_NAME}" "${MY
 
 mylog info "Create Kafka Connectors for datagen and MQ connectors"
 check_create_oc_yaml "KafkaConnector" "datagen" "${MY_ES_SCRIPTDIR}config/" "${MY_ES_GEN_CUSTOMDIR}config/" "KConnector_datagen.yaml"
-check_create_oc_yaml "KafkaConnector" "mqsync" "${MY_ES_SCRIPTDIR}config/" "${MY_ES_GEN_CUSTOMDIR}config/" "KConnector_MQ_sink.yaml"
-check_create_oc_yaml "KafkaConnector" "mqsource" "${MY_ES_SCRIPTDIR}config/" "${MY_ES_GEN_CUSTOMDIR}config/" "KConnector_MQ_source.yaml"
+# check_create_oc_yaml "KafkaConnector" "mqsync" "${MY_ES_SCRIPTDIR}config/" "${MY_ES_GEN_CUSTOMDIR}config/" "KConnector_MQ_sink.yaml"
+# check_create_oc_yaml "KafkaConnector" "mqsource" "${MY_ES_SCRIPTDIR}config/" "${MY_ES_GEN_CUSTOMDIR}config/" "KConnector_MQ_source.yaml"
 
 duration=$SECONDS
 mylog info "Configuration for EventStreams took $duration seconds to execute." 1>&2

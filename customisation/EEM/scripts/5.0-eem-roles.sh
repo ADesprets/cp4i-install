@@ -1,7 +1,7 @@
 
 . ./env.sh
 
-roles='{\"mappings\":[ {\"id\":\"admin\",\"roles\":[\"admin\",\"author\"]},  {\"id\":\"eventendpointmanagement-admin\",\"roles\":[\"admin\",\"author\"]}, {\"id\":\"eem-admin\",\"roles\":[\"admin\"]}, {\"id\":\"integration-admin\",\"roles\":[\"admin\",\"author\"]}, {\"id\":\"eventendpointmanagement-viewer\",\"roles\":[\"viewer\"]}, {\"id\":\"eem-user\",\"roles\":[\"viewer\"]}, {\"id\":\"eem-author\",\"roles\":[\"author\"]},  {\"id\":\"author\",\"roles\":[\"author\"]} ]}'
+roles='{\"mappings\":[ {\"id\":\"admin\",\"roles\":[\"admin\",\"author\"]},  {\"id\":\"eventendpointmanagement-admin\",\"roles\":[\"admin\",\"author\"]}, {\"id\":\"eem-admin\",\"roles\":[\"admin\"]}, {\"id\":\"$MY_KEYCLOAK_CP4I_USERNAME\",\"roles\":[\"admin\",\"author\"]}, {\"id\":\"eventendpointmanagement-viewer\",\"roles\":[\"viewer\"]}, {\"id\":\"eem-user\",\"roles\":[\"viewer\"]}, {\"id\":\"eem-author\",\"roles\":[\"author\"]},  {\"id\":\"author\",\"roles\":[\"author\"]} ]}'
 
 secret_roles=$(oc get -n $NAMESPACE secret |grep ibm-eem-user-roles | awk '{ print $1 }')
 

@@ -10,7 +10,7 @@ spec:
 #    tlsSecret: ${MY_KEYCLOAK_TLS_SECRET}  # Secret managed by cert-manager
   db:
     vendor: postgres
-    host: ${MY_POSTGRESQL_HOSTNAME} # an example "${MY_POSTGRESQL_CLUSTER}-rw.${MY_POSTGRESQL_NAMESPACE}.svc.cluster.local"
+    host: ${MY_POSTGRES_HOSTNAME} # an example "${VAR_POSTGRES_CLUSTER}-rw.${MY_POSTGRES_NAMESPACE}.svc.cluster.local"
     usernameSecret:
       name: ${MY_KEYCLOAK_DB_SECRET}
       key: username

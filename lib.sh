@@ -312,52 +312,6 @@ function is_case_downloaded() {
   return $lf_res
 }
 
-############################################################
-# Check that the CR is newer than the CR file
-# Inputs :
-#  - Type of the custom resource
-#  - Custom resource
-#  - the file defining the custom resource
-#  - the namespace
-#  Returns 1 (if the cr is newer than the file) otherwise 0
-# @param 1:
-# @param 2:
-# @param 3:
-# @param 4:
-function is_cr_newer() {
-  trace_in 5 is_cr_newer
-  local lf_in_type=$1
-  local lf_in_customresource=$2
-  local lf_in_file=$3
-  local lf_in_namespace=$4
-  
-  decho 5 "lf_in_type=$lf_in_type|lf_in_customresource=$lf_in_customresource|lf_in_file=$lf_in_file|lf_in_namespace=$lf_in_namespace"
-
-  local lf_customresource_timestamp
-  local lf_file_timestamp
-  local lf_path="{.metadata.creationTimestamp}"
-  local lf_res
-
-  #oc -n $lf_in_namespace get $lf_in_type $lf_in_customresource -o jsonpath='$lf_path'| date -d - +%s
-  if [ -z "$lf_in_namespace" ]; then
-    lf_customresource_timestamp=$(oc get $lf_in_customresource -o json | jq -r '.metadata.creationTimestamp')
-  else
-    lf_customresource_timestamp=$(oc -n $lf_in_namespace get $lf_in_type $lf_in_customresource -o json | jq -r '.metadata.creationTimestamp')
-  fi
-
-  lf_customresource_timestamp=$(echo "$lf_customresource_timestamp" | date -d - +%s)
-  lf_file_timestamp=$(stat -c %Y $lf_in_file)
-
-  if [ $lf_customresource_timestamp -gt $lf_file_timestamp ]; then
-    lf_res=1
-  else
-    lf_res=0
-  fi
-
-  trace_out 5 is_cr_newer
-  return $lf_res
-}
-
 ################################################
 # Check that all required executables are installed
 # @param 1:
@@ -473,6 +427,7 @@ function check_exec_prereqs() {
   check_command_exist oc
   check_command_exist "oc ibm-pak"
   check_command_exist openssl
+  check_command_exist mvn
 
   if $MY_MQ_CUSTOM; then
     check_command_exist runmqakm
@@ -558,7 +513,7 @@ function wait_for_state() {
   local lf_current_time lf_elapsed_time lf_last_state lf_current_state lf_bullet
   local lf_bullets=('|' '/' '-' '\\')
 
-  mylog check "Checking $lf_in_what"
+  mylog check "Checking $lf_in_what with $lf_in_command"
   #mylog check "Checking $lf_in_what status until reaches value $lf_in_value with command $lf_in_command"
   lf_last_state=''
   while true; do
@@ -721,7 +676,7 @@ function check_create_oc_yaml() {
   local lf_in_target_directory="$4"
   local lf_in_yaml_file="$5"
 
-  local lf_newer lf_source_yaml_file lf_target_yaml_file lf_apply_cmd lf_delete_cmd
+  local lf_source_yaml_file lf_target_yaml_file lf_apply_cmd lf_delete_cmd
 
   lf_source_yaml_file="${lf_in_source_directory}${lf_in_yaml_file}"
   lf_target_yaml_file="${lf_in_target_directory}${lf_in_yaml_file}"
@@ -735,7 +690,9 @@ function check_create_oc_yaml() {
   append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
   prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
 
-  oc apply -f $lf_target_yaml_file || exit 1
+  if $MY_APPLY_FLAG; then 
+    oc apply -f $lf_target_yaml_file || exit 1
+  fi
 
   trace_out 3 check_create_oc_yaml
 }
@@ -853,6 +810,8 @@ function is_service_exposed() {
 
   lf_port_name=$(oc -n "${lf_in_namespace}" get service "${lf_in_service_name}" -o json | jq --argjson port "$lf_in_port" '.spec.ports[] | select(.nodePort == $port) |.name')
   decho 3 "lf_port_name=$lf_port_name"
+
+  # This fuction needed to be re-written. The oc expose function creates a route.
   
   if [ -z "$lf_port_name" ]; then
     lf_res=1
@@ -968,29 +927,29 @@ function expose_service_openldap() {
   lf_port0=$(oc -n ${lf_in_namespace} get service ${lf_in_name} -o jsonpath='{.spec.ports[0].nodePort}')
   lf_port1=$(oc -n ${lf_in_namespace} get service ${lf_in_name} -o jsonpath='{.spec.ports[1].nodePort}')
 
-  #mylog info "Service ${lf_in_name} using port ${lf_port0} is not exposed."
-  #oc -n ${lf_in_namespace} expose service ${lf_in_name} --name=openldap-external --port=${lf_port0}
+  mylog info "Expose service ${lf_in_name} using port ${lf_port0} to the route openldap-external-http."
+  oc -n ${lf_in_namespace} expose service ${lf_in_name} --name=openldap-external-http --port=${lf_port0}
 
-  #mylog info "Service ${lf_in_name} using port ${lf_port1} is not exposed."
-  #oc -n ${lf_in_namespace} expose service ${lf_in_name} --name=openldap-external --port=${lf_port1}
+  # mylog info "Expose service ${lf_in_name} using port ${lf_port1} to the route openldap-external-https."
+  # oc -n ${lf_in_namespace} expose service ${lf_in_name} --name=openldap-external-https --port=${lf_port1}
 
-  is_service_exposed "${lf_in_namespace}" "${lf_in_name}" "${lf_port0}"
-  if [ $? -eq 0 ]; then
-    mylog info "Service ${lf_in_name} using port ${lf_port0} is already exposed."
-  else
-    mylog info "Service ${lf_in_name} using port ${lf_port0} is not exposed."
-    oc -n ${lf_in_namespace} expose service ${lf_in_name} --name=openldap-external --port=${lf_port0}
-  fi
+  # is_service_exposed "${lf_in_namespace}" "${lf_in_name}" "${lf_port0}"
+  # if [ $? -eq 0 ]; then
+  #   mylog info "Service ${lf_in_name} using port ${lf_port0} is already exposed."
+  # else
+  #   mylog info "Service ${lf_in_name} using port ${lf_port0} is not exposed."
+  #   oc -n ${lf_in_namespace} expose service ${lf_in_name} --name=openldap-external --port=${lf_port0}
+  # fi
+# 
+  # is_service_exposed "${lf_in_namespace}" "${lf_in_name}" "${lf_port1}"
+  # if [ $? -eq 0 ]; then
+  #   mylog info "Service ${lf_in_name} using port ${lf_port1} is already exposed."
+  # else
+  #   mylog info "Service ${lf_in_name} using port ${lf_port1} is not exposed."
+  #   oc -n ${lf_in_namespace} expose service ${lf_in_name} --name=openldap-external --port=${lf_port1}
+  # fi
 
-  is_service_exposed "${lf_in_namespace}" "${lf_in_name}" "${lf_port1}"
-  if [ $? -eq 0 ]; then
-    mylog info "Service ${lf_in_name} using port ${lf_port1} is already exposed."
-  else
-    mylog info "Service ${lf_in_name} using port ${lf_port1} is not exposed."
-    oc -n ${lf_in_namespace} expose service ${lf_in_name} --name=openldap-external --port=${lf_port1}
-  fi
-
-  lf_hostname=$(oc -n ${lf_in_namespace} get route openldap-external -o jsonpath='{.spec.host}')
+  lf_hostname=$(oc -n ${lf_in_namespace} get route openldap-external-http -o jsonpath='{.spec.host}')
 
   # load users and groups into LDAP
   adapt_file "${MY_YAMLDIR}ldap/" "${MY_WORKINGDIR}" "ldap-users.ldif"
@@ -1060,11 +1019,14 @@ function create_project() {
     local lf_delete_cmd="oc delete -f ${lf_in_workingdir}project.yaml"
     append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
     prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
-    if ! oc apply -f "${lf_in_workingdir}project.yaml" ; then
-      unset MY_PROJECT MY_PROJECT_DISPLAYNAME MY_PROJECT_DESCRIPTION
-      trace_out 3 create_project
-      exit 1
-    fi
+    if $MY_APPLY_FLAG; then
+      oc apply -f "${lf_in_workingdir}project.yaml"
+      if [ $? -ne 0 ]; then 
+        unset MY_PROJECT MY_PROJECT_DISPLAYNAME MY_PROJECT_DESCRIPTION
+        trace_out 3 create_project
+       exit 1
+      fi
+    fi    
   fi
 
   unset MY_PROJECT MY_PROJECT_DISPLAYNAME MY_PROJECT_DESCRIPTION
@@ -1086,9 +1048,10 @@ function wait_for_resource() {
   local lf_resource=""
   seconds=0
   while [ -z "$lf_resource" ]; do
-    echo -ne "Timer: $seconds seconds | waiting for $lf_in_resource_name/$lf_in_type...\033[0K\r"
+    echo -ne "Timer: $seconds seconds | waiting for $lf_in_resource_name/$lf_in_type in project $lf_in_namespace...\033[0K\r"
     sleep 1
-    lf_resource=$(oc -n $lf_in_namespace get $lf_in_type -o json | jq -r --arg my_resource "$lf_in_resource_name" '.items[].metadata | select (.name | contains ($my_resource)).name')
+    #lf_resource=$(oc -n $lf_in_namespace get $lf_in_type -o json | jq -r --arg my_resource "$lf_in_resource_name" '.items[].metadata | select (.name | contains ($my_resource)).name')
+    lf_resource=$(oc -n $lf_in_namespace get $lf_in_type -o json | jq -r --arg my_resource "$lf_in_resource_name" '.items[].metadata | select (.name == $my_resource).name')
     seconds=$((seconds + 1))
   done
   echo 
@@ -1156,14 +1119,18 @@ function check_add_cs_ibm_pak() {
   # Getting the id of the catalogsource, using head -n 1 to get only one value in case of many
   lf_type="CatalogSource"
   decho 3 "lf_file=$lf_file|lf_display_name=$lf_display_name"
-  local lf_catalogsource=$(yq "select(.spec.displayName == \"$lf_display_name\") | .metadata.name" $lf_file | head -n 1)
+  #local lf_catalogsource=$(yq "select(.spec.displayName == \"$lf_display_name\") | .metadata.name" $lf_file | head -n 1)
+  local lf_catalogsource=$(yq -o=json ". | select(.spec.displayName == \"$lf_display_name\") | .metadata.name" "$lf_file")
+
   decho 3 "lf_catalogsource=$lf_catalogsource"
   export VAR_CATALOG_SOURCE=$lf_catalogsource
   local lf_apply_cmd="oc apply -f $lf_file"
   local lf_delete_cmd="oc delete -f $lf_file"
   append_to_file  "$lf_apply_cmd" $sc_install_executed_commands_file
   prepend_to_file  "$lf_delete_cmd" $sc_uninstall_executed_commands_file
-  oc apply -f $lf_file || exit 1
+  if $MY_APPLY_FLAG; then 
+    oc apply -f $lf_file || exit 1
+  fi
 
   trace_out 3 check_add_cs_ibm_pak
 }
@@ -1190,8 +1157,7 @@ function create_operator_subscription() {
   local lf_in_csv_name=$6
   local lf_in_workingdir=$7
 
-  local lf_file lf_path lf_resource lf_state lf_type 
-
+  local lf_file lf_path lf_resource lf_state lf_type
   check_directory_exist ${MY_OPERATORSDIR}
 
   #SECONDS=0
@@ -1205,6 +1171,7 @@ function create_operator_subscription() {
   check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
 
   lf_type="clusterserviceversion"
+  decho 3 "wait_for_resource $lf_type $lf_in_csv_name $MY_OPERATOR_NAMESPACE"
   wait_for_resource $lf_type $lf_in_csv_name $MY_OPERATOR_NAMESPACE
   lf_resource=$MY_RESOURCE
   unset MY_RESOURCE
@@ -1330,6 +1297,7 @@ function create_certificate_chain() {
   
   local lf_type lf_cr_name lf_yaml_file lf_source_directory lf_target_directory lf_namespace
   
+
   mylog info "Create a certificate chain in ${lf_in_namespace} namespace"
 
   # For Self-signed issuer
@@ -1601,88 +1569,4 @@ function generate_password() {
   export USER_PASSWORD_GEN=$lf_password
 
   trace_out 5 generate_password
-}
-
-################################################
-# Create a PostGreSQL DB
-# @param 1: postgresql cluster name
-# @param 2: postgresql database name
-# @param 3: postgresql database username
-# @param 4: postgresql database password
-# @param 5: postgresql secret name
-# @param 6: postgresql database description
-# 
-function create_postgresql_db() {
-  trace_in 3 create_postgresql_db
-
-  # local lf_in_cluster_name=$1 : pas besoin utiliser le cluster : MY_POSTGRESQL_CLUSTER
-  # local lf_in_namespace=$ : pas besoin utiliser le ns : MY_POSTGRESQL_NAMESPACE
-
-  local lf_working_directory="${MY_POSTGRESQL_WORKINGDIR}"
-  check_directory_exist_create "${lf_working_directory}"
-
-  create_project "$MY_POSTGRESQL_NAMESPACE" "PostGreSQL" "PostGreSQL DB namespace"
-  add_ibm_entitlement "$MY_POSTGRESQL_NAMESPACE" $MY_CONTAINER_ENGINE
-
-  local lf_in_cluster_name=$1
-  local lf_in_db_name=$2
-  local lf_in_db_username=$3
-  local lf_in_db_password=$4
-  local lf_in_secret_name=$5
-  local lf_in_db_description=$6
-
-  # Create a PostGreSQL DB secret
-  local lf_username=$(echo -n "${lf_in_db_username}" | base64 -w0)
-  local lf_password=$(echo -n "${lf_in_db_password}" | base64 -w0)
-  local lf_secret_type="Opaque"
-
-  export MY_SECRET_NAME=$lf_in_secret_name
-  export MY_PROJECT=$MY_POSTGRESQL_NAMESPACE
-  export MY_SECRET_TYPE=$lf_secret_type
-  export MY_USERNAME=$lf_username
-  export MY_PASSWORD=$lf_password
-  
-  local lf_type="Secret"
-  local lf_cr_name="${lf_in_secret_name}"
-  local lf_source_directory="${MY_RESOURCESDIR}"
-  local lf_target_directory="${lf_working_directory}"
-  local lf_yaml_file="secret.yaml"
-  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
-  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
-  unset MY_SECRET_NAME MY_PROJECT MY_SECRET_TYPE MY_USERNAME MY_PASSWORD
-
-  # PostGreSQL DB
-  export MY_POSTGRESQL_CLUSTER="${lf_in_cluster_name}"
-  export MY_POSTGRESQL_DATABASE="${lf_in_db_name}"
-  export MY_POSTGRESQL_USER="${lf_in_db_username}"
-  export MY_POSTGRESQL_SECRET="${lf_in_secret_name}"
-  export MY_POSTGRESQL_DESCRIPTION="${lf_in_db_description}"
-  export MY_POSTGRESQL_IMAGE_NAME=$(oc get packagemanifests -n $MY_CATALOGSOURCES_NAMESPACE --selector=$MY_POSTGRESQL_CATALOGSOURCE_NAME -o json | jq --arg channel "$MY_POSTGRESQL_CHL" '.items[].status.channels[] | select(.name == $channel)' | jq -r '.currentCSVDesc.relatedImages[]   | select(startswith("icr.io/cpopen/edb/postgresql:"))' | sort -V | tail -n 1)
-
-  local lf_type="Cluster"
-  local lf_cr_name="${lf_in_cluster_name}"
-  local lf_source_directory="${MY_RESOURCESDIR}"
-  local lf_target_directory="${lf_working_directory}"
-  local lf_yaml_file="postgresql-cluster.yaml"
-  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
-  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
-  unset MY_POSTGRESQL_CLUSTER MY_POSTGRESQL_DATABASE MY_POSTGRESQL_USER MY_POSTGRESQL_SECRET MY_POSTGRESQL_DESCRIPTION MY_POSTGRESQL_IMAGE_NAME
-
-  #local lf_resource=$(oc -n $lf_namespace get $lf_type -o json | jq -r --arg my_resource "$lf_cr_name" '.items[0].metadata | select (.name | contains ($my_resource)).name')
-  local lf_resource=$(oc -n $lf_namespace get $lf_type -o jsonpath="{.items[0].metadata.name}")
-  local lf_path="{.status.conditions[0].type}"
-  local lf_state="Ready"
-  decho 3 "wait_for_state \"$lf_type $lf_resource is $lf_state\" \"$lf_state\" \"oc -n $lf_namespace get $lf_type $lf_resource -o jsonpath='$lf_path'\""
-  wait_for_state "$lf_type $lf_resource $lf_path is $lf_state" "$lf_state" "oc -n $lf_namespace get $lf_type $lf_resource -o jsonpath='$lf_path'"
-
-  # Authorize superuser access
-  oc -n $lf_namespace patch $lf_type $lf_cr_name --type=merge -p '{"spec":{"enableSuperuserAccess":true}}' | awk '{printf "%*s%s\n", NR * $SC_SPACES_COUNTER, "", $0}'
-
-  # Here after how to check the status of the PostGreSQL DB and connect to it
-  # oc run pg-check --image=postgres:15 --restart=Never -- sleep 3600
-  # oc exec -it pg-check -- bash
-  # psql -h <postgresql_svc> -U <postgres_user> -d <database_name> // password is asked
-  # \q to quit
-
-  trace_out 3 create_postgresql_db
 }

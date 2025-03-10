@@ -1,4 +1,4 @@
-<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/26.0.9 Chrome/128.0.6613.186 Electron/32.2.5 Safari/537.36" version="26.0.9" pages="10">
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/26.0.16 Chrome/132.0.6834.196 Electron/34.2.0 Safari/537.36" version="26.0.16" pages="11">
   <diagram id="tJqLn7msZHwJoY5_B4Vj" name="Capabilities">
     <mxGraphModel dx="1840" dy="1089" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
       <root>
@@ -912,45 +912,94 @@
       </root>
     </mxGraphModel>
   </diagram>
-  <diagram id="7BhQDi70umXX2ms-lZuC" name="Page-10">
-    <mxGraphModel dx="1674" dy="1032" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+  <diagram id="7BhQDi70umXX2ms-lZuC" name="Images">
+    <mxGraphModel dx="2074" dy="2023" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="iGjpVeRC_H579PY2v30k-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontSize=16;" edge="1" parent="1" source="iGjpVeRC_H579PY2v30k-1" target="iGjpVeRC_H579PY2v30k-2">
+        <mxCell id="iGjpVeRC_H579PY2v30k-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontSize=16;" parent="1" source="iGjpVeRC_H579PY2v30k-1" target="iGjpVeRC_H579PY2v30k-2" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="iGjpVeRC_H579PY2v30k-1" value="channel" style="rounded=0;whiteSpace=wrap;html=1;fontSize=16;" vertex="1" parent="1">
-          <mxGeometry x="190" y="240" width="120" height="60" as="geometry" />
+        <mxCell id="iGjpVeRC_H579PY2v30k-1" value="channel" style="rounded=0;whiteSpace=wrap;html=1;fontSize=16;" parent="1" vertex="1">
+          <mxGeometry x="201" y="299" width="120" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="iGjpVeRC_H579PY2v30k-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=16;" edge="1" parent="1" source="iGjpVeRC_H579PY2v30k-2" target="iGjpVeRC_H579PY2v30k-3">
+        <mxCell id="iGjpVeRC_H579PY2v30k-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=16;" parent="1" source="iGjpVeRC_H579PY2v30k-2" target="iGjpVeRC_H579PY2v30k-3" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="iGjpVeRC_H579PY2v30k-2" value="currentCSVDesc" style="rounded=0;whiteSpace=wrap;html=1;fontSize=16;" vertex="1" parent="1">
-          <mxGeometry x="370" y="240" width="120" height="60" as="geometry" />
+        <mxCell id="iGjpVeRC_H579PY2v30k-2" value="currentCSVDesc" style="rounded=0;whiteSpace=wrap;html=1;fontSize=16;" parent="1" vertex="1">
+          <mxGeometry x="381" y="299" width="120" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="iGjpVeRC_H579PY2v30k-3" value="relatedImages" style="rounded=0;whiteSpace=wrap;html=1;fontSize=16;" vertex="1" parent="1">
-          <mxGeometry x="540" y="240" width="120" height="60" as="geometry" />
+        <mxCell id="iGjpVeRC_H579PY2v30k-3" value="relatedImages" style="rounded=0;whiteSpace=wrap;html=1;fontSize=16;" parent="1" vertex="1">
+          <mxGeometry x="551" y="299" width="120" height="60" as="geometry" />
         </mxCell>
-        <UserObject label="oc ibm-pak list --case-name ibm-mq&lt;br&gt;&lt;br&gt;cd /home/desprets/.ibm-pak/data/mirror/ibm-mq/3.4.1&lt;br&gt;more images-mapping.txt&lt;br&gt;OR&lt;br&gt;oc get packagemanifest ibm-mq -o json&lt;div&gt;&lt;br&gt;&lt;div&gt;kubectl&amp;nbsp;&amp;nbsp;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;get packagemanifest ibm-mq -o json&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;br&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Maybe use API as well&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;" link="oc ibm-pak list --case-name ibm-mq&#xa;&#xa;&#xa;&#xa;&#xa;cd /home/desprets/.ibm-pak/data/mirror/ibm-mq/3.4.1&#xa;more images-mapping.txt&#xa;OR&#xa;oc get packagemanifest ibm-mq -o json" id="iGjpVeRC_H579PY2v30k-6">
-          <mxCell style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;" vertex="1" parent="1">
-            <mxGeometry x="190" y="10" width="830" height="200" as="geometry" />
+        <UserObject label="oc ibm-pak list --case-name ibm-mq&lt;br&gt;&lt;br&gt;cd /home/desprets/.ibm-pak/data/mirror/ibm-mq/3.4.1&lt;br&gt;more images-mapping.txt&lt;div&gt;Example:&amp;nbsp;&lt;span style=&quot;background-color: transparent;&quot;&gt;cp.icr.io/cp/ibm-mqadvanced-server@sha256:1b754ab08d4852777a8050335abca29f22b7b4ccb2fe20948622694f5b78d6e6=icr.io/cp/ibm-mqadvanced-server:9.4.0.7-r1&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;OR&lt;br&gt;oc get packagemanifest ibm-mq -o json&lt;div&gt;&lt;br&gt;&lt;div&gt;kubectl&amp;nbsp;&amp;nbsp;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;get packagemanifest ibm-mq -o json&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;br&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Maybe use API as well&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;" link="oc ibm-pak list --case-name ibm-mq&#xa;&#xa;&#xa;&#xa;&#xa;cd /home/desprets/.ibm-pak/data/mirror/ibm-mq/3.4.1&#xa;more images-mapping.txt&#xa;OR&#xa;oc get packagemanifest ibm-mq -o json" id="iGjpVeRC_H579PY2v30k-6">
+          <mxCell style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;" parent="1" vertex="1">
+            <mxGeometry x="45" y="10" width="1070" height="200" as="geometry" />
           </mxCell>
         </UserObject>
-        <mxCell id="iGjpVeRC_H579PY2v30k-7" value="entitlement to access the images" style="rounded=0;whiteSpace=wrap;html=1;fontSize=16;" vertex="1" parent="1">
+        <mxCell id="iGjpVeRC_H579PY2v30k-7" value="entitlement to access the images" style="rounded=0;whiteSpace=wrap;html=1;fontSize=16;" parent="1" vertex="1">
           <mxGeometry x="340" y="590" width="120" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="iGjpVeRC_H579PY2v30k-8" value="secret in your cluster to access the images" style="rounded=0;whiteSpace=wrap;html=1;fontSize=16;" vertex="1" parent="1">
+        <mxCell id="iGjpVeRC_H579PY2v30k-8" value="secret in your cluster to access the images" style="rounded=0;whiteSpace=wrap;html=1;fontSize=16;" parent="1" vertex="1">
           <mxGeometry x="510" y="590" width="140" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="iGjpVeRC_H579PY2v30k-9" value="Catalog Source" style="rounded=0;whiteSpace=wrap;html=1;fontSize=16;" vertex="1" parent="1">
+        <mxCell id="iGjpVeRC_H579PY2v30k-9" value="Catalog Source" style="rounded=0;whiteSpace=wrap;html=1;fontSize=16;" parent="1" vertex="1">
           <mxGeometry x="200" y="400" width="120" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="iGjpVeRC_H579PY2v30k-10" value="Package Manifest" style="rounded=0;whiteSpace=wrap;html=1;fontSize=16;" vertex="1" parent="1">
+        <mxCell id="iGjpVeRC_H579PY2v30k-10" value="Package Manifest" style="rounded=0;whiteSpace=wrap;html=1;fontSize=16;" parent="1" vertex="1">
           <mxGeometry x="410" y="400" width="120" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="iGjpVeRC_H579PY2v30k-11" value="Resource Group" style="rounded=0;whiteSpace=wrap;html=1;fontSize=16;" vertex="1" parent="1">
+        <mxCell id="iGjpVeRC_H579PY2v30k-11" value="Resource Group" style="rounded=0;whiteSpace=wrap;html=1;fontSize=16;" parent="1" vertex="1">
           <mxGeometry x="800" y="400" width="120" height="60" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="tAwYNA3uFQUVHqpSkI3z" name="ES">
+    <mxGraphModel dx="1185" dy="683" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="Bf1Le8ibkL58mJHD5RrQ-9" value="ConsumerCLI" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="250" y="260" width="230" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="Bf1Le8ibkL58mJHD5RrQ-10" value="&lt;div&gt;+ apikey: String&lt;/div&gt;&lt;div&gt;+ bootstrapServers: String&lt;/div&gt;&lt;div&gt;+ topicName: String&lt;/div&gt;&lt;div&gt;+ consumerGroup: String&lt;/div&gt;&lt;div&gt;+ autoCommit: boolean&lt;/div&gt;&lt;div&gt;+ autoOffset: String&lt;/div&gt;&lt;div&gt;+ pollRecords: int&lt;/div&gt;&lt;div&gt;+ pollLoop: boolean&lt;/div&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="Bf1Le8ibkL58mJHD5RrQ-9">
+          <mxGeometry y="26" width="230" height="104" as="geometry" />
+        </mxCell>
+        <mxCell id="Bf1Le8ibkL58mJHD5RrQ-11" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" vertex="1" parent="Bf1Le8ibkL58mJHD5RrQ-9">
+          <mxGeometry y="130" width="230" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="Bf1Le8ibkL58mJHD5RrQ-12" value="&lt;div&gt;+ ConsumerCLI()&lt;/div&gt;&lt;div&gt;+ parse(String[] args): ConsumerCLI&lt;/div&gt;&lt;div&gt;+ printHelpAndExit(String, Options): void&lt;/div&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="Bf1Le8ibkL58mJHD5RrQ-9">
+          <mxGeometry y="138" width="230" height="62" as="geometry" />
+        </mxCell>
+        <mxCell id="Bf1Le8ibkL58mJHD5RrQ-13" value="ConsumerConfiguration" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="580" y="260" width="266.14119999999997" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="Bf1Le8ibkL58mJHD5RrQ-15" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" vertex="1" parent="Bf1Le8ibkL58mJHD5RrQ-13">
+          <mxGeometry y="26" width="266.14119999999997" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="Bf1Le8ibkL58mJHD5RrQ-16" value="+ makeConfiguration(&lt;span style=&quot;text-align: center;&quot;&gt;ConsumerCLI&lt;/span&gt;): Properties" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="Bf1Le8ibkL58mJHD5RrQ-13">
+          <mxGeometry y="34" width="266.14119999999997" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="Bf1Le8ibkL58mJHD5RrQ-22" value="uses" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="Bf1Le8ibkL58mJHD5RrQ-17" target="Bf1Le8ibkL58mJHD5RrQ-9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Bf1Le8ibkL58mJHD5RrQ-17" value="ESKafkaConsumer" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="490" y="120" width="180" height="108" as="geometry">
+            <mxRectangle x="425" y="80" width="140" height="30" as="alternateBounds" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Bf1Le8ibkL58mJHD5RrQ-18" value="&lt;div&gt;+ consumer: KafkaConsumer&lt;/div&gt;&lt;div&gt;+ mainThread: Thread&lt;/div&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="Bf1Le8ibkL58mJHD5RrQ-17">
+          <mxGeometry y="26" width="180" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="Bf1Le8ibkL58mJHD5RrQ-19" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" vertex="1" parent="Bf1Le8ibkL58mJHD5RrQ-17">
+          <mxGeometry y="60" width="180" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="Bf1Le8ibkL58mJHD5RrQ-20" value="+ main(String[] args): void&lt;div&gt;+ shutdown(): void&lt;/div&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="Bf1Le8ibkL58mJHD5RrQ-17">
+          <mxGeometry y="68" width="180" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="Bf1Le8ibkL58mJHD5RrQ-21" value="uses" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="Bf1Le8ibkL58mJHD5RrQ-20" target="Bf1Le8ibkL58mJHD5RrQ-13">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

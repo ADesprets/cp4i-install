@@ -98,8 +98,8 @@ function create_application() {
   check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
   
   local lf_cr_name=$(oc -n $lf_namespace get $lf_type -o jsonpath="{.items[0].metadata.name}")
-  local lf_path="{.status.phase}"
-  local lf_state="Ready"
+  local lf_path="{.status.conditions[-1].type}"
+  local lf_state="ResourcesReady"
   decho 3 "wait_for_state \"$lf_type $lf_cr_name is $lf_state\" \"$lf_state\" \"oc -n $lf_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'\""
   wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $lf_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
   
@@ -137,9 +137,14 @@ decho 5 "WAS configuration directory: ${lf_was_config_dir}"
       was_build_image
       popd > /dev/null 2>&1
     fi
+    # save the current cluster config context
+    sc_current_context=$(oc config current-context)
     login_to_registry
     push_image_to_registry
     create_application
+    oc logout
+    # back to the saved context
+    oc config use-context $sc_current_context
   fi
 
 duration=$SECONDS
