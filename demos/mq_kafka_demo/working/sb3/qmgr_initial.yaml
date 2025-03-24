@@ -1,0 +1,73 @@
+apiVersion: mq.ibm.com/v1beta1
+kind: QueueManager
+metadata:
+  name: sb3
+  namespace: cp4i
+spec:
+  license:
+    accept: true
+    license: L-QYVA-B365MB
+    use: "NonProduction"
+  terminationGracePeriodSeconds: 30
+  pki:
+    keys:
+      - name: sb3
+        secret:
+          items:
+            - tls.key
+            - tls.crt
+          secretName: sb3-secret
+    trust:
+      - name: sb3
+        secret:
+          secretName: sb3-secret
+          items:
+            - ca.crt
+  securityContext:
+    initVolumeAsRoot: false
+  queueManager:
+    name: SB3
+    metrics:
+      enabled: true
+    resources:
+      limits:
+        cpu: 500m
+        memory: 1Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
+    route:
+      enabled: true
+    storage:
+      defaultClass: ocs-storagecluster-ceph-rbd
+      queueManager:
+        deleteClaim: true
+        type: persistent-claim
+    availability:
+      type: SingleInstance
+      updateStrategy: RollingUpdate
+    imagePullPolicy: IfNotPresent
+    debug: false
+    logFormat: Basic
+    mqsc:
+      - configMap:
+          name: sb3-mqsc-cm
+          items:
+            - sb3.mqsc
+      - configMap:
+          name: sb3-ldap-cm
+          items:
+            - sb3.ldap
+  version: 9.4.2.0-r1
+  template:
+    pod:
+      containers:
+        - name: qmgr
+          resources: {}
+  web:
+    console:
+      authentication:
+        provider: manual
+      authorization:
+        provider: manual
+    enabled: true

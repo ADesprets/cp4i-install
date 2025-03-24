@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: $MY_ES_METRICS_CM
-  namespace: $MY_OC_PROJECT
+  name: ${VAR_ES_METRICS_CM}
+  namespace: $VAR_EP_NAMESPACE
 data:
   kafka-metrics-config.yaml: |

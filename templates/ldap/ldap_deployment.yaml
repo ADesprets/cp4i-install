@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: $MY_LDAP_DEPLOYMENT
+  namespace: $VAR_LDAP_NAMESPACE
+  labels:
+    app: $MY_LDAP_DEPLOYMENT
+    app.kubernetes.io/component: $MY_LDAP_DEPLOYMENT
+    app.kubernetes.io/instance: $MY_LDAP_DEPLOYMENT
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: $MY_LDAP_DEPLOYMENT
+  template:
+    metadata:
+      labels:
+        app: $MY_LDAP_DEPLOYMENT
+    spec:
+      containers:
+        - name: $MY_LDAP_DEPLOYMENT
+          image: ${MY_LDAP_IMAGE}          
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 389
+              protocol: TCP
+            - containerPort: 636
+              protocol: TCP
+          env:
+            - name: LDAP_LOG_LEVEL
+              value: "256"
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+      serviceAccountName: $MY_LDAP_SERVICEACCOUNT
+      volumes:
+        - name: ldap-db-main
+          persistentVolumeClaim:
+            claimName: ${MY_LDAP_PVC_MAIN}
+        - name: ldap-db-config
+          persistentVolumeClaim:
+            claimName: pvc-ldap-config
+          volumeMounts:
+            - name: ldap-db-main
+              mountPath: /var/lib/ldap
+            - name: ldap-db-config
+              mountPath: /etc/ldap/slapd.d

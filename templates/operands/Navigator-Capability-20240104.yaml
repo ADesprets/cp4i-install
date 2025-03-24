@@ -1,8 +1,8 @@
 apiVersion: integration.ibm.com/v1beta1
 kind: PlatformNavigator
 metadata:
-  name: $MY_NAVIGATOR_INSTANCE_NAME
-  namespace: $MY_OC_PROJECT
+  name: $VAR_NAVIGATOR_INSTANCE_NAME
+  namespace: $VAR_NAVIGATOR_NAMESPACE
 spec:
   license:
     accept: true

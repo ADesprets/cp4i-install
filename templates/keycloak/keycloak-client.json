@@ -1,0 +1,30 @@
+{
+    "clientId": "${VAR_KEYCLOAK_CLIENT_ID}",
+    "description": "${VAR_KEYCLOAK_DESCRIPTION}",    
+    "surrogateAuthRequired": false,
+    "enabled": true,
+    "alwaysDisplayInConsole": true,
+    "clientAuthenticatorType": "client-secret",
+    "redirectUris": ["https://${VAR_KEYCLOAK_HOST}/realms/${MY_KEYCLOAK_CP4I_REALM}/login"],
+    "webOrigins": [],
+    "bearerOnly": false,
+    "consentRequired": false,
+    "standardFlowEnabled": true,
+    "implicitFlowEnabled": false,
+    "directAccessGrantsEnabled": true,
+    "serviceAccountsEnabled": true,
+    "authorizationServicesEnabled": true,
+    "publicClient": false,
+    "frontchannelLogout": false,
+    "protocol": "openid-connect",
+    "fullScopeAllowed": true,
+    "defaultClientScopes": [
+      "profile",
+      "email"
+    ],
+    "access": {
+      "view": true,
+      "configure": true,
+      "manage": true
+    }
+}

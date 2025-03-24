@@ -2,7 +2,7 @@ apiVersion: liberty.websphere.ibm.com/v1
 kind: WebSphereLibertyApplication
 metadata:
   name: ${MY_WASLIBERTY_APP_NAME}
-  namespace: ${MY_BACKEND_NAMESPACE}
+  namespace: ${VAR_WASLIBERTY_NAMESPACE}
 spec:
   license:
     accept: true
@@ -10,7 +10,7 @@ spec:
     productEntitlementSource: Standalone
   serviceAccount:
     mountToken: true
-  applicationImage: 'image-registry.openshift-image-registry.svc:5000/${MY_BACKEND_NAMESPACE}/${MY_WASLIBERTY_APP_NAME_VERSION}'
+  applicationImage: 'image-registry.openshift-image-registry.svc:5000/${VAR_WASLIBERTY_NAMESPACE}/${MY_WASLIBERTY_APP_NAME_VERSION}'
   expose: true
   resources:
     limits:

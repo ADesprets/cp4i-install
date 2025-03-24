@@ -1,8 +1,8 @@
 apiVersion: appconnect.ibm.com/v1beta1
 kind: DesignerAuthoring
 metadata:
-  name: $MY_ACE_DESIGNER_INSTANCE_NAME
-  namespace: $MY_OC_PROJECT
+  name: ${VAR_ACE_DESIGNER_INSTANCE_NAME}
+  namespace: $VAR_ACE_NAMESPACE
 spec:
   license:
     accept: true
@@ -24,7 +24,7 @@ spec:
       useIncrementalLearning: true
   designerFlowsOperationMode: local
   switchServer:
-    name: $MY_ACE_SWITCHSERVER_INSTANCE_NAME
+    name: ${VAR_ACE_SWITCHSERVER_INSTANCE_NAME}
 #  authentication:
 #    integrationKeycloak:
 #      enabled: false

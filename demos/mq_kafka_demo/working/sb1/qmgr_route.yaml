@@ -1,0 +1,14 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: sb1-route
+  namespace: cp4i
+spec:
+  host: sb1chl.chl.mq.ibm.com
+  to:
+    kind: Service
+    name: sb1-ibm-mq
+  port:
+    targetPort: 1414
+  tls:
+    termination: passthrough

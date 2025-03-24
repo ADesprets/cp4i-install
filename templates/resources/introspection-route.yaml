@@ -8,12 +8,12 @@ metadata:
     haproxy.router.openshift.io/timeout-tunnel: 5d
   annotations:
     cert-manager.io/issuer-kind: Issuer
-    cert-manager.io/issuer-name: ${MY_ISSUER}
+    cert-manager.io/issuer-name: ${VAR_ISSUER}
   labels:
     route: stepzen-service
   name: introspection-route
 spec:
-  host: stepzen-introspection.apps.${MY_CLUSTER_DOMAIN}
+  host: stepzen-introspection.apps.${VAR_CLUSTER_DOMAIN}
   port:
     targetPort: introspection-port
   tls:

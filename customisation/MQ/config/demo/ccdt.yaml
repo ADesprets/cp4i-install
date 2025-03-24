@@ -12,7 +12,7 @@ data:
                         "clientConnection": {
                                 "connection": [
                                         {
-                                                "host": "uniform-cluster-${QMGR1}-ibm-mq.${MY_MQ_DEMO_NAMESPACE}",
+                                                "host": "uniform-cluster-${VAR_QMGR1}-ibm-mq.${MY_MQ_DEMO_NAMESPACE}",
                                                 "port": 1414
                                         }
                                 ],
@@ -32,7 +32,7 @@ data:
                         "clientConnection": {
                                 "connection": [
                                         {
-                                                "host": "uniform-cluster-${QMGR2}-ibm-mq.${MY_MQ_DEMO_NAMESPACE}",
+                                                "host": "uniform-cluster-${VAR_QMGR2}-ibm-mq.${MY_MQ_DEMO_NAMESPACE}",
                                                 "port": 1414
                                         }
                                 ],
@@ -52,7 +52,7 @@ data:
                         "clientConnection": {
                                 "connection": [
                                         {
-                                                "host": "uniform-cluster-${QMGR1}-ibm-mq.${MY_MQ_DEMO_NAMESPACE}",
+                                                "host": "uniform-cluster-${VAR_QMGR1}-ibm-mq.${MY_MQ_DEMO_NAMESPACE}",
                                                 "port": 1414
                                         }
                                 ],
@@ -68,7 +68,7 @@ data:
                         "clientConnection": {
                                 "connection": [
                                         {
-                                                "host": "uniform-cluster-${QMGR2}-ibm-mq.${MY_MQ_DEMO_NAMESPACE}",
+                                                "host": "uniform-cluster-${VAR_QMGR2}-ibm-mq.${MY_MQ_DEMO_NAMESPACE}",
                                                 "port": 1414
                                         }
                                 ],

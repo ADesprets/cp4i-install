@@ -1,8 +1,8 @@
 apiVersion: integration.ibm.com/v1beta1
 kind: MessagingServer
 metadata:
-  name: $MY_MSGSRV_INSTANCE_NAME
-  namespace: $MY_OC_PROJECT
+  name: ${VAR_MSGSRV_INSTANCE_NAME}
+  namespace: $VAR_MQ_NAMESPACE
 spec:
   license:
     accept: true
@@ -18,25 +18,25 @@ spec:
 apiVersion: integration.ibm.com/v1beta1
 kind: MessagingQueue
 metadata:
-  name: $MY_MSGQ_INSTANCE_NAME
-  namespace: $MY_OC_PROJECT
+  name: ${VAR_MSGQ_INSTANCE_NAME}
+  namespace: $VAR_MQ_NAMESPACE
 spec:
   messagingServer:
-    name: $MY_MSGSRV_INSTANCE_NAME
+    name: ${VAR_MSGSRV_INSTANCE_NAME}
   queue:
-    name: $MY_MSGQ_INSTANCE_NAME
+    name: ${VAR_MSGQ_INSTANCE_NAME}
     type: Local
 ---
 apiVersion: integration.ibm.com/v1beta1
 kind: MessagingChannel
 metadata:
-  name: $MY_MSGCHL_INSTANCE_NAME
-  namespace: $MY_OC_PROJECT
+  name: ${VAR_MSGCHL_INSTANCE_NAME}
+  namespace: $VAR_MQ_NAMESPACE
 spec:
   messagingServer:
-    name: $MY_MSGSRV_INSTANCE_NAME
+    name: ${VAR_MSGSRV_INSTANCE_NAME}
   channel:
-    name: $MY_MSGSRV_INSTANCE_NAME
+    name: ${VAR_MSGSRV_INSTANCE_NAME}
     type: ServerConnMTLS
   sniRoute: 
     enabled: false
@@ -44,14 +44,14 @@ spec:
 apiVersion: integration.ibm.com/v1beta1
 kind: MessagingUser
 metadata:
-  name: $MY_MSGUSER_INSTANCE_NAME
-  namespace: $MY_OC_PROJECT
+  name: ${VAR_MSGUSER_INSTANCE_NAME}
+  namespace: $VAR_MQ_NAMESPACE
 spec:
   user:
-    name: $MY_MSGUSER_INSTANCE_NAME
+    name: ${VAR_MSGUSER_INSTANCE_NAME}
     channel:
-      name: $MY_MSGCHL_INSTANCE_NAME
+      name: ${VAR_MSGCHL_INSTANCE_NAME}
     queues:
-    - name: $MY_MSGQ_INSTANCE_NAME
+    - name: ${VAR_MSGQ_INSTANCE_NAME}
       auth: 
         - "PASSALL"

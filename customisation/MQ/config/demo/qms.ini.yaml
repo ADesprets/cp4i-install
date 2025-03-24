@@ -6,9 +6,9 @@ metadata:
 data:
   config.ini: |-
     AutoCluster:
-      Repository2Conname=uniform-cluster-${QMGR1}-ibm-mq.cp4i.svc(1414)
+      Repository2Conname=uniform-cluster-${VAR_QMGR1}-ibm-mq.cp4i.svc(1414)
       Repository2Name=$QMGR_UC1
-      Repository1Conname=uniform-cluster-${QMGR2}-ibm-mq.cp4i.svc(1414)
+      Repository1Conname=uniform-cluster-${VAR_QMGR2}-ibm-mq.cp4i.svc(1414)
       Repository1Name=$QMGR_UC2
       ClusterName=DEMOCLUSTER
       Type=Uniform

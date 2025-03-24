@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: $VAR_INI_CM
+  namespace: $VAR_MQ_NAMESPACE
+data:
+  ${VAR_QMGR}.ini: |-
+    Service:
+      Name=AuthorizationService
+      EntryPoints=4
+      SecurityPolicy=UserExternal

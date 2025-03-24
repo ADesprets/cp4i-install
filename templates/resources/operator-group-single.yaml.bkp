@@ -1,0 +1,10 @@
+apiVersion: operators.coreos.com/v1alpha2
+kind: OperatorGroup
+metadata:
+  name: $VAR_OPERATORGROUP
+  namespace: $VAR_NAMESPACE
+  labels:
+    backup.integration.ibm.com/component: $VAR_OPERATORGROUP  
+spec:
+  targetNamespaces:
+  - $VAR_NAMESPACE

@@ -1,15 +1,15 @@
 apiVersion: events.ibm.com/v1beta1
 kind: EventProcessing
 metadata:
-  name: ${MY_EP_INSTANCE_NAME}
-  namespace: ${MY_OC_PROJECT}
+  name: ${VAR_EP_INSTANCE_NAME}
+  namespace: ${VAR_EP_NAMESPACE}
 spec:
   license:
     accept: true
     license: $MY_EP_LIC
     use: $MY_EP_LIC_USAGE
   flink:
-    endpoint: ${MY_FLINK_INSTANCE_NAME}-rest.${MY_OC_PROJECT}.svc.cluster.local:8081
+    endpoint: ${VAR_FLINK_INSTANCE_NAME}-rest.${VAR_EP_NAMESPACE}.svc.cluster.local:8081
   authoring:
     authConfig:
       authType: $MY_EP_AUTH_TYPE

@@ -1,0 +1,33 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ${VAR_CERT}
+  namespace: ${VAR_MQ_NAMESPACE}
+spec:
+  commonName: "${VAR_COMMON_NAME}"
+  dnsNames:
+    - "${VAR_SAN_DNS}"
+  duration: 8760h  # 1 year
+  issuerRef:
+    kind: Issuer
+    name: ${VAR_QMGR}-issuer
+  isCA: true
+  privateKey:
+    algorithm: RSA
+    size: 4096
+  renewBefore: 720h
+  secretName: ${VAR_CERT}-secret 
+  subject:
+    organizations:
+      - "${MY_LDAP_ORGANISATION}"
+    organizationalUnits:
+      - "${MY_LDAP_ORGANISATION}_CA"
+    countries:
+      - "${MY_LDAP_COUNTRY}"
+    localities:
+      - "${MY_LDAP_LOCALITY}"
+    provinces:
+      - "${MY_LDAP_STATE}"
+  usages:
+    - cert sign
+    - crl sign

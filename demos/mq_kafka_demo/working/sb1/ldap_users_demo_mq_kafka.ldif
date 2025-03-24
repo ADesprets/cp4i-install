@@ -1,0 +1,58 @@
+dn: ou=people,dc=ibm,dc=com
+objectClass: organizationalUnit
+description: All people in organization
+ou: people
+
+dn: ou=groups,dc=ibm,dc=com
+objectClass: organizationalUnit
+objectClass: top
+ou: groups
+
+
+###
+### Identities used by the JMS apps that
+###  put and get messages to IBM MQ
+###
+
+# User
+dn: uid=mquser,ou=people,dc=ibm,dc=com
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: mquserCN
+sn: mquserSN
+uid: mquser
+userPassword: mquserpassword
+
+# Group
+dn: cn=mqusers,ou=groups,dc=ibm,dc=com
+objectClass: groupOfUniqueNames
+objectClass: top
+cn: mqusers
+uniquemember: uid=mquser,ou=people,dc=ibm,dc=com
+
+
+###
+### Identities used by the Kafka Connector
+###  that moves messages from MQ to a
+###  a Kafka topic
+###
+
+# User
+dn: uid=kafkauser,ou=people,dc=ibm,dc=com
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: kafkauserCN
+sn: kafkauserSN
+uid: kafkauser
+userPassword: kafkapassword
+
+# Group
+dn: cn=kafkausers,ou=groups,dc=ibm,dc=com
+objectClass: groupOfUniqueNames
+objectClass: top
+cn: kafkausers
+uniquemember: uid=kafkauser,ou=people,dc=ibm,dc=com

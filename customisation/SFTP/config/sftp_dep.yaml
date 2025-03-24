@@ -1,38 +1,44 @@
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: ${MY_SFTP_SERVER_NAMESPACE}-sftp-server
-  namespace: $MY_SFTP_SERVER_NAMESPACE
+  name: ${VAR_SFTP_SERVER_NAMESPACE}-sftp-server
+  namespace: $VAR_SFTP_SERVER_NAMESPACE
   labels:
-    app: ${MY_SFTP_SERVER_NAMESPACE}-sftp-server
-    app.kubernetes.io/component: ${MY_SFTP_SERVER_NAMESPACE}-sftp-server
-    app.kubernetes.io/instance: ${MY_SFTP_SERVER_NAMESPACE}-sftp-server  
+    app: ${VAR_SFTP_SERVER_NAMESPACE}-sftp-server
+    app.kubernetes.io/component: ${VAR_SFTP_SERVER_NAMESPACE}-sftp-server
+    app.kubernetes.io/instance: ${VAR_SFTP_SERVER_NAMESPACE}-sftp-server  
 spec:
   replicas: 1
   selector:
     matchLabels:
-      deployment: ${MY_SFTP_SERVER_NAMESPACE}-sftp-server  
+      deployment: ${VAR_SFTP_SERVER_NAMESPACE}-sftp-server  
   template:
     metadata:
       labels:
-        deployment: ${MY_SFTP_SERVER_NAMESPACE}-sftp-server 
+        deployment: ${VAR_SFTP_SERVER_NAMESPACE}-sftp-server 
     spec:
       volumes:
         - name: sftp-users
           secret:
-            secretName: ${MY_SFTP_SERVER_NAMESPACE}-sftp-creds-secret
+            secretName: ${VAR_SFTP_SERVER_NAMESPACE}-sftp-creds-secret
             defaultMode: 420
         - name: sftp-ssh
           configMap:
-            name: ${MY_SFTP_SERVER_NAMESPACE}-ssh-conf-cm
+            name: ${VAR_SFTP_SERVER_NAMESPACE}-ssh-conf-cm
             defaultMode: 384
-        - name: ${MY_SFTP_SERVER_NAMESPACE}-sftp-pvc
+        - name: ${VAR_SFTP_SERVER_NAMESPACE}-sftp-pvc
           persistentVolumeClaim:
-            claimName: ${MY_SFTP_SERVER_NAMESPACE}-sftp-pvc            
+            claimName: ${VAR_SFTP_SERVER_NAMESPACE}-sftp-pvc            
       containers:
-        - resources: {}
+        - resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
           terminationMessagePath: /dev/termination-log
-          name: ${MY_SFTP_SERVER_NAMESPACE}-sftp-server
+          name: ${VAR_SFTP_SERVER_NAMESPACE}-sftp-server
           securityContext:
             capabilities:
               add:
@@ -48,7 +54,7 @@ spec:
             - name: sftp-ssh
               readOnly: true
               mountPath: /etc/ssh
-            - name: ${MY_SFTP_SERVER_NAMESPACE}-sftp-pvc
+            - name: ${VAR_SFTP_SERVER_NAMESPACE}-sftp-pvc
               mountPath: /home/data              
           terminationMessagePolicy: File
           image: 'atmoz/sftp:alpine'

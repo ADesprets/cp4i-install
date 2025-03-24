@@ -1,8 +1,8 @@
 apiVersion: operators.coreos.com/v1
 kind: OperatorGroup
 metadata:
-  name: $MY_OPERATORGROUP
-  namespace: $MY_PROJECT
+  name: $VAR_OPERATORGROUP
+  namespace: $VAR_NAMESPACE
 spec:
   targetNamespaces: []
   spec: {}

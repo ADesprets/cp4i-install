@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: openshift-operators-redhat 
+  name: ${MY_RH_COMMON_OPERATORS_NAMESPACE} 
   annotations:
     openshift.io/node-selector: ""
   labels:

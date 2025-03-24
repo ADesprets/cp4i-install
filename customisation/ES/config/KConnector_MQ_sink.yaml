@@ -2,16 +2,16 @@ apiVersion: eventstreams.ibm.com/v1beta2
 kind: KafkaConnector
 metadata:
   labels:
-        eventstreams.ibm.com/cluster: ${MY_ES_KAFKA_CONNECT_INSTANCE_NAME}
+        eventstreams.ibm.com/cluster: ${VAR_ES_KAFKA_CONNECT_INSTANCE_NAME}
   name: mq-sink
-  namespace: $MY_OC_PROJECT
+  namespace: $VAR_ES_NAMESPACE
 spec:
   class: com.ibm.eventstreams.connect.mqsink.MQSinkConnector
   tasksMax: 1
   config:
-    mq.queue.manager: CP4IMQ
-    mq.channel.name: CP4IMQCHL
-    mq.connection.name.list: cp4imq-ibm-mq(1414)
+    mq.queue.manager: $VAR_QMGR_UC
+    mq.channel.name: $VAR_CHL_UC
+    mq.connection.name.list: ${VAR_QMGR}-ibm-mq(1414)
     mq.ssl.truststore.location: /tmp/kafka/cluster.truststore.p12
     mq.ssl.truststore.password: Fxfj6ANTCNFzdrN-fpdeqZ6W-M_ZxD2W
     mq.ssl.cipher.suite: TLS_AES_256_GCM_SHA384

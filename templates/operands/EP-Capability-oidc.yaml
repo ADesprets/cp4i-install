@@ -1,15 +1,15 @@
 apiVersion: events.ibm.com/v1beta1
 kind: EventProcessing
 metadata:
-  name: ${MY_EP_INSTANCE_NAME}
-  namespace: ${MY_OC_PROJECT}
+  name: ${VAR_EP_INSTANCE_NAME}
+  namespace: ${VAR_EP_NAMESPACE}
 spec:
   license:
     accept: true
     license: $MY_EP_LIC
     use: $MY_EP_LIC_USAGE
   flink:
-    endpoint: ${MY_FLINK_INSTANCE_NAME}-rest.${MY_OC_PROJECT}.svc.cluster.local:8081
+    endpoint: ${VAR_FLINK_INSTANCE_NAME}-rest.${VAR_EP_NAMESPACE}.svc.cluster.local:8081
   authoring:
     authConfig:
       authType: $MY_EP_AUTH_TYPE
@@ -17,8 +17,19 @@ spec:
         clientIDKey: client-id
         clientSecretKey: client-secret
         discovery: true
-        secretName: $MY_EP_KEYCLOAK_SECRET
+        secretName: ${VAR_EP_INSTANCE_NAME}-keycloak-secret
         site: https://${VAR_KEYCLOAK_HOST}/realms/${MY_KEYCLOAK_CP4I_REALM}
+#        site: >-
+#          https://${VAR_KEYCLOAK_HOST}/realms/${MY_KEYCLOAK_CP4I_REALM}.well-known/openid-configuration
     storage:
       type: persistent-claim
       storageClassName: $MY_FILE_STORAGE_CLASS
+---
+# Voir ceci trouvé dans le slack channel #icp4i-keycloak
+#      oidcConfig:
+#        clientIDKey: client-id
+#        clientSecretKey: client-secret
+#        discovery: true
+#        secretName: oidc-secret
+#        site: >-
+#          https://cs-keycloak-service.ibm-common-services.svc:8443/realms/cloudpak/.well-known/openid-configuration

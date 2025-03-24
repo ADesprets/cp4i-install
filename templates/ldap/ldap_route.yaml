@@ -1,0 +1,13 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: ${VAR_LDAP_NAMESPACE}-route
+  namespace: $VAR_LDAP_NAMESPACE
+spec:
+  to:
+    kind: Service
+    name: ${VAR_LDAP_SERVICE}
+    weight: 100
+  port:
+    targetPort: ldap
+  wildcardPolicy: None

@@ -1,8 +1,8 @@
 apiVersion: integration.ibm.com/v1beta1
 kind: IntegrationAssembly
 metadata:
-  name: $MY_INTASSEMBLY_INSTANCE_NAME
-  namespace: $MY_OC_PROJECT
+  name: ${VAR_INTASSEMBLY_INSTANCE_NAME}
+  namespace: $VAR_INTASSEMBLY_NAMESPACE
   labels:
     backup.integration.ibm.com/component: IntegrationAssembly    
 spec:

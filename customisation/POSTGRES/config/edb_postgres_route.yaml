@@ -1,0 +1,14 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: ${VAR_EDB_POSTGRES_NAMESPACE}-edb-postgres-route
+  namespace: $VAR_EDB_POSTGRES_NAMESPACE
+spec:
+  host: ${VAR_POSTGRES_CLUSTER}-rw.${VAR_EDB_POSTGRES_NAMESPACE}.svc.cluster.local
+  to:
+    kind: Service
+    name: ${VAR_EDB_POSTGRES_NAMESPACE}-edb-postgres-rw-service
+    weight: 100
+  port:
+    targetPort: 5432-tcp
+  wildcardPolicy: None

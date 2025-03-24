@@ -1,8 +1,8 @@
 apiVersion: appconnect.ibm.com/v1beta1
 kind: Dashboard
 metadata:
-  namespace: $MY_OC_PROJECT
-  name: $MY_ACE_DASHBOARD_INSTANCE_NAME
+  namespace: $VAR_ACE_NAMESPACE
+  name: ${VAR_ACE_NAMESPACE}-ace-db
 spec:
   license:
     accept: true

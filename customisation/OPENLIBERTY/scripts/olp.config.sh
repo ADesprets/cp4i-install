@@ -4,151 +4,247 @@
 # Ensure internal registry is available
 ################################################
 function prepare_internal_registry() {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho 3 "F:IN:prepare_internal_registry"
+  trace_in 3 prepare_internal_registry
 
-  decho 3 "F:OUT:prepare_internal_registry"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
-}
+  # Expose service using default route
+  oc patch configs.imageregistry.operator.openshift.io/cluster --patch '{"spec":{"defaultRoute":true}}' --type=merge
+  wait_for_resource Route default-route openshift-image-registry
 
-################################################
-# Compile code
-################################################
-function compile_code() {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho 3 "F:IN:compile_code"
-  # $MY_CONTAINER_ENGINE build -t basicjaxrs:1.0 .
-  decho 3 "F:OUT:compile_code"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
-}
+  # Get the default registry route:
+  export IMAGE_REGISTRY_HOST=$(oc get route default-route -n openshift-image-registry --template='{{ .spec.host }}')
 
-################################################
-# Build docker image
-################################################
-function was_build_image() {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho 3 "F:IN:was_build_image"
-  $MY_CONTAINER_ENGINE build -t basicjaxrs:1.0 .
-  decho 3 "F:OUT:was_build_image"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
-}
+  # Get the certificate of the Ingress Operator and add it in the trust store, need to check if this is in /usr/local/share/ca-certificates
+  # oc get secret -n openshift-ingress  router-certs-default -o go-template='{{index .data "tls.crt"}}' | base64 -d | sudo tee /etc/pki/ca-trust/source/anchors/${HOST}.crt  > /dev/null
+  # oc -n openshift-ingress get secret letsencrypt-certs -o go-template='{{index .data "tls.crt7"}}' | base64 -d | sudo tee /etc/pki/ca-trust/source/anchors/${HOST}.crt
+  # For Ubuntu:  update-ca-certificates / For Mac: / For RH: update-ca-trust / For Windows: 
+  # sudo update-ca-trust enable
 
-################################################
-# Get token to access internal registry
-################################################
-function get_login_token() {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho 3 "F:IN:get_login_token"
-  oc get route -n openshift-image-registry
-  docker login -u kube:admin -p $(oc whoami -t) default-route-openshift-image-registry.apps.clustername.basedomain
-
-  decho 3 "F:OUT:get_login_token"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
-}
-
-################################################
-# Push image to internal registry
-################################################
-function push_image_to_registry() {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho 3 "F:IN:push_image_to_registry"
-  
-  decho 3 "F:OUT:push_image_to_registry"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
+  trace_out 3 prepare_internal_registry
 }
 
 ################################################
 # Create application from image
 ################################################
 function create_application() {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho 3 "F:IN:create_application"
+  trace_in 3 create_application
+
+  mylog info "Application:version ${MY_OPENLIBERTY_APP_NAME_VERSION}"
+
+  check_directory_exist_create "${MY_OPENLIBERTY_WORKINGDIR}"
+
+  create_operand_instance "WebSphereLibertyApplication" "$MY_OPENLIBERTY_APP_NAME" "$MY_OPERANDSDIR" "$MY_OPENLIBERTY_WORKINGDIR" "WAS-WLApp.yaml" "$VAR_OPENLIBERTY_NAMESPACE" "{.status.conditions[-1].type}" "ResourcesReady"
   
-  decho 3 "F:OUT:create_application"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))
+  trace_out 3 create_application
+}
+
+################################################
+# Push image to internal registry
+################################################
+function push_image_to_registry() {
+  trace_in 3 push_image_to_registry
+  
+  #	tag the local image with details of image registry
+  decho 3 "CMD: $MY_CONTAINER_ENGINE tag ${MY_OPENLIBERTY_APP_NAME_VERSION} ${IMAGE_REGISTRY_HOST}/${VAR_OPENLIBERTY_NAMESPACE}/${MY_OPENLIBERTY_APP_NAME_VERSION}"
+  $MY_CONTAINER_ENGINE tag ${MY_OPENLIBERTY_APP_NAME_VERSION} ${IMAGE_REGISTRY_HOST}/${VAR_OPENLIBERTY_NAMESPACE}/${MY_OPENLIBERTY_APP_NAME_VERSION}
+  $MY_CONTAINER_ENGINE push ${IMAGE_REGISTRY_HOST}/${VAR_OPENLIBERTY_NAMESPACE}/${MY_OPENLIBERTY_APP_NAME_VERSION}
+    
+  trace_out 3 push_image_to_registry
+}
+
+################################################
+# Login to internal registry
+################################################
+function login_to_registry() {
+  trace_in 3 login_to_registry
+
+  decho 3 "Internal image registry host: $IMAGE_REGISTRY_HOST"
+  local lf_cluster_server=$(oc whoami --show-server)
+  decho 3 "Cluster server host: $lf_cluster_server"
+  #echo "kubeadmin password: $MY_TECHZONE_PASSWORD"
+  oc login -p $MY_TECHZONE_PASSWORD -u kubeadmin $lf_cluster_server
+  local lf_token=$(oc whoami -t)
+  #docker login -u kubeadmin -p $lf_token $IMAGE_REGISTRY_HOST
+  echo "$lf_token" | docker login -u kubeadmin --password-stdin "$IMAGE_REGISTRY_HOST"
+  
+  trace_out 3 login_to_registry
+}
+
+################################################
+# Compile code
+################################################
+function compile_code() {
+  trace_in 3 compile_code
+
+  mvn clean install
+  # $MY_CONTAINER_ENGINE build -t basicjaxrs:1.0 .
+
+  trace_out 3 compile_code
+}
+
+################################################
+# Build docker image
+################################################
+function olp_build_image() {
+  trace_in 3 olp_build_image
+
+  $MY_CONTAINER_ENGINE build -t ${MY_OPENLIBERTY_APP_NAME_VERSION} .
+
+  trace_out 3 olp_build_image
+}
+
+#############################################################
+# run all 
+#############################################################
+function olp_run_all () {
+  trace_in 3 olp_run_all
+
+  SECONDS=0
+  local lf_starting_date=$(date);
+  
+  mylog info "Create back end applications (OLP)" 0
+
+  prepare_internal_registry
+  # Build the image
+  if $MY_OPENLIBERTY_CUSTOM_BUILD; then
+    pushd ${MY_OPENLIBERTY_SCRIPTDIR} > /dev/null 2>&1
+    mylog info "==== Compile code and build docker image." 1>&2
+    compile_code
+    olp_build_image
+    popd > /dev/null 2>&1
+  fi
+  # save the current cluster config context
+  sc_current_context=$(oc config current-context)
+  login_to_registry
+  push_image_to_registry
+  create_application
+  oc logout
+
+  # back to the saved context
+  oc config use-context $sc_current_context
+
+  local lf_ending_date=$(date)
+    
+  mylog info "==== Creation back end applications (OLP) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+  trace_out 3 olp_run_all
+}
+
+################################################
+# initialisation
+function olp_init() {
+  trace_in 2 olp_init
+
+  trace_out 2 olp_init
+}
+
+################################################
+# main function
+# Main logic
+function main() {
+  trace_in 3 main
+
+  if [[ $# -eq 0 ]]; then
+    mylog error "No arguments provided. Use --all or --call function_name parameters, function_name parameters, ...."
+    return 1
+  fi
+
+  # Main script logic
+  local lf_calls=""  # Initialize calls variable
+  local lf_key
+
+  while [[ $# -gt 0 ]]; do
+    lf_key="$1"
+    case $lf_key in
+      --all)
+        shift
+        ;;
+      --call)
+        shift
+        while [[ $# -gt 0 && "$1" != --* ]]; do
+          lf_calls+="$1 "  # Accumulate all arguments after --call
+          shift
+        done
+        ;;
+      *)
+        mylog error "Invalid option '$1'. Use --all or --call function_name parameters, function_name parameters, ...."
+        trace_out 3 main
+        return 1
+        ;;
+      esac
+  done
+  lf_calls=$(echo "$lf_calls" | xargs)  # Trim leading/trailing spaces
+
+  # Call processing function if --call was used
+  case $lf_key in
+    --all) olp_run_all "$@";;
+    --call) if [[ -n $lf_calls ]]; then
+              process_calls "$lf_calls"
+            else
+              mylog error "No function to call. Use --call function_name parameters, function_name parameters, ...."
+              trace_out 3 main
+              return 1
+            fi;;
+    esac
+
+  trace_out 3 main
+  exit 0
 }
 
 ################################################################################################
 # Start of the script main entry
-# main
-# This script needs to be started in the same directory as this script.
+################################################################################################
+# other example: ./olp.config.sh --call <function_name1>, <function_name2>, ...
+# other example: ./olp.config.sh --all
+################################################################################################
 
-mylog info "Create back end applications"
+# SB] getting the path of this script independently from using it directly or calling it from another script
+# sc_component_script_dir="$( cd "$( dirname "$0" )" && pwd )/": this statement returns the calling script path
 
-starting=$(date);
+# Voir aussi comment on peut utiliser l'option suivante (trouvée dans un sript de Dale Lane)
+# allow this script to be run from other locations, despite the
+# relative file paths used in it
+#OPTION# if [[ $BASH_SOURCE = */* ]]; then
+#OPTION#   cd -- "${BASH_SOURCE%/*}/" || exit
+#OPTION# fi
 
-# end with / on purpose (if var not defined, uses CWD - Current Working Directory)
-# scriptdir=$(dirname "$0")/
-scriptdir=${PWD}/
+# the following script returns the absolute path of this script independently from using it directly or calling it from another script
+sc_component_script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/"
+export VAR_OLP_WORKINGDIR="${sc_component_script_dir}working/"
+
+PROVISION_SCRIPTDIR="$( cd "$( dirname "${sc_component_script_dir}../../../../" )" && pwd )/"
+sc_provision_script_parameters_file="${PROVISION_SCRIPTDIR}script-parameters.properties"
+sc_provision_constant_properties_file="${PROVISION_SCRIPTDIR}properties/cp4i-constants.properties"
+sc_provision_variable_properties_file="${PROVISION_SCRIPTDIR}properties/cp4i-variables.properties"
+sc_provision_lib_file="${PROVISION_SCRIPTDIR}lib.sh"
+sc_component_properties_file="${sc_component_script_dir}../config/olp.properties"
+sc_provision_preambule_file="${PROVISION_SCRIPTDIR}preambule.properties"
+
+# SB]20250319 Je suis obligé d'utiliser set -a et set +a parceque à cet instant je n'ai pas accès à la fonction read_config_file
+# load script parrameters fil
+set -a
+. "${sc_provision_script_parameters_file}"
+
+# load config files
+. "${sc_provision_constant_properties_file}"
+
+# load config files
+. "${sc_provision_variable_properties_file}"
+
+# Load mq variables
+. "${sc_component_properties_file}"
+
+# Load shared variables
+. "${sc_provision_preambule_file}"
+set +a
 
 # load helper functions
-. "${scriptdir}"lib.sh
+. "${sc_provision_lib_file}"
 
-# backend J2EE applications
-if $MY_OPENLIBERTY_CUSTOM; then
-  mylog info "==== Customise OPEN Liberty." 1>&2
+olp_init
 
-  # Handle private image registry
-  # I'm using a service id associated to my email, information are configured in private/users.properties (See README.dm)
-  # Creating the secret to access the images in the private registry
-  local lf_octype='secret'
-  local lf_name='my-image-registry-secret'
-
-  # check if secret already created
-  mylog check "Checking ${lf_octype} ${lf_name} in ${MY_BACKEND_NAMESPACE}"
-  if oc -n ${MY_BACKEND_NAMESPACE} get ${lf_octype} ${lf_name} >/dev/null 2>&1; then
-    mylog ok
-  else
-    kubectl -n ${MY_BACKEND_NAMESPACE} create secret docker-registry my-image-registry-secret \
-      --docker-server=${MY_IMAGE_REGISTRY} \
-      --docker-username=${MY_IMAGE_REGISTRY_USERNAME} \
-      --docker-password=${MY_IMAGE_REGISTRY_PASSWORD} \
-      --docker-email=${MY_USER_EMAIL}
-  fi
-
-  # Build and create image, then load it into registry, this is optional because images won't change very often
-  if $MY_OPENLIBERTY_CUSTOM; then
-    pushd ${MY_OPENLIBERTY_SCRIPTDIR}system
-
-    # Build the image
-    if $MY_OPENLIBERTY_CUSTOM_BUILD; then
-      mylog info "==== Compile code and build docker image." 1>&2
-      ## compile_code
-      mvn clean install
-      ## olp_build_image
-      mylog info "Build docker image oljaxrs:1.0"
-      docker build -t oljaxrs:1.0 .
-    fi
-
-    ## prepare_internal_registry
-    ## get_login_token
-    mylog info "Login to docker registry"
-    docker login -u $MY_IMAGE_REGISTRY_USERNAME -p $MY_IMAGE_REGISTRY_PASSWORD $MY_IMAGE_REGISTRY
-    ibmcloud cr login --client docker -u myappscreds -p $MY_IMAGE_REGISTRY_PASSWORD $MY_IMAGE_REGISTRY
-
-    ## push_image_to_registry
-    mylog info "Push image to ${MY_IMAGE_REGISTRY}"
-    # olo1 is a namespace that belongs to me, in my private registry
-    docker image tag oljaxrs:1.0 ${MY_IMAGE_REGISTRY}/${MY_IMAGE_REGISTRY_NS1}/oljaxrs:1.0
-    docker push ${MY_IMAGE_REGISTRY}/${MY_IMAGE_REGISTRY_NS1}/oljaxrs:1.0
-    # Check everything is correct
-    # docker images
-    # ibmcloud cr login --client docker
-    # ibmcloud cr image-inspect de.icr.io/${MY_IMAGE_REGISTRY_NS1}/oljaxrs:1.0
-    popd
-  fi
-
-  # Deploy the image in the $MY_BACKEND_NAMESPACE namespace 
-  ## create_application
-  adapt_file ${MY_OPENLIBERTY_SCRIPTDIR}config/ ${MY_OPENLIBERTY_GEN_CUSTOMDIR}config/ system-appdeploy.yaml
-  kubectl -n ${MY_BACKEND_NAMESPACE} apply -f ${MY_OPENLIBERTY_GEN_CUSTOMDIR}config/system-appdeploy.yaml
-  # kubectl run <service_name> --image=de.icr.io/olo1/oljaxrs
-  # kubectl -n ${MY_BACKEND_NAMESPACE} get OpenLibertyApplications
-  # kubectl -n ${MY_BACKEND_NAMESPACE} describe olapps/mysystem
+######################################################
+# main entry
+######################################################
+# Main execution block (only runs if executed directly)
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
 fi
-
-duration=$SECONDS
-ending=$(date);
-# echo "------------------------------------"
-mylog info "Start: $starting - end: $ending" 1>&2
-mylog info "$(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."  1>&2

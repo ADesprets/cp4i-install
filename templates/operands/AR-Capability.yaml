@@ -1,8 +1,8 @@
 apiVersion: integration.ibm.com/v1beta1
 kind: AssetRepository
 metadata:
-  name: $MY_ASSETREPO_INSTANCE_NAME
-  namespace: $MY_OC_PROJECT
+  name: ${VAR_ASSETREPO_INSTANCE_NAME}
+  namespace: $VAR_ASSETREPO_NAMESPACE
   labels:
     backup.integration.ibm.com/component: assetrepository   
 spec:

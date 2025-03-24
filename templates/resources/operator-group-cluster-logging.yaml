@@ -2,9 +2,9 @@ apiVersion: operators.coreos.com/v1alpha2
 kind: OperatorGroup
 metadata:
   name: cluster-logging
-  namespace: $MY_PROJECT
+  namespace: $VAR_NAMESPACE
   labels:
     backup.integration.ibm.com/component: operatorgroup  
 spec:
   targetNamespaces:
-  - $MY_PROJECT
+  - $VAR_NAMESPACE

@@ -1,0 +1,35 @@
+apiVersion: postgresql.k8s.enterprisedb.io/v1
+kind: Cluster
+metadata:
+  name: $VAR_POSTGRES_CLUSTER
+  namespace: $VAR_POSTGRES_NAMESPACE
+spec:
+  description: $VAR_POSTGRES_DATABASE_DESCRIPTION
+  instances: 2
+  storage:
+    resizeInUseVolumes: true
+    size: 1Gi
+    storageClass: $MY_BLOCK_STORAGE_CLASS
+  imagePullSecrets:
+    - name: ibm-entitlement-key
+  imageName: $VAR_POSTGRES_IMAGE_NAME
+#  imageName: 'icr.io/cpopen/edb/postgresql:15.8-1.22.5@sha256:63c1bfc431fba3eba7a2e803d5d24c48425dbe7d1e9b1dec9832b30717ce8753'
+  enableSuperuserAccess: true
+  logLevel: info
+  startDelay: 3600
+  stopDelay: 1800
+  smartShutdownTimeout: 180
+  resources:
+    limits:
+      cpu: 200m
+      memory: 512Mi
+    requests:
+      cpu: 200m
+      memory: 512Mi
+  bootstrap:
+    initdb:
+      database: $VAR_POSTGRES_DATABASE
+      encoding: UTF8
+      owner: $VAR_POSTGRES_USER
+#      secret:
+#        name: $VAR_POSTGRES_SECRET

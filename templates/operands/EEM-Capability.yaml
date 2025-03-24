@@ -1,8 +1,8 @@
 apiVersion: events.ibm.com/v1beta1
 kind: EventEndpointManagement
 metadata:
-  name: $MY_EEM_INSTANCE_NAME
-  namespace: $MY_OC_PROJECT
+  name: ${VAR_EEM_INSTANCE_NAME}
+  namespace: $VAR_EEM_NAMESPACE
 spec:
   license:
     accept: true

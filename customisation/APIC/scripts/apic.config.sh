@@ -266,7 +266,7 @@ function create_apic_resources() {
 
   local lf_cm_token=$1
   local lf_am_token=$2
-  # local org=$3
+  local org=$3
   
   # Check if already created
   decho 3 "curl -sk \"${PLATFORM_API_URL}api/user-registries/admin/url_registry?fields=url\" -H \"Authorization: Bearer cmtoken\" -H 'Accept: application/json'"
@@ -399,7 +399,7 @@ for index in ${!api_names[@]}
     adapt_file ${MY_APIC_SCRIPTDIR}config/ ${MY_APIC_GEN_CUSTOMDIR}config/ ${api_files[$index]}
     decho 3 "curl -sk \"${platform_api_url}api/orgs/${apic_provider_org}/drafts/draft-apis/${api_names[$index]}?fields=url\" -H \"Authorization: Bearer <token>\" -H 'Accept: application/json'"
     local api_uri_result=$(curl -sk "${platform_api_url}api/orgs/${apic_provider_org}/drafts/draft-apis/${api_names[$index]}?fields=url" -H "Authorization: Bearer $token" -H 'Accept: application/json' | jq -r .total_results)
-    if [ $api_uri_result -eq 0 ]; then
+    if [[ $api_uri_result -eq 0 ]]; then
       mylog info "Load ${api_names[$index]} API as a draft"
       local api_content=`cat ${MY_APIC_GEN_CUSTOMDIR}config/${api_files[$index]}`;
       draftAPI=$(curl -sk "https://${EP_APIC_MGR}/api/orgs/${apic_provider_org}/drafts/draft-apis?gateway_type=datapower-api-gateway&api_type=rest" \
@@ -576,76 +576,188 @@ function create_am_token(){
   trace_out 3 create_am_token
 }
 
+#####################################
+# run all
+function apic_run_all () {
+  trace_in 3 apic_run_all
+
+  SECONDS=0
+  local lf_starting_date=$(date);
+  
+  # TODO Cannot work the variable for mail ns is not ready at that time, quick fix below
+  VAR_MAIL_SERVER_NAMESPACE='mail'
+  
+  # Get ClusterIP for the mail server if MailHog
+  # TODO check error, if not there, ...
+  export MY_MAIL_SERVER_HOST_IP=$(oc -n ${VAR_MAIL_SERVER_NAMESPACE} get svc/mailhog -o jsonpath='{.spec.clusterIP}')
+  decho 3 "To configure the mail server the clusterIP is ${MY_MAIL_SERVER_HOST_IP}"
+  
+  # Will create both directories needed later on
+  adapt_file ${MY_APIC_SCRIPTDIR}config/ ${MY_APIC_GEN_CUSTOMDIR}config/ apic.properties
+  adapt_file ${MY_APIC_SCRIPTDIR}config/ ${MY_APIC_GEN_CUSTOMDIR}config/ web-mgmt.cfg
+  
+  read_config_file "${MY_APIC_GEN_CUSTOMDIR}config/apic.properties"
+  
+  # Init APIC variables
+  init_apic_variables
+  
+  # Download toolkit/designer+loopback+toolkit
+  download_tools
+  
+  # Create Cloud Manager token
+  create_cm_token
+  
+  TOOLKIT_CREDS_URL="${PLATFORM_API_URL}api/cloud/settings/toolkit-credentials"
+  
+  # always download the credential.json
+  # if test ! -e "~/.apiconnect/config-apim";then
+  mylog info "Downloading apic config json file" 1>&2
+  curl -ks "${TOOLKIT_CREDS_URL}" -H "Authorization: Bearer ${access_token}" -H "Accept: application/json" -H "Content-Type: application/json" -o "${MY_APIC_GEN_CUSTOMDIR}config/fullcreds.json"
+  
+  # Get ClusterIP of the mail service
+  create_mail_server "${APIC_SMTP_SERVER}" "${APIC_SMTP_SERVER_PORT}"
+  
+  # TODO Add idempotence
+  create_topology $integration_url
+  
+  create_org "${APIC_PROVIDER_ORG}" "${APIC_ORG1_USERNAME}" "${APIC_ORG1_PASSWORD}" "${APIC_ORG1_USER_EMAIL}"
+  
+  # Create API Manager token
+  create_am_token
+  
+  create_catalog "${APIC_PROVIDER_ORG}"
+  
+  create_apic_resources $access_token $amToken $APIC_PROVIDER_ORG
+
+  # Push API into draft
+  apic_provider_org_lower=$(echo "$APIC_PROVIDER_ORG" | awk '{print tolower($0)}')
+
+  load_apis $PLATFORM_API_URL $apic_provider_org_lower $amToken
+
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+    
+  mylog info "==== Customisation of apic [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+  trace_out 3 apic_run_all
+}
+################################################
+# initialisation
+function apic_init() {
+  trace_in 2 apic_init
+
+  trace_out 2 apic_init
+}
+
+################################################
+# main function
+# Main logic
+function main() {
+  trace_in 3 main
+
+  if [[ $# -eq 0 ]]; then
+    mylog error "No arguments provided. Use --all or --call function_name parameters, function_name parameters, ...."
+    return 1
+  fi
+
+  # Main script logic
+  local lf_calls=""  # Initialize calls variable
+  local lf_key
+
+  while [[ $# -gt 0 ]]; do
+    lf_key="$1"
+    case $lf_key in
+      --all)
+        shift
+        ;;
+      --call)
+        shift
+        while [[ $# -gt 0 && "$1" != --* ]]; do
+          lf_calls+="$1 "  # Accumulate all arguments after --call
+          shift
+        done
+        ;;
+      *)
+        mylog error "Invalid option '$1'. Use --all or --call function_name parameters, function_name parameters, ...."
+        trace_out 3 main
+        return 1
+        ;;
+      esac
+  done
+  lf_calls=$(echo "$lf_calls" | xargs)  # Trim leading/trailing spaces
+
+  # Call processing function if --call was used
+  case $lf_key in
+    --all) apic_run_all "$@";;
+    --call) if [[ -n $lf_calls ]]; then
+              process_calls "$lf_calls"
+            else
+              mylog error "No function to call. Use --call function_name parameters, function_name parameters, ...."
+              trace_out 3 main
+              return 1
+            fi;;
+    esac
+
+  trace_out 3 main
+  exit 0
+}
+
 ################################################################################################
 # Start of the script main entry
-# main
-# This script needs to be started in the same directory as this script.
+################################################################################################
+# other example: ./apic.config.sh --call <function_name1>, <function_name2>, ...
+# other example: ./apic.config.sh --all
+################################################################################################
 
-mylog info "Start customisation API Connect"
+# SB] getting the path of this script independently from using it directly or calling it from another script
+# sc_component_script_dir="$( cd "$( dirname "$0" )" && pwd )/": this statement returns the calling script path
 
-starting=$(date);
+# Voir aussi comment on peut utiliser l'option suivante (trouvée dans un sript de Dale Lane)
+# allow this script to be run from other locations, despite the
+# relative file paths used in it
+#OPTION# if [[ $BASH_SOURCE = */* ]]; then
+#OPTION#   cd -- "${BASH_SOURCE%/*}/" || exit
+#OPTION# fi
 
-# end with / on purpose (if var not defined, uses CWD - Current Working Directory)
-# scriptdir=$(dirname "$0")/
-scriptdir=${PWD}/
+# the following script returns the absolute path of this script independently from using it directly or calling it from another script
+sc_component_script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/"
+export VAR_APIC_WORKINGDIR="${sc_component_script_dir}working/"
+
+PROVISION_SCRIPTDIR="$( cd "$( dirname "${sc_component_script_dir}../../../../" )" && pwd )/"
+sc_provision_script_parameters_file="${PROVISION_SCRIPTDIR}script-parameters.properties"
+sc_provision_constant_properties_file="${PROVISION_SCRIPTDIR}properties/cp4i-constants.properties"
+sc_provision_variable_properties_file="${PROVISION_SCRIPTDIR}properties/cp4i-variables.properties"
+sc_provision_lib_file="${PROVISION_SCRIPTDIR}lib.sh"
+sc_component_properties_file="${sc_component_script_dir}../config/apic.properties"
+sc_provision_preambule_file="${PROVISION_SCRIPTDIR}preambule.properties"
+
+# SB]20250319 Je suis obligé d'utiliser set -a et set +a parceque à cet instant je n'ai pas accès à la fonction read_config_file
+# load script parrameters fil
+set -a
+. "${sc_provision_script_parameters_file}"
+
+# load config files
+. "${sc_provision_constant_properties_file}"
+
+# load config files
+. "${sc_provision_variable_properties_file}"
+
+# Load mq variables
+. "${sc_component_properties_file}"
+
+# Load shared variables
+. "${sc_provision_preambule_file}"
+set +a
 
 # load helper functions
-. "${scriptdir}"lib.sh
+. "${sc_provision_lib_file}"
 
-# TODO Cannot work the variable for mail ns is not ready at that time, quick fix below
-MY_MAIL_SERVER_NAMESPACE='mail'
+apic_init
 
-# Get ClusterIP for the mail server if MailHog
-mail_server_cluster_ip=$(oc -n ${MY_MAIL_SERVER_NAMESPACE} get svc/mailhog -o jsonpath='{.spec.clusterIP}')
-
-# TODO check error, if not there, ...
-decho 3 "To configure the mail server the clusterIP is ${mail_server_cluster_ip}"
-export MY_MAIL_SERVER_HOST_IP=${mail_server_cluster_ip}
-
-# Will create both directories needed later on
-adapt_file ${MY_APIC_SCRIPTDIR}config/ ${MY_APIC_GEN_CUSTOMDIR}config/ apic.properties
-adapt_file ${MY_APIC_SCRIPTDIR}config/ ${MY_APIC_GEN_CUSTOMDIR}config/ web-mgmt.cfg
-
-read_config_file "${MY_APIC_GEN_CUSTOMDIR}config/apic.properties"
-
-# Init APIC variables
-init_apic_variables
-
-# Download toolkit/designer+loopback+toolkit
-download_tools
-
-# Create Cloud Manager token
-create_cm_token
-
-TOOLKIT_CREDS_URL="${PLATFORM_API_URL}api/cloud/settings/toolkit-credentials"
-
-# always download the credential.json
-# if test ! -e "~/.apiconnect/config-apim";then
-mylog info "Downloading apic config json file" 1>&2
-curl -ks "${TOOLKIT_CREDS_URL}" -H "Authorization: Bearer ${access_token}" -H "Accept: application/json" -H "Content-Type: application/json" -o "${MY_APIC_GEN_CUSTOMDIR}config/fullcreds.json"
-
-# Get ClusterIP of the mail service
-create_mail_server "${APIC_SMTP_SERVER}" "${APIC_SMTP_SERVER_PORT}"
-
-# TODO Add idempotence
-create_topology $integration_url
-
-create_org "${APIC_PROVIDER_ORG}" "${APIC_ORG1_USERNAME}" "${APIC_ORG1_PASSWORD}" "${APIC_ORG1_USER_EMAIL}"
-
-# Create API Manager token
-create_am_token
-
-create_catalog "${APIC_PROVIDER_ORG}"
-
-create_apic_resources $access_token $amToken
-
-# Push API into draft
-apic_provider_org_lower=$(echo "$APIC_PROVIDER_ORG" | awk '{print tolower($0)}')
-
-load_apis $PLATFORM_API_URL $apic_provider_org_lower $amToken
-
-duration=$SECONDS
-ending=$(date);
-# echo "------------------------------------"
-mylog info "Start: $starting - end: $ending" 1>&2
-mylog info "$(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."  1>&2
+######################################################
+# main entry
+######################################################
+# Main execution block (only runs if executed directly)
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi

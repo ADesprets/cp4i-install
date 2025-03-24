@@ -1,10 +1,10 @@
 apiVersion: operators.coreos.com/v1
 kind: OperatorGroup
 metadata:
-  name: $MY_OPERATORGROUP
-  namespace: $MY_PROJECT
+  name: $VAR_OPERATORGROUP
+  namespace: $VAR_NAMESPACE
   labels:
-    backup.integration.ibm.com/component: $MY_OPERATORGROUP  
+    backup.integration.ibm.com/component: $VAR_OPERATORGROUP  
 spec:
   targetNamespaces:
-  - $MY_PROJECT  
+  - $VAR_NAMESPACE  

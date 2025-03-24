@@ -3,8 +3,8 @@ kind: IntegrationRuntime
 metadata:
   labels:
     backup.appconnect.ibm.com/component: integrationruntime
-  name: ${MY_ACE_INTEGRATIONRUNTIME_NAME}
-  namespace: ${MY_OC_PROJECT}
+  name: ${VAR_ACE_INTEGRATIONRUNTIME_NAME}
+  namespace: ${MY_OC_NAMESPACE}
 spec:
   license:
     accept: true
@@ -30,10 +30,10 @@ spec:
             cpu: 500m
             memory: 512Mi
   barURL: 
-    - ${MY_ACE_BAR_URL}
+    - ${VAR_ACE_BAR_URL}
   version: ${MY_ACE_VERSION}
   replicas: 1
   logFormat: basic
   configurations: 
-    - ${MY_ACE_SERVERCONF_NAME}
-    - ${MY_ACE_BARAUTH_NAME}
+    - ${VAR_ACE_SERVERCONF_NAME}
+    - ${VAR_ACE_BARAUTH_NAME}

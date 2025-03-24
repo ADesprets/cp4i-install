@@ -313,7 +313,7 @@ function Get_APIC_Infos() {
   fi
   
   # Common service namespace
-  CS_NAMESPACE=$(oc -n $cs_project get CommonServices $cs_instance -o jsonpath='{.metadata.namespace}') 
+  CS_NAMESPACE=$(oc -n $MY_OPENSHIFT_OPERATORS get CommonServices $MY_COMMONSERVICES_INSTANCE_NAME -o jsonpath='{.spec.servicesNamespace}') 
   mylog info "Common service namespace. CS_NAMESPACE: $CS_NAMESPACE"
   
   # Cloud pak admin uid

@@ -1,0 +1,28 @@
+{
+    "channel":
+    [
+        {
+            "name": "SB3CHL",
+            "connectionManagement":
+            {
+              "heartbeatInterval": 30
+            },
+            "clientConnection":
+            {
+                "connection":
+                [
+                    {
+                        "host": "sb3-ibm-mq-qm-cp4i.apps.67ce6e58c93eabd5dbaf02a8.ocp.techzone.ibm.com",
+                        "port": 443
+                    }
+                ],
+                "queueManager": "SB3"
+            },
+            "transmissionSecurity":
+            {
+              "cipherSpecification": "ANY_TLS12_OR_HIGHER"
+            },
+            "type": "clientConnection"
+        }
+   ]
+}

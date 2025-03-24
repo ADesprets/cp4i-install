@@ -3,10 +3,10 @@ kind: KafkaUser
 metadata:
   generation: 1
   labels:
-    app.kubernetes.io/instance: ${es_instance}
-    eventstreams.ibm.com/cluster: ${es_instance}
+    app.kubernetes.io/instance: ${VAR_ES_INSTANCE_NAME}
+    eventstreams.ibm.com/cluster: ${VAR_ES_INSTANCE_NAME}
   name: kafka-user1
-  namespace: ${MY_OC_PROJECT}
+  namespace: ${VAR_ES_NAMESPACE}
 spec:
   authentication:
     type: tls

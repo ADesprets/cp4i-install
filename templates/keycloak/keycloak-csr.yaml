@@ -1,0 +1,13 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: keycloak-cert
+  namespace: ${VAR_KEYCLOAK_NAMESPACE}
+spec:
+  dnsNames:
+    - "${VAR_SAN_DNS}"
+  isCA: true
+  secretName: ${MY_KEYCLOAK_TLS_SECRET}
+  issuerRef:
+    name: ${VAR_ISSUER}
+    kind: Issuer

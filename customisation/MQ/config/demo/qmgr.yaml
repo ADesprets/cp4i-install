@@ -3,7 +3,7 @@ kind: QueueManager
 metadata:
   annotations:
     com.ibm.mq/write-defaults-spec: 'false'
-  name: ${MY_MQ_DEMO_NAMESPACE}-$QMGR
+  name: ${MY_MQ_DEMO_NAMESPACE}-$VAR_QMGR
   namespace: $MY_MQ_DEMO_NAMESPACE
 spec:
   license:
@@ -20,7 +20,7 @@ spec:
             - tls.crt
             - ca.crt
   queueManager:
-    name: ${QMGR}
+    name: ${VAR_QMGR}
     ini:
       - configMap:
           items:
@@ -32,7 +32,7 @@ spec:
           items:
           - common_config.mqsc
       - configMap:
-          name: ${MY_MQ_DEMO_NAMESPACE}-${MQ_CLUSTERNAME}-mqsc-${QMGR}
+          name: ${MY_MQ_DEMO_NAMESPACE}-${MQ_CLUSTERNAME}-mqsc-${VAR_QMGR}
           items:
             - qm.mqsc
     resources:
@@ -62,5 +62,5 @@ spec:
         provider: manual
     manualConfig:
       configMap: 
-        name: ${MY_MQ_DEMO_NAMESPACE}-${QMGR}-mywebconfig
+        name: ${MY_MQ_DEMO_NAMESPACE}-${VAR_QMGR}-mywebconfig
     enabled: true

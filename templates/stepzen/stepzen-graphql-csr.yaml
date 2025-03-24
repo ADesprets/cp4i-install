@@ -1,0 +1,55 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: stepzen-to-graph-server-cert
+  namespace: ${VAR_APIC_GRAPHQL_NAMESPACE}
+spec:
+  dnsNames:
+    - "${VAR_SAN_DNS}"
+  isCA: true
+  secretName: stepzen-to-graph-server-cert-secret
+  issuerRef:
+    name: ${VAR_ISSUER}
+    kind: Issuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: graphql-to-graph-server-cert
+  namespace: ${VAR_APIC_GRAPHQL_NAMESPACE}
+spec:
+  dnsNames:
+    - "${VAR_SAN_DNS}"
+  isCA: true
+  secretName: graphql-to-graph-server-cert-secret
+  issuerRef:
+    name: ${VAR_ISSUER}
+    kind: Issuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: graphql-to-graph-server-subscriptions-cert
+  namespace: ${VAR_APIC_GRAPHQL_NAMESPACE}
+spec:
+  dnsNames:
+    - "${VAR_SAN_DNS}"
+  isCA: true
+  secretName: graphql-to-graph-server-subscriptions-cert-secret
+  issuerRef:
+    name: ${VAR_ISSUER}
+    kind: Issuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: introspection-cert
+  namespace: ${VAR_APIC_GRAPHQL_NAMESPACE}
+spec:
+  dnsNames:
+    - "${VAR_SAN_DNS}"
+  isCA: true
+  secretName: introspection-cert-secret
+  issuerRef:
+    name: ${VAR_ISSUER}
+    kind: Issuer

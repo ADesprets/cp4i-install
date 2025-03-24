@@ -1,8 +1,8 @@
 apiVersion: flink.apache.org/v1beta1
 kind: FlinkDeployment
 metadata:
-  namespace: $MY_OC_PROJECT
-  name: $MY_FLINK_INSTANCE_NAME
+  namespace: $VAR_FLINK_NAMESPACE
+  name: ${VAR_FLINK_INSTANCE_NAME}
 spec:
   flinkConfiguration:
     license.use: $MY_FLINK_LIC_USAGE

@@ -1,8 +1,8 @@
 apiVersion: eventstreams.ibm.com/v1beta2
 kind: EventStreams
 metadata:
-  name: $MY_ES_INSTANCE_NAME
-  namespace: $MY_OC_PROJECT
+  name: $VAR_ES_INSTANCE_NAME
+  namespace: $VAR_ES_NAMESPACE
   labels:
     backup.eventstreams.ibm.com/component: eventstreams
 spec:
@@ -44,7 +44,7 @@ spec:
         valueFrom:
           configMapKeyRef:
             key: kafka-metrics-config.yaml
-            name: $MY_ES_METRICS_CM
+            name: ${VAR_ES_METRICS_CM}
       storage:
         type: persistent-claim
         class: $MY_BLOCK_STORAGE_CLASS
@@ -56,7 +56,7 @@ spec:
         valueFrom:
           configMapKeyRef:
             key: zookeeper-metrics-config.yaml
-            name: $MY_ES_METRICS_CM
+            name: ${VAR_ES_METRICS_CM}
       storage:
         type: persistent-claim
         class: $MY_BLOCK_STORAGE_CLASS

@@ -1,26 +1,26 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: "${MY_MQ_INSTANCE_NAME}-mqsc-cm"
-  namespace: $MY_OC_PROJECT
+  name: "${VAR_MQ_INSTANCE_NAME}-mqsc-cm"
+  namespace: $VAR_MQ_NAMESPACE
 data:
-  ${QMGR}.mqsc: |
+  ${VAR_QMGR}.mqsc: |
     DEFINE QLOCAL('Q1') REPLACE DEFPSIST(YES)
     DEFINE QLOCAL('TO.KAFKA') REPLACE DEFPSIST(YES)
     DEFINE QLOCAL('FROM.KAFKA') REPLACE DEFPSIST(YES)
-    DEFINE CHANNEL('${MY_MQ_INSTANCE_NAME_UC}CHL') CHLTYPE(SVRCONN) REPLACE TRPTYPE(TCP) SSLCAUTH(OPTIONAL) SSLCIPH('ANY_TLS12_OR_HIGHER')
-    SET CHLAUTH('${MY_MQ_INSTANCE_NAME_UC}CHL') TYPE(BLOCKUSER) USERLIST(NOBODY) ACTION(ADD)
+    DEFINE CHANNEL('${VAR_MQ_INSTANCE_NAME_UC}CHL') CHLTYPE(SVRCONN) REPLACE TRPTYPE(TCP) SSLCAUTH(OPTIONAL) SSLCIPH('ANY_TLS12_OR_HIGHER')
+    SET CHLAUTH('${VAR_MQ_INSTANCE_NAME_UC}CHL') TYPE(BLOCKUSER) USERLIST(NOBODY) ACTION(ADD)
 ---
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
-  name: "${MY_MQ_INSTANCE_NAME}_ROUTE"
-  namespace: $MY_OC_PROJECT
+  name: "${VAR_MQ_INSTANCE_NAME}_ROUTE"
+  namespace: $VAR_MQ_NAMESPACE
 spec:
-  host: "${MY_MQ_INSTANCE_NAME}chl.chl.mq.ibm.com"
+  host: "${VAR_MQ_INSTANCE_NAME}chl.chl.mq.ibm.com"
   to:
     kind: Service
-    name: ${MY_MQ_INSTANCE_NAME}-ibm-mq
+    name: ${VAR_MQ_INSTANCE_NAME}-ibm-mq
   port:
     targetPort: 1414
   tls:
@@ -29,8 +29,8 @@ spec:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: "${MY_MQ_INSTANCE_NAME}_SECRET"
-  namespace: $MY_OC_PROJECT
+  name: "${VAR_MQ_INSTANCE_NAME}_SECRET"
+  namespace: $VAR_MQ_NAMESPACE
 data:
   tls.crt: $B64_QMGR_CRT
   tls.key: $B64_QMGR_KEY
@@ -40,8 +40,8 @@ type: kubernetes.io/tls
 apiVersion: mq.ibm.com/v1beta1
 kind: QueueManager
 metadata:
-  name: $MY_MQ_INSTANCE_NAME
-  namespace: $MY_OC_PROJECT
+  name: $VAR_MQ_INSTANCE_NAME
+  namespace: $VAR_MQ_NAMESPACE
 spec:
   license:
     accept: true
@@ -49,22 +49,22 @@ spec:
     use: NonProduction
   pki:
     keys:
-      - name: $MY_MQ_INSTANCE_NAME
+      - name: $VAR_MQ_INSTANCE_NAME
         secret:
-          secretName: "${MY_MQ_INSTANCE_NAME}_SECRET"
+          secretName: "${VAR_MQ_INSTANCE_NAME}_SECRET"
           items:
             - tls.key
             - tls.crt
             - ca.crt
   queueManager:
-    name: $MY_MQ_INSTANCE_NAME_UC
+    name: $VAR_MQ_INSTANCE_NAME_UC
     availability:
       type: SingleInstance
     mqsc:
       - configMap:
-          name: "${MY_MQ_INSTANCE_NAME}-mqsc-cm"
+          name: "${VAR_MQ_INSTANCE_NAME}-mqsc-cm"
           items:
-            - "${MY_MQ_INSTANCE_NAME}.mqsc"
+            - "${VAR_MQ_INSTANCE_NAME}.mqsc"
     resources:
       limits:
         cpu: 500m

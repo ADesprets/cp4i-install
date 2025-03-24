@@ -3,8 +3,8 @@ kind: APIConnectCluster
 metadata:
   annotations: 
     apiconnect-operator/backups-not-configured: "true"  
-  name: $MY_APIC_INSTANCE_NAME
-  namespace: $MY_OC_PROJECT
+  name: ${VAR_APIC_INSTANCE_NAME}
+  namespace: $VAR_APIC_NAMESPACE
 spec:
   analytics:
     mtlsValidateClient: true

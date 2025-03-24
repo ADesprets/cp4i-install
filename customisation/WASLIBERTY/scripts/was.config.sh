@@ -1,6 +1,25 @@
 #!/bin/bash
 
 ################################################
+# Create service account to push images to internal
+################################################
+function create_service_account() {
+  trace_in 3 create_service_account
+
+  # create the SA
+  oc -n $VAR_WASLIBERTY_NAMESPACE create sa my-service-account 
+  
+  # Grant the SA pushing images to the internal registry
+  oc -n $VAR_WASLIBERTY_NAMESPACE policy add-role-to-user edit system:serviceaccount:$VAR_WASLIBERTY_NAMESPACE:my-service-account
+
+  # Get the Token
+  # export VAR_TOKEN=$(oc -n $MY_WASLIBERTY_NAMESPACE sa get-token my-service-account)
+  export VAR_TOKEN=$(oc -n $VAR_WASLIBERTY_NAMESPACE create token my-service-account)
+
+  trace_out 3 create_service_account
+}
+
+################################################
 # Ensure internal registry is available
 ################################################
 function prepare_internal_registry() {
@@ -8,6 +27,7 @@ function prepare_internal_registry() {
 
   # Expose service using default route
   oc patch configs.imageregistry.operator.openshift.io/cluster --patch '{"spec":{"defaultRoute":true}}' --type=merge
+  wait_for_resource Route default-route openshift-image-registry
 
   # Get the default registry route:
   export IMAGE_REGISTRY_HOST=$(oc get route default-route -n openshift-image-registry --template='{{ .spec.host }}')
@@ -53,10 +73,11 @@ function login_to_registry() {
   decho 3 "Internal image registry host: $IMAGE_REGISTRY_HOST"
   local lf_cluster_server=$(oc whoami --show-server)
   decho 3 "Cluster server host: $lf_cluster_server"
-  echo "kubeadmin password: $MY_TECHZONE_PASSWORD"
-  oc login -u kubeadmin -p $MY_TECHZONE_PASSWORD $lf_cluster_server
+  #echo "kubeadmin password: $MY_TECHZONE_PASSWORD"
+  oc login -p $MY_TECHZONE_PASSWORD -u kubeadmin $lf_cluster_server
   local lf_token=$(oc whoami -t)
-  docker login -u kubeadmin -p $lf_token $IMAGE_REGISTRY_HOST
+  #docker login -u kubeadmin -p $lf_token $IMAGE_REGISTRY_HOST
+  echo "$lf_token" | docker login -u kubeadmin --password-stdin "$IMAGE_REGISTRY_HOST"
   
   trace_out 3 login_to_registry
 }
@@ -68,9 +89,9 @@ function push_image_to_registry() {
   trace_in 3 push_image_to_registry
   
   #	tag the local image with details of image registry
-  decho 3 "CMD: $MY_CONTAINER_ENGINE tag ${MY_WASLIBERTY_APP_NAME_VERSION} ${IMAGE_REGISTRY_HOST}/${MY_BACKEND_NAMESPACE}/${MY_WASLIBERTY_APP_NAME_VERSION}"
-  $MY_CONTAINER_ENGINE tag ${MY_WASLIBERTY_APP_NAME_VERSION} ${IMAGE_REGISTRY_HOST}/${MY_BACKEND_NAMESPACE}/${MY_WASLIBERTY_APP_NAME_VERSION}
-  $MY_CONTAINER_ENGINE push ${IMAGE_REGISTRY_HOST}/${MY_BACKEND_NAMESPACE}/${MY_WASLIBERTY_APP_NAME_VERSION}
+  decho 3 "CMD: $MY_CONTAINER_ENGINE tag ${MY_WASLIBERTY_APP_NAME_VERSION} ${IMAGE_REGISTRY_HOST}/${VAR_WASLIBERTY_NAMESPACE}/${MY_WASLIBERTY_APP_NAME_VERSION}"
+  $MY_CONTAINER_ENGINE tag ${MY_WASLIBERTY_APP_NAME_VERSION} ${IMAGE_REGISTRY_HOST}/${VAR_WASLIBERTY_NAMESPACE}/${MY_WASLIBERTY_APP_NAME_VERSION}
+  $MY_CONTAINER_ENGINE push ${IMAGE_REGISTRY_HOST}/${VAR_WASLIBERTY_NAMESPACE}/${MY_WASLIBERTY_APP_NAME_VERSION}
     
   trace_out 3 push_image_to_registry
 }
@@ -83,72 +104,166 @@ function create_application() {
 
   mylog info "Application:version ${MY_WASLIBERTY_APP_NAME_VERSION}"
 
-  local lf_working_directory="${MY_WASLIBERTY_WORKINGDIR}"
-  check_directory_exist_create "${lf_working_directory}"
+  check_directory_exist_create "${MY_WASLIBERTY_WORKINGDIR}"
 
-  local lf_namespace=$MY_BACKEND_NAMESPACE
-
-  local lf_type="WebSphereLibertyApplication"
-  local lf_cr_name="${MY_WASLIBERTY_APP_NAME}"
-  local lf_source_directory="${MY_OPERANDSDIR}"
-  local lf_target_directory="${lf_working_directory}"
-  local lf_yaml_file="WAS-WLApp.yaml"
-
-  decho 3 "check_create_oc_yaml \"${lf_type}\" \"${lf_cr_name}\" \"${lf_source_directory}\" \"${lf_target_directory}\" \"${lf_yaml_file}\""
-  check_create_oc_yaml "${lf_type}" "${lf_cr_name}" "${lf_source_directory}" "${lf_target_directory}" "${lf_yaml_file}"
-  
-  local lf_cr_name=$(oc -n $lf_namespace get $lf_type -o jsonpath="{.items[0].metadata.name}")
-  local lf_path="{.status.conditions[-1].type}"
-  local lf_state="ResourcesReady"
-  decho 3 "wait_for_state \"$lf_type $lf_cr_name is $lf_state\" \"$lf_state\" \"oc -n $lf_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'\""
-  wait_for_state "$lf_type $lf_cr_name $lf_path is $lf_state" "$lf_state" "oc -n $lf_namespace get $lf_type $lf_cr_name -o jsonpath='$lf_path'"
+  create_operand_instance "WebSphereLibertyApplication" "$MY_WASLIBERTY_APP_NAME" "$MY_OPERANDSDIR" "$MY_WASLIBERTY_WORKINGDIR" "WAS-WLApp.yaml" "$VAR_WASLIBERTY_NAMESPACE" "{.status.conditions[-1].type}" "ResourcesReady"
   
   trace_out 3 create_application
 }
 
-################################################################################################
-# Start of the script main entry
-# main
-# This script needs to be started in the same directory as this script.
+#############################################################
+# run all 
+#############################################################
+function was_run_all () {
+  trace_in 3 was_run_all
 
-mylog info "Create back end applications"
+  SECONDS=0
+  local lf_starting_date=$(date);
+  
+  mylog info "Create back end applications (WAS Liberty)" 0
 
-starting=$(date);
+  prepare_internal_registry
+  # Build the image
+  if $MY_WASLIBERTY_CUSTOM_BUILD; then
+    pushd ${MY_WASLIBERTY_SCRIPTDIR} > /dev/null 2>&1
+    mylog info "==== Compile code and build docker image." 1>&2
+    compile_code
+    was_build_image
+    popd > /dev/null 2>&1
+  fi
+  # save the current cluster config context
+  sc_current_context=$(oc config current-context)
+  login_to_registry
+  push_image_to_registry
+  create_application
+  oc logout
 
-# end with / on purpose (if var not defined, uses CWD - Current Working Directory)
-# scriptdir=$(dirname "$0")/
-scriptdir=${PWD}/
-lf_was_config_dir=${MY_WASLIBERTY_SCRIPTDIR}config/
-decho 5 "WAS configuration directory: ${lf_was_config_dir}"
+  # back to the saved context
+  oc config use-context $sc_current_context
 
-# load helper functions
-. "${scriptdir}"lib.sh
+  local lf_ending_date=$(date)
+    
+  mylog info "==== Creation back end applications (WAS Liberty) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+  trace_out 3 was_run_all
+}
 
-  # load config file
-  read_config_file "${lf_was_config_dir}was.properties"
+################################################
+# initialisation
+function was_init() {
+  trace_in 2 was_init
 
-  if $MY_WASLIBERTY_CUSTOM; then
-    prepare_internal_registry
-    # Build the image
-    if $MY_WASLIBERTY_CUSTOM_BUILD; then
-      pushd ${MY_WASLIBERTY_SCRIPTDIR} > /dev/null 2>&1
-      mylog info "==== Compile code and build docker image." 1>&2
-      compile_code
-      was_build_image
-      popd > /dev/null 2>&1
-    fi
-    # save the current cluster config context
-    sc_current_context=$(oc config current-context)
-    login_to_registry
-    push_image_to_registry
-    create_application
-    oc logout
-    # back to the saved context
-    oc config use-context $sc_current_context
+  trace_out 2 was_init
+}
+
+################################################
+# main function
+# Main logic
+function main() {
+  trace_in 3 main
+
+  if [[ $# -eq 0 ]]; then
+    mylog error "No arguments provided. Use --all or --call function_name parameters, function_name parameters, ...."
+    return 1
   fi
 
-duration=$SECONDS
-ending=$(date);
-# echo "------------------------------------"
-mylog info "Start: $starting - end: $ending" 1>&2
-mylog info "$(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."  1>&2
+  # Main script logic
+  local lf_calls=""  # Initialize calls variable
+  local lf_key
+
+  while [[ $# -gt 0 ]]; do
+    lf_key="$1"
+    case $lf_key in
+      --all)
+        shift
+        ;;
+      --call)
+        shift
+        while [[ $# -gt 0 && "$1" != --* ]]; do
+          lf_calls+="$1 "  # Accumulate all arguments after --call
+          shift
+        done
+        ;;
+      *)
+        mylog error "Invalid option '$1'. Use --all or --call function_name parameters, function_name parameters, ...."
+        trace_out 3 main
+        return 1
+        ;;
+      esac
+  done
+  lf_calls=$(echo "$lf_calls" | xargs)  # Trim leading/trailing spaces
+
+  # Call processing function if --call was used
+  case $lf_key in
+    --all) was_run_all "$@";;
+    --call) if [[ -n $lf_calls ]]; then
+              process_calls "$lf_calls"
+            else
+              mylog error "No function to call. Use --call function_name parameters, function_name parameters, ...."
+              trace_out 3 main
+              return 1
+            fi;;
+    esac
+
+  trace_out 3 main
+  exit 0
+}
+
+################################################################################################
+# Start of the script main entry
+################################################################################################
+# other example: ./was.config.sh --call <function_name1>, <function_name2>, ...
+# other example: ./was.config.sh --all
+################################################################################################
+
+# SB] getting the path of this script independently from using it directly or calling it from another script
+# sc_component_script_dir="$( cd "$( dirname "$0" )" && pwd )/": this statement returns the calling script path
+
+# Voir aussi comment on peut utiliser l'option suivante (trouvée dans un sript de Dale Lane)
+# allow this script to be run from other locations, despite the
+# relative file paths used in it
+#OPTION# if [[ $BASH_SOURCE = */* ]]; then
+#OPTION#   cd -- "${BASH_SOURCE%/*}/" || exit
+#OPTION# fi
+
+# the following script returns the absolute path of this script independently from using it directly or calling it from another script
+sc_component_script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/"
+export VAR_WAS_WORKINGDIR="${sc_component_script_dir}working/"
+
+PROVISION_SCRIPTDIR="$( cd "$( dirname "${sc_component_script_dir}../../../../" )" && pwd )/"
+sc_provision_script_parameters_file="${PROVISION_SCRIPTDIR}script-parameters.properties"
+sc_provision_constant_properties_file="${PROVISION_SCRIPTDIR}properties/cp4i-constants.properties"
+sc_provision_variable_properties_file="${PROVISION_SCRIPTDIR}properties/cp4i-variables.properties"
+sc_provision_lib_file="${PROVISION_SCRIPTDIR}lib.sh"
+sc_component_properties_file="${sc_component_script_dir}../config/was.properties"
+sc_provision_preambule_file="${PROVISION_SCRIPTDIR}preambule.properties"
+
+# SB]20250319 Je suis obligé d'utiliser set -a et set +a parceque à cet instant je n'ai pas accès à la fonction read_config_file
+# load script parrameters fil
+set -a
+. "${sc_provision_script_parameters_file}"
+
+# load config files
+. "${sc_provision_constant_properties_file}"
+
+# load config files
+. "${sc_provision_variable_properties_file}"
+
+# Load mq variables
+. "${sc_component_properties_file}"
+
+# Load shared variables
+. "${sc_provision_preambule_file}"
+set +a
+
+# load helper functions
+. "${sc_provision_lib_file}"
+
+was_init
+
+######################################################
+# main entry
+######################################################
+# Main execution block (only runs if executed directly)
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi

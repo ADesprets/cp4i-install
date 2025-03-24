@@ -1,8 +1,8 @@
 apiVersion: hsts.aspera.ibm.com/v1
 kind: IbmAsperaHsts
 metadata:
-  namespace: $MY_OC_PROJECT
-  name: $MY_HSTS_INSTANCE_NAME
+  namespace: $VAR_HSTS_NAMESPACE
+  name: ${VAR_HSTS_INSTANCE_NAME}
 spec:
   license:
     accept: true

@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openldap
+  namespace: ldap
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: openldap
+  template:
+    metadata:
+      labels:
+        app: openldap
+    spec:
+      containers:
+        - name: openldap
+          image: osixia/openldap:latest
+          ports:
+            - containerPort: 389
+            - containerPort: 636
+          env:
+            - name: LDAP_ORGANISATION
+              value: "My Company"
+            - name: LDAP_DOMAIN
+              value: "mycompany.com"
+            - name: LDAP_ADMIN_PASSWORD
+              value: "adminpassword" # Change this!
+            - name: LDAP_TLS
+              value: "false" # Change this!---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ldap-service
+  namespace: ldap
+spec:
+  selector:
+    app: openldap
+  ports:
+    - name: ldap
+      protocol: TCP
+      port: 389
+      targetPort: 389
+    - name: ldaps
+      protocol: TCP
+      port: 636
+      targetPort: 636
+  type: ClusterIP
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: ldap_route
+  namespace: ldap
+spec:
+  to:
+    kind: Service
+    name: ldap-service
+  port:
+    targetPort: ldap  # Exposes port 389
+  wildcardPolicy: None

@@ -4,8 +4,7 @@
 # this secret will be used to access theserver hosting bar files
 ################################################################
 function create_secret_for_barauth () {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho 3 "F:IN :create_secret_for_barauth"
+  trace_in 3 create_secret_for_barauth
  
   local lf_in_json_file=$1
 
@@ -16,22 +15,20 @@ function create_secret_for_barauth () {
   mylog "info" "Creating   : secret to be used by barauth type"
 
   # Check if the secret already exists
-  if oc get secret ${MY_ACE_BARAUTH_SECRET_NAME} -n=${MY_OC_PROJECT} >/dev/null 2>&1; then
-    mylog "info" "Secret ${MY_ACE_BARAUTH_SECRET_NAME} already exists"
+  if oc get secret ${VAR_ACE_BARAUTH_SECRET_NAME} -n=${VAR_ACE_NAMESPACE} >/dev/null 2>&1; then
+    mylog "info" "Secret ${VAR_ACE_BARAUTH_SECRET_NAME} already exists"
   else
-    oc -n=${MY_OC_PROJECT} create secret generic ${MY_ACE_BARAUTH_SECRET_NAME} --from-file=configuration=${lf_in_json_file} 
+    oc -n=${VAR_ACE_NAMESPACE} create secret generic ${VAR_ACE_BARAUTH_SECRET_NAME} --from-file=configuration=${lf_in_json_file} 
   fi
 
-  decho 3 "F:OUT:create_secret_for_barauth"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))    
+  trace_out 3 create_secret_for_barauth
 }
 
 ################################################
 # Create Openshift ACE config type : barauth
 #################################################
 function create_ace_config_barauth () {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho 3 "F:IN :create_ace_config_barauth"
+  trace_in 3 create_ace_config_barauth
  
   local lf_in_file=$1
   local lf_file_bn=$(basename "${lf_in_file}")
@@ -47,22 +44,20 @@ function create_ace_config_barauth () {
   cat ${lf_in_file} | envsubst > ${lf_gen_file}
 
   # Check if the resource already exists
-  if oc get -n ${MY_OC_PROJECT} -f ${lf_gen_file} >/dev/null 2>&1; then
+  if oc get -n ${VAR_ACE_NAMESPACE} -f ${lf_gen_file} >/dev/null 2>&1; then
     mylog "info" "Resource already exists"
   else
-    oc -n ${MY_OC_PROJECT} apply -f ${lf_gen_file}
+    oc -n ${VAR_ACE_NAMESPACE} apply -f ${lf_gen_file}
   fi
 
-  decho 3 "F:OUT:create_ace_config_barauth"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))    
+  trace_out 3 create_ace_config_barauth
 }
 
 ################################################
 # Create Openshift ACE config type : serverconf
 #################################################
 function create_ace_config_serverconf () {
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER+$SC_SPACES_INCR))
-  decho 3 "F:IN :create_ace_config_serverconf"
+  trace_in 3 create_ace_config_serverconf
  
   local lf_in_file=$1
 
@@ -72,7 +67,7 @@ function create_ace_config_serverconf () {
   local lf_file_bn_wo_ext="${lf_file_bn%.*}"
   decho 3 "lf_in_file: ${lf_in_file}|lf_file_bn:${lf_file_bn}|lf_file_bn_wo_ext:${lf_file_bn_wo_ext}"
 
-  local lf_yaml_file="${TMPLYAMLDIR}${lf_file_bn_wo_ext}.yaml"
+  local lf_yaml_file="${sc_ace_tmpl_yaml_dir}${lf_file_bn_wo_ext}.yaml"
   local lf_gen_file="${sc_generatedyamldir}${lf_file_bn_wo_ext}.yaml"
 
   # check for the existence of all needed files 
@@ -81,132 +76,236 @@ function create_ace_config_serverconf () {
 
   # Generate server.conf.yaml file
   mylog "info" "Creating   : ace config serverconf"
-  export MY_ACE_SERVER_CONF_YAML_B64=$(encode_b64_file $lf_in_file)
+  export VAR_ACE_SERVER_CONF_YAML_B64=$(encode_b64_file $lf_in_file)
   cat "${lf_yaml_file}" | envsubst > "${lf_gen_file}" 
 
   # Apply the generated yaml file
   # Check if the resource already exists
-  if oc get -n ${MY_OC_PROJECT} -f ${lf_gen_file} >/dev/null 2>&1; then
+  if oc get -n ${VAR_ACE_NAMESPACE} -f ${lf_gen_file} >/dev/null 2>&1; then
     mylog "info" "Resource already exists"
   else
-    oc -n ${MY_OC_PROJECT} apply -f ${lf_gen_file}
+    oc -n ${VAR_ACE_NAMESPACE} apply -f ${lf_gen_file}
   fi
 
-  decho 3 "F:OUT:create_ace_config_serverconf"
-  SC_SPACES_COUNTER=$((SC_SPACES_COUNTER-$SC_SPACES_INCR))    
+  trace_out 3 create_ace_config_serverconf
+}
+
+#############################################################
+# run all 
+#############################################################
+function ace_run_all () {
+  trace_in 3 ace_run_all
+
+  SECONDS=0
+  local lf_starting_date=$(date);
+  
+  mylog info "Start customisation ACE" 0
+
+  ##############################################################################################
+  # Loop through files in the barfiles directory
+  for sc_barfiledir in ${sc_ace_barfiles_dir}*; do
+  
+    decho 3 "sc_barfiledir: ${sc_barfiledir}"
+  
+    sc_ace_barfile_name=$(basename "${sc_barfiledir}")
+    # We have to use lower cases for secret due to the following rules :
+    # error: failed to create secret Secret "HTTPEchoApp-barauth-secret" is invalid: metadata.name: 
+    # Invalid value: "HTTPEchoApp-barauth-secret": a lowercase RFC 1123 subdomain must consist of 
+    # lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character 
+    # (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')
+    sc_ace_barfile_name_lc=$(echo "${sc_ace_barfile_name}" | tr '[:upper:]' '[:lower:]')
+    sc_ace_tmpl_yaml_dir="${sc_barfiledir}/tmpl/"
+    sc_ace_configurationtypes_dir="${sc_barfiledir}/configurationtypes/"
+  
+    export VAR_ACE_BAR_URL="${MY_ACE_REPOSITORY_URL}${sc_ace_barfile_name}.bar"
+    export VAR_ACE_BARAUTH_SECRET_NAME="${sc_ace_barfile_name_lc}-barauth-secret"
+    export VAR_ACE_SERVERCONF_NAME="${sc_ace_barfile_name_lc}-serverconf"
+    export VAR_ACE_BARAUTH_NAME="${sc_ace_barfile_name_lc}-barauth"
+    export VAR_ACE_INTEGRATIONRUNTIME_NAME="${sc_ace_barfile_name_lc}-integrationruntime"
+
+    check_directory_exist_create  "${MY_ACE_GEN_CUSTOMDIR}generated/${sc_ace_barfile_name}"
+    sc_ace_custom_gendir="${MY_ACE_GEN_CUSTOMDIR}generated/${sc_ace_barfile_name}/"
+  
+    check_directory_exist_create  "${sc_ace_custom_gendir}yaml"
+    sc_generatedyamldir="${sc_ace_custom_gendir}yaml/"
+  
+    # Process all the configuration types before creating the IntegrationRuntime (ex: IntegrationServer)
+    for sc_configfile in "${sc_ace_configurationtypes_dir}"*; do
+      # Get the file basename then the filename without extension
+      sc_configfile_bn=$(basename "${sc_configfile}")
+      sc_configtype="${sc_configfile_bn%.*}"
+      decho 3 "sc_configfile: ${sc_configfile}|sc_configfile_bn=$sc_configfile_bn|sc_configtype:${sc_configtype}"
+  
+      decho 3 "sc_configtype: ${sc_configtype}"
+      # SB]20240524 Process the different ACE configuration types
+      # https://www.ibm.com/docs/en/app-connect/containers_cd?topic=resources-configuration-reference
+      # https://www.ibm.com/docs/en/app-connect/containers_cd?topic=resources-configuration-reference
+      case "${sc_configtype}" in
+        "accounts") mylog "info" "policyproject:tbd";;
+        "adminssl") mylog "info" "policyproject:tbd";;
+        "agenta") mylog "info" "policyproject:tbd";;
+        "agentx") mylog "info" "policyproject:tbd";;
+        "barauth") create_secret_for_barauth "${sc_ace_configurationtypes_dir}${sc_configfile_bn}"
+                   create_ace_config_barauth "${sc_ace_tmpl_yaml_dir}${sc_configtype}.yaml";;
+        "db2cli") mylog "info" "policyproject:tbd";;
+        "generic") mylog "info" "policyproject:tbd";;
+        "keystore") mylog "info" "policyproject:tbd";;
+        "loopbackdatasource") mylog "info" "policyproject:tbd";;
+        "mqccdt") mylog "info" "policyproject:tbd";;
+        "mqccred") mylog "info" "policyproject:tbd";;
+        "odbc") mylog "info" "policyproject:tbd";;
+        "persistencerediscredentials") mylog "info" "policyproject:tbd";;
+        "policyproject") mylog "info" "policyproject:tbd";;
+        "privatenetworkagent") mylog "info" "privatenetworkagent:tbd";;
+        "resiliencekafkacredentials") mylog "info" "resiliencekafkacredentials:tbd";;
+        "s3credentials") mylog "info" "s3credentials:tbd";;
+        "serverconf") create_ace_config_serverconf "${sc_ace_configurationtypes_dir}${sc_configfile_bn}";;
+        "setdbparms") mylog "info" "setdbparms:tbd";;
+        "truststore") mylog "info" "truststore:tbd";;
+        "truststorecertificate") mylog "info" "truststorecertificate:tbd";;
+        "Vault") mylog "info" "Vault:tbd";;
+        "VaultKey") mylog "info" "VaultKey:tbd";;
+        "workdiroverride") mylog "info" "workdiroverride:tbd";;
+        *) mylog "error" "Unknown configuration type: ${sc_ace_barfile_name}";;
+      esac
+    done
+  
+    # Create the IntegrationRuntime (ex: IntegrationServer)
+    adapt_file "${sc_ace_tmpl_yaml_dir}" "${sc_generatedyamldir}" "integrationruntime.yaml"
+  
+    # Check if the resource already exists
+    if oc get -n ${VAR_ACE_NAMESPACE} -f -f "${sc_generatedyamldir}integrationruntime.yaml" >/dev/null 2>&1; then
+      mylog "info" "Resource already exists"
+    else
+      oc -n ${VAR_ACE_NAMESPACE} apply -f "${sc_generatedyamldir}integrationruntime.yaml"
+    fi
+  
+  done
+
+  local lf_ending_date=$(date)
+    
+  mylog info "==== Customisation of ace [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+  trace_out 3 ace_run_all
+}
+
+################################################
+# initialisation
+function ace_init() {
+  trace_in 2 ace_init
+  # Data directory (in this case bar files directory)
+  sc_ace_barfiles_dir="${sc_component_script_dir}/BarFiles/"
+  trace_out 2 ace_init
+}
+
+################################################
+# main function
+# Main logic
+function main() {
+  trace_in 3 main
+
+  if [[ $# -eq 0 ]]; then
+    mylog error "No arguments provided. Use --all or --call function_name parameters, function_name parameters, ...."
+    return 1
+  fi
+
+  # Main script logic
+  local lf_calls=""  # Initialize calls variable
+  local lf_key
+
+  while [[ $# -gt 0 ]]; do
+    lf_key="$1"
+    case $lf_key in
+      --all)
+        shift
+        ;;
+      --call)
+        shift
+        while [[ $# -gt 0 && "$1" != --* ]]; do
+          lf_calls+="$1 "  # Accumulate all arguments after --call
+          shift
+        done
+        ;;
+      *)
+        mylog error "Invalid option '$1'. Use --all or --call function_name parameters, function_name parameters, ...."
+        trace_out 3 main
+        return 1
+        ;;
+      esac
+  done
+  lf_calls=$(echo "$lf_calls" | xargs)  # Trim leading/trailing spaces
+
+  # Call processing function if --call was used
+  case $lf_key in
+    --all) ace_run_all "$@";;
+    --call) if [[ -n $lf_calls ]]; then
+              process_calls "$lf_calls"
+            else
+              mylog error "No function to call. Use --call function_name parameters, function_name parameters, ...."
+              trace_out 3 main
+              return 1
+            fi;;
+    esac
+
+  trace_out 3 main
+  exit 0
 }
 
 ################################################################################################
 # Start of the script main entry
-# main
+################################################################################################
+# other example: ./ace.config.sh --call <function_name1>, <function_name2>, ...
+# other example: ./ace.config.sh --all
+################################################################################################
 
-starting=$(date);
+# SB] getting the path of this script independently from using it directly or calling it from another script
+# sc_component_script_dir="$( cd "$( dirname "$0" )" && pwd )/": this statement returns the calling script path
 
-SECONDS=0
+# Voir aussi comment on peut utiliser l'option suivante (trouvée dans un sript de Dale Lane)
+# allow this script to be run from other locations, despite the
+# relative file paths used in it
+#OPTION# if [[ $BASH_SOURCE = */* ]]; then
+#OPTION#   cd -- "${BASH_SOURCE%/*}/" || exit
+#OPTION# fi
 
-# end with / on purpose
-#SCRIPTDIR=$(dirname "$0")/
-SCRIPTDIR="${MY_ACE_SCRIPTDIR}scripts/"
-CONFIGDIR="${SCRIPTDIR}../config/"
+# the following script returns the absolute path of this script independently from using it directly or calling it from another script
+sc_component_script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/"
+export VAR_ACE_WORKINGDIR="${sc_component_script_dir}working/"
 
-MAINSCRIPTDIR="${SCRIPTDIR}../../../"
+PROVISION_SCRIPTDIR="$( cd "$( dirname "${sc_component_script_dir}../../../../" )" && pwd )/"
+sc_provision_script_parameters_file="${PROVISION_SCRIPTDIR}script-parameters.properties"
+sc_provision_constant_properties_file="${PROVISION_SCRIPTDIR}properties/cp4i-constants.properties"
+sc_provision_variable_properties_file="${PROVISION_SCRIPTDIR}properties/cp4i-variables.properties"
+sc_provision_lib_file="${PROVISION_SCRIPTDIR}lib.sh"
+sc_component_properties_file="${sc_component_script_dir}../config/ace.properties"
+sc_provision_preambule_file="${PROVISION_SCRIPTDIR}preambule.properties"
 
-# Template directories
-BARFILESDIR="${SCRIPTDIR}BarFiles/"
+# SB]20250319 Je suis obligé d'utiliser set -a et set +a parceque à cet instant je n'ai pas accès à la fonction read_config_file
+# load script parrameters fil
+set -a
+. "${sc_provision_script_parameters_file}"
 
-#SB]20240524 Only the following variable is global for all bar files (Check if there others in which case put all them in a config file)
-MY_ACE_REPOSITORY_URL="https://raw.githubusercontent.com/saadbenachi/my_bar_files/main/"
+# load config files
+. "${sc_provision_constant_properties_file}"
 
-# SB]20240404 Global Index sequence for incremental output for each function call
-SC_SPACES_COUNTER=0
-SC_SPACES_INCR=3
+# load config files
+. "${sc_provision_variable_properties_file}"
 
-: <<'END_COMMENT'
-END_COMMENT
+# Load mq variables
+. "${sc_component_properties_file}"
 
-# Loop through files in the barfiles directory
-for sc_barfiledir in ${BARFILESDIR}*; do
+# Load shared variables
+. "${sc_provision_preambule_file}"
+set +a
 
-  decho 3 "sc_barfiledir: ${sc_barfiledir}"
+# load helper functions
+. "${sc_provision_lib_file}"
 
-  export MY_ACE_BAR_NAME=$(basename "${sc_barfiledir}")
+ace_init
 
-  # We have to use lower cases for secret due to the following rules :
-  # error: failed to create secret Secret "HTTPEchoApp-barauth-secret" is invalid: metadata.name: 
-  # Invalid value: "HTTPEchoApp-barauth-secret": a lowercase RFC 1123 subdomain must consist of 
-  # lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character 
-  # (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')
-
-  export MY_ACE_BAR_NAME_LC=$(echo "${MY_ACE_BAR_NAME}" | tr '[:upper:]' '[:lower:]')
-  TMPLYAMLDIR="${sc_barfiledir}/tmpl/"
-  CONFIGURATIONTYPESDIR="${sc_barfiledir}/configurationtypes/"
-
-  # load config file here in the loop because it depends on the name of the bar file
-  read_config_file "${CONFIGDIR}ace.properties"
-
-  check_directory_exist_create  "${MY_ACE_GEN_CUSTOMDIR}generated/${MY_ACE_BAR_NAME}"
-  sc_ace_custom_gendir="${MY_ACE_GEN_CUSTOMDIR}generated/${MY_ACE_BAR_NAME}/"
-
-  check_directory_exist_create  "${sc_ace_custom_gendir}yaml"
-  sc_generatedyamldir="${sc_ace_custom_gendir}yaml/"
-
-  # Process all the configuration types before creating the IntegrationRuntime (ex: IntegrationServer)
-  for sc_configfile in "${CONFIGURATIONTYPESDIR}"*; do
-    # Get the file basename then the filename without extension
-    sc_configfile_bn=$(basename "${sc_configfile}")
-    sc_configtype="${sc_configfile_bn%.*}"
-    decho 3 "sc_configfile: ${sc_configfile}|sc_configfile_bn=$sc_configfile_bn|sc_configtype:${sc_configtype}"
-
-    decho 3 "sc_configtype: ${sc_configtype}"
-    # SB]20240524 Process the different ACE configuration types
-    # https://www.ibm.com/docs/en/app-connect/containers_cd?topic=resources-configuration-reference
-    # https://www.ibm.com/docs/en/app-connect/containers_cd?topic=resources-configuration-reference
-    case "${sc_configtype}" in
-      "accounts") mylog "info" "policyproject:tbd";;
-      "adminssl") mylog "info" "policyproject:tbd";;
-      "agenta") mylog "info" "policyproject:tbd";;
-      "agentx") mylog "info" "policyproject:tbd";;
-      "barauth") create_secret_for_barauth "${CONFIGURATIONTYPESDIR}${sc_configfile_bn}"
-                 create_ace_config_barauth "${TMPLYAMLDIR}${sc_configtype}.yaml";;
-      "db2cli") mylog "info" "policyproject:tbd";;
-      "generic") mylog "info" "policyproject:tbd";;
-      "keystore") mylog "info" "policyproject:tbd";;
-      "loopbackdatasource") mylog "info" "policyproject:tbd";;
-      "mqccdt") mylog "info" "policyproject:tbd";;
-      "mqccred") mylog "info" "policyproject:tbd";;
-      "odbc") mylog "info" "policyproject:tbd";;
-      "persistencerediscredentials") mylog "info" "policyproject:tbd";;
-      "policyproject") mylog "info" "policyproject:tbd";;
-      "privatenetworkagent") mylog "info" "privatenetworkagent:tbd";;
-      "resiliencekafkacredentials") mylog "info" "resiliencekafkacredentials:tbd";;
-      "s3credentials") mylog "info" "s3credentials:tbd";;
-      "serverconf") create_ace_config_serverconf "${CONFIGURATIONTYPESDIR}${sc_configfile_bn}";;
-      "setdbparms") mylog "info" "setdbparms:tbd";;
-      "truststore") mylog "info" "truststore:tbd";;
-      "truststorecertificate") mylog "info" "truststorecertificate:tbd";;
-      "Vault") mylog "info" "Vault:tbd";;
-      "VaultKey") mylog "info" "VaultKey:tbd";;
-      "workdiroverride") mylog "info" "workdiroverride:tbd";;
-      *) mylog "error" "Unknown configuration type: ${MY_ACE_BAR_NAME}";;
-    esac
-  done
-
-  # Create the IntegrationRuntime (ex: IntegrationServer)
-  cat "${TMPLYAMLDIR}integrationruntime.yaml" | envsubst > "${sc_generatedyamldir}integrationruntime.yaml"
-
-  # Check if the resource already exists
-  if oc get -n ${MY_OC_PROJECT} -f -f "${sc_generatedyamldir}integrationruntime.yaml" >/dev/null 2>&1; then
-    mylog "info" "Resource already exists"
-  else
-    oc -n ${MY_OC_PROJECT} apply -f "${sc_generatedyamldir}integrationruntime.yaml"
-  fi
-
-done
-
-duration=$SECONDS
-mylog info "Creation of the ACE artefacts took $duration seconds to execute." 1>&2
-
-ending=$(date);
-# echo "------------------------------------"
-mylog info "Start: $starting - end: $ending" 1>&2
-mylog info "$(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."  1>&2
+######################################################
+# main entry
+######################################################
+# Main execution block (only runs if executed directly)
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi

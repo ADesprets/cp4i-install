@@ -7,7 +7,7 @@ spec:
   zone:
     name:  $MY_INSTANA_ZONE_NAME
   cluster: 
-      name: $MY_OC_PROJECT 
+      name: $MY_INSTANA_AGENT_NAMESPACE 
   agent:
     key: $MY_INSTANA_AGENT_KEY
     endpointHost: $MY_INSTANA_EP_HOST

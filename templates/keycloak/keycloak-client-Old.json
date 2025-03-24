@@ -1,0 +1,25 @@
+{
+    "clientId": "${VAR_KEYCLOAK_CLIENT_ID}",
+    "name": "${VAR_KEYCLOAK_CLIENT_ID}",
+    "description": "${MY_KEYCLOAK_DESCRIPTION}",
+    "protocol": "openid-connect",
+    "rootUrl": "https://my-app.example.com",
+    "redirectUris": ["https://my-app.example.com/callback"],
+    "clientAuthenticatorType": "client-secret",
+    "publicClient": false,
+    "serviceAccountsEnabled": true,
+    "standardFlowEnabled": true,
+    "directAccessGrantsEnabled": true,
+    "surrogateAuthRequired": false,
+    "enabled": true,
+    "alwaysDisplayInConsole": true,
+    "fullScopeAllowed": true,
+    "attributes": {
+    "access.token.lifespan": "300"
+    },
+    "access": {
+      "view": true,
+      "configure": true,
+      "manage": true
+    }
+  }

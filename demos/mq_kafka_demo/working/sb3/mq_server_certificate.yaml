@@ -1,0 +1,26 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: sb3
+  namespace: cp4i
+spec:
+  commonName: "*.67ce6e58c93eabd5dbaf02a8.ocp.techzone.ibm.com"
+  dnsNames:
+    - "*.67ce6e58c93eabd5dbaf02a8.ocp.techzone.ibm.com"
+  duration: 8760h
+  issuerRef:
+    name: sb3-issuer
+    kind: Issuer
+  privateKey:
+    algorithm: RSA
+    size: 2048
+  renewBefore: 720h
+  secretName: sb3-secret
+  subject:
+    organizations:
+      - "ibm"
+    organizationalUnits:
+      - "ibm_MQ"
+  usages:
+    - server auth
+    - client auth
