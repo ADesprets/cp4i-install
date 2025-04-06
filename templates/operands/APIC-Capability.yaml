@@ -22,7 +22,9 @@ spec:
     governance:
       enabled: true 
   portal:
-    mtlsValidateClient: true           
+    mtlsValidateClient: true
+  gateway:
+    webGUIManagementEnabled: true
   license:
     accept: true
     license: $MY_APIC_LIC

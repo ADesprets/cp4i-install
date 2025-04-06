@@ -1,0 +1,876 @@
+.
+├── argocd
+│   ├── 00-bootstrap
+│   │   ├── apic-ssys
+│   │   │   ├── bootstrap-cp4i-path.yaml
+│   │   │   ├── bootstrap-infra-path.yaml
+│   │   │   ├── bootstrap-path.yaml
+│   │   │   └── kustomization.yaml
+│   │   ├── base
+│   │   │   ├── apps
+│   │   │   │   ├── cp4i
+│   │   │   │   │   ├── bootstrap-cp4i.yaml
+│   │   │   │   │   └── kustomization.yaml
+│   │   │   │   ├── infra
+│   │   │   │   │   ├── bootstrap-infra.yaml
+│   │   │   │   │   └── kustomization.yaml
+│   │   │   │   └── observability
+│   │   │   │       ├── bootstrap-observability.yaml
+│   │   │   │       └── kustomization.yaml
+│   │   │   ├── bootstrap-prj.yaml
+│   │   │   ├── bootstrap.yaml
+│   │   │   └── kustomization.yaml
+│   │   ├── klesia
+│   │   │   ├── bootstrap-cp4i-path.yaml
+│   │   │   ├── bootstrap-infra-path.yaml
+│   │   │   ├── bootstrap-path.yaml
+│   │   │   └── kustomization.yaml
+│   │   ├── lts_16.1
+│   │   │   ├── bootstrap-cp4i-path.yaml
+│   │   │   ├── bootstrap-infra-path.yaml
+│   │   │   ├── bootstrap-path.yaml
+│   │   │   └── kustomization.yaml
+│   │   ├── lts_2022.2
+│   │   │   ├── bootstrap-cp4i-path.yaml
+│   │   │   ├── bootstrap-infra-path.yaml
+│   │   │   ├── bootstrap-observability-path.yaml
+│   │   │   ├── bootstrap-path.yaml
+│   │   │   └── kustomization.yaml
+│   │   ├── sandbox
+│   │   │   ├── bootstrap-cp4i-path.yaml
+│   │   │   ├── bootstrap-infra-path.yaml
+│   │   │   ├── bootstrap-path.yaml
+│   │   │   └── kustomization.yaml
+│   │   ├── test
+│   │   │   ├── bootstrap-cp4i-path.yaml
+│   │   │   ├── bootstrap-infra-path.yaml
+│   │   │   ├── bootstrap-path.yaml
+│   │   │   └── kustomization.yaml
+│   │   └── ugrade_16.1
+│   │       ├── bootstrap-cp4i-path.yaml
+│   │       ├── bootstrap-infra-path.yaml
+│   │       ├── bootstrap-path.yaml
+│   │       └── kustomization.yaml
+│   ├── 10-infra
+│   │   ├── apic-ssys
+│   │   │   ├── cert-manager-path.yaml
+│   │   │   ├── console-banner-path.yaml
+│   │   │   ├── kustomization.yaml
+│   │   │   ├── monitoring-path.yaml
+│   │   │   └── rook-ceph-path.yaml
+│   │   ├── base
+│   │   │   ├── apps
+│   │   │   │   ├── cert-manager
+│   │   │   │   │   ├── cert-manager.yaml
+│   │   │   │   │   └── kustomization.yaml
+│   │   │   │   ├── console-banner
+│   │   │   │   │   ├── console-banner.yaml
+│   │   │   │   │   └── kustomization.yaml
+│   │   │   │   ├── ingress-controller
+│   │   │   │   │   ├── ingress-controller.yaml
+│   │   │   │   │   └── kustomization.yaml
+│   │   │   │   ├── monitoring
+│   │   │   │   │   ├── kustomization.yaml
+│   │   │   │   │   └── monitoring.yaml
+│   │   │   │   ├── openshift-pipeline
+│   │   │   │   │   ├── kustomization.yaml
+│   │   │   │   │   └── openshift-pipeline.yaml
+│   │   │   │   ├── rook-ceph
+│   │   │   │   │   ├── kustomization.yaml
+│   │   │   │   │   └── rook-ceph.yaml
+│   │   │   │   └── sealed-secrets
+│   │   │   │       ├── kustomization.yaml
+│   │   │   │       └── sealed-secrets.yaml
+│   │   │   ├── infra-prj.yaml
+│   │   │   └── kustomization.yaml
+│   │   ├── klesia
+│   │   │   ├── cert-manager-path.yaml
+│   │   │   ├── console-banner-path.yaml
+│   │   │   ├── kustomization.yaml
+│   │   │   ├── monitoring-path.yaml
+│   │   │   └── rook-ceph-path.yaml
+│   │   ├── lts_16.1
+│   │   │   ├── cert-manager-path.yaml
+│   │   │   ├── console-banner-path.yaml
+│   │   │   ├── kustomization.yaml
+│   │   │   ├── monitoring-path.yaml
+│   │   │   ├── openshift-pipeline-path.yaml
+│   │   │   └── sealed-secrets-path.yaml
+│   │   ├── lts_2022.2
+│   │   │   ├── cert-manager-path.yaml
+│   │   │   ├── console-banner-path.yaml
+│   │   │   ├── ingress-controler.yaml
+│   │   │   ├── kustomization.yaml
+│   │   │   ├── monitoring-path.yaml
+│   │   │   ├── openshift-pipeline-path.yaml
+│   │   │   ├── rook-ceph-path.yaml
+│   │   │   └── sealed-secrets-path.yaml
+│   │   ├── sandbox
+│   │   │   ├── cert-manager-path.yaml
+│   │   │   ├── console-banner-path.yaml
+│   │   │   ├── kustomization.yaml
+│   │   │   ├── monitoring-path.yaml
+│   │   │   ├── openshift-pipeline-path.yaml
+│   │   │   └── sealed-secrets-path.yaml
+│   │   ├── test
+│   │   │   ├── cert-manager-path.yaml
+│   │   │   ├── console-banner-path.yaml
+│   │   │   ├── kustomization.yaml
+│   │   │   ├── monitoring-path.yaml
+│   │   │   ├── openshift-pipeline-path.yaml
+│   │   │   └── sealed-secrets-path.yaml
+│   │   └── ugrade_16.1
+│   │       ├── cert-manager-path.yaml
+│   │       ├── console-banner-path.yaml
+│   │       ├── kustomization.yaml
+│   │       ├── monitoring-path.yaml
+│   │       ├── openshift-pipeline-path.yaml
+│   │       └── sealed-secrets-path.yaml
+│   └── 20-cp4i
+│       ├── apic-ssys
+│       │   ├── apic-path.yaml
+│       │   ├── common-services-path.yaml
+│       │   ├── datapower-path.yaml
+│       │   ├── ibm-catalogs-path.yaml
+│       │   ├── kustomization.yaml
+│       │   ├── platform-ui-path.yaml
+│       │   └── subscriptions-path.yaml
+│       ├── base
+│       │   ├── apps
+│       │   │   ├── apic
+│       │   │   │   ├── apic-instance.yaml
+│       │   │   │   └── kustomization.yaml
+│       │   │   ├── apic-config
+│       │   │   │   ├── apic-config-pipeline.yaml
+│       │   │   │   └── kustomization.yaml
+│       │   │   ├── common-services
+│       │   │   │   ├── common-services.yaml
+│       │   │   │   └── kustomization.yaml
+│       │   │   ├── cp4i
+│       │   │   │   ├── cp4i.yaml
+│       │   │   │   └── kustomization.yaml
+│       │   │   ├── datapower
+│       │   │   │   ├── datapower.yaml
+│       │   │   │   └── kustomization.yaml
+│       │   │   ├── datapower-v5
+│       │   │   │   ├── datapower-v5.yaml
+│       │   │   │   └── kustomization.yaml
+│       │   │   ├── eventstreams
+│       │   │   │   ├── eventstreams-instance.yaml
+│       │   │   │   └── kustomization.yaml
+│       │   │   ├── ibm-catalogs
+│       │   │   │   ├── ibm-catalogs.yaml
+│       │   │   │   └── kustomization.yaml
+│       │   │   ├── ibm-license-reporter
+│       │   │   │   ├── ibm-license-reporter.yaml
+│       │   │   │   └── kustomization.yaml
+│       │   │   ├── mq
+│       │   │   │   ├── kustomization.yaml
+│       │   │   │   └── mq-instance.yaml
+│       │   │   ├── platform-ui
+│       │   │   │   ├── kustomization.yaml
+│       │   │   │   └── platform-ui-instance.yaml
+│       │   │   └── subscriptions
+│       │   │       ├── kustomization.yaml
+│       │   │       └── subscriptions.yaml
+│       │   ├── cp4i-prj.yaml
+│       │   └── kustomization.yaml
+│       ├── klesia
+│       │   ├── apic-path.yaml
+│       │   ├── common-services-path.yaml
+│       │   ├── datapower-path.yaml
+│       │   ├── ibm-catalogs-path.yaml
+│       │   ├── kustomization.yaml
+│       │   ├── platform-ui-path.yaml
+│       │   └── subscriptions-path.yaml
+│       ├── lts_16.1
+│       │   ├── apic-config-path.yaml
+│       │   ├── apic-path.yaml
+│       │   ├── common-services-path.yaml
+│       │   ├── env1
+│       │   │   ├── kustomization.yaml
+│       │   │   └── mq-path.yaml
+│       │   ├── env2
+│       │   │   ├── kustomization.yaml
+│       │   │   └── mq-path.yaml
+│       │   ├── eventstreams-path.yaml
+│       │   ├── eventstream.yaml
+│       │   ├── ibm-catalogs-path.yaml
+│       │   ├── ibm-license-reporter-path.yaml
+│       │   ├── kustomization.yaml
+│       │   ├── mq-path.yaml
+│       │   ├── platform-ui-path.yaml
+│       │   └── subscriptions-path.yaml
+│       ├── lts_2022.2
+│       │   ├── apic-config-path.yaml
+│       │   ├── apic-path.yaml
+│       │   ├── common-services-path.yaml
+│       │   ├── eventstreams-path.yaml
+│       │   ├── ibm-catalogs-path.yaml
+│       │   ├── kustomization.yaml
+│       │   ├── mq-path.yaml
+│       │   ├── sandbox-env1
+│       │   │   ├── kustomization.yaml
+│       │   │   └── mq-path.yaml
+│       │   ├── sandbox-env2
+│       │   │   ├── kustomization.yaml
+│       │   │   └── mq-path.yaml
+│       │   └── subscriptions-path.yaml
+│       ├── sandbox
+│       │   ├── apic-config-path.yaml
+│       │   ├── apic-path.yaml
+│       │   ├── common-services-path.yaml
+│       │   ├── env1
+│       │   │   ├── kustomization.yaml
+│       │   │   └── mq-path.yaml
+│       │   ├── env2
+│       │   │   ├── kustomization.yaml
+│       │   │   └── mq-path.yaml
+│       │   ├── eventstreams-path.yaml
+│       │   ├── eventstream.yaml
+│       │   ├── ibm-catalogs-path.yaml
+│       │   ├── ibm-license-reporter-path.yaml
+│       │   ├── kustomization.yaml
+│       │   ├── mq-path.yaml
+│       │   ├── platform-ui-path.yaml
+│       │   └── subscriptions-path.yaml
+│       ├── test
+│       │   ├── apic-config-path.yaml
+│       │   ├── apic-path.yaml
+│       │   ├── common-services-path.yaml
+│       │   ├── env1
+│       │   │   ├── kustomization.yaml
+│       │   │   └── mq-path.yaml
+│       │   ├── env2
+│       │   │   ├── kustomization.yaml
+│       │   │   └── mq-path.yaml
+│       │   ├── eventstreams-path.yaml
+│       │   ├── eventstream.yaml
+│       │   ├── ibm-catalogs-path.yaml
+│       │   ├── ibm-license-reporter-path.yaml
+│       │   ├── kustomization.yaml
+│       │   ├── mq-path.yaml
+│       │   ├── platform-ui-path.yaml
+│       │   └── subscriptions-path.yaml
+│       └── ugrade_16.1
+│           ├── apic-config-path.yaml
+│           ├── apic-path.yaml
+│           ├── common-services-path.yaml
+│           ├── env1
+│           │   ├── kustomization.yaml
+│           │   └── mq-path.yaml
+│           ├── env2
+│           │   ├── kustomization.yaml
+│           │   └── mq-path.yaml
+│           ├── eventstreams-path.yaml
+│           ├── eventstream.yaml
+│           ├── ibm-catalogs-path.yaml
+│           ├── ibm-license-reporter-path.yaml
+│           ├── kustomization.yaml
+│           ├── mq-path.yaml
+│           ├── platform-ui-path.yaml
+│           └── subscriptions-path.yaml
+├── deployables
+│   ├── 10-infra
+│   │   ├── cert-manager
+│   │   │   ├── apic-ssys
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── base
+│   │   │   │   ├── cert-manager-operator-group.yaml
+│   │   │   │   ├── cert-manager-operator-namespace.yaml.old
+│   │   │   │   ├── cert-manager-subscription.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── klesia
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── lts_16.1
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── lts_2022.2
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── sandbox
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── test
+│   │   │   │   └── kustomization.yaml
+│   │   │   └── ugrade_16.1
+│   │   │       └── kustomization.yaml
+│   │   ├── cloud-native-postgresql-catalog
+│   │   │   ├── base
+│   │   │   │   ├── cloud-native-postgresql-catalog.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── lts_16.1
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── sandbox
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── test
+│   │   │   │   └── kustomization.yaml
+│   │   │   └── ugrade_16.1
+│   │   │       └── kustomization.yaml
+│   │   ├── console-banner
+│   │   │   ├── apic-ssys
+│   │   │   │   ├── banner.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── base
+│   │   │   │   ├── banner.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── klesia
+│   │   │   │   ├── banner.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── lts_16.1
+│   │   │   │   ├── banner.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── lts_2022.2
+│   │   │   │   ├── banner.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── sandbox
+│   │   │   │   ├── banner.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── test
+│   │   │   │   ├── banner.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   └── ugrade_16.1
+│   │   │       ├── banner.yaml
+│   │   │       └── kustomization.yaml
+│   │   ├── ingress-controller
+│   │   │   ├── base
+│   │   │   │   ├── ingress-controller.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── lts_16.1
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── lts_2022.2
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── sandbox
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── test
+│   │   │   │   └── kustomization.yaml
+│   │   │   └── ugrade_16.1
+│   │   │       └── kustomization.yaml
+│   │   ├── monitoring
+│   │   │   ├── apic-ssys
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── base
+│   │   │   │   ├── cluster-monitoring-config.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── klesia
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── lts_16.1
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── lts_2022.2
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── sandbox
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── test
+│   │   │   │   └── kustomization.yaml
+│   │   │   └── ugrade_16.1
+│   │   │       └── kustomization.yaml
+│   │   ├── openshift-pipeline
+│   │   │   ├── base
+│   │   │   │   ├── kustomization.yaml
+│   │   │   │   └── openshift-pipeline-operator.yaml
+│   │   │   ├── lts_16.1
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── lts_2022.2
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── sandbox
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── test
+│   │   │   │   └── kustomization.yaml
+│   │   │   └── ugrade_16.1
+│   │   │       └── kustomization.yaml
+│   │   ├── rook-ceph
+│   │   │   ├── apic-ssys
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── base
+│   │   │   │   ├── cephfs-storageclass.yaml
+│   │   │   │   ├── check-rook-rb.yaml
+│   │   │   │   ├── check-rook-sa.yaml
+│   │   │   │   ├── check-rook.yaml
+│   │   │   │   ├── cluster.yaml
+│   │   │   │   ├── common.yaml
+│   │   │   │   ├── crds.yaml
+│   │   │   │   ├── filesystem.yaml
+│   │   │   │   ├── kustomization.yaml
+│   │   │   │   ├── operator-openshift.yaml
+│   │   │   │   └── storageclass.yaml
+│   │   │   ├── klesia
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── lts_16.1
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── lts_2022.2
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── sandbox
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── test
+│   │   │   │   └── kustomization.yaml
+│   │   │   └── ugrade_16.1
+│   │   │       └── kustomization.yaml
+│   │   └── sealed-secrets
+│   │       ├── base
+│   │       │   ├── controller.yaml
+│   │       │   └── kustomization.yaml
+│   │       ├── lts_16.1
+│   │       │   └── kustomization.yaml
+│   │       ├── lts_2022.2
+│   │       │   └── kustomization.yaml
+│   │       ├── sandbox
+│   │       │   └── kustomization.yaml
+│   │       ├── test
+│   │       │   └── kustomization.yaml
+│   │       └── ugrade_16.1
+│   │           └── kustomization.yaml
+│   ├── 20-cp4i
+│   │   ├── apic
+│   │   │   ├── apic-ssys
+│   │   │   │   ├── apic-analytics-cluster.yaml
+│   │   │   │   ├── apic-management-cluster.yaml
+│   │   │   │   ├── apic-portal-cluster.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── base
+│   │   │   │   ├── analytics-cluster
+│   │   │   │   │   ├── analytics-cluster.yaml
+│   │   │   │   │   └── kustomization.yaml
+│   │   │   │   ├── apic-cluster
+│   │   │   │   │   ├── apic-cluster.yaml
+│   │   │   │   │   └── kustomization.yaml
+│   │   │   │   ├── ingress-issuer
+│   │   │   │   │   ├── ingress-issuer.yaml
+│   │   │   │   │   └── kustomization.yaml
+│   │   │   │   ├── management-cluster
+│   │   │   │   │   ├── kustomization.yaml
+│   │   │   │   │   └── management-cluster.yaml
+│   │   │   │   └── portal-cluster
+│   │   │   │       ├── kustomization.yaml
+│   │   │   │       └── portal-cluster.yaml
+│   │   │   ├── klesia
+│   │   │   │   ├── apic-analytics-cluster.yaml
+│   │   │   │   ├── apic-management-cluster.yaml
+│   │   │   │   ├── apic-portal-cluster.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── lts_16.1
+│   │   │   │   ├── apic-cluster.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── lts_2022.2
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── sandbox
+│   │   │   │   ├── apic-cluster.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── test
+│   │   │   │   ├── apic-cluster.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   └── ugrade_16.1
+│   │   │       ├── apic-cluster.yaml
+│   │   │       └── kustomization.yaml
+│   │   ├── apic-config
+│   │   │   ├── base
+│   │   │   │   ├── apic-config-pipeline.yaml
+│   │   │   │   ├── apic-config-rolebinding.yaml
+│   │   │   │   ├── apic-config-role.yaml
+│   │   │   │   ├── apic-config-tasks.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── lts_16.1
+│   │   │   │   ├── apic-config-email-server-secret.yaml
+│   │   │   │   ├── apic-pipeline-git-secret.yaml
+│   │   │   │   ├── apic-pipeline-provider-org-secret.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── lts_2022.2
+│   │   │   │   ├── apic-config-email-server-secret.yaml
+│   │   │   │   ├── apic-pipeline-git-secret.yaml
+│   │   │   │   ├── apic-pipeline-provider-org-secret.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── sandbox
+│   │   │   │   ├── apic-config-email-server-secret.yaml
+│   │   │   │   ├── apic-pipeline-git-secret.yaml
+│   │   │   │   ├── apic-pipeline-provider-org-secret.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── test
+│   │   │   │   ├── apic-config-email-server-secret.yaml
+│   │   │   │   ├── apic-pipeline-git-secret.yaml
+│   │   │   │   ├── apic-pipeline-provider-org-secret.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   └── ugrade_16.1
+│   │   │       ├── apic-config-email-server-secret.yaml
+│   │   │       ├── apic-pipeline-git-secret.yaml
+│   │   │       ├── apic-pipeline-provider-org-secret.yaml
+│   │   │       └── kustomization.yaml
+│   │   ├── common-services
+│   │   │   ├── apic-ssys
+│   │   │   │   ├── common-services-size.yaml
+│   │   │   │   ├── ibm-licensing-reporter.yaml
+│   │   │   │   ├── kustomization.yaml
+│   │   │   │   └── operand-requests.yaml
+│   │   │   ├── base
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── klesia
+│   │   │   │   ├── common-services-size.yaml
+│   │   │   │   ├── ibm-licensing-reporter.yaml
+│   │   │   │   ├── kustomization.yaml
+│   │   │   │   └── operand-requests.yaml
+│   │   │   ├── lts_16.1
+│   │   │   │   ├── common-services-size.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── lts_2022.2
+│   │   │   │   ├── check-rb.yaml
+│   │   │   │   ├── check-sa.yaml
+│   │   │   │   ├── check.yaml
+│   │   │   │   ├── common-services.yaml
+│   │   │   │   ├── ibm-licensing-reporter.yaml
+│   │   │   │   ├── kustomization.yaml
+│   │   │   │   └── operand-requests.yaml
+│   │   │   ├── sandbox
+│   │   │   │   ├── common-services-size.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── test
+│   │   │   │   ├── common-services-size.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   └── ugrade_16.1
+│   │   │       ├── common-services-size.yaml
+│   │   │       └── kustomization.yaml
+│   │   ├── cp4i
+│   │   │   └── base
+│   │   │       ├── apic-namespace.yaml
+│   │   │       └── kustomization.yaml
+│   │   ├── cp4i-subscriptions
+│   │   │   ├── apic-ssys
+│   │   │   │   ├── apic-subscription.yaml
+│   │   │   │   ├── cpfs-subscription-channel.yaml
+│   │   │   │   ├── eventstreams-subscription.yaml
+│   │   │   │   ├── ibm-common-services-namespace.yaml
+│   │   │   │   ├── kustomization.yaml
+│   │   │   │   └── platform-ui-subscription.yaml
+│   │   │   ├── base
+│   │   │   │   ├── apic
+│   │   │   │   │   ├── apic-subscription.yaml
+│   │   │   │   │   └── kustomization.yaml
+│   │   │   │   ├── common-services
+│   │   │   │   │   ├── cpfs-subscription.yaml
+│   │   │   │   │   └── kustomization.yaml
+│   │   │   │   ├── eventstreams
+│   │   │   │   │   ├── eventstreams-subscription.yaml
+│   │   │   │   │   └── kustomization.yaml
+│   │   │   │   ├── ibm-licensing
+│   │   │   │   │   ├── ibm-licensing-namespace.yaml
+│   │   │   │   │   ├── ibm-licensing-operator-group.yaml
+│   │   │   │   │   ├── ibm-licensing-subscription.yaml
+│   │   │   │   │   └── kustomization.yaml
+│   │   │   │   ├── ibm-licensing-reporter
+│   │   │   │   │   ├── ibm-licensing-reporter-subscription.yaml
+│   │   │   │   │   └── kustomization.yaml
+│   │   │   │   ├── mq
+│   │   │   │   │   ├── kustomization.yaml
+│   │   │   │   │   └── mq-subscription.yaml
+│   │   │   │   └── platform-ui
+│   │   │   │       ├── kustomization.yaml
+│   │   │   │       └── platform-ui-subscription.yaml
+│   │   │   ├── klesia
+│   │   │   │   ├── apic-subscription.yaml
+│   │   │   │   ├── cpfs-subscription-channel.yaml
+│   │   │   │   ├── eventstreams-subscription.yaml
+│   │   │   │   ├── ibm-common-services-namespace.yaml
+│   │   │   │   ├── kustomization.yaml
+│   │   │   │   └── platform-ui-subscription.yaml
+│   │   │   ├── lts_16.1
+│   │   │   │   ├── apic-subscription-channel.yaml
+│   │   │   │   ├── cpfs-subscription-channel.yaml
+│   │   │   │   ├── eventstreams-subscription-channel.yaml
+│   │   │   │   ├── ibm-common-services-namespace.yaml
+│   │   │   │   ├── kustomization.yaml
+│   │   │   │   ├── mq-subscription-channel.yaml
+│   │   │   │   └── platform-ui-subscription.yaml
+│   │   │   ├── lts_2022.2
+│   │   │   │   ├── apic-subscription-channel.yaml
+│   │   │   │   ├── cpfs-subscription-channel.yaml
+│   │   │   │   ├── eventstreams-subscription-channel.yaml
+│   │   │   │   ├── kustomization.yaml
+│   │   │   │   └── mq-subscription-channel.yaml
+│   │   │   ├── sandbox
+│   │   │   │   ├── apic-subscription-channel.yaml
+│   │   │   │   ├── cpfs-subscription-channel.yaml
+│   │   │   │   ├── eventstreams-subscription-channel.yaml
+│   │   │   │   ├── ibm-common-services-namespace.yaml
+│   │   │   │   ├── kustomization.yaml
+│   │   │   │   ├── mq-subscription-channel.yaml
+│   │   │   │   └── platform-ui-subscription.yaml
+│   │   │   ├── test
+│   │   │   │   ├── apic-subscription-channel.yaml
+│   │   │   │   ├── cpfs-subscription-channel.yaml
+│   │   │   │   ├── eventstreams-subscription-channel.yaml
+│   │   │   │   ├── ibm-common-services-namespace.yaml
+│   │   │   │   ├── kustomization.yaml
+│   │   │   │   ├── mq-subscription-channel.yaml
+│   │   │   │   └── platform-ui-subscription.yaml
+│   │   │   └── ugrade_16.1
+│   │   │       ├── apic-subscription-channel.yaml
+│   │   │       ├── cpfs-subscription-channel.yaml
+│   │   │       ├── eventstreams-subscription-channel.yaml
+│   │   │       ├── ibm-common-services-namespace.yaml
+│   │   │       ├── kustomization.yaml
+│   │   │       ├── mq-subscription-channel.yaml
+│   │   │       └── platform-ui-subscription.yaml
+│   │   ├── datapower
+│   │   │   ├── apic-ssys
+│   │   │   │   ├── datapower.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── base
+│   │   │   │   ├── common-issuer-and-gateway-certs.yaml
+│   │   │   │   ├── datapower-admin-secret.yaml
+│   │   │   │   ├── datapower.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   └── klesia
+│   │   │       ├── datapower.yaml
+│   │   │       └── kustomization.yaml
+│   │   ├── datapower-v5
+│   │   │   └── base
+│   │   │       ├── common-issuer-and-gateway-certs.yaml
+│   │   │       ├── datapower-admin-secret.yaml
+│   │   │       ├── datapower-v5.yaml
+│   │   │       └── kustomization.yaml
+│   │   ├── eventstreams
+│   │   │   ├── apic-ssys
+│   │   │   │   ├── eventstreams-sample-development.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── base
+│   │   │   │   ├── evenstreams-sample-development.yaml
+│   │   │   │   ├── kustomization.yaml
+│   │   │   │   ├── patch-cm.yaml
+│   │   │   │   ├── patch-rb.yaml
+│   │   │   │   └── patch-sa.yaml
+│   │   │   ├── klesia
+│   │   │   │   ├── eventstreams-sample-development.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── lts_16.1
+│   │   │   │   ├── eventstreams-sample-development.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── lts_2022.2
+│   │   │   │   ├── eventstreams-sample-development.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── sandbox
+│   │   │   │   ├── eventstreams-sample-development.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── test
+│   │   │   │   ├── eventstreams-sample-development.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   └── ugrade_16.1
+│   │   │       ├── eventstreams-sample-development.yaml
+│   │   │       └── kustomization.yaml
+│   │   ├── ibm-catalogs
+│   │   │   ├── apic-ssys
+│   │   │   │   ├── ibm-apic-catalog.yaml
+│   │   │   │   ├── ibm-cp-common-services-catalog.yaml
+│   │   │   │   ├── ibm-datapower-operator-catalog.yaml
+│   │   │   │   ├── ibm-platform-ui-catalog.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── base
+│   │   │   │   ├── apic
+│   │   │   │   │   ├── ibm-apiconnect-catalog.yaml
+│   │   │   │   │   ├── ibm-datapower-operator-catalog.yaml
+│   │   │   │   │   └── kustomization.yaml
+│   │   │   │   ├── apic-2023.4
+│   │   │   │   │   ├── ibm-apiconnect-catalog.yaml
+│   │   │   │   │   ├── ibm-datapower-operator-catalog.yaml
+│   │   │   │   │   ├── kustomization.yaml
+│   │   │   │   │   └── ReadMe.md
+│   │   │   │   ├── cpfs
+│   │   │   │   │   ├── ibm-cp-common-services-catalog.yaml
+│   │   │   │   │   └── kustomization.yaml
+│   │   │   │   ├── cpfs-2023.4
+│   │   │   │   │   ├── ibm-cp-common-services-catalog.yaml
+│   │   │   │   │   └── kustomization.yaml
+│   │   │   │   ├── eventstreams
+│   │   │   │   │   ├── ibm-eventstreams-catalog.yaml
+│   │   │   │   │   └── kustomization.yaml
+│   │   │   │   ├── ibm-cloud-native-postgresql
+│   │   │   │   │   ├── ibm-cloud-native-postgresql-catalog.yaml
+│   │   │   │   │   └── kustomization.yaml
+│   │   │   │   ├── ibm-license-reporter
+│   │   │   │   │   ├── ibm-license-service-reporter-operator-catalog.yaml
+│   │   │   │   │   └── kustomization.yaml
+│   │   │   │   ├── ibm-license-service
+│   │   │   │   │   ├── ibm-license-service-catalog.yaml
+│   │   │   │   │   └── kustomization.yaml
+│   │   │   │   ├── ibm-operator-catalog
+│   │   │   │   │   ├── ibm-operator-catalog.yaml
+│   │   │   │   │   └── kustomization.yaml
+│   │   │   │   ├── mq
+│   │   │   │   │   ├── ibm-mq-catalog.yaml
+│   │   │   │   │   └── kustomization.yaml
+│   │   │   │   └── platform-ui
+│   │   │   │       ├── ibm-platform-ui-catalog.yaml
+│   │   │   │       └── kustomization.yaml
+│   │   │   ├── klesia
+│   │   │   │   ├── ibm-apic-catalog.yaml
+│   │   │   │   ├── ibm-cp-common-services-catalog.yaml
+│   │   │   │   ├── ibm-datapower-operator-catalog.yaml
+│   │   │   │   ├── ibm-platform-ui-catalog.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── lts_16.1
+│   │   │   │   ├── ibm-apiconnect-catalog.yaml
+│   │   │   │   ├── ibm-cp-common-services-catalog.yaml
+│   │   │   │   ├── ibm-datapower-operator-catalog.yaml
+│   │   │   │   ├── ibm-eventstreams-catalog.yaml
+│   │   │   │   ├── ibm-mq-catalog.yaml
+│   │   │   │   ├── ibm-platform-ui-catalog.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── lts_2022.2
+│   │   │   │   ├── cloud-native-postgresql-catalog.yaml
+│   │   │   │   ├── ibm-apiconnect-catalog.yaml
+│   │   │   │   ├── ibm-cp-common-services-catalog.yaml
+│   │   │   │   ├── ibm-datapower-operator-catalog.yaml
+│   │   │   │   ├── ibm-eventstreams-catalog.yaml
+│   │   │   │   ├── ibm-mq-catalog.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── sandbox
+│   │   │   │   ├── ibm-apiconnect-catalog.yaml
+│   │   │   │   ├── ibm-cp-common-services-catalog.yaml
+│   │   │   │   ├── ibm-datapower-operator-catalog.yaml
+│   │   │   │   ├── ibm-eventstreams-catalog.yaml
+│   │   │   │   ├── ibm-mq-catalog.yaml
+│   │   │   │   ├── ibm-platform-ui-catalog.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── test
+│   │   │   │   ├── ibm-apiconnect-catalog.yaml
+│   │   │   │   ├── ibm-cp-common-services-catalog.yaml
+│   │   │   │   ├── ibm-datapower-operator-catalog.yaml
+│   │   │   │   ├── ibm-eventstreams-catalog.yaml
+│   │   │   │   ├── ibm-mq-catalog.yaml
+│   │   │   │   ├── ibm-platform-ui-catalog.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   └── ugrade_16.1
+│   │   │       ├── ibm-apiconnect-catalog.yaml
+│   │   │       ├── ibm-cp-common-services-catalog.yaml
+│   │   │       ├── ibm-datapower-operator-catalog.yaml
+│   │   │       ├── ibm-eventstreams-catalog.yaml
+│   │   │       ├── ibm-mq-catalog.yaml
+│   │   │       ├── ibm-platform-ui-catalog.yaml
+│   │   │       └── kustomization.yaml
+│   │   ├── ibm-license-reporter
+│   │   │   ├── base
+│   │   │   │   ├── ibm-license-reporter-instance.yaml
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── lts_16.1
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── sandbox
+│   │   │   │   └── kustomization.yaml
+│   │   │   ├── test
+│   │   │   │   └── kustomization.yaml
+│   │   │   └── ugrade_16.1
+│   │   │       └── kustomization.yaml
+│   │   ├── mq
+│   │   │   ├── apic-ssys
+│   │   │   │   ├── kustomization.yaml
+│   │   │   │   └── queuemanager-quickstart.yaml
+│   │   │   ├── base
+│   │   │   │   ├── instance
+│   │   │   │   │   ├── kustomization.yaml
+│   │   │   │   │   └── queuemanager-quickstart.yaml
+│   │   │   │   └── x2instances
+│   │   │   │       ├── ibm-mq1-namespace.yaml
+│   │   │   │       ├── ibm-mq2-namespace.yaml
+│   │   │   │       ├── kustomization.yaml
+│   │   │   │       ├── queuemanager-quickstart1.yaml
+│   │   │   │       └── queuemanager-quickstart2.yaml
+│   │   │   ├── klesia
+│   │   │   │   ├── kustomization.yaml
+│   │   │   │   └── queuemanager-quickstart.yaml
+│   │   │   ├── lts_16.1
+│   │   │   │   ├── env1
+│   │   │   │   │   ├── kustomization.yaml
+│   │   │   │   │   └── queuemanager-quickstart1.yaml
+│   │   │   │   ├── env2
+│   │   │   │   │   ├── kustomization.yaml
+│   │   │   │   │   └── queuemanager-quickstart1.yaml
+│   │   │   │   ├── kustomization.yaml
+│   │   │   │   └── queuemanager-quickstart.yaml
+│   │   │   ├── lts_2022.2
+│   │   │   │   ├── kustomization.yaml
+│   │   │   │   ├── queuemanager-quickstart2.yaml
+│   │   │   │   ├── queuemanager-quickstart.yaml
+│   │   │   │   ├── sandbox-env1
+│   │   │   │   │   ├── kustomization.yaml
+│   │   │   │   │   └── queuemanager-quickstart1.yaml
+│   │   │   │   └── sandbox-env2
+│   │   │   │       ├── kustomization.yaml
+│   │   │   │       └── queuemanager-quickstart1.yaml
+│   │   │   ├── sandbox
+│   │   │   │   ├── env1
+│   │   │   │   │   ├── kustomization.yaml
+│   │   │   │   │   └── queuemanager-quickstart1.yaml
+│   │   │   │   ├── env2
+│   │   │   │   │   ├── kustomization.yaml
+│   │   │   │   │   └── queuemanager-quickstart1.yaml
+│   │   │   │   ├── kustomization.yaml
+│   │   │   │   └── queuemanager-quickstart.yaml
+│   │   │   ├── test
+│   │   │   │   ├── configuration.yaml
+│   │   │   │   ├── env1
+│   │   │   │   │   ├── kustomization.yaml
+│   │   │   │   │   └── queuemanager-quickstart1.yaml
+│   │   │   │   ├── env2
+│   │   │   │   │   ├── kustomization.yaml
+│   │   │   │   │   └── queuemanager-quickstart1.yaml
+│   │   │   │   ├── kustomization.yaml
+│   │   │   │   └── queuemanager-quickstart.yaml
+│   │   │   └── ugrade_16.1
+│   │   │       ├── env1
+│   │   │       │   ├── kustomization.yaml
+│   │   │       │   └── queuemanager-quickstart1.yaml
+│   │   │       ├── env2
+│   │   │       │   ├── kustomization.yaml
+│   │   │       │   └── queuemanager-quickstart1.yaml
+│   │   │       ├── kustomization.yaml
+│   │   │       └── queuemanager-quickstart.yaml
+│   │   └── platform-ui
+│   │       ├── apic-ssys
+│   │       │   └── kustomization.yaml
+│   │       ├── base
+│   │       │   ├── kustomization.yaml
+│   │       │   └── platform-ui-instance.yaml
+│   │       ├── klesia
+│   │       │   └── kustomization.yaml
+│   │       ├── lts_16.1
+│   │       │   ├── kustomization.yaml
+│   │       │   └── platform-ui-instance.yaml
+│   │       ├── sandbox
+│   │       │   ├── kustomization.yaml
+│   │       │   └── platform-ui-instance.yaml
+│   │       ├── test
+│   │       │   ├── kustomization.yaml
+│   │       │   └── platform-ui-instance.yaml
+│   │       └── ugrade_16.1
+│   │           ├── kustomization.yaml
+│   │           └── platform-ui-instance.yaml
+│   └── 30-appli
+│       ├── eventstream
+│       │   ├── base
+│       │   │   ├── kustomization.yaml
+│       │   │   └── my-first-topic.yaml
+│       │   ├── sandbox
+│       │   │   ├── kustomization.yaml
+│       │   │   └── topicname.yaml
+│       │   └── test
+│       │       ├── kustomization.yaml
+│       │       └── topicname.yaml
+│       └── test-cm-generator
+│           ├── base
+│           │   ├── configuration.yaml
+│           │   ├── deployment.yaml
+│           │   ├── kustomization.yaml
+│           │   ├── queuemanager-quickstart.yaml
+│           │   ├── route.yaml
+│           │   └── svc.yaml
+│           ├── sandbox
+│           │   ├── configuration.yaml
+│           │   ├── kustomization.yaml
+│           │   ├── queuemanager-quickstart.yaml
+│           │   └── test.conf
+│           └── test
+│               ├── configuration.yaml
+│               ├── kustomization.yaml
+│               ├── queuemanager-quickstart.yaml
+│               └── test.conf
+├── doc
+│   ├── build-local-registry.md
+│   ├── configure-cluster-to-use-registry.md
+│   ├── deploy.md
+│   ├── markdown-cheat-sheet.md
+│   └── mirror-images.md
+└── README.md
+
+280 directories, 650 files

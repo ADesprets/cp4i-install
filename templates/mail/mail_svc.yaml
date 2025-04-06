@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ${VAR_MAIL_SERVICE}
+  namespace: $VAR_MAIL_NAMESPACE
+  labels:
+    app: $MY_MAIL_DEPLOYMENT
+spec:
+  selector:
+    app: $MY_MAIL_DEPLOYMENT
+  ports:
+    - name: http
+      port: 8025  # Web UI port
+      protocol: TCP
+      targetPort: 8025
+    - name: smtp
+      port: 1025  # SMTP server port
+      protocol: TCP
+      targetPort: 1025
+  type: ClusterIP

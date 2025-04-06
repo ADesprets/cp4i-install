@@ -3,7 +3,7 @@ kind: Subscription
 metadata:
   generation: 1
   name: $VAR_OPERATOR_NAME
-  namespace: $VAR_OPERATOR_NAMESPACE
+  namespace: $VAR_NAMESPACE
   labels:
     operators.coreos.com/openshift-pipelines-operator-rh.openshift-operators: ""
 spec:

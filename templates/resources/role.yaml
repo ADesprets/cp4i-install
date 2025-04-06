@@ -1,0 +1,14 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: ${VAR_ROLE}
+  namespace: ${VAR_NAMESPACE}
+rules:
+  - apiGroups:
+      - sharedresource.openshift.io
+    resources:
+      - sharedsecrets
+    resourceNames:
+      - ${VAR_SHARED_SECRET}
+    verbs:
+      - use

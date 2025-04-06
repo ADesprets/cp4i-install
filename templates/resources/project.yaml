@@ -5,3 +5,7 @@ metadata:
   annotations:
     openshift.io/description: $VAR_NAMESPACE_DESCRIPTION
     openshift.io/display-name: $VAR_NAMESPACE_DISPLAYNAME
+    openshift.io/node-selector: ""
+  labels:
+    openshift.io/cluster-monitoring: "true"
+    openshift.io/cluster-logging: "true"

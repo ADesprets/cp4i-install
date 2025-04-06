@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: $MY_MAIL_DEPLOYMENT
+  namespace: $VAR_MAIL_NAMESPACE
+  labels:
+    app: $MY_MAIL_DEPLOYMENT
+    app.kubernetes.io/component: $MY_MAIL_DEPLOYMENT
+    app.kubernetes.io/instance: $MY_MAIL_DEPLOYMENT
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: $MY_MAIL_DEPLOYMENT
+  template:
+    metadata:
+      labels:
+        app: $MY_MAIL_DEPLOYMENT
+    spec:
+      containers:
+        - name: $MY_MAIL_DEPLOYMENT
+          image: $MY_MAIL_IMAGE     # mailhog/mailhog:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8025  # Web UI port
+              protocol: TCP
+            - containerPort: 1025  # SMTP server port
+              protocol: TCP
+          env:
+            - name: MH_UI_BIND_ADDR
+              value: "0.0.0.0:8025"
+            - name: MH_SMTP_BIND_ADDR
+              value: "0.0.0.0:1025"
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "250m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"

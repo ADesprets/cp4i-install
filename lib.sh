@@ -2,22 +2,48 @@
 # install_networkpolicies function for License Service
 # https://www.ibm.com/docs/en/cloud-paks/foundational-services/4.6?topic=service-installing-network-policies-license
 function install_networkpolicies() {
-  trace_in 5 install_networkpolicies
+  local lf_tracelevel=5
+  trace_in $lf_tracelevel install_networkpolicies
+
+  local lf_in_entity="$1"
+  decho $lf_tracelevel "Parameters:\"$1\"|"
+
+  if [[ $# -ne 1 ]]; then
+    mylog error "You have to provide one argument : the entity (lic_svc or lic_reporter)"
+    trace_out $lf_tracelevel install_networkpolicies
+    exit  1
+  fi
 
   # applying network policies
-  mylog info "Applying network policies for IBM License service" 
-  check_create_oc_yaml "NetworkPolicy" "egress-ibm-licensing-operator" "${MY_RESOURCESDIR}" "${MY_LICENSE_SERVICE_WORKINGDIR}" "${MY_LICENSE_SERVICE_BEDROCK_EGRESS_OPERATOR_FILE}" "${MY_LICENSE_SERVICE_NAMESPACE}"
-  check_create_oc_yaml "NetworkPolicy" "egress-ibm-licensing-service-instance" "${MY_RESOURCESDIR}" "${MY_LICENSE_SERVICE_WORKINGDIR}" "${MY_LICENSE_SERVICE_BEDROCK_EGRESS_INSTANCE_FILE}" "${MY_LICENSE_SERVICE_NAMESPACE}"
+  case $lf_in_entity in
+  lic_svc)
+    mylog info "Applying network policies for IBM License service" 
+    check_create_oc_yaml "NetworkPolicy" "egress-ibm-licensing-operator" "${MY_RESOURCESDIR}" "${MY_LICENSE_SERVICE_WORKINGDIR}" "${MY_LICENSE_SERVICE_BEDROCK_EGRESS_OPERATOR_FILE}" "${MY_LICENSE_SERVICE_NAMESPACE}"
+    check_create_oc_yaml "NetworkPolicy" "egress-ibm-licensing-service-instance" "${MY_RESOURCESDIR}" "${MY_LICENSE_SERVICE_WORKINGDIR}" "${MY_LICENSE_SERVICE_BEDROCK_EGRESS_INSTANCE_FILE}" "${MY_LICENSE_SERVICE_NAMESPACE}"
+    ;;
+  lic_reporter)
+    mylog info "Applying network policies for IBM License service reporter" 
+    check_create_oc_yaml "NetworkPolicy" "egress-ibm-license-service-reporter-operator" "${MY_RESOURCESDIR}" "${MY_LICENSE_SERVICE_REPORTER_WORKINGDIR}" "${MY_LICENSE_SERVICE_REPORTER_BEDROCK_EGRESS_OPERATOR_FILE}" "${MY_LICENSE_SERVICE_REPORTER_NAMESPACE}"
+    check_create_oc_yaml "NetworkPolicy" "access-to-ibm-licensing-service-reporter" "${MY_RESOURCESDIR}" "${MY_LICENSE_SERVICE_REPORTER_WORKINGDIR}" "${MY_LICENSE_SERVICE_REPORTER_BEDROCK_INGRESS_OPERATOR_FILE}" "${MY_LICENSE_SERVICE_REPORTER_NAMESPACE}"
+    ;;
+  *)
+    mylog error "Unknown entity: $lf_in_entity"
+    exit 1
+    ;;
+  esac
 
-  trace_out 5 install_networkpolicies
+  trace_out $lf_tracelevel install_networkpolicies
 }
 
 ################################################
 # search_networkpolicies function
 # Search for deny-all or allow-same-namespace networkpolicies
-function search_networkpolicies() {
-  trace_in 5 search_networkpolicies
+function search_networkpolicies() {  
+  local lf_tracelevel=5
+  trace_in $lf_tracelevel search_networkpolicies
 
+  decho $lf_tracelevel "Parameters: |no parameters|"
+  
   local lf_res lf_deny_all lf_allow_same_namespace
   #mylog info "==== Searching for deny-all or allow-same-namespace networkpolicies." 1>&2
 
@@ -35,7 +61,7 @@ function search_networkpolicies() {
     lf_res=0
   fi
 
-  trace_out 5 search_networkpolicies
+  trace_out $lf_tracelevel search_networkpolicies
   return $lf_res
 }
 
@@ -172,22 +198,23 @@ function decho () {
 # The script will output whether the first version is older, newer, or equal to the second version.
 # cmp_versions v1 v2 returns 0 if v1=v2, 1 if v1 is older than v2, 2 if v1 is newer than v2
 function cmp_versions() {
-  trace_in 5 cmp_versions
+  local lf_tracelevel=5
+  trace_in $lf_tracelevel cmp_versions
 
   local lf_in_version1=$1
   local lf_in_version2=$2
-  decho 5 "Parameters:\"$1\"|\"$2\"|"
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|"
 
   if [[ $# -ne 2 ]]; then
     mylog error "You have to provide 2 arguments : version1 and version2"
-    trace_out 3 cmp_versions
+    trace_out $lf_tracelevel cmp_versions
     exit  1
   fi
 
   # Just try to compare the versions using string comparison if they are equal
   if [[ "$lf_in_version1" == "$lf_in_version2" ]]; then
     #echo "$lf_in_version1 is equal to $lf_in_version2"
-    trace_out 5 cmp_versions
+    trace_out $lf_tracelevel cmp_versions
     return 0
   fi
 
@@ -212,40 +239,43 @@ function cmp_versions() {
     fi
   done
 
-  trace_out 5 cmp_versions
+  trace_out $lf_tracelevel cmp_versions
   return $lf_res
 }
 
 ################################################
 # Save a certificate in pem format from secret
-# @param 1: namespace where the secret exist
-# @param 2: name of the secret
-# @param 3: Data in the secret that contains the certificate
-# @param 4: Directory where to save the certificate
+# @param 1: name of the secret
+# @param 2: Data in the secret that contains the certificate
+# @param 3: Directory where to save the certificate
+# @param 4: namespace where the secret exist
 function save_certificate() {
-  trace_in 5 save_certificate
+  local lf_tracelevel=5
+  trace_in $lf_tracelevel save_certificate
 
-  local lf_in_ns=$1
-  local lf_in_secret_name=$2
-  local lf_in_data_name=$3
-  local lf_in_destination_path=$4
-  decho 5 "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|"
+  local lf_in_secret_name=$1
+  local lf_in_data_name=$2
+  local lf_in_target_directory=$3
+  local lf_in_ns=$4
+
+  local lf_target_relative_path=$(echo "${lf_in_target_directory#"$MY_WORKINGDIR"}")
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$lf_target_relative_path\"|\"$4\"|"
 
   if [[ $# -ne 4 ]]; then
-    mylog error "You have to provide 4 arguments : namespace, secret_name, data_name and destination directory path"
-    trace_out 5 save_certificate
+    mylog error "You have to provide 4 arguments : secret_name, data_name, destination directory and namespace"
+    trace_out $lf_tracelevel save_certificate
     exit  1
   fi
 
   local lf_data_normalised=$(sed 's/\./\\./g' <<< ${lf_in_data_name})
 
-  mylog info "Save certificate ${lf_in_secret_name} to ${lf_in_destination_path}${lf_in_secret_name}.${lf_in_data_name}.pem"
-  decho 6 "oc -n $lf_in_ns get secret ${lf_in_secret_name} -o jsonpath=\"{.data.$lf_data_normalised}\""
+  mylog info "Save certificate ${lf_in_secret_name} to ${lf_in_target_directory}${lf_in_secret_name}.${lf_in_data_name}.pem"
+  decho $lf_tracelevel "oc -n $lf_in_ns get secret ${lf_in_secret_name} -o jsonpath=\"{.data.$lf_data_normalised}\""
   local lf_cert=$(oc -n $lf_in_ns get secret ${lf_in_secret_name} -o jsonpath="{.data.$lf_data_normalised}")
 
-  echo $lf_cert | base64 --decode >"${lf_in_destination_path}${lf_in_secret_name}.${lf_in_data_name}.pem"
+  echo $lf_cert | base64 --decode >"${lf_in_target_directory}${lf_in_secret_name}.${lf_in_data_name}.pem"
 
-  trace_out 5 save_certificate
+  trace_out $lf_tracelevel save_certificate
 }
 
 ################################################
@@ -256,15 +286,16 @@ function save_certificate() {
 # @param 1:
 # @param 2:
 function is_case_downloaded() {
-  trace_in 5 is_case_downloaded
+  local lf_tracelevel=5
+  trace_in $lf_tracelevel is_case_downloaded
 
   local lf_in_case=$1
   local lf_in_version=$2
-  decho 5 "Parameters:\"$1\"|\"$2\"|"
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|"
 
   if [[ $# -ne 2 ]]; then
     mylog error "You have to provide 2 arguments : case and version"
-    trace_out 3 is_case_downloaded
+    trace_out $lf_tracelevel is_case_downloaded
     exit  1
   fi
 
@@ -289,11 +320,11 @@ function is_case_downloaded() {
       else
         lf_latestversion=$(echo $lf_result | jq -r max_by'(.latestVersion)|.latestVersion')
         
-        decho 3 "lf_latestversion=$lf_latestversion"
+        decho $lf_tracelevel "lf_latestversion=$lf_latestversion"
 
         cmp_versions $lf_latestversion $lf_in_version
         lf_cmp=$?
-        decho 3 "lf_cmp=$lf_cmp"
+        decho $lf_tracelevel "lf_cmp=$lf_cmp"
         case $lf_cmp in
         0) lf_res=1;;
         2) mylog info "newer version of case $lf_in_case is available. Current version=$lf_in_version. Latest version=$lf_latestversion"
@@ -303,7 +334,7 @@ function is_case_downloaded() {
     fi
   fi
 
-  trace_out 5 is_case_downloaded
+  trace_out $lf_tracelevel is_case_downloaded
   return $lf_res
 }
 
@@ -311,14 +342,15 @@ function is_case_downloaded() {
 # Check that all required executables are installed
 # @param 1:
 function check_command_exist() {
-  trace_in 5 check_command_exist
+  local lf_tracelevel=5
+  trace_in $lf_tracelevel check_command_exist
 
   local lf_in_command=$1
-  decho 5 "Parameters:\"$1\"|"
+  decho $lf_tracelevel "Parameters:\"$1\"|"
 
   if [[ $# -ne 1 ]]; then
     mylog error "You have to provide 1 argument : command name"
-    trace_out 3 check_command_exist
+    trace_out $lf_tracelevel check_command_exist
     exit  1
   fi
 
@@ -327,21 +359,22 @@ function check_command_exist() {
     exit 1
   fi
 
-  trace_out 5 check_command_exist
+  trace_out $lf_tracelevel check_command_exist
 }
 
 ######################################################
 # checks if the file exist, if no print a msg and exit
 # @param 1:
 function check_file_exist() {
-  trace_in 5 check_file_exist
+  local lf_tracelevel=5
+  trace_in $lf_tracelevel check_file_exist
 
   local lf_in_file=$1
-  decho 5 "Parameters:\"$1\"|"
+  decho $lf_tracelevel "Parameters:\"$1\"|"
 
   if [[ $# -ne 1 ]]; then
     mylog error "You have to provide 1 argument : file name"
-    trace_out 5 check_file_exist
+    trace_out $lf_tracelevel check_file_exist
     exit  1
   fi
 
@@ -349,22 +382,22 @@ function check_file_exist() {
     mylog error "No such file: $lf_in_file" 1>&2
     exit 1
   fi
-
-  trace_out 5 check_file_exist
+  trace_out $lf_tracelevel check_file_exist
 }
 
 ######################################################
 # checks if the directory exist, if no print a msg and exit
 # @param 1:
 function check_directory_exist() {
-  trace_in 5 check_directory_exist
+  local lf_tracelevel=5
+  trace_in $lf_tracelevel check_directory_exist
 
   local lf_in_directory=$1
-  decho 5 "Parameters:\"$1\"|"
+  decho $lf_tracelevel "Parameters:\"$1\"|"
 
   if [[ $# -ne 1 ]]; then
     mylog error "You have to provide 1 argument : directory name"
-    trace_out 3 check_directory_exist
+    trace_out $lf_tracelevel check_directory_exist
     exit  1
   fi
 
@@ -373,7 +406,7 @@ function check_directory_exist() {
     exit 1
   fi
 
-  trace_out 5 check_directory_exist
+  trace_out $lf_tracelevel check_directory_exist
 }
 
 ######################################################
@@ -392,14 +425,15 @@ function check_directory_contains_files() {
 # checks if the directory exist, otherwise create it
 # @param 1: directory name
 function check_directory_exist_create() {
-  trace_in 5 check_directory_exist_create
+  local lf_tracelevel=5
+  trace_in $lf_tracelevel check_directory_exist_create
 
   local lf_in_directory=$1
-  decho 5 "Parameters:\"$1\"|"
+  decho $lf_tracelevel "Parameters:\"$1\"|"
 
   if [[ $# -ne 1 ]]; then
     mylog error "You have to provide 1 argument : directory name"
-    trace_out 3 check_directory_exist_create
+    trace_out $lf_tracelevel check_directory_exist_create
     exit  1
   fi
 
@@ -407,21 +441,22 @@ function check_directory_exist_create() {
     mkdir -p $lf_in_directory
   fi
 
-  trace_out 5 check_directory_exist_create
+  trace_out $lf_tracelevel check_directory_exist_create
 }
 
 ################################################
 # 
 # @param 1:
 function read_config_file() {
-  trace_in 5 read_config_file
+  local lf_tracelevel=5
+  trace_in $lf_tracelevel read_config_file
 
   local lf_in_config_file=$1
-  decho 5 "Parameters:\"$1\"|"
+  decho $lf_tracelevel "Parameters:\"$1\"|"
 
   if [[ $# -ne 1 ]]; then
     mylog error "You have to provide 1 argument: file name"
-    trace_out 3 read_config_file
+    trace_out $lf_tracelevel read_config_file
     exit  1
   fi
 
@@ -432,14 +467,15 @@ function read_config_file() {
   . "${lf_in_config_file}"
   set +a
 
-  trace_out 5 read_config_file
+  trace_out $lf_tracelevel read_config_file
 }
 
 ################################################
 # Check that all required executables are installed
 # No parameters.
 function check_exec_prereqs() {
-  trace_in 3 check_exec_prereqs
+  local lf_tracelevel=5
+  trace_in $lf_tracelevel check_exec_prereqs
 
   check_command_exist awk
   check_command_exist tr
@@ -460,14 +496,14 @@ function check_exec_prereqs() {
 
   if $MY_LDAP; then
     check_command_exist ldapsearch
-    check_resource_exist storageclass $MY_FILE_LDAP_STORAGE_CLASS
+    check_resource_exist storageclass $MY_LDAP_FILE_STORAGE_CLASS
   fi
 
   if $MY_APIC_GRAPHQL; then
     check_command_exist helm
   fi
   
-  trace_out 3 check_exec_prereqs
+  trace_out $lf_tracelevel check_exec_prereqs
 }
 
 ################################################
@@ -476,15 +512,16 @@ function check_exec_prereqs() {
 # @param 1: resource type
 # @param 2: resource name
 function check_resource_exist() {
-  trace_in 5 check_resource_exist
+  local lf_tracelevel=5
+  trace_in $lf_tracelevel check_resource_exist
 
   local lf_in_type=$1
   local lf_in_name=$2
-  decho 5 "Parameters:\"$1\"|\"$2\"|"
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|"
 
   if [[ $# -ne 2 ]]; then
     mylog error "You have to provide 2 arguments: resource type and resource name"
-    trace_out 5 check_resource_exist
+    trace_out $lf_tracelevel check_resource_exist
     exit  1
   fi
 
@@ -497,7 +534,7 @@ function check_resource_exist() {
     exit 1
   fi
 
-  trace_out 5 check_resource_exist
+  trace_out $lf_tracelevel check_resource_exist
 }
 
 ################################################
@@ -521,27 +558,40 @@ function waitn() {
 # @param 2: value expected state value from check command
 # @param 3: command executed command that returns some state
 function wait_for_state() {
-  trace_in 3 wait_for_state
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel wait_for_state
+#wait_for_state "$lf_in_type $lf_in_cr_name $lf_in_path is $lf_in_state" "$lf_in_state" "oc -n $lf_in_namespace get $lf_in_type $lf_in_cr_name -o jsonpath='$lf_in_path'"
 
-  local lf_in_what=$1
-  local lf_in_value=$2
-  local lf_in_command=$3
-  decho 3 "Parameters:\"$1\"|\"$2\"|\"$3\"|"
+  local lf_in_type=$1
+  local lf_in_cr_name=$2
+  local lf_in_path=$3
+  local lf_in_state=$4
+  local lf_in_namespace=$5
 
-  if [[ $# -ne 3 ]]; then
-    mylog error "You have to provide 3 arguments: description of waited state, value expected and command"
-    trace_out 3 wait_for_state
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|\"$5\"|"
+
+  if [[ $# -ne 4 ]] && [[ $# -ne 5 ]]; then
+    mylog error "You have to provide 4 or 5 arguments: type, resource, jsonpath, state and eventually namespace"
+    trace_out $lf_tracelevel wait_for_state
     exit  1
   fi
 
   local lf_start_time=$(date +%s)
-  local lf_current_time lf_elapsed_time lf_last_state lf_current_state lf_bullet
+  local lf_current_time lf_elapsed_time lf_last_state lf_current_state lf_bullet lf_command
   local lf_bullets=('|' '/' '-' '\\')
+
+  #lf_command="oc -n $lf_in_namespace get $lf_in_type $lf_in_cr_name -o jsonpath=$lf_in_path"
+
+  if [[ -z $lf_in_namespace ]]; then
+    lf_option=""
+  else
+    lf_option="-n $lf_in_namespace"
+  fi
 
   lf_last_state=''
   while true; do
-    lf_current_state=$(eval $lf_in_command)
-    if [[ "$lf_current_state" == "$lf_in_value" ]]; then
+    lf_current_state=$(oc $lf_option get $lf_in_type $lf_in_cr_name -o jsonpath=$lf_in_path)
+    if [[ "$lf_current_state" == "$lf_in_state" ]]; then
       break
     fi
 
@@ -558,28 +608,29 @@ function wait_for_state() {
       lf_elapsed_time=$((lf_current_time - lf_start_time))
   
       # Display the elapsed time on the same line
-      echo -ne "\rElapsed time: ${lf_elapsed_time} seconds$lf_bullet"      
-      #echo -ne "\r$lf_bullet Timer: $seconds seconds | Waiting...\033[0K\r"
+      echo -ne "\rElapsed time: ${lf_elapsed_time} seconds$lf_bullet" 
+
       # Sleep for a short interval to control the speed of the animation
       sleep 0.1
     done 
   done
 
-  trace_out 3 wait_for_state
+  trace_out $lf_tracelevel wait_for_state
 }
 
 ################################################
 # add ibm entitlement key to namespace
 # @param ns namespace where secret is created
 function add_ibm_entitlement() {
-  trace_in 5 add_ibm_entitlement
+  local lf_tracelevel=5
+  trace_in $lf_tracelevel add_ibm_entitlement
 
   local lf_in_ns=$1
-  decho 3 "Parameters:\"$1\"|"
+  decho $lf_tracelevel "Parameters:\"$1\"|"
 
   if [[ $# -ne 1 ]]; then
     mylog error "You have to provide 1 argument: namespace"
-    trace_out 5 add_ibm_entitlement
+    trace_out $lf_tracelevel add_ibm_entitlement
     exit  1
   fi
 
@@ -590,18 +641,18 @@ function add_ibm_entitlement() {
     $MY_CONTAINER_ENGINE -h >/dev/null 2>&1
     if test $? -eq 0 && ! echo $MY_ENTITLEMENT_KEY | $MY_CONTAINER_ENGINE login cp.icr.io --username cp --password-stdin; then
       mylog error "Invalid entitlement key" 1>&2
-      trace_out 5 add_ibm_entitlement
+      trace_out $lf_tracelevel add_ibm_entitlement
       exit 1
     fi
 
     mylog info "Adding ibm-entitlement-key to $lf_in_ns"
     if ! oc -n $lf_in_ns create secret docker-registry ibm-entitlement-key --docker-username=cp --docker-password=$MY_ENTITLEMENT_KEY --docker-server=cp.icr.io; then
-      trace_out 5 add_ibm_entitlement
+      trace_out $lf_tracelevel add_ibm_entitlement
       exit 1
     fi
   fi
 
-  trace_out 5 add_ibm_entitlement
+  trace_out $lf_tracelevel add_ibm_entitlement
 }
 
 ################################################
@@ -614,7 +665,8 @@ function add_ibm_entitlement() {
 # @param 5: yaml: the file with the definition of the resource, example: "Navigator-Sub.yaml"
 # @param 6: namespace
 function check_create_oc_yaml() {
-  trace_in 4 check_create_oc_yaml
+  local lf_tracelevel=4
+  trace_in $lf_tracelevel  check_create_oc_yaml
 
   local lf_in_type="$1"
   local lf_in_cr_name="$2"
@@ -622,12 +674,15 @@ function check_create_oc_yaml() {
   local lf_in_target_directory="$4"
   local lf_in_yaml_file="$5"
   local lf_in_namespace="$6"
-  decho 4 "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|\"$5\"|\"$6\"|"
+
+  local lf_source_relative_path=$(echo "${lf_in_source_directory#"$PROVISION_SCRIPTDIR"}")
+  local lf_target_relative_path=$(echo "${lf_in_target_directory#"$MY_WORKINGDIR"}") 
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$lf_source_relative_path\"|\"$lf_target_relative_path\"|\"$5\"|\"$6\"|"
 
   if [[ $# -ne 6 ]]; then
     mylog error "You have to provide 6 arguments: type, resource, source directory, destination directory, yaml file and namespace"
-    trace_out 4 check_create_oc_yaml
-    exit  1
+    trace_out $lf_tracelevel check_create_oc_yaml
+    exit 1
   fi
   
   check_file_exist "${lf_in_source_directory}${lf_in_yaml_file}"
@@ -635,20 +690,23 @@ function check_create_oc_yaml() {
   adapt_file $lf_in_source_directory $lf_in_target_directory $lf_in_yaml_file
 
   if $MY_APPLY_FLAG; then
-    mylog check "Creating or Updating ${lf_in_cr_name}/${lf_in_type}"
+    mylog info "Creating/Updating ${lf_in_cr_name}/${lf_in_type} using ${lf_target_relative_path}${lf_in_yaml_file} in namespace ${lf_in_namespace}"
     oc apply -f "${lf_in_target_directory}${lf_in_yaml_file}" || exit 1
     wait_for_resource $lf_in_type $lf_in_cr_name $lf_in_namespace
   fi
 
-  trace_out 4 check_create_oc_yaml
+  trace_out $lf_tracelevel check_create_oc_yaml
 }
 
 ################################################
 # 
 # @param 1: namespace
 function provision_persistence_openldap() {
-  trace_in 3 provision_persistence_openldap
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel provision_persistence_openldap
 
+  decho $lf_tracelevel "Parameters: |no parameters|"
+  
   # handle persitence for Openldap
   # only check one, assume that if one is created the other one is also created (short cut to optimize time)
   export VAR_NAMESPACE=$VAR_LDAP_NAMESPACE
@@ -660,80 +718,59 @@ function provision_persistence_openldap() {
 
   unset VAR_NAMESPACE
 
-  trace_out 3 provision_persistence_openldap
+  trace_out $lf_tracelevel provision_persistence_openldap
 }
 
 ################################################
 # @param 1: octype: kubernetes resource class, example: "subscription"
 # @param 2: name: name of the resource, example: "ibm-integration-platform-navigator"
 # @param 3: service account 
-# @param 4: namespace
 # See https://github.com/osixia/docker-openldap for more details especialy all the configurations possible
 function deploy_openldap() {
-  trace_in 3 deploy_openldap
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel deploy_openldap
 
   local lf_in_type="$1"
   local lf_in_name="$2"
   local lf_in_serviceaccount="$3"
-  local lf_in_namespace="$4"
-  decho 3 "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|"
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|"
 
-  if [[ $# -ne 4 ]]; then
-    mylog error "You have to provide 4 arguments: type, resource, service account and namespace"
-    trace_out 3 deploy_openldap
+  if [[ $# -ne 3 ]]; then
+    mylog error "You have to provide 4 arguments: type, resource, and service account"
+    trace_out $lf_tracelevel deploy_openldap
     exit  1
   fi
 
 
   mylog info "Creating LDAP server"
   create_oc_resource "ServiceAccount" "$MY_LDAP_SERVICEACCOUNT" "${MY_RESOURCESDIR}" "${MY_LDAP_WORKINGDIR}" "serviceaccount.yaml" "$VAR_LDAP_NAMESPACE"
-  oc adm policy add-scc-to-user privileged system:serviceaccount:${lf_in_namespace}:${MY_LDAP_SERVICEACCOUNT}
-  oc adm policy add-scc-to-user anyuid system:serviceaccount:${lf_in_namespace}:${MY_LDAP_SERVICEACCOUNT}
-  #oc adm policy add-scc-to-group anyuid system:serviceaccounts:${lf_in_namespace}
+  oc adm policy add-scc-to-user privileged system:serviceaccount:${VAR_LDAP_NAMESPACE}:${MY_LDAP_SERVICEACCOUNT}
+  oc adm policy add-scc-to-user anyuid system:serviceaccount:${VAR_LDAP_NAMESPACE}:${MY_LDAP_SERVICEACCOUNT}
+  #oc adm policy add-scc-to-group anyuid system:serviceaccounts:${VAR_LDAP_NAMESPACE}
 
   # deploy openldap and take in account the PVCs just created
   # check that deployment of openldap was not done
-  create_oc_resource "Deployment" "${lf_in_name}" "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}" "ldap_deployment.yaml" "$lf_in_namespace"
-  oc -n ${lf_in_namespace} get deployment.apps/openldap -o json | jq '. | del(."status")' >${MY_LDAP_WORKINGDIR}openldap.json
+  create_oc_resource "Deployment" "${lf_in_name}" "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}" "ldap_deployment.yaml" "$VAR_LDAP_NAMESPACE"
+  #create_oc_resource "Deployment" "${lf_in_name}" "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}" "ldap_deployment-dinkel.yaml" "$VAR_LDAP_NAMESPACE"
+  oc -n ${VAR_LDAP_NAMESPACE} get deployment.apps/openldap -o json | jq '. | del(."status")' >${MY_LDAP_WORKINGDIR}openldap.json
 
   read_config_file "${MY_YAMLDIR}ldap/ldap_dit.properties"
   adapt_file "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}" "ldap_config.json" 
-  oc -n ${lf_in_namespace} patch deployment.apps/openldap --patch-file "${MY_LDAP_WORKINGDIR}ldap_config.json"
+  oc -n ${VAR_LDAP_NAMESPACE} patch deployment.apps/openldap --patch-file "${MY_LDAP_WORKINGDIR}ldap_config.json"
 
-  trace_out 3 deploy_openldap
+  trace_out $lf_tracelevel deploy_openldap
 }
 
 ################################################
-# @param 1: octype: kubernetes resource class, example: "deployment"
-# @param 2: ocname: name of the resource, example: "mailhog"
-# @param 3:
-# See https://github.com/osixia/docker-openldap for more details especialy all the configurations possible
 # To add a user/password protection to the web UI: https://stackoverflow.com/questions/60162842/how-can-i-add-basic-authentication-to-the-mailhog-service-in-ddev-local
-function deploy_mailhog() {
-  trace_in 3 deploy_mailhog
+function deploy_mail() {
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel deploy_mail
 
-  local lf_in_type="$1"
-  local lf_in_name="$2"
-  local lf_in_namespace="$3"
-  decho 3 "Parameters:\"$1\"|\"$2\"|\"$3\"|"
+  create_oc_resource "Deployment" "${MY_MAIL_DEPLOYMENT}" "${MY_YAMLDIR}mail/" "${VAR_MAIL_WORKINGDIR}" "mail_deployment.yaml" "$VAR_MAIL_NAMESPACE"
+  #oc -n ${VAR_MAIL_NAMESPACE} get deployment.apps/${MY_MAIL_DEPLOYMENT} -o json | jq '. | del(."status")' >${VAR_MAIL_WORKINGDIR}mailhog.json
 
-  if [[ $# -ne 3 ]]; then
-    mylog error "You have to provide 3 arguments: type, resource, and namespace"
-    trace_out 3 deploy_mailhog
-    exit  1
-  fi
-
-  # check if deploment already performed
-  mylog check "Checking ${lf_in_name}/${lf_in_type} in ${lf_in_namespace}"
-  if ! oc -n ${lf_in_namespace} get ${lf_in_type} ${lf_in_name} >/dev/null 2>&1; then
-    mylog check "Checking service ${lf_in_name} in ${lf_in_namespace}"
-    if ! oc -n ${lf_in_namespace} get service ${lf_in_name} >/dev/null 2>&1; then
-      mylog info "Creating mailhog server"
-      oc -n ${lf_in_namespace} new-app ${lf_in_name}/${lf_in_name}
-    fi
-  fi
-
-  trace_out 3 deploy_mailhog
+  trace_out $lf_tracelevel deploy_mail
 }
 
 #===========================================
@@ -742,10 +779,11 @@ function deploy_mailhog() {
 # @param 2: user DN
 # @param 3: user password
 # @param 4: Base entry
-# @param 5:
-# @param 6:
+# @param 5: one entry content
+# @param 6: ldif file
 function add_ldap_entry_if_not_exists() {
-  trace_in 4 add_ldap_entry_if_not_exists
+  local lf_tracelevel=4
+  trace_in $lf_tracelevel add_ldap_entry_if_not_exists
 
   local lf_in_ldap_server="$1"
   local lf_in_admin_dn="$2"
@@ -753,11 +791,13 @@ function add_ldap_entry_if_not_exists() {
   local lf_in_entry_dn="$4"
   local lf_in_entry_content="$5"
   local lf_in_tmp_ldif_file="$6"
-  decho 3 "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|\"$5\"|\"$6\"|"
+
+  local lf_tmp_ldif_file_relative_path=$(echo "${lf_in_tmp_ldif_file#"$PROVISION_SCRIPTDIR"}")
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|\"$5\"|\"$lf_tmp_ldif_file_relative_path\"|"
 
   if [[ $# -ne 6 ]]; then
     mylog error "You have to provide 6 arguments: ldap server, admin DN, admin password, entry DN, entry content and ldif file"
-    trace_out 4 add_ldap_entry_if_not_exists
+    trace_out $lf_tracelevel add_ldap_entry_if_not_exists
     exit  1
   fi
 
@@ -769,13 +809,13 @@ function add_ldap_entry_if_not_exists() {
     if echo "$lf_in_search_result" | grep -q "dn: $lf_in_entry_dn"; then
       mylog info "Entry $lf_in_entry_dn already exists. Skipping."
     else
-      decho 3 "Entry $lf_in_entry_dn does not exist. Adding entry."
+      decho $lf_tracelevel "Entry $lf_in_entry_dn does not exist. Adding entry."
       echo "$lf_in_entry_content" > $lf_in_tmp_ldif_file
       ldapadd -x -H $lf_in_ldap_server -D "$lf_in_admin_dn" -w $lf_in_admin_password -f $lf_in_tmp_ldif_file
     fi
   fi
 
-  trace_out 4 add_ldap_entry_if_not_exists
+  trace_out $lf_tracelevel add_ldap_entry_if_not_exists
 }
 
 #========================================================
@@ -785,17 +825,20 @@ function add_ldap_entry_if_not_exists() {
 # @param 3:
 # @param 4:
 function add_ldif_file () {
-  trace_in 4 add_ldif_file
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel add_ldif_file
 
   local lf_in_ldap_server="$1"
   local lf_in_admin_dn="$2"
   local lf_in_admin_password="$3"
   local lf_in_ldif_file="$4"
-  decho 3 "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|"
+
+  local lf_ldif_file_relative_path=$(echo "${lf_in_ldif_file#"$MY_WORKINGDIR"}")
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$lf_ldif_file_relative_path\"|"  
 
   if [[ $# -ne 4 ]]; then
     mylog error "You have to provide 4 arguments: ldap server, admin DN, admin password and ldif file"
-    trace_out 4 add_ldif_file
+    trace_out $lf_tracelevel add_ldif_file
     exit  1
   fi
 
@@ -829,42 +872,41 @@ function add_ldif_file () {
   # Clean up temporary file
   #rm -f $lf_tmp_ldif
 
-  trace_out 4 add_ldif_file
+  trace_out $lf_tracelevel add_ldif_file
 }
 
 ################################################
 # create the ldap service and route
-# @param 1: name: name of the resource, example: "openldap"
-# @param 2: dir: the source directory example: "${subscriptionsdir}"
-# @param 3: dir: the target directory example: "${workingdir}ldap/"
-# @param 4: file
-# @param 5: namespace: the namespace to use
+# @param 1: dir: the source directory example: "${subscriptionsdir}"
+# @param 2: file
 #
 function create_expose_service_openldap() {
-  trace_in 3 create_expose_service_openldap
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel create_expose_service_openldap
 
   local lf_in_source_directory="$1"
-  local lf_in_target_directory="$2"
-  local lf_in_file="$3"
-  decho 3 "Parameters:\"$1\"|\"$2\"|\"$3\"|"
+  local lf_in_file="$2"
 
-  if [[ $# -ne 3 ]]; then
-    mylog error "You have to provide 3 arguments : source directory, target directory and file"
-    trace_out 3 create_expose_service_openldap
+  local lf_source_relative_path=$(echo "${lf_in_source_directory#"$PROVISION_SCRIPTDIR"}")
+  decho $lf_tracelevel "Parameters:\"$lf_source_relative_path\"|\"$2\"|"
+
+  if [[ $# -ne 2 ]]; then
+    mylog error "You have to provide 2 arguments : source directory and file"
+    trace_out $lf_tracelevel create_expose_service_openldap
     exit  1
   fi
 
   # Create the service to expose the openldap server
-  create_oc_resource "Service" "${VAR_LDAP_SERVICE}" "$lf_in_source_directory" "${lf_in_target_directory}" "$lf_in_file" "${VAR_LDAP_NAMESPACE}"
+  create_oc_resource "Service" "${VAR_LDAP_SERVICE}" "$lf_in_source_directory" "${MY_LDAP_WORKINGDIR}" "$lf_in_file" "${VAR_LDAP_NAMESPACE}"
 
   # expose service externaly and get host and port
   oc -n ${VAR_LDAP_NAMESPACE} get service ${VAR_LDAP_SERVICE} -o json | \
      jq '.spec.ports |= map(if .name == "389-tcp" then . + { "nodePort": 30389 } else . end)' | \
-     jq '.spec.ports |= map(if .name == "636-tcp" then . + { "nodePort": 30686 } else . end)' >${lf_in_target_directory}openldap-service.json
+     jq '.spec.ports |= map(if .name == "636-tcp" then . + { "nodePort": 30686 } else . end)' >${MY_LDAP_WORKINGDIR}openldap-service.json
 
   # Saad there was a bug the openldap-service.json did not exist when those two calls were made in the deploy_openldap function, I moved them here
   # I do not think all this code is needed, what did you want to do?
-  oc -n ${VAR_LDAP_NAMESPACE} patch service/${VAR_LDAP_SERVICE} --patch-file ${lf_in_target_directory}openldap-service.json
+  oc -n ${VAR_LDAP_NAMESPACE} patch service/${VAR_LDAP_SERVICE} --patch-file ${MY_LDAP_WORKINGDIR}openldap-service.json
 
   export VAR_LDAP_PORT=$(oc -n ${VAR_LDAP_NAMESPACE} get service ${VAR_LDAP_SERVICE} -o jsonpath='{.spec.ports[0].nodePort}')
   lf_port1=$(oc -n ${VAR_LDAP_NAMESPACE} get service ${VAR_LDAP_SERVICE} -o jsonpath='{.spec.ports[1].nodePort}')
@@ -874,7 +916,7 @@ function create_expose_service_openldap() {
 
   export VAR_LDAP_HOSTNAME=$(oc -n ${VAR_LDAP_NAMESPACE} get route ${VAR_LDAP_ROUTE} -o jsonpath='{.spec.host}')
 
-  trace_out 3 create_expose_service_openldap
+  trace_out $lf_tracelevel create_expose_service_openldap
 }
 
 ################################################
@@ -882,22 +924,26 @@ function create_expose_service_openldap() {
 # @param 2: dir: the target directory example: "${workingdir}ldap/"
 # @param 3: ldif file
 function load_users_2_ldap_server() {
-  trace_in 4 load_users_2_ldap_server
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel load_users_2_ldap_server
 
   local lf_in_source_directory="$1"
   local lf_in_target_directory="$2"
   local lf_in_file="$3"
-  decho 3 "Parameters:\"$1\"|\"$2\"|\"$3\"|"
+
+  local lf_source_relative_path=$(echo "${lf_in_source_directory#"$PROVISION_SCRIPTDIR"}")
+  local lf_target_relative_path=$(echo "${lf_in_target_directory#"$MY_WORKINGDIR"}")
+  decho $lf_tracelevel "Parameters:\"$lf_source_relative_path\"|\"$lf_target_relative_path\"|\"$3\"|"
 
   if [[ $# -ne 3 ]]; then
     mylog error "You have to provide 3 arguments : source directory, target directory and ldif file"
-    trace_out 4 load_users_2_ldap_server
+    trace_out $lf_tracelevel load_users_2_ldap_server
     exit  1
   fi
 
   if [[ -z $VAR_LDAP_HOSTNAME ]] || [[ -z $VAR_LDAP_PORT ]]; then
     mylog error "ldap hostname or port are null"
-    trace_out 4 load_users_2_ldap_server
+    trace_out $lf_tracelevel load_users_2_ldap_server
     exit  1
   fi
 
@@ -910,38 +956,64 @@ function load_users_2_ldap_server() {
   mylog info "You can search entries with the following command: "
   mylog info "ldapsearch -H ldap://${VAR_LDAP_HOSTNAME}:${VAR_LDAP_PORT} -x -D \"$MY_LDAP_ADMIN_DN\" -w \"$MY_LDAP_ADMIN_PASSWORD\" -b \"$MY_LDAP_BASE_DN\" -s sub -a always -z 1000 \"(objectClass=*)\""
 
-  trace_out 4 load_users_2_ldap_server
+  trace_out $lf_tracelevel load_users_2_ldap_server
 }
 
 ################################################
-# @param 1: name: name of the resource, example: "mailhog"
-# @param 2: namespace: the namespace to use
-function expose_service_mailhog() {
-  trace_in 3 expose_service_mailhog
+# @param 1: source directory
+# @param 2: file
+function create_mail_service() {
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel create_mail_service
 
-  local lf_in_cr_name="$1"
-  local lf_in_port="$2"
-  local lf_in_namespace="$3"
-  decho 3 "Parameters:\"$1\"|\"$2\"|\"$3\"|"
+  local lf_in_source_directory="$1"
+  local lf_in_file="$2"
 
-  if [[ $# -ne 3 ]]; then
-    mylog error "You have to provide 3 arguments: resource name, port and namespace"
-    trace_out 3 expose_service_mailhog
+  local lf_source_relative_path=$(echo "${lf_in_source_directory#"$PROVISION_SCRIPTDIR"}")
+  decho $lf_tracelevel "Parameters:\"$lf_source_relative_path\"|\"$2\"|"
+
+  if [[ $# -ne 2 ]]; then
+    mylog error "You have to provide 2 arguments : source directory and file"
+    trace_out $lf_tracelevel create_mail_service
     exit  1
   fi
 
-  # expose service externaly and get host and port
-  # Check if the service is already exposed
-  if oc -n ${lf_in_namespace} get route ${lf_in_cr_name} >/dev/null 2>&1; then
-    mylog info "Service ${lf_in_cr_name} is already exposed."
-  else
-    mylog info "Service ${lf_in_cr_name} is not exposed."
-    oc -n ${lf_in_namespace} expose svc/${lf_in_cr_name} --port=${lf_in_port} --name=${lf_in_cr_name}
-  fi
-  lf_hostname=$(oc -n ${lf_in_namespace} get route ${lf_in_cr_name} -o jsonpath='{.spec.host}')
-  decho 3 "MailHog accessible at ${lf_hostname}"
+  # Create the service to expose the mailhog server
+  create_oc_resource "Service" "${VAR_MAIL_SERVICE}" "$lf_in_source_directory" "${VAR_MAIL_WORKINGDIR}" "$lf_in_file" "${VAR_MAIL_NAMESPACE}"
 
-  trace_out 3 expose_service_mailhog
+  trace_out $lf_tracelevel create_mail_service
+}
+
+################################################
+# @param 1: source directory
+# @param 2: file
+function create_mail_route() {
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel create_mail_route
+
+  local lf_in_source_directory="$1"
+  local lf_in_file="$2"
+
+  local lf_source_relative_path=$(echo "${lf_in_source_directory#"$PROVISION_SCRIPTDIR"}")
+  decho $lf_tracelevel "Parameters:\"$lf_source_relative_path\"|\"$2\"|"
+
+  if [[ $# -ne 2 ]]; then
+    mylog error "You have to provide 2 arguments : source directory and file"
+    trace_out $lf_tracelevel create_mail_route
+    exit  1
+  fi
+
+  # Create the route to access the mail server
+  create_oc_resource "Route" "${VAR_MAIL_ROUTE}" "$lf_in_source_directory" "${VAR_MAIL_WORKINGDIR}" "$lf_in_file" "${VAR_MAIL_NAMESPACE}"
+
+  # expose service externaly and get host and port
+  #oc -n ${VAR_MAIL_NAMESPACE} get service ${VAR_MAIL_SERVICE} -o json | \
+  #   jq '.spec.ports |= map(if .name == "1025-tcp" then . + { "nodePort": 31025 } else . end)' | \
+  #   jq '.spec.ports |= map(if .name == "8025-tcp" then . + { "nodePort": 38025 } else . end)' >${VAR_MAIL_WORKINGDIR}mail-service.json
+
+  export VAR_MAIL_HOSTNAME=$(oc -n ${VAR_MAIL_NAMESPACE} get route ${VAR_MAIL_ROUTE} -o jsonpath='{.spec.host}')
+
+  trace_out $lf_tracelevel create_mail_route
 }
 
 ################################################
@@ -951,42 +1023,46 @@ function expose_service_mailhog() {
 # @param 3: description of the project
 # @param 4: working directory where the generated yaml file will be stored
 function create_project() {
-  trace_in 3 create_project
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel create_project
 
   local lf_in_name="$1"
   local lf_in_display_name="$2"
   local lf_in_description="$3"
   local lf_in_source_directory="$4"
   local lf_in_target_directory="$5"
-  decho 3 "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|\"$5\"|"
+
+  local lf_source_relative_path=$(echo "${lf_in_source_directory#"$PROVISION_SCRIPTDIR"}")
+  local lf_target_relative_path=$(echo "${lf_in_target_directory#"$MY_WORKINGDIR"}")
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$lf_source_relative_path\"|\"$lf_target_relative_path\"|"
 
   if [[ $# -ne 5 ]]; then
-    mylog error "You have to provide 5 arguments: resource name, display name; description, source directory and target directory"
-    trace_out 3 create_project
+    mylog error "You have to provide 5 arguments: resource name, display name; description, source director and target directory"
+    trace_out $lf_tracelevel create_project
     exit  1
   fi
 
+  local lf_yaml_file="project.yaml"
   export VAR_NAMESPACE=$lf_in_name
   export VAR_NAMESPACE_DISPLAYNAME=$lf_in_display_name
   export VAR_NAMESPACE_DESCRIPTION=$lf_in_description
 
   var_fail lf_in_name "Please define project name in config"
-  mylog check "Checking project $lf_in_name"
+  mylog info "Creating/Updating project $lf_in_name"
   if ! oc get project $lf_in_name >/dev/null 2>&1; then 
-    mylog info "Creating project $lf_in_name"
-    adapt_file ${lf_in_source_directory} ${lf_in_target_directory} project.yaml
+    adapt_file ${lf_in_source_directory} ${lf_in_target_directory} ${lf_yaml_file}
     if $MY_APPLY_FLAG; then
-      oc apply -f "${lf_in_target_directory}project.yaml"
+      oc apply -f "${lf_in_target_directory}${lf_yaml_file}"
       if [[ $? -ne 0 ]]; then 
         unset VAR_NAMESPACE VAR_NAMESPACE_DISPLAYNAME VAR_NAMESPACE_DESCRIPTION
-        trace_out 3 create_project
+        trace_out $lf_tracelevel create_project
        exit 1
       fi
     fi    
   fi
 
   unset VAR_NAMESPACE VAR_NAMESPACE_DISPLAYNAME VAR_NAMESPACE_DESCRIPTION
-  trace_out 3 create_project
+  trace_out $lf_tracelevel create_project
 }
 
 ################################################
@@ -995,30 +1071,42 @@ function create_project() {
 # @param 2: resource name 
 # @param 3: namespace
 function wait_for_resource() {
-  trace_in 3 wait_for_resource
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel wait_for_resource
 
   local lf_in_type=$1
   local lf_in_cr_name=$2
   local lf_in_namespace=$3
-  decho 3 "Parameters:\"$1\"|\"$2\"|\"$3\"|"
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|"
 
-  if [[ $# -ne 3 ]]; then
-    mylog error "You have to provide 3 arguments: type, resource name and namespace"
-    trace_out 3 wait_for_resource
+  if [[ $# -ne 3 ]] && [[ $# -ne 2 ]]; then
+    mylog error "You have to provide 2 or 3 arguments: type, resource name and eventually namespace"
+    trace_out $lf_tracelevel wait_for_resource
     exit  1
   fi
 
+  if [[ -z $lf_in_namespace ]]; then
+    lf_option1=""
+    lf_option2=""
+  else
+    lf_option1="-n $lf_in_namespace"
+    lf_option2="in project $lf_in_namespace"
+  fi
+
+  local lf_resource=""
   seconds=0
   while [[ -z $lf_resource ]]; do
-    echo -ne "Timer: $seconds seconds | waiting for $lf_in_cr_name/$lf_in_type in project $lf_in_namespace...\033[0K\r"
+    echo -ne "Timer: $seconds seconds | waiting for $lf_in_cr_name/$lf_in_type $lf_option2...\033[0K\r"
+    #lf_resource=$(oc $lf_option1 get $lf_in_type -o json | jq -r --arg my_resource "$lf_in_cr_name" '.items[].metadata | select (.name == $my_resource).name')
+    lf_resource=$(oc $lf_option1 get $lf_in_type -o jsonpath="{.items[?(@.metadata.name=='$lf_in_cr_name')].metadata.name}")
+
     sleep 1
-    lf_resource=$(oc -n $lf_in_namespace get $lf_in_type -o json | jq -r --arg my_resource "$lf_in_cr_name" '.items[].metadata | select (.name == $my_resource).name')
     seconds=$((seconds + 1))
   done
   echo 
   export VAR_RESOURCE=$lf_resource
 
-  trace_out 3 wait_for_resource
+  trace_out $lf_tracelevel wait_for_resource
 }
 
 ################################################
@@ -1029,35 +1117,37 @@ function wait_for_resource() {
 # @param 3: This is the arch (amd64 for example)
 # @param 4: This is the version of the channel. It is an optional parameter, if ommited it is retrieved, else used values from invocation
 function check_add_cs_ibm_pak() {
-  trace_in 3 check_add_cs_ibm_pak
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel check_add_cs_ibm_pak
 
   local lf_in_case_name="$1"
   local lf_in_operator_name="$2"
   local lf_in_arch="$3"
   local lf_in_case_version="$4"
-  decho 3 "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|"
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|"
 
   if [[ $# -ne 3 && $# -ne 4 ]] ; then
     mylog error "You have to provide 3 or 4 arguments: case name, operator name, arch and optional case version"
-    trace_out 3 check_add_cs_ibm_pak
+    trace_out $lf_tracelevel check_add_cs_ibm_pak
     exit  1
   fi
 
   local lf_type lf_file lf_file_tmp1 lf_file_tmp2 lf_downloaded lf_display_name
 
+
   #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
   if [[ -z $lf_in_case_version ]]; then
-    read lf_case_version lf_app_version < <(oc ibm-pak list  -o json | jq -r --arg case "$lf_in_case_name" '.[] | select(.name == $case) | "\(.latestVersion) \(.latestAppVersion)"')
+    read lf_case_version lf_app_version < <(oc ibm-pak list -o json | jq -r --arg case "$lf_in_case_name" '.[] | select(.name == $case) | "\(.latestVersion) \(.latestAppVersion)"')
   else
     lf_case_version=$lf_in_case_version
     lf_app_version=$(oc ibm-pak list --case-name $lf_in_case_name -o json | jq --arg v "$lf_in_case_version" '.versions[$v].appVersion')
   fi
-  decho 3 "lf_case_version=$lf_case_version|lf_app_version=$lf_app_version"
+  decho $lf_tracelevel "lf_case_version=$lf_case_version|lf_app_version=$lf_app_version"
   export VAR_APP_VERSION=$lf_app_version
 
   is_case_downloaded ${lf_in_case_name} ${lf_case_version} #1>&2 > /dev/null
   lf_downloaded=$?
-  decho 4 "lf_downloaded=$lf_downloaded"
+  decho $lf_tracelevel "lf_downloaded=$lf_downloaded"
 
   if [[ $lf_downloaded -eq 1 ]]; then
     mylog info "case ${lf_in_case_name} ${lf_case_version} already downloaded"
@@ -1082,20 +1172,19 @@ function check_add_cs_ibm_pak() {
 
   # Getting the id of the catalogsource, using head -n 1 to get only one value in case of many
   lf_type="CatalogSource"
-  decho 3 "lf_file=$lf_file|lf_display_name=$lf_display_name"
-  #local lf_catalogsource=$(yq "select(.spec.displayName == \"$lf_display_name\") | .metadata.name" $lf_file | head -n 1)
-  local lf_catalogsource=$(yq -o=json ". | select(.spec.displayName == \"$lf_display_name\") | .metadata.name" "$lf_file")
+  decho $lf_tracelevel "lf_file=$lf_file|lf_display_name=$lf_display_name"
+  lf_catalogsource=$(yq -o=json ". | select(.spec.displayName == \"$lf_display_name\") | .metadata.name" "$lf_file")
 
-  decho 3 "lf_catalogsource=$lf_catalogsource"
+  mylog info "Creating/Updating catalog source ${lf_catalogsource}"
   export VAR_CATALOG_SOURCE=$lf_catalogsource
   if $MY_APPLY_FLAG; then 
     oc apply -f $lf_file || exit 1
   fi
 
   # wait for the availability of the catalogsource
-  wait_for_resource "packagemanifest" "${lf_in_operator_name}" $MY_CATALOGSOURCES_NAMESPACE
+  wait_for_resource "packagemanifest" "${lf_in_operator_name}" "$MY_CATALOGSOURCES_NAMESPACE"
 
-  trace_out 3 check_add_cs_ibm_pak
+  trace_out $lf_tracelevel check_add_cs_ibm_pak
 }
 
 #########################################################################################################
@@ -1106,16 +1195,20 @@ function check_add_cs_ibm_pak() {
 # @param 2:
 # @param 3:
 function generate_files() {
-  trace_in 3 generate_files
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel generate_files
 
-  local lf_in_customdir=$1
-  local lf_in_gendir=$2
+  local lf_in_source_directory=$1
+  local lf_in_target_directory=$2
   local lf_in_transform=$3
-  decho 3 "Parameters:\"$1\"|\"$2\"|\"$3\"|"
+
+  local lf_source_relative_path=$(echo "${lf_in_source_directory#"$PROVISION_SCRIPTDIR"}")
+  local lf_target_relative_path=$(echo "${lf_in_target_directory#"$MY_WORKINGDIR"}")
+  decho $lf_tracelevel "Parameters:\"$lf_source_relative_path\"|\"$lf_target_relative_path\"|\"$3\"|"
 
   if [[ $# -ne 3 ]]; then
-    mylog error "You have to provide 3 arguments: source directory, destination directory and file"
-    trace_out 3 generate_files
+    mylog error "You have to provide 3 arguments: source directory, destination directory and boolean (true|false)"
+    trace_out $lf_tracelevel generate_files
     exit  1
   fi
 
@@ -1126,17 +1219,17 @@ function generate_files() {
   # - in template custom dirs, separate the files to two categories : scripts (*.properties) and config (*.yaml or .json)
   # - generate first the *.properties files to be sourced then generate the *.yaml/*.json files
 
-  local lf_config_customdir="${lf_in_customdir}config/"
-  local lf_scripts_customdir="${lf_in_customdir}scripts/"
-  local lf_config_gendir="${lf_in_gendir}config/"
-  local lf_scripts_gendir="${lf_in_gendir}scripts/"
+  local lf_config_customdir="${lf_in_source_directory}config/"
+  local lf_scripts_customdir="${lf_in_source_directory}scripts/"
+  local lf_config_gendir="${lf_in_target_directory}config/"
+  local lf_scripts_gendir="${lf_in_target_directory}scripts/"
 
   local lf_nfiles lf_file lf_filename
 
-  decho 3 "lf_config_customdir: $lf_config_customdir"
-  decho 3 "lf_scripts_customdir: $lf_scripts_customdir"
-  decho 3 "lf_config_gendir: $lf_config_gendir"
-  decho 3 "lf_scripts_gendir: $lf_scripts_gendir"
+  decho $lf_tracelevel "lf_config_customdir: ${lf_source_relative_path}config/"
+  decho $lf_tracelevel "lf_scripts_customdir: ${lf_source_relative_path}scripts/"
+  decho $lf_tracelevel "lf_config_gendir: ${lf_target_relative_path}config/"
+  decho $lf_tracelevel "lf_scripts_gendir: ${lf_target_relative_path}scripts/"
 
   # set -a
   check_directory_contains_files $lf_scripts_customdir
@@ -1168,7 +1261,7 @@ function generate_files() {
     done
   fi
   #set +a
-  trace_out 3 generate_files
+  trace_out $lf_tracelevel generate_files
 }
 
 #########################################################################################################
@@ -1178,16 +1271,20 @@ function generate_files() {
 # @param 2: Target directory where the file is created.
 # @param 3: name of the file (as source and for the target).
 function adapt_file() {
-  trace_in 5 adapt_file
+  local lf_tracelevel=5
+  trace_in $lf_tracelevel adapt_file
 
   local lf_in_source_directory=$1
   local lf_in_target_directory=$2
   local lf_in_filename=$3
-  decho 5 "Parameters:\"$1\"|\"$2\"|\"$3\"|"
+
+  local lf_source_relative_path=$(echo "${lf_in_source_directory#"$PROVISION_SCRIPTDIR"}")
+  local lf_target_relative_path=$(echo "${lf_in_target_directory#"$MY_WORKINGDIR"}")
+  decho $lf_tracelevel "Parameters:\"$lf_source_relative_path\"|\"$lf_target_relative_path\"|\"$3\"|"
 
   if [[ $# -ne 3 ]]; then
     mylog error "You have to provide 3 arguments: source directory, destination directory and file"
-    trace_out 5 adapt_file
+    trace_out $lf_tracelevel adapt_file
     exit  1
   fi
   
@@ -1195,7 +1292,7 @@ function adapt_file() {
   check_file_exist "${lf_in_source_directory}${lf_in_filename}"
   envsubst < "${lf_in_source_directory}${lf_in_filename}" > "${lf_in_target_directory}${lf_in_filename}"
 
-  trace_out 5 adapt_file
+  trace_out $lf_tracelevel adapt_file
 }
 
 ################################################
@@ -1208,59 +1305,58 @@ function adapt_file() {
 # @param 6:
 # @param 7:
 function create_certificate_chain() {
-  trace_in 3 create_certificate_chain
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel create_certificate_chain
 
-  local lf_in_namespace="$1"
-  local lf_in_issuername="$2"
-  local lf_in_root_cert_name="$3"
-  local lf_in_tls_label1="$4"
-  local lf_in_tls_certname="$5"
-  local lf_in_workingdir="$6"
-  decho 3 "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|\"$5\"|\"$6\"|"
+  local lf_in_issuername="$1"
+  local lf_in_root_cert_name="$2"
+  local lf_in_tls_label1="$3"
+  local lf_in_tls_certname="$4"
+  local lf_in_workingdir="$5"
+  local lf_in_namespace="$6"
+
+  local lf_working_relative_path=$(echo "${lf_in_workingdir#"$MY_WORKINGDIR"}")
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|\"$lf_working_relative_path\"|\"$6\"|"
   
   if [[ $# -ne 6 ]]; then
-    mylog error "You have to provide 6 arguments: namespace, issuer name, root cert, label, cert name and working directory"
-    trace_out 3 create_certificate_chain
+    mylog error "You have to provide 6 arguments: issuer name, root cert, label, cert name, working directory and namespace"
+    trace_out $lf_tracelevel create_certificate_chain
     exit  1
   fi
 
   local lf_type lf_cr_name lf_yaml_file lf_source_directory lf_target_directory lf_namespace
   
-
   mylog info "Create a certificate chain in ${lf_in_namespace} namespace"
 
-  # For Self-signed issuer
-  export TLS_CA_ISSUER_NAME=${lf_in_namespace}-${lf_in_issuername}-ca
-  export TLS_NAMESPACE=${lf_in_namespace}
-
-  adapt_file ${MY_TLS_SCRIPTDIR}config/ ${MY_TLS_GEN_CUSTOMDIR}config/ Issuer_ca.yaml
+  # Create both Issuers
+  local lf_tls_ca_issuer_name=${lf_in_namespace}-${lf_in_issuername}-ca     # TLS_CA_ISSUER_NAME
+  local lf_tls_root_cert_name=${lf_in_namespace}-${lf_in_root_cert_name}-ca # TLS_ROOT_CERT_NAME
+  create_oc_resource "Issuer" "$lf_tls_ca_issuer_name" "${MY_TLS_SCRIPTDIR}config/" "${lf_in_workingdir}" "Issuer_ca.yaml" "$lf_in_namespace"
+  
+  local lf_tls_cert_issuer_name=${lf_in_namespace}-${lf_in_issuername}-tls   # TLS_CERT_ISSUER_NAME
+  export VAR_SECRET=$lf_tls_root_cert_name
+  create_oc_resource "Issuer" "$lf_tls_cert_issuer_name" "${MY_TLS_SCRIPTDIR}config/" "${lf_in_workingdir}" "Issuer_non_ca.yaml" "$lf_in_namespace"
+  unser VAR_SECRET
 
   # For Self-signed Certificate and Root Certificate
-  export TLS_ROOT_CERT_NAME=${lf_in_namespace}-${lf_in_root_cert_name}-ca
-  export TLS_LABEL1=${lf_in_tls_label1}
-  export TLS_CERT_ISSUER_NAME=${lf_in_namespace}-${lf_in_issuername}-tls
-
-  adapt_file ${MY_TLS_SCRIPTDIR}config/ ${MY_TLS_GEN_CUSTOMDIR}config/ CACertificate.yaml
-  adapt_file ${MY_TLS_SCRIPTDIR}config/ ${MY_TLS_GEN_CUSTOMDIR}config/ Issuer_non_ca.yaml
+  export VAR_COMMON_NAME=${lf_tls_root_cert_name}
+  export VAR_ISSUER=${lf_tls_ca_issuer_name}
+  export VAR_SECRET=${lf_tls_root_cert_name}
+  export VAR_LABEL=${lf_in_tls_label1}
+  create_oc_resource "Certificate" "$lf_tls_root_cert_name" "${MY_TLS_SCRIPTDIR}config/" "${lf_in_workingdir}" "CACertificate.yaml" "$lf_in_namespace"
+  unset VAR_COMMON_NAME VAR_ISSUER VAR_SECRET VAR_LABEL
 
   # For TLS Certificate
-  export TLS_CERT_NAME=${lf_in_namespace}-${lf_in_tls_certname}-tls
-  export TLS_INGRESS=$(oc get ingresses.config/cluster -o jsonpath='{.spec.domain}')
+  local lf_tls_cert_name=${lf_in_namespace}-${lf_in_tls_certname}-tls           # TLS_CERT_NAME
+  export VAR_COMMON_NAME=${lf_tls_cert_name}
+  export VAR_ISSUER=${lf_tls_cert_issuer_name}
+  export VAR_SECRET=${lf_tls_cert_name}
+  export VAR_LABEL=${lf_in_tls_label1}
+  export VAR_INGRESS=$(oc get ingresses.config/cluster -o jsonpath='{.spec.domain}')
+  create_oc_resource "Certificate" "$lf_tls_cert_name" "${MY_TLS_SCRIPTDIR}config/" "${lf_in_workingdir}" "TLSCertificate.yaml" "$lf_in_namespace"
+  unset VAR_COMMON_NAME VAR_ISSUER VAR_SECRET VAR_LABEL VAR_INGRESS
 
-  adapt_file ${MY_TLS_SCRIPTDIR}config/ ${MY_TLS_GEN_CUSTOMDIR}config/ TLSCertificate.yaml
-
-  # Create both Issuers and both Certificates
-  create_oc_resource "Issuer" "${lf_in_namespace}-${lf_in_issuername}-ca" "${MY_TLS_GEN_CUSTOMDIR}config/" "${lf_in_workingdir}" "Issuer_ca.yaml" "$lf_in_namespace"
-
-  create_oc_resource "Certificate" "${lf_in_namespace}-${lf_in_issuername}-ca" "${MY_TLS_GEN_CUSTOMDIR}config/" "${lf_in_workingdir}" "CACertificate.yaml" "$lf_in_namespace"
-
-  create_oc_resource "Issuer" "${lf_in_namespace}-${lf_in_issuername}-tls" "${MY_TLS_GEN_CUSTOMDIR}config/" "${lf_in_workingdir}" "Issuer_non_ca.yaml" "$lf_in_namespace"
-
-  create_oc_resource "Certificate" "${lf_in_namespace}-${lf_in_issuername}-tls" "${MY_TLS_GEN_CUSTOMDIR}config/" "${lf_in_workingdir}" "TLSCertificate.yaml" "$lf_in_namespace"
-  
-  unset TLS_CA_ISSUER_NAME TLS_NAMESPACE TLS_ROOT_CERT_NAME TLS_LABEL1 TLS_INGRESS
-
-  trace_out 3 create_certificate_chain
+  trace_out $lf_tracelevel create_certificate_chain
 }
 
 ################################################
@@ -1271,41 +1367,44 @@ function create_certificate_chain() {
 # License: Accept the license to use foundational services by adding spec.license.accept: true in the spec section.
 # 20250110 : add two more parameters to the function, to use it also for License Service instance which needs also the same patching
 function accept_license_fs() {
-  trace_in 5 accept_license_fs
+  local lf_tracelevel=5
+  trace_in $lf_tracelevel accept_license_fs
 
   local lf_in_type=$1
   local lf_in_cr_name=$2
   local lf_in_namespace=$3
-  decho 4 "Parameters:\"$1\"|\"$2\"|\"$3\"|"
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|"
 
   if [[ $# -ne 3 ]]; then
     mylog error "You have to provide 3 arguments: type, resource name and namespace"
-    trace_out 5 accept_license_fs
+    trace_out $lf_tracelevel accept_license_fs
     exit  1
   fi
-
-  decho 4 "oc -n ${lf_in_namespace} get ${lf_in_type} ${lf_in_cr_name} -o jsonpath='{.spec.license.accept}'"
+  
+  mylog info "Accepting license for ${lf_in_cr_name}/${lf_in_type} in namespace $lf_in_namespace"
+  decho $lf_tracelevel "oc -n ${lf_in_namespace} get ${lf_in_type} ${lf_in_cr_name} -o jsonpath='{.spec.license.accept}'"
   local lf_accept=$(oc -n ${lf_in_namespace} get ${lf_in_type} ${lf_in_cr_name} -o jsonpath='{.spec.license.accept}')
-  decho 4 "accept=$accept"
+  decho $lf_tracelevel "accept=$accept"
   if [[ $lf_accept == "true" ]]; then
     mylog info "license already accepted." 1>&2
   else
     oc -n ${lf_in_namespace} patch ${lf_in_type} ${lf_in_cr_name} --type merge -p '{"spec": {"license": {"accept": true}}}'
   fi
 
-  trace_out 5 accept_license_fs
+  trace_out $lf_tracelevel accept_license_fs
 }
 
 ################################################
 function generate_password() {
-  trace_in 5 generate_password
+  local lf_tracelevel=5
+  trace_in $lf_tracelevel generate_password
 
   local lf_in_length=$1
-  decho 5 "Parameters:\"$1\"|"
+  decho $lf_tracelevel "Parameters:\"$1\"|"
 
   if [[ $# -ne 1 ]]; then
     mylog error "You have to provide 1 argument: length"
-    trace_out 3 generate_password
+    trace_out $lf_tracelevel generate_password
     exit  1
   fi
 
@@ -1315,7 +1414,7 @@ function generate_password() {
   local lf_password=$(cat /dev/urandom | tr -dc "$lf_pattern" | head -c "$lf_in_length")
   export USER_PASSWORD_GEN=$lf_password
 
-  trace_out 5 generate_password
+  trace_out $lf_tracelevel generate_password
 }
 
 ################################################
@@ -1328,7 +1427,8 @@ function generate_password() {
 # @param 5: yaml: the file with the definition of the resource, example: "Navigator-Sub.yaml"
 # @param 6: namespace: the namespace to use
 function create_oc_resource() {
-  trace_in 3 create_oc_resource
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel create_oc_resource
 
   local lf_in_type="$1"
   local lf_in_cr_name="$2"
@@ -1336,41 +1436,44 @@ function create_oc_resource() {
   local lf_in_target_directory="$4"
   local lf_in_yaml_file="$5"
   local lf_in_namespace="$6"
-  decho 3 "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|\"$5\"|\"$6\"|"
+
+  local lf_source_relative_path=$(echo "${lf_in_source_directory#"$PROVISION_SCRIPTDIR"}")
+  local lf_target_relative_path=$(echo "${lf_in_target_directory#"$MY_WORKINGDIR"}")
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$lf_source_relative_path\"|\"$lf_target_relative_path\"|\"$5\"|\"$6\"|"
 
   if [[ $# -ne 6 ]]; then
-    mylog error "You have to provide 6 arguments: type, resource, namespace, issuer name, root cert, label, cert name and working directory"
-    trace_out 3 create_oc_resource
+    mylog error "You have to provide 6 arguments: type, resource, namespace, source directory, target directory, file and namespace"
+    trace_out $lf_tracelevel create_oc_resource
     exit  1
   fi
 
-  mylog check "Checking ${lf_in_cr_name}/${lf_in_type} in namespace $lf_in_namespace" 1>&2
   case $lf_in_type in
-    Certificate)   export VAR_CERT="${lf_in_cr_name}";;
-    Issuer)        export VAR_ISSUER="${lf_in_cr_name}"
-                   export VAR_NAMESPACE="${lf_in_namespace}";;
-    OperatorGroup) export VAR_OPERATORGROUP="${lf_in_cr_name}"
-                   export VAR_NAMESPACE="${lf_in_namespace}";;
+    Certificate)    export VAR_CERT="${lf_in_cr_name}"
+                    export VAR_NAMESPACE="${lf_in_namespace}";;
+    Issuer)         export VAR_ISSUER="${lf_in_cr_name}"
+                    export VAR_NAMESPACE="${lf_in_namespace}";;
+    OperatorGroup)  export VAR_OPERATORGROUP="${lf_in_cr_name}"
+                    export VAR_NAMESPACE="${lf_in_namespace}";;
+    Role)           export VAR_ROLE="${lf_in_cr_name}"
+                    export VAR_NAMESPACE="${lf_in_namespace}";;
     ServiceAccount) export VAR_SERVICEACCOUNT="${lf_in_cr_name}"
-                   export VAR_NAMESPACE="${lf_in_namespace}";;
+                    export VAR_NAMESPACE="${lf_in_namespace}";;
+    SharedSecret)   export VAR_SHARED_SECRET="${lf_in_cr_name}";;
   esac
   
-  if [[ $lf_in_type == "OperatorGroup" ]]; then
-    export VAR_OPERATORGROUP="${lf_in_cr_name}"
-    export VAR_NAMESPACE="${lf_in_namespace}" 
-  fi
-  
   adapt_file $lf_in_source_directory $lf_in_target_directory $lf_in_yaml_file
-  check_create_oc_yaml "${lf_in_type}" "${lf_in_cr_name}" "${lf_in_source_directory}" "${lf_in_target_directory}" "${lf_in_yaml_file}" ""${lf_in_namespace}
+  check_create_oc_yaml "${lf_in_type}" "${lf_in_cr_name}" "${lf_in_source_directory}" "${lf_in_target_directory}" "${lf_in_yaml_file}" "${lf_in_namespace}"
 
   case $lf_in_type in
-    Certificate)  unset VAR_CERT;;
-    Issuer)        unset VAR_ISSUER VAR_NAMESPACE;;
+    Certificate)  unset VAR_CERT VAR_NAMESPACE;;
+    Issuer) unset VAR_ISSUER VAR_NAMESPACE;;
     OperatorGroup) unset VAR_OPERATORGROUP VAR_NAMESPACE;;
+    Role) unset VAR_ROLE VAR_NAMESPACE;;
+    SharedSecret) unset VAR_SHARED_SECRET;;
     ServiceAccount) unset VAR_SERVICEACCOUNT VAR_NAMESPACE;;
   esac
 
-  trace_out 3 create_oc_resource
+  trace_out $lf_tracelevel create_oc_resource
 }
 
 
@@ -1385,7 +1488,8 @@ function create_oc_resource() {
 # @param 7: path: json path to check resource state
 # @param 8: state: resource state
 function create_operand_instance() {
-  trace_in 3 create_operand_instance  
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel create_operand_instance  
 
   local lf_in_type=$1
   local lf_in_cr_name=$2
@@ -1395,23 +1499,26 @@ function create_operand_instance() {
   local lf_in_namespace=$6
   local lf_in_path=$7
   local lf_in_state=$8
-  decho 3 "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|\"$5\"|\"$6\"|\"$7\"|\"$8\"|"
+
+  local lf_source_relative_path=$(echo "${lf_in_source_directory#"$PROVISION_SCRIPTDIR"}")
+  local lf_target_relative_path=$(echo "${lf_in_target_directory#"$MY_WORKINGDIR"}")
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$lf_source_relative_path\"|\"$lf_target_relative_path\"|\"$5\"|\"$6\"|\"$7\"|\"$8\"|"
 
   if [[ $# -ne 8 ]]; then
     mylog error "You have to provide 6 arguments: type, resource, source directory, target directory, yaml file, namespace, jsonpath and state"
-    trace_out 3 create_operand_instance
+    trace_out $lf_tracelevel create_operand_instance
     exit  1
   fi
 
   create_oc_resource "${lf_in_type}" "${lf_in_cr_name}" "${lf_in_source_directory}" "${lf_in_target_directory}" "${lf_in_yaml_file}" "$lf_in_namespace"
   
   if oc -n $lf_in_namespace get $lf_in_type $lf_in_cr_name >/dev/null 2>&1; then
-    wait_for_state "$lf_in_type $lf_in_cr_name $lf_in_path is $lf_in_state" "$lf_in_state" "oc -n $lf_in_namespace get $lf_in_type $lf_in_cr_name -o jsonpath='$lf_in_path'"
+    wait_for_state  "$lf_in_type" "$lf_in_cr_name" "$lf_in_path" "$lf_in_state" "$lf_in_namespace"
   else
     mylog error "$lf_in_cr_name of type $lf_in_type in $lf_in_namespace namespace does not exist, will not wait for state"
   fi
 
-  trace_out 3 create_operand_instance  
+  trace_out $lf_tracelevel create_operand_instance  
 }
 
 ################################################
@@ -1422,31 +1529,45 @@ function create_operand_instance() {
 # @param 4: dir: the target directory example: "${workingdir}apic/"
 # @param 5: namespace: the namespace to use
 function create_operator_instance() {
-  trace_in 3 create_operator_instance  
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel create_operator_instance  
 
   local lf_in_cr_name="$1"
   local lf_in_catalogue_source="$2"
   local lf_in_source_directory="$3"
   local lf_in_target_directory="$4"
   local lf_in_namespace="$5"
-  decho 3 "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|\"$5\"|"
+
+  local lf_source_relative_path=$(echo "${lf_in_source_directory#"$PROVISION_SCRIPTDIR"}")
+  local lf_target_relative_path=$(echo "${lf_in_target_directory#"$MY_WORKINGDIR"}")
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$lf_source_relative_path\"|\"$lf_target_relative_path\"|\"$5\"|"
 
   if [[ $# -ne 5 ]]; then
     mylog error "You have to provide 6 arguments: operator, catalog source, source directory, target directory and namespace"
-    trace_out 3 create_operand_instance
+    trace_out $lf_tracelevel create_operand_instance
     exit  1
   fi
 
   # export needed variables
   export VAR_OPERATOR_NAME=$lf_in_cr_name
   export VAR_CATALOG_SOURCE_NAME=$lf_in_catalogue_source
-  export VAR_OPERATOR_NAMESPACE=$lf_in_namespace
+  export VAR_NAMESPACE=$lf_in_namespace
 
   check_directory_exist ${lf_in_source_directory}
 
-  lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest -o json | jq -r --arg op "$VAR_OPERATOR_NAME" --arg cs "$VAR_CATALOG_SOURCE_NAME" '.items[] | select(.metadata.name==$op and .status.catalogSource==$cs) | .status.defaultChannel')
+  #lf_operator_chl=$(jq -r --arg op "$VAR_OPERATOR_NAME" --arg cs "$VAR_CATALOG_SOURCE_NAME" \
+  #                  '.items[] | select(.metadata.name==$op and .status.catalogSource==$cs) | .status.defaultChannel' $MY_RAM_MANIFEST_FILE)
+  #lf_csv_name=$(jq -r --arg op "$VAR_OPERATOR_NAME" --arg cs "$VAR_CATALOG_SOURCE_NAME" \
+  #              '.items[] | select(.metadata.name==$op and .status.catalogSource==$cs) | .status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV' $MY_RAM_MANIFEST_FILE)
+
+  lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest -o json | \
+                    jq -r --arg op "$VAR_OPERATOR_NAME" --arg cs "$VAR_CATALOG_SOURCE_NAME" \
+                    '.items[] | select(.metadata.name==$op and .status.catalogSource==$cs) | .status.defaultChannel')
+
+  lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest -o json | \
+                jq -r --arg op "$VAR_OPERATOR_NAME" --arg cs "$VAR_CATALOG_SOURCE_NAME" \
+                '.items[] | select(.metadata.name==$op and .status.catalogSource==$cs) | .status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
   local lf_strategy="Automatic"
-  lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest -o json | jq -r --arg op "$VAR_OPERATOR_NAME" --arg cs "$VAR_CATALOG_SOURCE_NAME" '.items[] | select(.metadata.name==$op and .status.catalogSource==$cs) | .status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
 
   # export are important because they are used to replace the variable in the subscription.yaml (envsubst command)
   export VAR_OPERATOR_CHL=$lf_operator_chl
@@ -1454,10 +1575,20 @@ function create_operator_instance() {
 
   local lf_path lf_resource lf_state lf_type
 
-  #SECONDS=0
-  create_oc_resource "Subscription" "${VAR_OPERATOR_NAME}" "${MY_OPERATORSDIR}" "${lf_in_target_directory}" "subscription.yaml" $VAR_OPERATOR_NAMESPACE
+  if [[ -z $lf_operator_chl ]]; then
+    mylog error "Operator channel not found for $lf_in_cr_name in $MY_CATALOGSOURCES_NAMESPACE namespace"
+    exit 1
+  fi
+
+  create_oc_resource "Subscription" "${VAR_OPERATOR_NAME}" "${MY_OPERATORSDIR}" "${lf_in_target_directory}" "subscription.yaml" $VAR_NAMESPACE
+
+  if [[ -z $lf_csv_name ]]; then
+    mylog error "CSV not found for $lf_in_cr_name in $MY_CATALOGSOURCES_NAMESPACE namespace"
+    exit 1
+  fi
+
   lf_type="clusterserviceversion"
-  wait_for_resource "$lf_type" "$lf_csv_name" "$VAR_OPERATOR_NAMESPACE"
+  wait_for_resource "$lf_type" "$lf_csv_name" "$VAR_NAMESPACE"
   lf_resource=$VAR_RESOURCE
   unset VAR_RESOURCE
 
@@ -1465,21 +1596,25 @@ function create_operator_instance() {
   lf_path="{.status.phase}"
   lf_state="Succeeded"
 
-  if oc -n $VAR_OPERATOR_NAMESPACE get $lf_type $lf_resource >/dev/null 2>&1; then
-    wait_for_state "$lf_type $lf_resource $lf_path is $lf_state" "$lf_state" "oc -n $VAR_OPERATOR_NAMESPACE get $lf_type $lf_resource -o jsonpath='$lf_path'"
+  if oc -n $VAR_NAMESPACE get $lf_type $lf_resource >/dev/null 2>&1; then
+    wait_for_state "$lf_type" "$lf_resource" "$lf_path" "$lf_state" "$VAR_NAMESPACE"
   else
-    mylog error "$lf_resource of type $lf_type in $VAR_OPERATOR_NAMESPACE namespace does not exist, will not wait for state"
+    mylog error "$lf_resource of type $lf_type in $VAR_NAMESPACE namespace does not exist, will not wait for state"
   fi
-  
-  unset VAR_OPERATOR_NAME VAR_OPERATOR_NAMESPACE VAR_OPERATOR_CHL VAR_STRATEGY VAR_CATALOG_SOURCE_NAME
 
-  trace_out 3 create_operator_instance  
+  # update the file containing the manifest
+  #oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest -o json > $MY_RAM_MANIFEST_FILE
+  
+  unset VAR_OPERATOR_NAME VAR_NAMESPACE VAR_OPERATOR_CHL VAR_STRATEGY VAR_CATALOG_SOURCE_NAME
+
+  trace_out $lf_tracelevel create_operator_instance  
 }
 
 ################################################
 # Function to process calls
 function process_calls() {
-  trace_in 2 process_calls
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel process_calls
 
   local lf_in_calls="$1"  # Get the full string of calls and parameters
 
@@ -1499,26 +1634,25 @@ function process_calls() {
       # Extract the function name and parameters
       lf_func=$(echo "$lf_cmd" | awk '{print $1}')
       lf_params=$(echo "$lf_cmd" | awk '{$1=""; sub(/^ /, ""); print}')  # Get all the parameters after the function name
-      decho 3 "Function: $lf_func|Parameters: $lf_params"
+      decho $lf_tracelevel "Function: $lf_func|Parameters: $lf_params"
 
       # Check if the function exists and call it
       if declare -f "$lf_func" > /dev/null; then
         if [ "$lf_func" = "main" ] || [ "$lf_func" = "process_calls" ]; then
           mylog error "Functions 'main', 'process_calls' cannot be called."
-          trace_out 2 process_calls
+          trace_out $lf_tracelevel process_calls
           return 1
         fi
-        #install_needed_resources_part
         $lf_func $lf_params
       else
         mylog error "Function '$lf_func' not found."
         lf_list=$(declare -F | awk '{print $NF}')
         mylog info "Available functions are:" 0
         mylog info "$lf_list" 0
-        trace_out 3 process_calls
+        trace_out $lf_tracelevel process_calls
         return 1
       fi
     done
 
-  trace_out 2 process_calls
+  trace_out $lf_tracelevel process_calls
 }

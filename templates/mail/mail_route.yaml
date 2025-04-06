@@ -1,0 +1,13 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: ${VAR_MAIL_ROUTE}
+  namespace: $VAR_MAIL_NAMESPACE
+spec:
+  to:
+    kind: Service
+    name: ${VAR_MAIL_SERVICE}
+    weight: 100
+  port:
+    targetPort: http
+  wildcardPolicy: None

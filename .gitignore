@@ -3,6 +3,6 @@ terraform/.terraform
 terraform/.terraform.*
 terraform/terraform.tfstate*
 /resources/*
-customisation/OPENLIBERTY/system/target/*
-customisation/WASLIBERTY/target/*
+demos/open_liberty/system/target/*
+demos/was_liberty/target/*
 tmp/*

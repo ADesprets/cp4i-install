@@ -1,7 +1,7 @@
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
-  name: ${VAR_LDAP_NAMESPACE}-route
+  name: ${VAR_LDAP_ROUTE}
   namespace: $VAR_LDAP_NAMESPACE
 spec:
   to:
