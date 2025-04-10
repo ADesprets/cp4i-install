@@ -27,7 +27,7 @@ function create_kafka_topics () {
   trace_in $lf_tracelevel create_kafka_topics
 
   local lf_source_directory="${MY_ES_SIMPLE_DEMODIR}config/"
-  local lf_target_directory="${MY_ES_GEN_CUSTOMDIR}config/"
+  local lf_target_directory="${MY_ES_WORKINGDIR}config/"
 
   # Creation of the Topics used for taxi demo
   mylog info "Creating topics"
@@ -58,7 +58,7 @@ function create_kafka_users () {
   trace_in $lf_tracelevel create_kafka_users
 
   local lf_source_directory="${MY_ES_SIMPLE_DEMODIR}config/"
-  local lf_target_directory="${MY_ES_GEN_CUSTOMDIR}config/"
+  local lf_target_directory="${MY_ES_WORKINGDIR}config/"
 
   # Creation of a Kafka user
   create_oc_resource "KafkaUser" "es-admin" "${lf_source_directory}" "${lf_target_directory}" "es-admin-user.yaml" "$VAR_ES_NAMESPACE"
@@ -79,12 +79,12 @@ function create_kafka_connector () {
   trace_in $lf_tracelevel create_kafka_connector
 
   local lf_source_directory="${MY_ES_SIMPLE_DEMODIR}config/"
-  local lf_target_directory="${MY_ES_GEN_CUSTOMDIR}config/"
+  local lf_target_directory="${MY_ES_WORKINGDIR}config/"
 
   # Create KafkaConnect and KafkaConnector in $ES_APPS_PROJECT project
   mylog info "Create Kafka Connect for datagen, and MQ connectors"
    
-  create_oc_resource "KafkaConnect" "${VAR_ES_KAFKA_CONNECT_INSTANCE_NAME}" "${lf_source_directory}" "${MY_ES_GEN_CUSTOMDIR}" "KConnect.yaml" "$VAR_ES_NAMESPACE"
+  create_oc_resource "KafkaConnect" "${VAR_ES_KAFKA_CONNECT_INSTANCE_NAME}" "${lf_source_directory}" "${MY_ES_WORKINGDIR}" "KConnect.yaml" "$VAR_ES_NAMESPACE"
   # TODO check for the TLS configuration: https://ibm.github.io/event-automation/es/connecting/mq/#configuration-options
   
   mylog info "Create Kafka Connectors for datagen and MQ connectors"
@@ -109,7 +109,7 @@ function es_run_all () {
   check_directory_exist_create "${MY_ES_WORKINGDIR}"
 
   # Create namespace 
-  create_project "$VAR_ES_NAMESPACE" "$VAR_ES_NAMESPACE project" "For MQ customisation" "${MY_RESOURCESDIR}" "${MY_ES_WORKINGDIR}"
+  create_project "$VAR_ES_NAMESPACE" "$VAR_ES_NAMESPACE project" "For Event Streams customisation" "${MY_RESOURCESDIR}" "${MY_ES_WORKINGDIR}"
 
   create_es
 
@@ -121,7 +121,7 @@ function es_run_all () {
 
   local lf_ending_date=$(date)
     
-  mylog info "==== Customisation of es [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+  mylog info "==== Customisation of es (${FUNCNAME[0]})[ended : $lf_ending_date and took : $SECONDS seconds]." 0
 
   trace_out $lf_tracelevel es_run_all
 }
@@ -217,7 +217,7 @@ sc_provision_constant_properties_file="${PROVISION_SCRIPTDIR}properties/cp4i-con
 sc_provision_variable_properties_file="${PROVISION_SCRIPTDIR}properties/cp4i-variables.properties"
 sc_provision_lib_file="${PROVISION_SCRIPTDIR}lib.sh"
 sc_component_properties_file="${sc_component_script_dir}../config/es.properties"
-sc_provision_preambule_file="${PROVISION_SCRIPTDIR}preambule.properties"
+sc_provision_preambule_file="${PROVISION_SCRIPTDIR}properties/preambule.properties"
 
 # SB]20250319 Je suis obligé d'utiliser set -a et set +a parceque à cet instant je n'ai pas accès à la fonction read_config_file
 # load script parrameters fil

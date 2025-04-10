@@ -6,7 +6,7 @@ metadata:
 spec:
   license:
     accept: true
-  controlDatabaseSecret: ${MY_POSTGRES_DSN_PASSWORD}
+  controlDatabaseSecret: ${MY_APIC_GRAPHQL_DSN_SECRET}
 #  imagePullSecrets:
 #    - ibm-entitlement-key  
   graphServer:

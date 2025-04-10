@@ -133,7 +133,7 @@ function was_run_all () {
   prepare_internal_registry
   # Build the image
   if $MY_WASLIBERTY_CUSTOM_BUILD; then
-    pushd ${MY_WASLIBERTY_SCRIPTDIR} > /dev/null 2>&1
+    pushd ${MY_WAS_LIBERTY_DEMODIR} > /dev/null 2>&1
     mylog info "==== Compile code and build docker image." 1>&2
     compile_code
     was_build_image
@@ -245,7 +245,7 @@ sc_provision_constant_properties_file="${PROVISION_SCRIPTDIR}properties/cp4i-con
 sc_provision_variable_properties_file="${PROVISION_SCRIPTDIR}properties/cp4i-variables.properties"
 sc_provision_lib_file="${PROVISION_SCRIPTDIR}lib.sh"
 sc_component_properties_file="${sc_component_script_dir}../config/was.properties"
-sc_provision_preambule_file="${PROVISION_SCRIPTDIR}preambule.properties"
+sc_provision_preambule_file="${PROVISION_SCRIPTDIR}properties/preambule.properties"
 
 # SB]20250319 Je suis obligé d'utiliser set -a et set +a parceque à cet instant je n'ai pas accès à la fonction read_config_file
 # load script parrameters fil

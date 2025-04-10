@@ -1,0 +1,73 @@
+apiVersion: mq.ibm.com/v1beta1
+kind: QueueManager
+metadata:
+  name: $VAR_QMGR
+  namespace: $VAR_MQ_NAMESPACE
+spec:
+  license:
+    accept: true
+    license: $MY_MQ_LIC
+    use: "NonProduction"
+  terminationGracePeriodSeconds: 30
+  pki:
+    keys:
+      - name: $VAR_QMGR
+        secret:
+          items:
+            - tls.key
+            - tls.crt
+          secretName: ${VAR_QMGR}-secret
+    trust:
+      - name: $VAR_QMGR
+        secret:
+          secretName: ${VAR_QMGR}-secret
+          items:
+            - ca.crt
+  securityContext:
+    initVolumeAsRoot: false
+  queueManager:
+    name: $VAR_QMGR_UC
+    metrics:
+      enabled: true
+    resources:
+      limits:
+        cpu: 500m
+        memory: 1Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
+    route:
+      enabled: true
+    storage:
+      defaultClass: $MY_BLOCK_STORAGE_CLASS
+      queueManager:
+        deleteClaim: true
+        type: persistent-claim
+    availability:
+      type: SingleInstance
+      updateStrategy: RollingUpdate
+    imagePullPolicy: IfNotPresent
+    debug: false
+    logFormat: Basic
+    mqsc:
+      - configMap:
+          name: $VAR_MQSC_OBJECTS_CM
+          items:
+            - ${VAR_QMGR}.mqsc
+      - configMap:
+          name: $VAR_MQSC_LDAP_CM
+          items:
+            - ${VAR_QMGR}.ldap
+  version: $MY_MQ_VERSION
+  template:
+    pod:
+      containers:
+        - name: qmgr
+          resources: {}
+  web:
+    console:
+      authentication:
+        provider: manual
+      authorization:
+        provider: manual
+    enabled: true

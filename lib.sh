@@ -1,3 +1,77 @@
+  ################################################
+# @param 1: namespace 
+function display_access_info_es() {
+  local lf_tracelevel=5
+  trace_in $lf_tracelevel display_access_info_es
+
+  local lf_in_namespace=$1
+
+  decho $lf_tracelevel "Parameters:\"$1\"|"
+
+  if [[ $# -ne 1 ]]; then
+    mylog error "You have to provide one argument : namespace"
+    trace_out $lf_tracelevel display_access_info_es
+    exit  1
+  fi
+
+  # Event Streams
+  local lf_es_ui_url lf_es_admin_url lf_es_apicurioregistry_url lf_es_restproducer_url lf_es_bootstrap_urls lf_es_admin_pwd
+  lf_es_ui_url=$(oc -n $lf_in_namespace get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="ui")].uri}')
+  mylog info "Event Streams Management UI endpoint: ${lf_es_ui_url}" 0
+  lf_es_admin_url=$(oc -n $lf_in_namespace get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="admin")].uri}')
+  mylog info "Event Streams Management admin endpoint: ${lf_es_admin_url}" 0
+  lf_es_apicurioregistry_url=$(oc -n $lf_in_namespace get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="apicurioregistry")].uri}')
+  mylog info "Event Streams Management apicurio registry endpoint: ${lf_es_apicurioregistry_url}" 0
+  lf_es_restproducer_url=$(oc -n $lf_in_namespace get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="restproducer")].uri}')
+  mylog info "Event Streams Management REST Producer endpoint: ${lf_es_restproducer_url}" 0
+  lf_es_bootstrap_urls=$(oc -n $lf_in_namespace get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.kafkaListeners[*].bootstrapServers}')
+  mylog info "Event Streams Bootstraps servers endpoints: ${lf_es_bootstrap_urls}" 0
+  lf_es_admin_pwd=$(oc -n $lf_in_namespace get secret es-admin -o jsonpath={.data.password} | base64 -d)
+  mylog info "Event Streams UI Credentials: es-admin/${lf_es_admin_pwd}" 0
+  
+  trace_out $lf_tracelevel display_access_info_es
+}
+#############################################################
+# Function to process array of (object id, yaml file)
+# @param 1: type
+# @param 2: dir: the source directory
+# @param 3: dir: the target directory 
+# @param 4: namespace: the namespace
+# @param 5: array
+
+function create_oc_objects() {
+  local lf_tracelevel=5
+  trace_in $lf_tracelevel create_oc_objects
+  
+  local lf_in_type="$1"
+  local lf_in_source_directory="$2"
+  local lf_in_target_directory="$3"
+  local lf_in_namespace=$4
+  local -n lf_in_arr_ref=$5
+
+  local lf_source_relative_path=$(echo "${lf_in_source_directory#"$PROVISION_SCRIPTDIR"}")
+  local lf_target_relative_path=$(echo "${lf_in_target_directory#"$MY_WORKINGDIR"}")
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$lf_source_relative_path\"|\"$lf_target_relative_path\"|\"$4\"|\"$5\"|"
+
+  local lf_length=${#lf_in_arr_ref[@]}
+  local lf_obj_id lf_in_file
+
+  # Ensure the array contains an even number of elements
+  if (( lf_length % 2 != 0 )); then
+    mylog error "Error: Odd number of elements in the array. Ensure pairs are complete."
+    return 1
+  fi
+
+  # Loop through array in pairs
+  for ((i = 0; i < lf_length; i += 2)); do
+    lf_obj_id=${lf_in_arr_ref[i]}
+    lf_file=${lf_in_arr_ref[i+1]}
+    create_oc_resource "${lf_in_type}" "${lf_obj_id}" "${lf_in_source_directory}" "${lf_in_target_directory}" "$lf_file" "${lf_in_namespace}"
+  done
+  
+  trace_out $lf_tracelevel create_oc_objects
+}
+
 ###########################################################
 # install_networkpolicies function for License Service
 # https://www.ibm.com/docs/en/cloud-paks/foundational-services/4.6?topic=service-installing-network-policies-license
@@ -258,6 +332,8 @@ function save_certificate() {
   local lf_in_target_directory=$3
   local lf_in_ns=$4
 
+  check_directory_exist_create $lf_in_target_directory
+
   local lf_target_relative_path=$(echo "${lf_in_target_directory#"$MY_WORKINGDIR"}")
   decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$lf_target_relative_path\"|\"$4\"|"
 
@@ -387,7 +463,7 @@ function check_file_exist() {
 
 ######################################################
 # checks if the directory exist, if no print a msg and exit
-# @param 1:
+# @param 1: directory path
 function check_directory_exist() {
   local lf_tracelevel=5
   trace_in $lf_tracelevel check_directory_exist
@@ -665,7 +741,7 @@ function add_ibm_entitlement() {
 # @param 5: yaml: the file with the definition of the resource, example: "Navigator-Sub.yaml"
 # @param 6: namespace
 function check_create_oc_yaml() {
-  local lf_tracelevel=4
+  local lf_tracelevel=3
   trace_in $lf_tracelevel  check_create_oc_yaml
 
   local lf_in_type="$1"
@@ -690,7 +766,7 @@ function check_create_oc_yaml() {
   adapt_file $lf_in_source_directory $lf_in_target_directory $lf_in_yaml_file
 
   if $MY_APPLY_FLAG; then
-    mylog info "Creating/Updating ${lf_in_cr_name}/${lf_in_type} using ${lf_target_relative_path}${lf_in_yaml_file} in namespace ${lf_in_namespace}"
+    mylog info "Creating/Updating ${lf_in_type}/${lf_in_cr_name} using ${lf_target_relative_path}${lf_in_yaml_file} in namespace ${lf_in_namespace}"
     oc apply -f "${lf_in_target_directory}${lf_in_yaml_file}" || exit 1
     wait_for_resource $lf_in_type $lf_in_cr_name $lf_in_namespace
   fi
@@ -880,24 +956,9 @@ function add_ldif_file () {
 # @param 1: dir: the source directory example: "${subscriptionsdir}"
 # @param 2: file
 #
-function create_expose_service_openldap() {
+function create_openldap_route() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_expose_service_openldap
-
-  local lf_in_source_directory="$1"
-  local lf_in_file="$2"
-
-  local lf_source_relative_path=$(echo "${lf_in_source_directory#"$PROVISION_SCRIPTDIR"}")
-  decho $lf_tracelevel "Parameters:\"$lf_source_relative_path\"|\"$2\"|"
-
-  if [[ $# -ne 2 ]]; then
-    mylog error "You have to provide 2 arguments : source directory and file"
-    trace_out $lf_tracelevel create_expose_service_openldap
-    exit  1
-  fi
-
-  # Create the service to expose the openldap server
-  create_oc_resource "Service" "${VAR_LDAP_SERVICE}" "$lf_in_source_directory" "${MY_LDAP_WORKINGDIR}" "$lf_in_file" "${VAR_LDAP_NAMESPACE}"
+  trace_in $lf_tracelevel create_openldap_route
 
   # expose service externaly and get host and port
   oc -n ${VAR_LDAP_NAMESPACE} get service ${VAR_LDAP_SERVICE} -o json | \
@@ -916,7 +977,7 @@ function create_expose_service_openldap() {
 
   export VAR_LDAP_HOSTNAME=$(oc -n ${VAR_LDAP_NAMESPACE} get route ${VAR_LDAP_ROUTE} -o jsonpath='{.spec.host}')
 
-  trace_out $lf_tracelevel create_expose_service_openldap
+  trace_out $lf_tracelevel create_openldap_route
 }
 
 ################################################
@@ -1093,12 +1154,18 @@ function wait_for_resource() {
     lf_option2="in project $lf_in_namespace"
   fi
 
+  # specific for postgresql cluster crd
+  #if [[ $lf_in_type == "Cluster" ]]; then
+  #  lf_in_type="${MY_POSTGRES_CRD_CLUSTER}"
+  #fi
+
   local lf_resource=""
   seconds=0
   while [[ -z $lf_resource ]]; do
-    echo -ne "Timer: $seconds seconds | waiting for $lf_in_cr_name/$lf_in_type $lf_option2...\033[0K\r"
-    #lf_resource=$(oc $lf_option1 get $lf_in_type -o json | jq -r --arg my_resource "$lf_in_cr_name" '.items[].metadata | select (.name == $my_resource).name')
-    lf_resource=$(oc $lf_option1 get $lf_in_type -o jsonpath="{.items[?(@.metadata.name=='$lf_in_cr_name')].metadata.name}")
+    echo -ne "Timer: $seconds seconds | waiting for $lf_in_type/$lf_in_cr_name $lf_option2...\033[0K\r"
+    lf_resource=$(oc $lf_option1 get $lf_in_type -o json | jq -r --arg my_resource "$lf_in_cr_name" '.items[].metadata | select (.name == $my_resource).name')
+    #lf_resource=$(oc $lf_option1 get $lf_in_type -o json | jq -r --arg my_resource "$lf_in_cr_name" '.items[] | select(.metadata.name == $my_resource) | .metadata.name')
+    #lf_resource=$(oc $lf_option1 get $lf_in_type -o jsonpath="{.items[?(@.metadata.name==\"$lf_in_cr_name\")].metadata.name}")
 
     sleep 1
     seconds=$((seconds + 1))
@@ -1456,6 +1523,8 @@ function create_oc_resource() {
                     export VAR_NAMESPACE="${lf_in_namespace}";;
     Role)           export VAR_ROLE="${lf_in_cr_name}"
                     export VAR_NAMESPACE="${lf_in_namespace}";;
+    Secret)         export VAR_SECRET_NAME="${lf_in_cr_name}"
+                    export VAR_NAMESPACE="${lf_in_namespace}";;
     ServiceAccount) export VAR_SERVICEACCOUNT="${lf_in_cr_name}"
                     export VAR_NAMESPACE="${lf_in_namespace}";;
     SharedSecret)   export VAR_SHARED_SECRET="${lf_in_cr_name}";;
@@ -1469,8 +1538,9 @@ function create_oc_resource() {
     Issuer) unset VAR_ISSUER VAR_NAMESPACE;;
     OperatorGroup) unset VAR_OPERATORGROUP VAR_NAMESPACE;;
     Role) unset VAR_ROLE VAR_NAMESPACE;;
-    SharedSecret) unset VAR_SHARED_SECRET;;
+    Secret) unset VAR_SECRET_NAME VAR_NAMESPACE;;
     ServiceAccount) unset VAR_SERVICEACCOUNT VAR_NAMESPACE;;
+    SharedSecret) unset VAR_SHARED_SECRET;;
   esac
 
   trace_out $lf_tracelevel create_oc_resource
@@ -1559,14 +1629,16 @@ function create_operator_instance() {
   #                  '.items[] | select(.metadata.name==$op and .status.catalogSource==$cs) | .status.defaultChannel' $MY_RAM_MANIFEST_FILE)
   #lf_csv_name=$(jq -r --arg op "$VAR_OPERATOR_NAME" --arg cs "$VAR_CATALOG_SOURCE_NAME" \
   #              '.items[] | select(.metadata.name==$op and .status.catalogSource==$cs) | .status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV' $MY_RAM_MANIFEST_FILE)
-
   lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest -o json | \
                     jq -r --arg op "$VAR_OPERATOR_NAME" --arg cs "$VAR_CATALOG_SOURCE_NAME" \
                     '.items[] | select(.metadata.name==$op and .status.catalogSource==$cs) | .status.defaultChannel')
+  decho $lf_tracelevel "Channel:\"$lf_operator_chl\" for operator \"$VAR_OPERATOR_NAME\""
 
   lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest -o json | \
                 jq -r --arg op "$VAR_OPERATOR_NAME" --arg cs "$VAR_CATALOG_SOURCE_NAME" \
                 '.items[] | select(.metadata.name==$op and .status.catalogSource==$cs) | .status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
+  decho $lf_tracelevel "Installed version:\"$lf_csv_name\" for operator \"$VAR_OPERATOR_NAME\""
+
   local lf_strategy="Automatic"
 
   # export are important because they are used to replace the variable in the subscription.yaml (envsubst command)

@@ -1,0 +1,98 @@
+apiVersion: eventstreams.ibm.com/v1beta2
+kind: KafkaConnect
+metadata:
+  name: ${VAR_ES_KAFKA_CONNECT_INSTANCE_NAME}
+  annotations:
+    eventstreams.ibm.com/use-connector-resources: 'true'
+  labels:
+    backup.eventstreams.ibm.com/component: kafkaconnect
+  namespace: ${VAR_ES_NAMESPACE}    
+spec:
+  config:
+    group.id: connect-cluster
+    offset.storage.topic: connect-cluster-offsets
+    config.storage.topic: connect-cluster-configs
+    status.storage.topic: connect-cluster-status
+    client.id: connect-cluster-client
+    config.providers: file
+    config.providers.file.class: org.apache.kafka.common.config.provider.DirectoryConfigProvider
+  bootstrapServers: '${VAR_ES_INSTANCE_NAME}-kafka-bootstrap.${VAR_ES_NAMESPACE}.svc:9093'
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 2Gi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+  authentication:
+    certificateAndKey:
+      certificate: user.crt
+      key: user.key
+      secretName: kafka-user1
+    type: tls      
+  template:
+    buildConfig:
+      pullSecret: ibm-entitlement-key
+    connectContainer:
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+        privileged: false
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true
+    pod:
+      imagePullSecrets: []
+      metadata:
+        annotations:
+          eventstreams.production.type: CloudPakForIntegrationNonProduction
+          productID: 2a79e49111f44ec3acd89608e56138f5
+          productName: IBM Event Streams for Non Production
+          productVersion: $MY_ES_VERSION
+          productMetric: VIRTUAL_PROCESSOR_CORE
+          productChargedContainers: ${VAR_ES_KAFKA_CONNECT_INSTANCE_NAME}-connect
+          cloudpakId: c8b82d189e7545f0892db9ef2731b90d
+          cloudpakName: IBM Cloud Pak for Integration
+          productCloudpakRatio: '2:1'
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+                      - s390x
+                      - ppc64le
+  tls:
+    trustedCertificates:
+      - certificate: ca.crt
+        secretName: ${VAR_ES_INSTANCE_NAME}-cluster-ca-cert
+  replicas: 1
+  build:
+    output:
+      type: docker
+      image: image-registry.openshift-image-registry.svc:5000/${VAR_ES_NAMESPACE}/datagen-producer:0.0.6
+    plugins:
+      - name: datagen
+        artifacts:
+          - type: jar
+            url: https://github.com/IBM/kafka-connect-loosehangerjeans-source/releases/download/0.0.6/kafka-connect-loosehangerjeans-source-0.0.6-jar-with-dependencies.jar
+          - artifact: apicurio-registry-serdes-avro-serde
+            group: io.apicurio
+            type: maven
+            version: 2.5.10.Final
+          - artifact: apicurio-registry-utils-converter
+            group: io.apicurio
+            type: maven
+            version: 2.5.10.Final            
+      - name: mq-source
+        artifacts:
+          - type: jar
+            url: https://github.com/ibm-messaging/kafka-connect-mq-source/releases/download/v1.3.5/kafka-connect-mq-source-1.3.5-jar-with-dependencies.jar
+      - name: mq-sink
+        artifacts:
+          - type: jar
+            url: https://github.com/ibm-messaging/kafka-connect-mq-sink/releases/download/v1.5.2/kafka-connect-mq-sink-1.5.2-jar-with-dependencies.jar

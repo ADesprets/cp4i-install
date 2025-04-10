@@ -5,3 +5,17 @@ metadata:
   namespace: $VAR_ES_NAMESPACE
 data:
   kafka-metrics-config.yaml: |
+    lowercaseOutputName: true
+    rules:
+    - attrNameSnakeCase: false
+      name: kafka_controller_$1_$2_$3
+      pattern: kafka.controller<type=(\w+), name=(\w+)><>(Count|Value|Mean)
+    - attrNameSnakeCase: false
+      name: kafka_server_BrokerTopicMetrics_$1_$2
+      pattern: kafka.server<type=BrokerTopicMetrics, name=(BytesInPerSec|BytesOutPerSec)><>(Count)
+    - attrNameSnakeCase: false
+      name: kafka_server_BrokerTopicMetrics_$1__alltopics_$2
+      pattern: kafka.server<type=BrokerTopicMetrics, name=(BytesInPerSec|BytesOutPerSec)><>(OneMinuteRate)
+    - attrNameSnakeCase: false
+      name: kafka_server_ReplicaManager_$1_$2
+      pattern: kafka.server<type=ReplicaManager, name=(\w+)><>(Value)

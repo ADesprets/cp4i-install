@@ -1,0 +1,21 @@
+apiVersion: eventstreams.ibm.com/v1beta2
+kind: KafkaConnector
+metadata:
+  labels:
+        eventstreams.ibm.com/cluster: ${VAR_ES_KAFKA_CONNECT_INSTANCE_NAME}
+  name: mq-source
+  namespace: $VAR_ES_NAMESPACE
+spec:
+  class: com.ibm.eventstreams.connect.mqsource.MQSourceConnector
+  tasksMax: 1
+  config:
+    mq.channel.name: $VAR_CHL_UC
+    value.converter: org.apache.kafka.connect.storage.StringConverter
+    mq.connection.name.list: ${VAR_QMGR}-ibm-mq(1414)
+    mq.queue.manager: ${VAR_QMGR}
+    mq.queue: TO.KAFKA
+    mq.record.builder: com.ibm.eventstreams.connect.mqsource.builders.DefaultRecordBuilder
+    topic: LH.ORDERS              
+    key.converter: org.apache.kafka.connect.storage.StringConverter
+    mq.message.body.jms: false 
+    mq.user.authentication.mqcsp: false

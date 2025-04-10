@@ -19,8 +19,8 @@ public class SampleApplication {
     //Schema schema = null;
     //try {
 //
-    //  // eem schema = schemaDefinitionParser.parse(new File("D:\\CurrentProjects\\CP4I\\Installation\\cp4i-install\\customisation\\EEM\\client\\asyncapi\\src\\main\\resources\\LH.ORDERS.avsc"));
-    //  schema = schemaDefinitionParser.parse(new File("D:\\CurrentProjects\\CP4I\\Installation\\cp4i-install\\customisation\\EEM\\client\\asyncapi\\src\\main\\resources\\LH.ORDERS.avsc"));
+    //  // eem schema = schemaDefinitionParser.parse(new File("D:\\CurrentProjects\\CP4I\\Installation\\cp4i-install\\demos\\eem_simple\\client\\asyncapi\\src\\main\\resources\\LH.ORDERS.avsc"));
+    //  schema = schemaDefinitionParser.parse(new File("D:\\CurrentProjects\\CP4I\\Installation\\cp4i-install\\demos\\eem_simple\\client\\asyncapi\\src\\main\\resources\\LH.ORDERS.avsc"));
 //
     //} catch (Exception e) {
     //  e.printStackTrace();
@@ -69,7 +69,7 @@ public class SampleApplication {
       props.put(SslConfigs.SSL_ENABLED_PROTOCOLS_CONFIG, "TLSv1.3");
       props.put(SslConfigs.SSL_PROTOCOL_CONFIG, "TLSv1.3");
       // The Kafka cluster may have encryption enabled. Contact the API owner for the appropriate TrustStore configuration.
-      props.put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, "D:\\CurrentProjects\\CP4I\\Installation\\cp4i-install\\customisation\\EEM\\client\\asyncapi\\src\\main\\resources\\certificate_cp4i-eg-ibm-egw-rt-1-cp4i.apps.66d5d603d361e1cd7ea1cfc0.ocp.techzone.ibm.com_443.pem");
+      props.put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, "D:\\CurrentProjects\\CP4I\\Installation\\cp4i-install\\demos\\eem_simple\\client\\asyncapi\\src\\main\\resources\\certificate_cp4i-eg-ibm-egw-rt-1-cp4i.apps.66d5d603d361e1cd7ea1cfc0.ocp.techzone.ibm.com_443.pem");
       // props.put(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, "TrustPassword123456!");
       props.put(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PEM");
       

@@ -1,59 +1,34 @@
 A mettre dans plus tard https://github.ibm.com/icp4i
 
-Create_Capabilities(ns)
-	check_create_oc_yaml(octype, name, yaml, ns)
-	wait_for_oc_state(octype, ocname, ocstate, ocpath)
-		wait_for_state(what, value, command)
-check_resource_availability (octype, name)
+Explanation on directories
 
-Manque DP capabilities
+PROVISION_SCRIPTDIR Where is the provision_cluster-v2.sh shell (root of the scripts)
+MY_WORKINGDIR Folder where the files are generated, under this folder for each component, there is a folder associated with that component and also a DEMOS folder.
+XXX_DEMODIR For each scenario, a folder with the subdirectoires used for the scenario template, certificates, etc ... NOT generated files
 
-D:.
-│   .gitignore
-│   delete-all.sh
-│   lib.sh
-│   LICENSE
-│   provision_cluster-v2.sh
-│   README.md
-│   show_creds.sh
-│   TODO.txt
-├───ldap
-│       Import.ldiff
-│       Import.tmpl
-├───private
-├───properties
-│       cp4i.properties
-├───resources
-│       design.drawio
-│       structure.txt
-├───templates
-│   │   ibm-operator-catalog.yaml
-│   │   operator-source-cs.yaml
-│   ├───capabilities
-│   │       ACE-Dashboard-Capability.yaml
-│   │       ACE-Designer-Capability.yaml
-│   │       APIC-Capability.yaml
-│   │       AR-Capability.yaml
-│   │       AsperaHSTS-Capability.yaml
-│   │       ES-Capability.yaml
-│   │       MQ-Capability.yaml
-│   │       Navigator-Capability.yaml
-│   ├───monitoring
-│   │       cluster-monitoring-config.yaml
-│   └───subscriptions
-│           subscription.yaml
-├───terraform
-│       cluster-openshift.tf
-│       cos.tf
-│       log-analysis.tf
-│       monitoring-sysdig.tf
-│       network.tf
-│       provider.tf
-│       resource-group.tf
-│       terraform.tfstate
-│       variables.tf
-│       var_override.tfvars
-└───versions
-        cp4i-2021.4
-        cp4i-2022.2
-        cp4i-2023.2
+-----------------------------------------------------------------------------------
+Main directories fro templates, operators, operands
+MY_YAMLDIR="${PROVISION_SCRIPTDIR}templates/"
+MY_OPERATORSDIR="${PROVISION_SCRIPTDIR}templates/operators/"
+MY_OPERANDSDIR="${PROVISION_SCRIPTDIR}templates/operands/"
+MY_RESOURCESDIR="${PROVISION_SCRIPTDIR}templates/resources/"
+MY_POSTGRES_DIR="${PROVISION_SCRIPTDIR}templates/postgres/"
+MY_KEYCLOAK_DIR="${PROVISION_SCRIPTDIR}templates/keycloak/"
+MY_LDAP_DIR="${PROVISION_SCRIPTDIR}templates/ldap/"
+MY_APIC_GRAPHQL_DIR="${PROVISION_SCRIPTDIR}templates/stepzen/"
+MY_ACE_CONFIGDIR="${PROVISION_SCRIPTDIR}templates/configuration/ACE/"
+MY_EP_DIR="${PROVISION_SCRIPTDIR}templates/ep/"
+
+MY_PRIVATEDIR="${PROVISION_SCRIPTDIR}private/"
+
+MY_DEMODIR="${PROVISION_SCRIPTDIR}demos/"
+-----------------------------------------------------------------------------------
+Other directories
+MY_IBMPAK_CASESDIR="${HOME}/.ibm-pak/data/cases/"
+MY_IBMPAK_MIRRORDIR="${HOME}/.ibm-pak/data/mirror/"
+MY_IC_APIKEY=$(jq -r .apikey < "${MY_PRIVATEDIR}apikey.json")
+MY_ENTITLEMENT_KEY=$(cat "${MY_PRIVATEDIR}ibm_container_entitlement_key.txt")
+
+MY_ACE_BARDIR="${MY_RESOURCESDIR}ACE/Bar/"
+
+-----------------------------------------------------------------------------------

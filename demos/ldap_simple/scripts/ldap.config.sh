@@ -10,14 +10,14 @@ function login_to_registry() {
   decho $lf_tracelevel "Cluster server host: $lf_cluster_server"
   decho $lf_tracelevel "kubeadmin password: $MY_TECHZONE_PASSWORD"
   oc project ${VAR_LDAP_NAMESPACE}
-  oc login -p $MY_TECHZONE_HTPASSWD -u saad #$lf_cluster_server
+  oc login -p $MY_TECHZONE_HTPASSWD -u ${MY_USER} #$lf_cluster_server
   local lf_token=$(oc whoami -t)
-  echo "$lf_token" | $MY_CONTAINER_ENGINE login -u saad --password-stdin "$VAR_IMAGE_REGISTRY_HOST"
+  echo "$lf_token" | $MY_CONTAINER_ENGINE login -u ${MY_USER} --password-stdin "$VAR_IMAGE_REGISTRY_HOST"
 
   # Create a user for registry
   #oc policy add-role-to-user system:image-builder system:serviceaccount:$VAR_LDAP_NAMESPACE:$MY_LDAP_SERVICEACCOUNT
   #oc policy add-role-to-user system:image-builder system:serviceaccount:openshift:admin-sa
-  oc policy add-role-to-user system:image-builder system:serviceaccount:openshift:saad
+  oc policy add-role-to-user system:image-builder system:serviceaccount:openshift:${MY_USER}
 
   #docker login -u kubeadmin -p "$(oc whoami -t)" "$VAR_IMAGE_REGISTRY_HOST"
   #local lf_token=$(oc -n $VAR_LDAP_NAMESPACE create token $MY_LDAP_SERVICEACCOUNT)
@@ -36,8 +36,8 @@ function push_image_to_registry() {
   trace_in $lf_tracelevel push_image_to_registry
 
   # Add roles to the user
-  oc -n openshift policy add-role-to-user system:image-builder saad
-  oc -n openshift policy add-role-to-user system:registry saad
+  oc -n openshift policy add-role-to-user system:image-builder ${MY_USER}
+  oc -n openshift policy add-role-to-user system:registry ${MY_USER}
 
   #	tag the local image with details of image registry
   decho $lf_tracelevel "CMD: $MY_CONTAINER_ENGINE tag ${MY_LDAP_APP_NAME_VERSION} ${VAR_IMAGE_REGISTRY_HOST}/${VAR_LDAP_NAMESPACE}/${MY_LDAP_APP_NAME_VERSION}"
@@ -68,7 +68,7 @@ function ldap_run_all () {
 
   # Build the image
   if $MY_LDAP_CUSTOM_BUILD; then
-    pushd ${MY_LDAP_SCRIPTDIR} > /dev/null 2>&1
+    pushd ${MY_LDAP_SIMPLE_DEMODIR}config/ > /dev/null 2>&1
     ldap_build_image
     popd > /dev/null 2>&1
   fi

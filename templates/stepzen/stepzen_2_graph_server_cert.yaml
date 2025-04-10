@@ -1,0 +1,13 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: stepzen-to-graph-server-cert
+  namespace: ${VAR_APIC_GRAPHQL_NAMESPACE}
+spec:
+  dnsNames:
+    - "${VAR_SAN_DNS}"
+  isCA: true
+  secretName: stepzen-to-graph-server-cert-secret
+  issuerRef:
+    name: ${VAR_ISSUER}
+    kind: Issuer

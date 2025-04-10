@@ -4,7 +4,7 @@ metadata:
   labels:
     backup.appconnect.ibm.com/component: integrationruntime
   name: ${VAR_ACE_INTEGRATIONRUNTIME_NAME}
-  namespace: ${MY_OC_NAMESPACE}
+  namespace: ${VAR_ACE_NAMESPACE}
 spec:
   license:
     accept: true

@@ -9,7 +9,7 @@ function create_issuer () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel create_issuer
   
-  create_oc_resource "Issuer" "${VAR_QMGR}-issuer" "${MY_TLS_SCRIPTDIR}config/" "$MY_MQ_WORKINGDIR" "Issuer_ca.yaml" "${VAR_MQ_NAMESPACE}"
+  create_oc_resource "Issuer" "${VAR_QMGR}-issuer" "${MY_MQ_SIMPLE_DEMODIR}tls/" "$MY_MQ_WORKINGDIR" "issuer.yaml" "${VAR_MQ_NAMESPACE}"
 
    trace_out $lf_tracelevel create_issuer
 }
@@ -22,7 +22,7 @@ function create_qmgr_certificate () {
   export VAR_ISSUER="${VAR_QMGR}-issuer"
   export VAR_SECRET="${VAR_QMGR}-secret"
   export VAR_LABEL="${VAR_QMGR}-label" 
-  create_oc_resource "Certificate" "${VAR_QMGR}-cert" "${sc_mq_tmpl_yaml_dir}" "${MY_MQ_WORKINGDIR}" "qmgr_CACertificate.yaml" "$VAR_MQ_NAMESPACE"
+  create_oc_resource "Certificate" "${VAR_QMGR}-cert" "${MY_MQ_SIMPLE_DEMODIR}tls/" "${MY_MQ_WORKINGDIR}" "ca_certificate.yaml" "$VAR_MQ_NAMESPACE"
   unset VAR_ISSUER VAR_SECRET VAR_LABEL
 
   trace_out $lf_tracelevel create_qmgr_certificate
@@ -33,10 +33,10 @@ function create_qmgr_configmaps () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel create_qmgr_configmaps
 
-  create_oc_resource "ConfigMap" "$VAR_MQSC_CM" "${sc_mq_tmpl_yaml_dir}" "${MY_MQ_WORKINGDIR}" "qmgr_cm_mqsc.yaml" "$VAR_MQ_NAMESPACE"
-  create_oc_resource "ConfigMap" "$VAR_WEBCONFIG_CM" "${sc_mq_tmpl_yaml_dir}" "${MY_MQ_WORKINGDIR}" "qmgr_cm_web.yaml" "$VAR_MQ_NAMESPACE"
-  create_oc_resource "ConfigMap" "$VAR_AUTH_CM" "${sc_mq_tmpl_yaml_dir}" "${MY_MQ_WORKINGDIR}" "qmgr_cm_mqsc_auth.yaml" "$VAR_MQ_NAMESPACE"
-  create_oc_resource "ConfigMap" "$VAR_INI_CM" "${sc_mq_tmpl_yaml_dir}" "${MY_MQ_WORKINGDIR}" "qmgr_cm_ini.yaml" "$VAR_MQ_NAMESPACE"
+  create_oc_resource "ConfigMap" "$VAR_MQSC_OBJECTS_CM" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}" "qmgr_cm_mqsc.yaml" "$VAR_MQ_NAMESPACE"
+  create_oc_resource "ConfigMap" "$VAR_AUTH_CM" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}" "qmgr_cm_mqsc_auth.yaml" "$VAR_MQ_NAMESPACE"
+  create_oc_resource "ConfigMap" "$VAR_INI_CM" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}" "qmgr_cm_ini.yaml" "$VAR_MQ_NAMESPACE"
+  create_oc_resource "ConfigMap" "$VAR_WEBCONFIG_CM" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}" "qmgr_cm_web.yaml" "$VAR_MQ_NAMESPACE"
 
   trace_out $lf_tracelevel create_qmgr_configmaps
 }
@@ -46,7 +46,7 @@ function create_qmgr_route () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel create_qmgr_route
 
-  create_oc_resource "Route" "${VAR_QMGR}-route" "${sc_mq_tmpl_yaml_dir}" "${MY_MQ_WORKINGDIR}" "qmgr_route.yaml" "$VAR_MQ_NAMESPACE"
+  create_oc_resource "Route" "${VAR_QMGR}-route" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}" "qmgr_route.yaml" "$VAR_MQ_NAMESPACE"
 
   trace_out $lf_tracelevel create_qmgr_route
 }
@@ -77,7 +77,7 @@ function create_qmgr () {
     # Creating MQ MessagingServer instance
     create_operand_instance "MessagingServer" "${VAR_MSGSRV_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_MQ_WORKINGDIR}" "MessagingServer-Capability.yaml" "$VAR_MQ_NAMESPACE" "{.status.conditions[0].type}" "Ready"
   else 
-    create_operand_instance "QueueManager" "${VAR_QMGR}" "${sc_mq_tmpl_yaml_dir}" "${MY_MQ_WORKINGDIR}" "qmgr.yaml" "$VAR_MQ_NAMESPACE" "{.status.phase}" "Running"
+    create_operand_instance "QueueManager" "${VAR_QMGR}" "${MY_MQ_SIMPLE_DEMODIR}tmpl" "${MY_MQ_WORKINGDIR}" "qmgr.yaml" "$VAR_MQ_NAMESPACE" "{.status.phase}" "Running"
   fi
   
   trace_out $lf_tracelevel create_qmgr
@@ -201,7 +201,7 @@ function create_ccdt () {
   export ROOTURL=$(oc get route -n $VAR_MQ_NAMESPACE "${VAR_QMGR}-ibm-mq-qm" -o jsonpath='{.spec.host}')
   decho $lf_tracelevel "VAR_CHL_UC=$VAR_CHL_UC|VAR_QMGR_UC=$VAR_QMGR_UC|ROOTURL=$ROOTURL"
 
-  adapt_file "${MY_MQ_SCRIPTDIR}scripts/tmpl/json/" "${sc_qmgr_custom_gendir}json/" ccdt.json
+  adapt_file "${MY_MQ_SIMPLE_DEMODIR}scripts/tmpl/json/" "${sc_qmgr_custom_gendir}json/" ccdt.json
 
   trace_out $lf_tracelevel create_ccdt
 }
@@ -241,16 +241,13 @@ function mq_init() {
   # Create namespace 
   create_project "$VAR_MQ_NAMESPACE" "$VAR_MQ_NAMESPACE project" "For MQ" "${MY_RESOURCESDIR}" "${MY_MQ_WORKINGDIR}"
 
-  # Template directories
-  #sc_mq_tmpl_json_dir="${sc_component_script_dir}tmpl/json/"
-  #sc_mq_tmpl_sh_dir="${sc_component_script_dir}tmpl/sh/"
-  sc_mq_tmpl_yaml_dir="${sc_component_script_dir}tmpl/yaml/"
-  
+  # Quick and dirty TODO
+  export VAR_MQSC_OBJECTS_CM="${VAR_QMGR}-mqsc-cm"
+  export MY_MQ_DEMO_NAMESPACE="${VAR_MQ_NAMESPACE}"
+
+ 
   check_directory_exist_create  "${MY_MQ_WORKINGDIR}generated/${VAR_QMGR}"
   sc_qmgr_custom_gendir="${MY_MQ_WORKINGDIR}generated/${VAR_QMGR}/"
-  
-  #check_directory_exist_create  "${sc_qmgr_custom_gendir}tls/ca"
-  #sc_qmgr_ca_crtdir="${sc_qmgr_custom_gendir}tls/ca/"
   
   check_directory_exist_create  "${sc_qmgr_custom_gendir}tls/${VAR_CLNT1}"
   sc_qmgr_clnt_crtdir="${sc_qmgr_custom_gendir}tls/${VAR_CLNT1}/"
@@ -259,7 +256,7 @@ function mq_init() {
   sc_qmgr_srv_crtdir="${sc_qmgr_custom_gendir}tls/qmgr/"
   
   # CCDT tmpl file
-  sc_ccdt_tmpl_file="${MY_MQ_SCRIPTDIR}scripts/tmpl/json/ccdt.json";
+  sc_ccdt_tmpl_file="${MY_MQ_SIMPLE_DEMODIR}scripts/tmpl/json/ccdt.json";
   MQCCDTURL="${sc_qmgr_custom_gendir}json/ccdt.json"
 
   trace_out $lf_tracelevel mq_init
@@ -346,7 +343,7 @@ sc_provision_constant_properties_file="${PROVISION_SCRIPTDIR}properties/cp4i-con
 sc_provision_variable_properties_file="${PROVISION_SCRIPTDIR}properties/cp4i-variables.properties"
 sc_provision_preambule_file="${PROVISION_SCRIPTDIR}properties/preambule.properties"
 sc_provision_lib_file="${PROVISION_SCRIPTDIR}lib.sh"
-sc_component_properties_file="${sc_component_script_dir}../config/mq.properties"
+sc_component_properties_file="${sc_component_script_dir}../properties/mq.properties"
 
 # SB]20250319 Je suis obligé d'utiliser set -a et set +a parceque à cet instant je n'ai pas accès à la fonction read_config_file
 # load script parrameters fil

@@ -12,16 +12,16 @@
 ################################################
 # Install SFTP server, it is usefull for example for backups
 function install_sftp() {
+  SECONDS=0
+  local lf_starting_date=$(date)  
+  mylog info "==== Installing SFTP server (${FUNCNAME[0]}) [started : $lf_starting_date]." 0 
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_sftp
 
   decho $lf_tracelevel "Parameters: |no parameters|"
   
   if $MY_SFTP; then
-    SECONDS=0
-    local lf_starting_date=$(date)
-  
-    mylog info "==== Installing SFTP server (${FUNCNAME[0]}) [started : $lf_starting_date]." 0 
     check_directory_exist_create "${MY_SFTP_WORKINGDIR}"
   
     create_project "${VAR_SFTP_SERVER_NAMESPACE}" "${VAR_SFTP_SERVER_NAMESPACE} project" "For SFTP server" "${MY_RESOURCESDIR}" "${MY_SFTP_WORKINGDIR}"
@@ -30,30 +30,30 @@ function install_sftp() {
     mylog check "Checking Secret for credential ${VAR_SFTP_SERVER_NAMESPACE}-sftp-creds-secret" 1>&2
     if ! oc -n ${VAR_SFTP_SERVER_NAMESPACE} get secret "${VAR_SFTP_SERVER_NAMESPACE}-sftp-creds-secret" >/dev/null 2>&1; then
       generate_password 32
-      adapt_file ${MY_SFTP_SCRIPTDIR}config/ ${MY_SFTP_GEN_CUSTOMDIR}config/ users.conf
+      adapt_file ${MY_SFTP_SCRIPTDIR}config/ ${MY_SFTP_WORKINGDIR}config/ users.conf
       unset USER_PASSWORD_GEN
-      oc -n $VAR_SFTP_SERVER_NAMESPACE create secret generic "${VAR_SFTP_SERVER_NAMESPACE}-sftp-creds-secret" --from-file=${MY_SFTP_GEN_CUSTOMDIR}config/users.conf
+      oc -n $VAR_SFTP_SERVER_NAMESPACE create secret generic "${VAR_SFTP_SERVER_NAMESPACE}-sftp-creds-secret" --from-file=${MY_SFTP_WORKINGDIR}config/users.conf
     fi
   
     # Create configmap with SSH keys
     mylog check "Checking ConfigMap for ssh keys ${VAR_SFTP_SERVER_NAMESPACE}-ssh-conf-cm" 1>&2
     if ! oc -n ${VAR_SFTP_SERVER_NAMESPACE} get configmap "${VAR_SFTP_SERVER_NAMESPACE}-ssh-conf-cm" >/dev/null 2>&1; then
-      ssh-keygen -t ed25519 -f ${MY_SFTP_GEN_CUSTOMDIR}config/ssh_host_ed25519_key < /dev/null
-      ssh-keygen -t rsa -b 4096 -f ${MY_SFTP_GEN_CUSTOMDIR}config/ssh_host_rsa_key < /dev/null
-      adapt_file ${MY_SFTP_SCRIPTDIR}config/ ${MY_SFTP_GEN_CUSTOMDIR}config/ sshd_config
+      ssh-keygen -t ed25519 -f ${MY_SFTP_WORKINGDIR}config/ssh_host_ed25519_key < /dev/null
+      ssh-keygen -t rsa -b 4096 -f ${MY_SFTP_WORKINGDIR}config/ssh_host_rsa_key < /dev/null
+      adapt_file ${MY_SFTP_SCRIPTDIR}config/ ${MY_SFTP_WORKINGDIR}config/ sshd_config
       local lf_apply_cmd="oc -n $VAR_SFTP_SERVER_NAMESPACE create configmap ${VAR_SFTP_SERVER_NAMESPACE}-ssh-conf-cm \
-        --from-file=${MY_SFTP_GEN_CUSTOMDIR}config/ssh_host_ed25519_key \
-        --from-file=${MY_SFTP_GEN_CUSTOMDIR}config/ssh_host_ed25519_key.pub \
-        --from-file=${MY_SFTP_GEN_CUSTOMDIR}config/ssh_host_rsa_key \
-        --from-file=${MY_SFTP_GEN_CUSTOMDIR}config/ssh_host_rsa_key.pub \
-        --from-file=${MY_SFTP_GEN_CUSTOMDIR}config/sshd_config"
+        --from-file=${MY_SFTP_WORKINGDIR}config/ssh_host_ed25519_key \
+        --from-file=${MY_SFTP_WORKINGDIR}config/ssh_host_ed25519_key.pub \
+        --from-file=${MY_SFTP_WORKINGDIR}config/ssh_host_rsa_key \
+        --from-file=${MY_SFTP_WORKINGDIR}config/ssh_host_rsa_key.pub \
+        --from-file=${MY_SFTP_WORKINGDIR}config/sshd_config"
 
       oc -n $VAR_SFTP_SERVER_NAMESPACE create configmap ${VAR_SFTP_SERVER_NAMESPACE}-ssh-conf-cm \
-        --from-file=${MY_SFTP_GEN_CUSTOMDIR}config/ssh_host_ed25519_key \
-        --from-file=${MY_SFTP_GEN_CUSTOMDIR}config/ssh_host_ed25519_key.pub \
-        --from-file=${MY_SFTP_GEN_CUSTOMDIR}config/ssh_host_rsa_key \
-        --from-file=${MY_SFTP_GEN_CUSTOMDIR}config/ssh_host_rsa_key.pub \
-        --from-file=${MY_SFTP_GEN_CUSTOMDIR}config/sshd_config
+        --from-file=${MY_SFTP_WORKINGDIR}config/ssh_host_ed25519_key \
+        --from-file=${MY_SFTP_WORKINGDIR}config/ssh_host_ed25519_key.pub \
+        --from-file=${MY_SFTP_WORKINGDIR}config/ssh_host_rsa_key \
+        --from-file=${MY_SFTP_WORKINGDIR}config/ssh_host_rsa_key.pub \
+        --from-file=${MY_SFTP_WORKINGDIR}config/sshd_config
     fi
   
     # Check security context constraint
@@ -76,26 +76,29 @@ function install_sftp() {
     unset VAR_PVC_NAME VAR_PVC_NAME VAR_PVC_STORAGE_CLASS
 
     # Create deployment including the resources generated
-    create_oc_resource "Deployment" "${VAR_SFTP_SERVER_NAMESPACE}-sftp-server" "${MY_SFTP_SCRIPTDIR}config/" "${MY_SFTP_GEN_CUSTOMDIR}config/" "sftp_dep.yaml" "$VAR_SFTP_SERVER_NAMESPACE"
+    create_oc_resource "Deployment" "${VAR_SFTP_SERVER_NAMESPACE}-sftp-server" "${MY_SFTP_SCRIPTDIR}config/" "${MY_SFTP_WORKINGDIR}config/" "sftp_dep.yaml" "$VAR_SFTP_SERVER_NAMESPACE"
   
     # Create the service to expose the SFTP server
-    create_oc_resource "Service" "${VAR_SFTP_SERVER_NAMESPACE}-sftp-service" "${MY_SFTP_SCRIPTDIR}config/" "${MY_SFTP_GEN_CUSTOMDIR}config/" "sftp_svc.yaml" "$VAR_SFTP_SERVER_NAMESPACE"
+    create_oc_resource "Service" "${VAR_SFTP_SERVER_NAMESPACE}-sftp-service" "${MY_SFTP_SCRIPTDIR}config/" "${MY_SFTP_WORKINGDIR}config/" "sftp_svc.yaml" "$VAR_SFTP_SERVER_NAMESPACE"
 
     # Create the route to expose the SFTP server
-    create_oc_resource "Route" "${VAR_SFTP_SERVER_NAMESPACE}-sftp-route" "${MY_SFTP_SCRIPTDIR}config/" "${MY_SFTP_GEN_CUSTOMDIR}config/" "sftp_route.yaml" "$VAR_SFTP_SERVER_NAMESPACE"
-
-    local lf_duration=$SECONDS
-    local lf_ending_date=$(date)
-
-    mylog info "==== Installation of SFTP server [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+    create_oc_resource "Route" "${VAR_SFTP_SERVER_NAMESPACE}-sftp-route" "${MY_SFTP_SCRIPTDIR}config/" "${MY_SFTP_WORKINGDIR}config/" "sftp_route.yaml" "$VAR_SFTP_SERVER_NAMESPACE"
   fi
 
   trace_out $lf_tracelevel install_sftp
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of SFTP server (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
 # Install GitOps
 function install_gitops() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing Redhat Openshift GitOps (${FUNCNAME[0]}) [started : $lf_starting_date]." 0 
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_gitops
 
@@ -103,23 +106,19 @@ function install_gitops() {
 
   # https://docs.openshift.com/gitops/1.12/installing_gitops/installing-openshift-gitops.html
   if $MY_GITOPS; then
-    SECONDS=0
-    local lf_starting_date=$(date)
-
-    mylog info "==== Installing Redhat Openshift GitOps (${FUNCNAME[0]}) [started : $lf_starting_date]." 0 
-
     check_directory_exist_create "${MY_GITOPS_WORKINGDIR}"
 
     # Namespace openshift-gitops-operator does not exist and will be created.
     create_operator_instance "${MY_GITOPS_OPERATOR}" "${MY_RH_OPERATORS_CATALOG}" "${MY_OPERATORSDIR}" "${MY_GITOPS_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
 
-    local lf_duration=$SECONDS
-    local lf_ending_date=$(date)
-
-    mylog info "==== Installation of Redhat Openshift GitOps [ended : $lf_ending_date and took : $SECONDS seconds]." 0
   fi
-  
+
   trace_out $lf_tracelevel install_gitops
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of Redhat Openshift GitOps (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+  
 }
 
 ###############################################
@@ -127,6 +126,10 @@ function install_gitops() {
 # use Openshift Logging
 # https://docs.openshift.com/container-platform/4.16/observability/logging/cluster-logging-deploying.html#logging-loki-cli-install_cluster-logging-deploying
 function install_logging_loki() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing Cluster Logging : Loki log store (${FUNCNAME[0]}) [started : $lf_starting_date]." 0 
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_logging_loki
 
@@ -134,11 +137,6 @@ function install_logging_loki() {
 
   # Openshift Logging
   if $MY_LOGGING_LOKI; then
-    SECONDS=0
-    local lf_starting_date=$(date)
-
-    mylog info "==== Installing Cluster Logging : Loki log store (${FUNCNAME[0]}) [started : $lf_starting_date]." 0 
-
     check_directory_exist_create "${MY_LOKI_WORKINGDIR}"
 
     # Create a namespace object for Loki Operator
@@ -230,14 +228,13 @@ function install_logging_loki() {
     # https://docs.openshift.com/container-platform/4.16/observability/logging/logging-6.1/log6x-about-6.1.html
     # Sur ce dernier lien, dans le pargraphe Quick start sont décrites les deux options suivantes:
     # ViaQ (General Availability) et OpenTelemetry (Technology Preview)
-
-    local lf_duration=$SECONDS
-    local lf_ending_date=$(date)
-
-    mylog info "==== Installation of Cluster Logging : Loki log store [ended : $lf_ending_date and took : $SECONDS seconds]." 0
   fi
-
+  
   trace_out $lf_tracelevel install_logging_loki
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of Cluster Logging : Loki log store (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ###############################################
@@ -245,6 +242,10 @@ function install_logging_loki() {
 # # https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html-single/cluster_observability_operator/index#cluster-observability-operator-overview
 # SB]20250116 TODO : Revoir la configuration de l'observabilité du cluster à la lumière de la documentation ci-dessus.
 function install_cluster_observability() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing Cluster Observability (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_cluster_observability
 
@@ -252,11 +253,6 @@ function install_cluster_observability() {
 
   # Openshift Observability
   if $MY_COO; then
-    SECONDS=0
-    local lf_starting_date=$(date)
-
-    mylog info "==== Installing Cluster Observability (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
-
     check_directory_exist_create "${MY_COO_WORKINGDIR}"
 
     if $MY_APPLY_FLAG; then 
@@ -280,14 +276,13 @@ function install_cluster_observability() {
     # Create a subscription object for Cluster Observability Operator
     # Create a subscription object for Loki Operator (because there are two loki-operator : community and Redhat, so the command to get the chl is different) 
     create_operator_instance "${MY_COO_OPERATOR}" "${MY_RH_OPERATORS_CATALOG}" "${MY_OPERATORSDIR}" "${MY_COO_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
-    
-    local lf_duration=$SECONDS
-    local lf_ending_date=$(date)
-
-    mylog info "==== Installation of Cluster Observability [ended : $lf_ending_date and took : $SECONDS seconds]." 0
   fi
-
+    
   trace_out $lf_tracelevel install_cluster_observability
+    
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of Cluster Observability (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ###############################################
@@ -339,6 +334,10 @@ function install_logging_otel() {
 # https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/monitoring/common-monitoring-configuration-scenarios#configuring-core-platform-monitoring-postinstallation-steps_common-monitoring-configuration-scenarios
 # 
 function install_cluster_monitoring() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing Redhat Cluster Monitoring (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_cluster_monitoring
 
@@ -346,11 +345,6 @@ function install_cluster_monitoring() {
 
   # Openshift cluster monitoring
   if $MY_CLUSTER_MONITORING; then
-    SECONDS=0
-    local lf_starting_date=$(date)
-
-    mylog info "==== Installing Redhat Cluster Monitoring (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
-
     check_directory_exist_create "${MY_OPENSHIFT_MONITORING_WORKINGDIR}"
 
     create_project "${MY_OPENSHIFT_MONITORING_NAMESPACE}" "${MY_OPENSHIFT_MONITORING_NAMESPACE} project" "For Openshift monitoring" "${MY_RESOURCESDIR}" "${MY_OPENSHIFT_MONITORING_WORKINGDIR}"
@@ -358,30 +352,28 @@ function install_cluster_monitoring() {
     create_oc_resource "ConfigMap" "${MY_MONITORING_CM_NAME}" "${MY_RESOURCESDIR}" "${MY_OPENSHIFT_MONITORING_WORKINGDIR}" "openshift-monitoring-cm.yaml" "${MY_OPENSHIFT_MONITORING_NAMESPACE}"
 
     # Granting users permissions for core platform monitoring
-
-    local lf_duration=$SECONDS
-    local lf_ending_date=$(date)
-
-    mylog info "==== Installation of Redhat Cluster Monitoring [ended : $lf_ending_date and took : $SECONDS seconds]." 0
   fi
 
   trace_out $lf_tracelevel install_cluster_monitoring
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of Redhat Cluster Monitoring (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ##################################################
 # Install OADP (OpenShift API for Data Protection)
 function install_oadp() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing Redhat Openshift OADP (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_oadp
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
   if $MY_OADP; then
-    SECONDS=0
-    local lf_starting_date=$(date)
-
-    mylog info "==== Installing Redhat Openshift OADP (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
-
     check_directory_exist_create "${MY_OADP_WORKINGDIR}"
 
     create_project "$MY_OADP_NAMESPACE" "${MY_OADP_NAMESPACE} project" "For OpenShift API for Data Protection" "${MY_RESOURCESDIR}" "${MY_OADP_WORKINGDIR}"
@@ -390,109 +382,122 @@ function install_oadp() {
 
     # Create a subscription object for OADP Operator
     create_operator_instance "${MY_OADP_OPERATOR}" "${MY_RH_OPERATORS_CATALOG}" "${MY_OPERATORSDIR}" "${MY_OADP_WORKINGDIR}" "${MY_OADP_NAMESPACE}"
-
-    local lf_duration=$SECONDS
-    local lf_ending_date=$(date)
-
-    mylog info "==== Installation of Redhat Openshift OADP [ended : $lf_ending_date and took : $SECONDS seconds]." 0
   fi
+
   trace_out $lf_tracelevel install_oadp
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of Redhat Openshift OADP (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
 # Install redhat Pipelines (tekton)
+# https://docs.openshift.com/pipelines/1.14/install_config/installing-pipelines.html
 function install_pipelines() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing Redhat Openshift Pipelines (tekton) (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_pipelines
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
   if $MY_TEKTON; then
-    SECONDS=0
-    local lf_starting_date=$(date)
-  
-    # https://docs.openshift.com/pipelines/1.14/install_config/installing-pipelines.html
-    mylog info "==== Installing Redhat Openshift Pipelines (tekton) (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
-
     check_directory_exist_create "${MY_PIPELINES_WORKINGDIR}"
 
     # Create a subscription object for pipelines Operator
     create_operator_instance "${MY_PIPELINES_OPERATOR}" "${MY_RH_OPERATORS_CATALOG}" "${MY_OPERATORSDIR}" "${MY_PIPELINES_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
-  
-    local lf_duration=$SECONDS
-    local lf_ending_date=$(date)
-
-    mylog info "==== Installation of Redhat Openshift Pipelines (tekton) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
   fi
+  
+  trace_out $lf_tracelevel install_pipeline
 
-  trace_out $lf_tracelevel install_pipelines
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of Redhat Openshift Pipelines (tekton) (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
 # Add mailhog app to openshift
 # Port is hard coded to 8025 and is defined by mailhog (default port)
 function install_mail() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing Mailhog (server and client) (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_mail
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
   if $MY_MAILHOG; then
-    SECONDS=0
-    local lf_starting_date=$(date)
+    check_directory_exist_create "${MY_MAIL_WORKINGDIR}"
 
-    mylog info "==== Installing Mailhog (server and client) (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+    create_project "${VAR_MAIL_NAMESPACE}" "${VAR_MAIL_NAMESPACE} project" "For Mailhog fake SMTP server" "${MY_RESOURCESDIR}" "${MY_MAIL_WORKINGDIR}"
 
-    check_directory_exist_create "${MY_MAIL_SERVER_WORKINGDIR}"
+    create_oc_resource "Deployment" "${MY_MAIL_DEPLOYMENT}" "${MY_YAMLDIR}mail/" "${MY_MAIL_WORKINGDIR}" "mail_deployment.yaml" "$VAR_MAIL_NAMESPACE"
 
-    create_project "${VAR_MAIL_NAMESPACE}" "${VAR_MAIL_NAMESPACE} project" "For Mailhog fake SMTP server" "${MY_RESOURCESDIR}" "${VAR_MAIL_WORKINGDIR}"
+    create_oc_resource "Service" "${VAR_MAIL_SERVICE}" "${MY_YAMLDIR}mail/" "${MY_MAIL_WORKINGDIR}" "mail_svc.yaml" "${VAR_MAIL_NAMESPACE}"
 
-    deploy_mail
+    create_oc_resource "Route" "${VAR_MAIL_ROUTE}" "${MY_YAMLDIR}mail/" "${MY_MAIL_WORKINGDIR}" "mail_route.yaml" "${VAR_MAIL_NAMESPACE}"
 
-    create_mail_service "${MY_YAMLDIR}mail/" "mail_svc.yaml"
-
-    create_mail_route "${MY_YAMLDIR}mail/" "mail_route.yaml"
-
-    local lf_duration=$SECONDS
-    local lf_ending_date=$(date)
-
-    mylog info "==== Installation of Mailhog (server and client) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+    # expose service externaly and get host and port
+    #oc -n ${VAR_MAIL_NAMESPACE} get service ${VAR_MAIL_SERVICE} -o json | \
+    #   jq '.spec.ports |= map(if .name == "1025-tcp" then . + { "nodePort": 31025 } else . end)' | \
+    #   jq '.spec.ports |= map(if .name == "8025-tcp" then . + { "nodePort": 38025 } else . end)' >${MY_MAIL_WORKINGDIR}mail-service.json
+    export VAR_MAIL_HOSTNAME=$(oc -n ${VAR_MAIL_NAMESPACE} get route ${VAR_MAIL_ROUTE} -o jsonpath='{.spec.host}')
   fi
 
   trace_out $lf_tracelevel install_mail
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of Mailhog (server and client) (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
 # Add OpenLdap app to openshift
 function install_openldap() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing OpenLdap (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_openldap
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
   if $MY_LDAP; then
-    SECONDS=0
-    local lf_starting_date=$(date)
-
-    mylog info "==== Installing OpenLdap (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
-
     check_directory_exist_create "${MY_LDAP_WORKINGDIR}"
 
     create_project "${VAR_LDAP_NAMESPACE}" "${VAR_LDAP_NAMESPACE} project" "For OpenLDAP" "${MY_RESOURCESDIR}" "${MY_LDAP_WORKINGDIR}"
 
     provision_persistence_openldap
 
-    deploy_openldap "Deployment" ${MY_LDAP_DEPLOYMENT} ${MY_LDAP_SERVICEACCOUNT}
+    create_oc_resource "ServiceAccount" "$MY_LDAP_SERVICEACCOUNT" "${MY_RESOURCESDIR}" "${MY_LDAP_WORKINGDIR}" "serviceaccount.yaml" "$VAR_LDAP_NAMESPACE"
+    oc adm policy add-scc-to-user privileged system:serviceaccount:${VAR_LDAP_NAMESPACE}:${MY_LDAP_SERVICEACCOUNT}
+    oc adm policy add-scc-to-user anyuid system:serviceaccount:${VAR_LDAP_NAMESPACE}:${MY_LDAP_SERVICEACCOUNT}
+    #oc adm policy add-scc-to-group anyuid system:serviceaccounts:${VAR_LDAP_NAMESPACE}
 
-    create_expose_service_openldap "${MY_YAMLDIR}ldap/" "ldap_svc.yaml"
+    create_oc_resource "Deployment" "${MY_LDAP_DEPLOYMENT}" "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}" "ldap_deployment.yaml" "$VAR_LDAP_NAMESPACE"
+
+    read_config_file "${MY_YAMLDIR}ldap/ldap_dit.properties"
+    adapt_file "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}" "ldap_config.json" 
+    oc -n ${VAR_LDAP_NAMESPACE} patch deployment.apps/openldap --patch-file "${MY_LDAP_WORKINGDIR}ldap_config.json"
+
+    # Create the service to expose the openldap server
+    create_oc_resource "Service" "${VAR_LDAP_SERVICE}" "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}" "ldap_svc.yaml" "${VAR_LDAP_NAMESPACE}"
     
-    local lf_duration=$SECONDS
-    local lf_ending_date=$(date)
-
-    mylog info "==== Installation of OpenLdap [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+    create_openldap_route
   fi
 
   trace_out $lf_tracelevel install_openldap
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of OpenLdap (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+
 }
 
 ################################################
@@ -504,17 +509,16 @@ function install_openldap() {
 # https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/security_and_compliance/cert-manager-operator-for-red-hat-openshift#cert-manager-install-cli_cert-manager-operator-install
 # to fulfill this requirement.
 function install_cert_manager() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing Redhat Cert Manager (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_cert_manager
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
   if $MY_CERT_MANAGER; then
-    SECONDS=0
-    local lf_starting_date=$(date)
-
-    mylog info "==== Installing Redhat Cert Manager (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
-
     check_directory_exist_create "${MY_CERTMANAGER_WORKINGDIR}"
     
     create_project "$MY_CERTMANAGER_OPERATOR_NAMESPACE" "${MY_CERTMANAGER_OPERATOR_NAMESPACE} project" "For Cert Manager" "${MY_RESOURCESDIR}" "${MY_CERTMANAGER_WORKINGDIR}"
@@ -523,14 +527,13 @@ function install_cert_manager() {
   
     # Create a subscription object for cert manager Operator
     create_operator_instance "${MY_CERTMANAGER_OPERATOR}" "${MY_RH_OPERATORS_CATALOG}" "${MY_OPERATORSDIR}" "${MY_CERTMANAGER_WORKINGDIR}" "${MY_CERTMANAGER_OPERATOR_NAMESPACE}"
-
-    local lf_duration=$SECONDS
-    local lf_ending_date=$(date)
-
-    mylog info "==== Installation of Redhat Cert Manager [ended : $lf_ending_date and took : $SECONDS seconds]." 0
   fi
 
   trace_out $lf_tracelevel install_cert_manager
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of Redhat Cert Manager (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
@@ -538,6 +541,10 @@ function install_cert_manager() {
 # 2025010 https://www.ibm.com/docs/en/cloud-paks/foundational-services/4.6?topic=service-installing-license-openshift-container-platform
 #
 function install_lic_svc() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing IBM License Server (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_lic_svc
 
@@ -545,11 +552,6 @@ function install_lic_svc() {
 
   # ibm-license-server
   if $MY_LIC_SRV; then
-    SECONDS=0
-    local lf_starting_date=$(date)
-
-    mylog info "==== Installing IBM License Server (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
-
     check_directory_exist_create "${MY_LICENSE_SERVICE_WORKINGDIR}"
 
     create_project "$MY_LICENSE_SERVICE_NAMESPACE"  "${MY_LICENSE_SERVICE_NAMESPACE} project" "For License Service" "${MY_RESOURCESDIR}" "${MY_LICENSE_SERVICE_WORKINGDIR}"
@@ -588,14 +590,14 @@ function install_lic_svc() {
      else
       mylog info "Network policies for License Service not needed."
     fi
-
-    local lf_duration=$SECONDS
-    local lf_ending_date=$(date)
-
-    mylog info "==== Installation of IBM License Server [ended : $lf_ending_date and took : $SECONDS seconds]." 0
   fi
 
   trace_out $lf_tracelevel install_lic_svc
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of IBM License Server (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+
 }
 
 ################################################
@@ -603,6 +605,10 @@ function install_lic_svc() {
 # 2025010 https://www.ibm.com/docs/en/cloud-paks/foundational-services/4.6?topic=repository-installing-license-service-reporter-cli
 #
 function install_lic_reporter_svc() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing IBM License Service Reporter (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+  
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_lic_reporter_svc
 
@@ -610,11 +616,6 @@ function install_lic_reporter_svc() {
 
   # ibm-license-server
   if $MY_LIC_SRV_REPORTER; then
-    SECONDS=0
-    local lf_starting_date=$(date)
-
-    mylog info "==== Installing IBM License Service Reporter (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
-
     check_directory_exist_create "${MY_LICENSE_SERVICE_REPORTER_WORKINGDIR}"
 
     create_project "$MY_LICENSE_SERVICE_REPORTER_NAMESPACE" "${MY_LICENSE_SERVICE_REPORTER_NAMESPACE} project" "For License Service Reporter" "${MY_RESOURCESDIR}" "${MY_LICENSE_SERVICE_REPORTER_WORKINGDIR}"
@@ -625,12 +626,16 @@ function install_lic_reporter_svc() {
       unset VAR_APP_VERSION
     fi
 
-
     # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
     local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
     unset VAR_CATALOG_SOURCE
 
-    create_oc_resource "OperatorGroup" "$MY_LICENSE_SERVICE_REPORTER_OPERATORGROUP" "$MY_RESOURCESDIR" "$MY_LICENSE_SERVICE_REPORTER_WORKINGDIR" "operator-group-single.yaml" "$MY_LICENSE_SERVICE_REPORTER_NAMESPACE"
+    # check if the license service and license service reporter are in the same namespace, then only one operator group is needed
+    if [[ $MY_LICENSE_SERVICE_NAMESPACE != $MY_LICENSE_SERVICE_REPORTER_NAMESPACE ]]; then
+      mylog info "License Service and License Service Reporter are in different namespaces. Please check the documentation."
+      mylog info "https://www.ibm.com/docs/en/cloud-paks/foundational-services/4.6?topic=repository-installing-license-service-reporter-cli"
+      create_oc_resource "OperatorGroup" "$MY_LICENSE_SERVICE_REPORTER_OPERATORGROUP" "$MY_RESOURCESDIR" "$MY_LICENSE_SERVICE_REPORTER_WORKINGDIR" "operator-group-single.yaml" "$MY_LICENSE_SERVICE_REPORTER_NAMESPACE"
+    fi
 
     # Create a subscription object for license service reporter Operator
     create_operator_instance "${MY_LICENSE_SERVICE_REPORTER_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_LICENSE_SERVICE_REPORTER_WORKINGDIR}" "${MY_LICENSE_SERVICE_REPORTER_NAMESPACE}"
@@ -659,14 +664,13 @@ function install_lic_reporter_svc() {
     else
       mylog info "Network policies for License Service not needed."
     fi
-
-    local lf_duration=$SECONDS
-    local lf_ending_date=$(date)
-
-    mylog info "==== Installation of IBM License Service Reporter [ended : $lf_ending_date and took : $SECONDS seconds]." 0
   fi
 
   trace_out $lf_tracelevel install_lic_reporter_svc
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of IBM License Service Reporter (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ############################################################################################################################################
@@ -682,17 +686,16 @@ function install_lic_reporter_svc() {
 # It's stated clearly that : CP4I uses only the Keycloak installation that is installed by Cloud Pak foundational services.
 ############################################################################################################################################
 function install_fs() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing IBM Common Services (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_fs
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
   if $MY_COMMONSERVICES; then
-    SECONDS=0
-    local lf_starting_date=$(date)
-
-    mylog info "==== Installing IBM Common Services (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
-
     check_directory_exist_create "${MY_COMMONSERVICES_WORKINGDIR}"
 
     create_project "$MY_COMMONSERVICES_NAMESPACE" "$MY_COMMONSERVICES_NAMESPACE project" "For the common services" "${MY_RESOURCESDIR}" "${MY_COMMONSERVICES_WORKINGDIR}"
@@ -703,7 +706,6 @@ function install_fs() {
       export MY_COMMONSERVICES_VERSION=$VAR_APP_VERSION
       unset VAR_APP_VERSION
     fi
-
 
     # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
     local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
@@ -717,19 +719,22 @@ function install_fs() {
 
     # Configuring foundational services by using the CommonService custom resource.
     create_oc_resource "CommonService" "$MY_COMMONSERVICES_INSTANCE_NAME" "${MY_RESOURCESDIR}" "${MY_COMMONSERVICES_WORKINGDIR}" "foundational-services-cr.yaml" "$MY_OPERATORS_NAMESPACE"
-    
-    local lf_duration=$SECONDS
-    local lf_ending_date=$(date)
-
-    mylog info "==== Installation of IBM Common Services [ended : $lf_ending_date and took : $SECONDS seconds]." 0
   fi
-
+    
   trace_out $lf_tracelevel install_fs
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of IBM Common Services (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
  
 ################################################
 # Install Open Liberty
 function install_openliberty() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing OPEN Liberty (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_openliberty
 
@@ -737,10 +742,6 @@ function install_openliberty() {
 
   # backend J2EE applications
   if $MY_OPENLIBERTY; then
-    SECONDS=0
-    local lf_starting_date=$(date)
-
-    mylog info "==== Installing OPEN Liberty (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
     check_directory_exist_create "${MY_OPENLIBERTY_WORKINGDIR}"
 
     create_project "$VAR_OPENLIBERTY_NAMESPACE" "$VAR_OPENLIBERTY_NAMESPACE project" "For Open Liberty" "${MY_RESOURCESDIR}" "${MY_OPENLIBERTY_WORKINGDIR}"
@@ -753,9 +754,9 @@ function install_openliberty() {
 
     # TODO Check that is this value
     export WATCH_NAMESPACE='""'
-    adapt_file ${MY_OPENLIBERTY_SCRIPTDIR}config/ ${MY_OPENLIBERTY_GEN_CUSTOMDIR}config/ openliberty-app-rbac-watch-all.yaml
-    adapt_file ${MY_OPENLIBERTY_SCRIPTDIR}config/ ${MY_OPENLIBERTY_GEN_CUSTOMDIR}config/ openliberty-app-crd.yaml
-    adapt_file ${MY_OPENLIBERTY_SCRIPTDIR}config/ ${MY_OPENLIBERTY_GEN_CUSTOMDIR}config/ openliberty-app-operator.yaml
+    adapt_file ${MY_OPENLIBERTY_SCRIPTDIR}config/ ${MY_OPENLIBERTY_WORKINGDIR}config/ openliberty-app-rbac-watch-all.yaml
+    adapt_file ${MY_OPENLIBERTY_SCRIPTDIR}config/ ${MY_OPENLIBERTY_WORKINGDIR}config/ openliberty-app-crd.yaml
+    adapt_file ${MY_OPENLIBERTY_SCRIPTDIR}config/ ${MY_OPENLIBERTY_WORKINGDIR}config/ openliberty-app-operator.yaml
 
     # Creating Open Liberty operator subscription (Check arbitrarely one resource, the deployment of the operator)
     local lf_octype='deployment'
@@ -765,39 +766,37 @@ function install_openliberty() {
     mylog check "Checking ${lf_name}/${lf_octype} in ${VAR_OPENLIBERTY_NAMESPACE}"
     if ! oc -n ${VAR_OPENLIBERTY_NAMESPACE} get ${lf_octype} ${lf_name} >/dev/null 2>&1; then
       if $MY_APPLY_FLAG; then     
-        oc apply --server-side -f ${MY_OPENLIBERTY_GEN_CUSTOMDIR}config/openliberty-app-crd.yaml
-        oc apply -f ${MY_OPENLIBERTY_GEN_CUSTOMDIR}config/openliberty-app-rbac-watch-all.yaml
-        oc -n ${VAR_OPENLIBERTY_NAMESPACE} apply -f ${MY_OPENLIBERTY_GEN_CUSTOMDIR}config/openliberty-app-operator.yaml
+        oc apply --server-side -f ${MY_OPENLIBERTY_WORKINGDIR}config/openliberty-app-crd.yaml
+        oc apply -f ${MY_OPENLIBERTY_WORKINGDIR}config/openliberty-app-rbac-watch-all.yaml
+        oc -n ${VAR_OPENLIBERTY_NAMESPACE} apply -f ${MY_OPENLIBERTY_WORKINGDIR}config/openliberty-app-operator.yaml
       fi
     fi
-
-    local lf_duration=$SECONDS
-    local lf_ending_date=$(date)
-
-    mylog info "==== Installation of OPEN Liberty [ended : $lf_ending_date and took : $SECONDS seconds]." 0
   fi
 
   trace_out $lf_tracelevel install_openliberty
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of OPEN Liberty (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
 # Install WebSphere Liberty
 function install_wasliberty() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing WAS Liberty (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_wasliberty
   
   decho $lf_tracelevel "Parameters: |no parameters|"
 
   if $MY_WASLIBERTY; then
-    SECONDS=0
-    local lf_starting_date=$(date)
-
-    mylog info "==== Installing WAS Liberty (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
-
     #check_directory_exist_create "${MY_WASLIBERTY_WORKINGDIR}"
-    check_directory_exist_create "${VAR_WASLIBERTY_WORKINGDIR}"
+    check_directory_exist_create "${MY_WASLIBERTY_WORKINGDIR}"
 
-    create_project "$VAR_WASLIBERTY_NAMESPACE" "$VAR_WASLIBERTY_NAMESPACE project" "For WebSphere Liberty Application Server" "${MY_RESOURCESDIR}" "${VAR_WASLIBERTY_WORKINGDIR}"
+    create_project "$VAR_WASLIBERTY_NAMESPACE" "$VAR_WASLIBERTY_NAMESPACE project" "For WebSphere Liberty Application Server" "${MY_RESOURCESDIR}" "${MY_WASLIBERTY_WORKINGDIR}"
 
     # add catalog sources using ibm_pak plugin
     check_add_cs_ibm_pak $MY_WASLIBERTY_CASE $MY_WASLIBERTY_OPERATOR amd64
@@ -815,19 +814,22 @@ function install_wasliberty() {
 
     # Creating WebSphere Liberty operator subscription
     create_operator_instance "${MY_WASLIBERTY_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_WASLIBERTY_WORKINGDIR}" "${VAR_WASLIBERTY_NAMESPACE}"
-
-    local lf_duration=$SECONDS
-    local lf_ending_date=$(date)
-
-    mylog info "==== Installation of WAS Liberty [ended : $lf_ending_date and took : $SECONDS seconds]." 0
   fi
 
   trace_out $lf_tracelevel install_wasliberty
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of WAS Liberty (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
 # Install Navigator (depending on two boolean)
 function install_navigator() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing CP4I Navigator (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_navigator
 
@@ -837,12 +839,6 @@ function install_navigator() {
   # SB,AD]20240103 Suite au pb installation keycloak (besoin de l'operateur IBM Cloud Pak for Integration)
   # Creating Navigator operator subscription
   if $MY_NAVIGATOR; then
-    SECONDS=0
-    local lf_starting_date=$(date)
-
-    mylog info "==== Installing CP4I Navigator (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
-
-    #check_directory_exist_create "${MY_NAVIGATOR_WORKINGDIR}"
     check_directory_exist_create "${MY_NAVIGATOR_WORKINGDIR}"
 
     # add catalog sources using ibm_pak plugin
@@ -869,30 +865,28 @@ function install_navigator() {
 
     # Creating Navigator instance
     create_operand_instance "PlatformNavigator" "${VAR_NAVIGATOR_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_NAVIGATOR_WORKINGDIR}" "Navigator-Capability.yaml" "$VAR_NAVIGATOR_NAMESPACE" "{.status.conditions[0].type}" "Ready"
-
-    local lf_duration=$SECONDS
-    local lf_ending_date=$(date)
-
-    mylog info "==== Installation of CP4I Navigator [ended : $lf_ending_date and took : $SECONDS seconds]." 0
   fi
 
   trace_out $lf_tracelevel install_navigator
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of CP4I Navigator (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
 # Install Asset Repository
 function install_assetrepo() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing CP4I Asset Repository (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_assetrepo
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
   if $MY_ASSETREPO; then
-    SECONDS=0
-    local lf_starting_date=$(date)
-
-    mylog info "==== Installing CP4I Asset Repository (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
-
     check_directory_exist_create "${MY_ASSETREPO_WORKINGDIR}"
 
     # add catalog sources using ibm_pak plugin
@@ -919,19 +913,22 @@ function install_assetrepo() {
       # Creating Asset Repository instance
       create_operand_instance "AssetRepository" "${VAR_ASSETREPO_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_ASSETREPO_WORKINGDIR}" "AR-Capability.yaml" "$VAR_ASSETREPO_NAMESPACE" "{.status.phase}" "Ready"
     fi
-
-    local lf_duration=$SECONDS
-    local lf_ending_date=$(date)
-
-    mylog info "==== Installation of CP4I Asset Repository [ended : $lf_ending_date and took : $SECONDS seconds]." 0
   fi
 
   trace_out $lf_tracelevel install_assetrepo
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of CP4I Asset Repository (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
 # Install Integration Assembly
 function install_intassembly() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing CP4I Integration Assembly (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_intassembly
 
@@ -939,27 +936,25 @@ function install_intassembly() {
 
   # Creating Integration Assembly instance
   if $MY_INTASSEMBLY; then
-    SECONDS=0
-    local lf_starting_date=$(date)
-
-    mylog info "==== Installing CP4I Integration Assembly (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
-
     check_directory_exist_create "${MY_INTASSEMBLY_WORKINGDIR}"
 
     create_operand_instance "IntegrationAssembly" "${VAR_INTASSEMBLY_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_INTASSEMBLY_WORKINGDIR}" "IntegrationAssembly-Capability.yaml" "$VAR_INTASSEMBLY_NAMESPACE" "{.status.phase}" "Ready"
-
-    local lf_duration=$SECONDS
-    local lf_ending_date=$(date)
-
-    mylog info "==== Installation of CP4I Integration Assembly [ended : $lf_ending_date and took : $SECONDS seconds]." 0
   fi
 
   trace_out $lf_tracelevel install_intassembly
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of CP4I Integration Assembly (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
 # Install ACE
 function install_ace() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing CP4I ACE (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+  
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_ace
 
@@ -967,11 +962,6 @@ function install_ace() {
 
   # ibm-appconnect
   if $MY_ACE; then
-    SECONDS=0
-    local lf_starting_date=$(date)
-
-    mylog info "==== Installing CP4I ACE (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
-
     check_directory_exist_create "${MY_ACE_WORKINGDIR}"
   
     create_project "${VAR_ACE_NAMESPACE}" "${VAR_ACE_NAMESPACE} project" "For App Connect" "${MY_RESOURCESDIR}" "${MY_ACE_WORKINGDIR}"
@@ -996,19 +986,22 @@ function install_ace() {
     create_operand_instance "Dashboard" "${VAR_ACE_NAMESPACE}-ace-db" "${MY_OPERANDSDIR}" "${MY_ACE_WORKINGDIR}" "ACE-Dashboard-Capability.yaml" "$VAR_ACE_NAMESPACE" "{.status.conditions[0].type}" "Ready"
 
     create_operand_instance "DesignerAuthoring" "${VAR_ACE_DESIGNER_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_ACE_WORKINGDIR}" "ACE-Designer-Capability.yaml" "$VAR_ACE_NAMESPACE" "{.status.phase}" "Ready"
-
-    local lf_duration=$SECONDS
-    local lf_ending_date=$(date)
-
-    mylog info "==== Installation of CP4I ACE [ended : $lf_ending_date and took : $SECONDS seconds]." 0
   fi
 
   trace_out $lf_tracelevel install_ace
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of CP4I ACE (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
 # Install APIC
 function install_apic() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing CP4I APIC (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_apic
 
@@ -1016,10 +1009,6 @@ function install_apic() {
 
   # ibm-apiconnect
   if $MY_APIC; then
-    SECONDS=0
-    local lf_starting_date=$(date)
-
-    mylog info "==== Installing CP4I APIC (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
     check_directory_exist_create "${MY_APIC_WORKINGDIR}"
 
@@ -1052,16 +1041,16 @@ function install_apic() {
     create_oc_resource "Route" "${VAR_APIC_GW_ROUTE_NAME}" "${MY_RESOURCESDIR}" "${MY_APIC_WORKINGDIR}" "route.yaml" "$VAR_APIC_NAMESPACE"
     unset VAR_NAMESPACE VAR_APIC_GW_ROUTE_HOST
 
-    save_certificate cp4i-apic-ingress-ca ca.crt ${MY_APIC_WORKINGDIR} ${VAR_APIC_NAMESPACE}
-    save_certificate cp4i-apic-gw-gateway ca.crt ${MY_APIC_WORKINGDIR} ${VAR_APIC_NAMESPACE}
+    save_certificate ${VAR_APIC_INSTANCE_NAME}-ingress-ca ca.crt ${MY_APIC_WORKINGDIR} ${VAR_APIC_NAMESPACE}
+    save_certificate ${VAR_APIC_INSTANCE_NAME}-gw-gateway ca.crt ${MY_APIC_WORKINGDIR} ${VAR_APIC_NAMESPACE}
 
-    local lf_duration=$SECONDS
-    local lf_ending_date=$(date)
-
-    mylog info "==== Installation of CP4I APIC [ended : $lf_ending_date and took : $SECONDS seconds]." 0
   fi
 
   trace_out $lf_tracelevel install_apic
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of CP4I APIC (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
@@ -1069,6 +1058,10 @@ function install_apic() {
 # https://www.ibm.com/docs/en/api-connect/graphql/1.x?topic=installing-maintaining-api-connect-graphql
 # https://www.ibm.com/docs/en/api-connect/graphql/1.x?topic=graphql-installing-api-connect
 function install_apic_graphql() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing CP4I APIC Graphql (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_apic_graphql
 
@@ -1076,10 +1069,6 @@ function install_apic_graphql() {
 
   # ibm apic graphql
   if $MY_APIC_GRAPHQL; then
-    SECONDS=0
-    local lf_starting_date=$(date)
-
-    mylog info "==== Installing CP4I APIC Graphql (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
     local lf_postgresql_host lf_dsn lf_type lf_cr_name
     local lf_tgz_file lf_deploy_dir
@@ -1091,23 +1080,28 @@ function install_apic_graphql() {
     add_ibm_entitlement $VAR_APIC_GRAPHQL_NAMESPACE
 
     # create a PostgreSQL database for the APIC Graphql
-    create_edb_postgres_db "apic-graphql-cluster" "apic-graphql-db" "apic-graphql-pg-user" "apic-graphql-pg-password" "apic-graphql-pg-secret" "apic graphql pg database"
+    create_edb_postgres_db "${VAR_POSTGRES_CLUSTER}" "${VAR_POSTGRES_DATABASE}" "${VAR_POSTGRES_USER}" "${MY_POSTGRES_PASSWORD}" "${MY_POSTGRES_DSN_SECRET}" "Postgres DB for APIC Graphql"
 
+    #local lf_postgresql_password=$(oc -n $VAR_POSTGRES_NAMESPACE get secret "${VAR_POSTGRES_CLUSTER}-superuser" -o jsonpath='{.data.paswword}' | base64 -d)
     # create a generic secret for the PostgreSQL server
     # there are three postgresql services : 
     # - ${VAR_POSTGRES_CLUSTER}-r"  : for read-only workloads across all nodes
     # - ${VAR_POSTGRES_CLUSTER}-ro" : for read-only workloads on replicas only
     # - ${VAR_POSTGRES_CLUSTER}-rw" : for read-write workloads on the primary node
 
-    lf_postgresql_host="${VAR_POSTGRES_CLUSTER}-rw.${VAR_POSTGRES_NAMESPACE}.svc.cluster.local"
-    lf_dsn="postgresql://${VAR_POSTGRES_USER}:${VAR_POSTGRES_PASSWORD}@${lf_postgresql_host}/${VAR_POSTGRES_DATABASE}"
-    lf_type="Secret"
-    lf_cr_name="${MY_POSTGRES_DSN_PASSWORD}"
-    if oc -n ${VAR_APIC_GRAPHQL_NAMESPACE} get ${lf_type} ${lf_cr_name} >/dev/null 2>&1; then
-      mylog info "Custom Resource $lf_type/$lf_cr_name already exists"
-    else
-      oc -n ${VAR_APIC_GRAPHQL_NAMESPACE} create secret generic $lf_cr_name --from-literal=DSN="${lf_dsn}"
-    fi
+    #lf_postgresql_host="${VAR_POSTGRES_CLUSTER}-rw.${VAR_POSTGRES_NAMESPACE}.svc.cluster.local"
+    #lf_dsn="postgresql://${VAR_POSTGRES_USER}:${lf_postgresql_password}@${lf_postgresql_host}/${VAR_POSTGRES_DATABASE}"
+
+    #oc -n $VAR_POSTGRES_NAMESPACE get Secret "${VAR_POSTGRES_CLUSTER}-superuser" -o jsonpath='{.data.uri}'
+    #export VAR_DSN=$(oc -n $VAR_POSTGRES_NAMESPACE get secret "${VAR_POSTGRES_CLUSTER}-superuser" -o jsonpath='{.data.uri}' | base64 -d)
+    export VAR_DSN="postgresql://${VAR_POSTGRES_USER}:$(oc get secret ${VAR_POSTGRES_SECRET} -n ${VAR_POSTGRES_NAMESPACE} -o jsonpath='{.data.password}' | base64 -d)@${VAR_POSTGRES_CLUSTER}-rw.${VAR_POSTGRES_NAMESPACE}.svc:5432/${VAR_POSTGRES_DATABASE}?sslmode=disable"
+    echo "VAR_DSN=$VAR_DSN"
+    create_oc_resource "Secret" "${MY_APIC_GRAPHQL_DSN_SECRET}" "${MY_APIC_GRAPHQL_DIR}" "${MY_APIC_GRAPHQL_WORKINGDIR}" "stepzen_secret.yaml" "$VAR_APIC_GRAPHQL_NAMESPACE"
+    #oc create secret generic ${MY_APIC_GRAPHQL_DSN_SECRET} \
+  #--from-literal=dsn="postgresql://${VAR_POSTGRES_USER}:$(oc get secret ${VAR_POSTGRES_SECRET} -n ${VAR_POSTGRES_NAMESPACE} -o jsonpath='{.data.password}' | base64 -d)@${VAR_POSTGRES_CLUSTER}-rw.${VAR_POSTGRES_NAMESPACE}.svc:5432/${VAR_POSTGRES_DATABASE}?sslmode=disable" \
+  #--namespace ${VAR_APIC_GRAPHQL_NAMESPACE}
+    unset VAR_NAMESPACE VAR_SECRET_NAME VAR_DSN
+    #oc -n ${VAR_APIC_GRAPHQL_NAMESPACE} create secret generic $MY_POSTGRES_DSN_SECRET --from-literal=DSN="${lf_dsn}"
 
     # Download and extract the CASE bundle.
     lf_case_version=$(oc ibm-pak list -o json | jq -r --arg case "$MY_APIC_GRAPHQL_CASE" '.[] | select (.name == $case ) | .latestVersion')
@@ -1133,20 +1127,16 @@ function install_apic_graphql() {
     create_operand_instance "StepZenGraphServer" "${VAR_APIC_GRAPHQL_INSTANCE_NAME}" "${MY_APIC_GRAPHQL_DIR}" "${MY_APIC_GRAPHQL_WORKINGDIR}" "APIC-Stepzen-Capability.yaml" "$VAR_APIC_GRAPHQL_NAMESPACE" "{.status.conditions[-1].type}" "Ready"
 
     # Add the certificate csr for routes (following chatgpt advice)
-    adapt_file ${MY_APIC_GRAPHQL_DIR} ${MY_WORKINGDIR} stepzen-graphql-csr.yaml
-    if $MY_APPLY_FLAG; then 
-      if ! oc apply -f "${MY_WORKINGDIR}stepzen-graphql-csr.yaml" ; then
-        unset VAR_CLUSTER_DOMAIN
-        trace_out $lf_tracelevel install_apic_graphql
-        exit 1
-      fi
+    export VAR_ISSUER="${VAR_APIC_GRAPHQL_INSTANCE_NAME}-issuer"
+    # Create apic graphql certificates
+    lf_certs_pairs=("graphql-to-graph-server-cert" "graphql_2_graph_server_cert.yaml" "graphql-to-graph-server-subscriptions-cert" "graphql_2_graph_server_subscription_cert.yaml" "introspection-cert" "introspection_cert.yaml" "stepzen-to-graph-server-cert" "stepzen_2_graph_server_cert.yaml")
+    create_oc_objects "Certificate" "${MY_APIC_GRAPHQL_DIR}" "${MY_APIC_GRAPHQL_WORKINGDIR}" "${VAR_APIC_GRAPHQL_NAMESPACE}" lf_certs_pairs
   
-      # Then Install OpenShift Route Support for cert-manager (openshift-routes).
-      # ATTENTION REVOIR le namespace : c'est cert-manager et non pas cert-manager-namespace (https://github.com/cert-manager/openshift-routes?tab=readme-ov-file)
-      # https://github.com/cert-manager/openshift-routes
-      helm -n cert-manager install openshift-routes oci://ghcr.io/cert-manager/charts/openshift-routes
-      #oc -n cert-manager apply -f <(helm template openshift-routes -n cert-manager oci://ghcr.io/cert-manager/charts/openshift-routes --set omitHelmLabels=true)
-    fi
+    # Then Install OpenShift Route Support for cert-manager (openshift-routes).
+    # ATTENTION REVOIR le namespace : c'est cert-manager et non pas cert-manager-namespace (https://github.com/cert-manager/openshift-routes?tab=readme-ov-file)
+    # https://github.com/cert-manager/openshift-routes
+    helm -n cert-manager install openshift-routes oci://ghcr.io/cert-manager/charts/openshift-routes
+    #oc -n cert-manager apply -f <(helm template openshift-routes -n cert-manager oci://ghcr.io/cert-manager/charts/openshift-routes --set omitHelmLabels=true)
 
     # Set up a stepzen-graph-server route for the stepzen account. This is the "root" account of the API Connect Graphql service, 
     # which is used to host endpoints that modify the metadata database but does not serve application requests. 
@@ -1163,25 +1153,29 @@ function install_apic_graphql() {
     fi
 
     # Install Introspection service
-    adapt_file ${MY_RESOURCESDIR} ${MY_APIC_GRAPHQL_WORKINGDIR} introspection.yaml
+    adapt_file ${MY_APIC_GRAPHQL_DIR} ${MY_APIC_GRAPHQL_WORKINGDIR} introspection.yaml
     if ! oc apply -f "${MY_APIC_GRAPHQL_WORKINGDIR}introspection.yaml" ; then
       trace_out $lf_tracelevel install_apic_graphql
       exit 1
     fi
-
-    local lf_duration=$SECONDS
-    local lf_ending_date=$(date)
-
-    mylog info "==== Installation of CP4I APIC Graphql [ended : $lf_ending_date and took : $SECONDS seconds]." 0
   fi
+  unset VAR_ISSUER 
 
   trace_out $lf_tracelevel install_apic_graphql
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of CP4I APIC Graphql (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 
 ################################################
 # Install IBM Event streams
 function install_es() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing CP4I Eventstreams Operator (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_es
 
@@ -1189,11 +1183,6 @@ function install_es() {
 
   # ibm-eventstreams
   if $MY_ES; then
-    SECONDS=0
-    local lf_starting_date=$(date)
-
-    mylog info "==== Installing CP4I Eventstreams Operator (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
-
     check_directory_exist_create "${MY_ES_WORKINGDIR}"
 
     create_project "$VAR_ES_NAMESPACE" "$VAR_ES_NAMESPACE project" "For Eventstreams" "${MY_RESOURCESDIR}" "${MY_ES_WORKINGDIR}"
@@ -1215,29 +1204,29 @@ function install_es() {
     # Creating EventStreams operator subscription
     create_operator_instance "${MY_ES_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_ES_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
 
-    local lf_duration=$SECONDS
-    local lf_ending_date=$(date)
-
-    mylog info "==== Installation of CP4I Eventstreams Operator [ended : $lf_ending_date and took : $SECONDS seconds]." 0
   fi
 
   trace_out $lf_tracelevel install_es
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of CP4I Eventstreams Operator (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
 # Install EEM
 function install_eem() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing CP4I Event Endpoint Management (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_eem
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
   if $MY_EEM; then
-    SECONDS=0
-    local lf_starting_date=$(date)
-
     local lf_varb64
-    mylog info "==== Installing CP4I Event Endpoint Management (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
     check_directory_exist_create "${MY_EEM_WORKINGDIR}"
 
@@ -1272,36 +1261,45 @@ function install_eem() {
     ## Creating EEM users and roles
     if $MY_KEYCLOAK_INTEGRATION; then
       # generate properties files
-      adapt_file ${MY_EEM_SIMPLE_DEMODIR}config/ ${MY_EEM_GEN_CUSTOMDIR}config/ keycloak-user-roles
+      adapt_file ${MY_EEM_SIMPLE_DEMODIR}config/ ${MY_EEM_WORKINGDIR}config/ keycloak-user-roles
       # keycloak user roles
-      local lf_varb64=$(cat "${MY_EEM_GEN_CUSTOMDIR}config/keycloak-user-roles.yaml" | base64 -w0)
+      local lf_varb64=$(cat "${MY_EEM_WORKINGDIR}config/keycloak-user-roles.yaml" | base64 -w0)
       oc -n $VAR_EEM_NAMESPACE patch secret "${VAR_EEM_INSTANCE_NAME}-ibm-eem-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$lf_varb64\"}]"
     else
       # generate properties files
-      adapt_file ${MY_EEM_SIMPLE_DEMODIR}config/ ${MY_EEM_GEN_CUSTOMDIR}config/ local-user-credentials.yaml
-      adapt_file ${MY_EEM_SIMPLE_DEMODIR}config/ ${MY_EEM_GEN_CUSTOMDIR}config/ local-user-roles.yaml
+      adapt_file ${MY_EEM_SIMPLE_DEMODIR}config/ ${MY_EEM_WORKINGDIR}config/ local-user-credentials.yaml
+      adapt_file ${MY_EEM_SIMPLE_DEMODIR}config/ ${MY_EEM_WORKINGDIR}config/ local-user-roles.yaml
       # base64 generates an error ": illegal base64 data at input byte 76". Solution found here : https://bugzilla.redhat.com/show_bug.cgi?id=1809431. use base64 -w0
       # local user credentials
-      local lf_varb64=$(cat "${MY_EEM_GEN_CUSTOMDIR}config/local-user-credentials.yaml" | base64 -w0)
+      wait_for_resource "Secret" "${VAR_EEM_INSTANCE_NAME}-ibm-eem-user-credentials" "$VAR_EEM_NAMESPACE"
+      local lf_varb64=$(cat "${MY_EEM_WORKINGDIR}config/local-user-credentials.yaml" | base64 -w0)
       oc -n $VAR_EEM_NAMESPACE patch secret "${VAR_EEM_INSTANCE_NAME}-ibm-eem-user-credentials" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-credentials.json\" ,\"value\" : \"$lf_varb64\"}]"
       
       # local user roles
-      local lf_varb64=$(cat "${MY_EEM_GEN_CUSTOMDIR}config/local-user-roles.yaml" | base64 -w0)
+      wait_for_resource "Secret" "${VAR_EEM_INSTANCE_NAME}-ibm-eem-user-roles" "$VAR_EEM_NAMESPACE"
+      local lf_varb64=$(cat "${MY_EEM_WORKINGDIR}config/local-user-roles.yaml" | base64 -w0)
       oc -n $VAR_EEM_NAMESPACE patch secret "${VAR_EEM_INSTANCE_NAME}-ibm-eem-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$lf_varb64\"}]"
     fi
 
-    local lf_duration=$SECONDS
-    local lf_ending_date=$(date)
+    # Thgis URL to be used by the EventGateway
+    export VAR_EEM_MANAGER_GATEWAY_ROUTE=$(oc -n $VAR_EEM_NAMESPACE get eem ${VAR_EEM_INSTANCE_NAME} -o jsonpath='{.status.endpoints}' | jq -r '.[] | select (.name=="gateway").uri')
 
-    mylog info "==== Installation of CP4I Event Endpoint Management [ended : $lf_ending_date and took : $SECONDS seconds]." 0
   fi
   
   trace_out $lf_tracelevel install_eem
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of CP4I Event Endpoint Management (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
 # Install EGW
 function install_egw() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing CP4I Event Endpoint Gateway (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_egw
 
@@ -1309,41 +1307,36 @@ function install_egw() {
 
   # Creating EventGateway instance (Event Gateway)
   if $MY_EGW; then
-    SECONDS=0
-    local lf_starting_date=$(date)
-
-    mylog info "==== Installing CP4I Event Endpoint Gateway (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
-
     check_directory_exist_create "${MY_EGW_WORKINGDIR}"
 
     create_project "${VAR_EGW_NAMESPACE}" "${VAR_EGW_NAMESPACE} project" "For Event Endpoint Gateway" "${MY_RESOURCESDIR}" "${MY_EGW_WORKINGDIR}"
 
-    export VAR_EEM_MANAGER_GATEWAY_ROUTE=$(oc -n $VAR_EEM_NAMESPACE get eem ${VAR_EEM_INSTANCE_NAME} -o jsonpath='{.status.endpoints[1].uri}')
-    create_operand_instance "EventGateway" "${VAR_EGW_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_EGW_WORKINGDIR}" "EG-Capability.yaml" "${VAR_EGW_NAMESPACE}" "{.status.conditions[0].type}" "Ready"
+    #export VAR_EEM_MANAGER_GATEWAY_ROUTE=$(oc -n $VAR_EEM_NAMESPACE get eem ${VAR_EEM_INSTANCE_NAME} -o jsonpath='{.status.endpoints[1].uri}')
+    create_operand_instance "EventGateway" "${VAR_EGW_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_EGW_WORKINGDIR}" "EG-Capability.yaml" "${VAR_EGW_NAMESPACE}" "{.status.phase}" "Running"
 
-    local lf_duration=$SECONDS
-    local lf_ending_date=$(date)
-
-    mylog info "==== Installation of CP4I Event Endpoint Gateway [ended : $lf_ending_date and took : $SECONDS seconds]." 0
   fi
 
   trace_out $lf_tracelevel install_egw
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of CP4I Event Endpoint Gateway (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
 # Install EP
 function install_ep() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing CP4I Event Processing (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_ep
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
   if $MY_EP; then
-    SECONDS=0
-    local lf_starting_date=$(date)
-
     local lf_varb64
-    mylog info "==== Installing CP4I Event Processing (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
     #check_directory_exist_create "${MY_EP_WORKINGDIR}"
     check_directory_exist_create "${MY_EP_WORKINGDIR}"
@@ -1392,10 +1385,10 @@ function install_ep() {
       wait_for_resource "Secret" "${VAR_EP_INSTANCE_NAME}-ibm-ep-user-roles" "$VAR_EP_NAMESPACE"
 
       # generate properties files
-      adapt_file ${MY_EP_SCRIPTDIR}config/ ${MY_EP_GEN_CUSTOMDIR}config/ user-roles.yaml
+      adapt_file ${MY_EP_SCRIPTDIR}config/ ${MY_EP_WORKINGDIR}config/ user-roles.yaml
   
       # user roles
-      lf_varb64=$(cat "${MY_EP_GEN_CUSTOMDIR}config/user-roles.yaml" | base64 -w0)
+      lf_varb64=$(cat "${MY_EP_WORKINGDIR}config/user-roles.yaml" | base64 -w0)
       if $MY_APPLY_FLAG; then
         oc -n $VAR_EP_NAMESPACE patch secret ${VAR_EP_INSTANCE_NAME}-ibm-ep-user-roles --type=merge -p "{\"data\":{\"user-mapping.json\":\"$lf_varb64\"}}"
   
@@ -1421,46 +1414,47 @@ function install_ep() {
       wait_for_resource "Secret" "${VAR_EP_INSTANCE_NAME}-ibm-ep-user-credentials" "$VAR_EP_NAMESPACE"
 
       # generate properties files
-      adapt_file ${MY_EP_SCRIPTDIR}config/ ${MY_EP_GEN_CUSTOMDIR}config/ user-credentials.yaml
-      adapt_file ${MY_EP_SCRIPTDIR}config/ ${MY_EP_GEN_CUSTOMDIR}config/ user-roles.yaml
+      adapt_file ${MY_EP_SIMPLE_DEMODIR}config/ ${MY_EP_WORKINGDIR}config/ user-credentials.yaml
+      adapt_file ${MY_EP_SIMPLE_DEMODIR}config/ ${MY_EP_WORKINGDIR}config/ user-roles.yaml
   
       # user credentials
-      local lf_varb64=$(cat "${MY_EP_GEN_CUSTOMDIR}config/user-credentials.yaml" | base64 -w0)
+      local lf_varb64=$(cat "${MY_EP_WORKINGDIR}config/user-credentials.yaml" | base64 -w0)
       if $MY_APPLY_FLAG; then
         oc -n $VAR_EP_NAMESPACE patch secret ${VAR_EP_INSTANCE_NAME}-ibm-ep-user-credentials --type=merge -p "{\"data\":{\"user-mapping.json\":\"$lf_varb64\"}}"
       fi
   
       # user roles
-      lf_varb64=$(cat "${MY_EP_GEN_CUSTOMDIR}config/user-roles.yaml" | base64 -w0)
+      lf_varb64=$(cat "${MY_EP_WORKINGDIR}config/user-roles.yaml" | base64 -w0)
       if $MY_APPLY_FLAG; then
         oc -n $VAR_EP_NAMESPACE patch secret ${VAR_EP_INSTANCE_NAME}-ibm-ep-user-roles --type=merge -p "{\"data\":{\"user-mapping.json\":\"$lf_varb64\"}}"
       fi
     fi
 
-    local lf_duration=$SECONDS
-    local lf_ending_date=$(date)
-
-    mylog info "==== Installation of CP4I Event Processing [ended : $lf_ending_date and took : $SECONDS seconds]." 0
   fi
 
   trace_out $lf_tracelevel install_ep
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of CP4I Event Processing (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
 # Install Flink
 function install_flink() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing CP4I Flink (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_flink
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
   if $MY_FLINK; then
-    SECONDS=0
-    local lf_starting_date=$(date)
-
-    mylog info "==== Installing CP4I Flink (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
-
     check_directory_exist_create "${MY_FLINK_WORKINGDIR}"
+
+    create_project "${VAR_FLINK_NAMESPACE}" "${VAR_FLINK_NAMESPACE} project" "For Flink" "${MY_RESOURCESDIR}" "${MY_FLINK_WORKINGDIR}"
 
     # add catalog sources using ibm_pak plugin
     ## SB]20231020 For Flink and Event processing first you have to apply the catalog source to your cluster :
@@ -1498,13 +1492,13 @@ function install_flink() {
     ## STANLE and READY (uppercase!!!)
     create_operand_instance "FlinkDeployment" "${VAR_FLINK_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_FLINK_WORKINGDIR}" "EA-Flink-Capability.yaml" "$VAR_FLINK_NAMESPACE" "{.status.lifecycleState}-{.status.jobManagerDeploymentStatus}" "STABLE-READY"
 
-    local lf_duration=$SECONDS
-    local lf_ending_date=$(date)
-
-    mylog info "==== Installation of CP4I flink [ended : $lf_ending_date and took : $SECONDS seconds]." 0
   fi
 
   trace_out $lf_tracelevel install_flink
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of CP4I flink (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
@@ -1523,6 +1517,10 @@ function install_flink_ep() {
 ################################################
 # Install Aspera HSTS
 function install_hsts() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing CP4I HSTS (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_hsts
 
@@ -1530,12 +1528,7 @@ function install_hsts() {
 
   # ibm aspera hsts
   if $MY_HSTS; then
-    SECONDS=0
-    local lf_starting_date=$(date)
-
-    mylog info "==== Installing CP4I HSTS (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
-
-    check_directory_exist_create "${VAR_HSTS_WORKINGDIR}"
+    check_directory_exist_create "${MY_HSTS_WORKINGDIR}"
 
     # Asperac License
     export MY_ASPERA_LICENSE_FILE="${MY_PRIVATEDIR}aspera-license"
@@ -1553,22 +1546,26 @@ function install_hsts() {
     unset VAR_CATALOG_SOURCE
 
     # Creating Aspera HSTS operator subscription
-    create_operator_instance "${MY_HSTS_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${VAR_HSTS_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
+    create_operator_instance "${MY_HSTS_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_HSTS_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
 
     create_operand_instance "IbmAsperaHsts" "${VAR_HSTS_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_HSTS_WORKINGDIR}" "AsperaHSTS-Capability.yaml" "$VAR_HSTS_NAMESPACE" "{.status.conditions[0].type}" "Ready"
     
-    local lf_duration=$SECONDS
-    local lf_ending_date=$(date)
-
-    mylog info "==== Installation of CP4I HSTS [ended : $lf_ending_date and took : $SECONDS seconds]." 0
   fi
 
   trace_out $lf_tracelevel install_hsts
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of CP4I HSTS (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
 # Install MQ
 function install_mq() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing CP4I MQ operator (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_mq
 
@@ -1576,11 +1573,6 @@ function install_mq() {
 
   # ibm-mq
   if $MY_MQ; then
-    SECONDS=0
-    local lf_starting_date=$(date)
-
-    mylog info "==== Installing CP4I MQ operator (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
-
     check_directory_exist_create "${MY_MQ_WORKINGDIR}"
 
     create_project "$VAR_MQ_NAMESPACE" "$VAR_MQ_NAMESPACE project" "For MQ" "${MY_RESOURCESDIR}" "${MY_MQ_WORKINGDIR}"
@@ -1599,13 +1591,13 @@ function install_mq() {
     # Creating MQ operator subscription
     create_operator_instance "${MY_MQ_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_MQ_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
     
-    local lf_duration=$SECONDS
-    local lf_ending_date=$(date)
-
-    mylog info "==== Installation of CP4I MQ operator [ended : $lf_ending_date and took : $SECONDS seconds]." 0
   fi
 
   trace_out $lf_tracelevel install_mq
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of CP4I MQ operator (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
@@ -1613,6 +1605,10 @@ function install_mq() {
 # Voir ceci dans CP4I 16.1.1 : With the release of Cloud Pak for Integration 16.1.1 , Instana agents are now included in the Cloud Pak for Integration package. 
 # https://www.ibm.com/docs/en/cloud-paks/cp-integration/16.1.1?topic=planning-licensing#instana__title__1
 function install_instana() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing Instana (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+    
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_instana
 
@@ -1622,11 +1618,6 @@ function install_instana() {
   #SB]20230201 Ajout d'Instana
   # Creating Instana operator subscription
   if $MY_INSTANA; then
-    SECONDS=0
-    local lf_starting_date=$(date)
-
-    mylog info "==== Installing Instana (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
-    
     check_directory_exist_create "${MY_INSTANA_WORKINGDIR}"
 
     # SB]20240629 Instana Agent key
@@ -1645,146 +1636,146 @@ function install_instana() {
     # Creating Instana agent
     create_operand_instance "daemonset" "${MY_INSTANA_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_INSTANA_WORKINGDIR}" "Instana-Agent-CloudIBM-Capability.yaml" "$MY_INSTANA_AGENT_NAMESPACE" "{.status.numberReady}" "${MY_CLUSTER_WORKERS}"
     
-    local lf_duration=$SECONDS
-    local lf_ending_date=$(date)
-
-    mylog info "==== Installation of Instana [ended : $lf_ending_date and took : $SECONDS seconds]." 0
   fi
 
   trace_out $lf_tracelevel install_instana
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of Instana (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
 # Customise ldap adding users and groups
 function customise_openldap() {
+  SECONDS=0
+  local lf_starting_date=$(date);
+  mylog info "==== Customise ldap (ldap.config.sh)." 0
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel customise_openldap
 
   decho $lf_tracelevel "Parameters: |no parameters|"
-
-  SECONDS=0
-  local lf_starting_date=$(date);
-  mylog info "==== Customise ldap (ldap.config.sh)." 0
 
   if $MY_LDAP_CUSTOM; then
     read_config_file "${MY_YAMLDIR}ldap/ldap_dit.properties"
     check_file_exist ${MY_YAMLDIR}ldap/ldap_config.json
 
     # launch custom script
-    ${MY_LDAP_SCRIPTDIR}scripts/ldap.config.sh --call ldap_run_all
+    ${MY_LDAP_SIMPLE_DEMODIR}scripts/ldap.config.sh --call ldap_run_all
   fi
 
-  local lf_ending_date=$(date)
-  mylog info "==== Customisation of ldap [ended : $lf_ending_date and took : $SECONDS seconds]." 0
-
   trace_out $lf_tracelevel customise_openldap
+
+  local lf_ending_date=$(date)
+  mylog info "==== Customisation of ldap (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
 # Customise Open Liberty
 function customise_openliberty() {
+  SECONDS=0
+  local lf_starting_date=$(date);
+  mylog info "==== Customise Open Liberty (olp.config.sh)." 0
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel customise_openliberty
 
   decho $lf_tracelevel "Parameters: |no parameters|"
-
-  SECONDS=0
-  local lf_starting_date=$(date);
-  mylog info "==== Customise Open Liberty (olp.config.sh)." 0
 
   # backend J2EE applications
   if $MY_OPENLIBERTY_CUSTOM; then
     ${MY_OPENLIBERTY_SCRIPTDIR}scripts/olp.config.sh --call olp_run_all
   fi
 
-  local lf_ending_date=$(date)    
-  mylog info "==== Customisation of  Open Liberty [ended : $lf_ending_date and took : $SECONDS seconds]." 0
-
   trace_out $lf_tracelevel customise_openliberty
+
+  local lf_ending_date=$(date)    
+  mylog info "==== Customisation of Open Liberty (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
 # Customise WebSphere Liberty
 function customise_wasliberty() {
+  SECONDS=0
+  local lf_starting_date=$(date);
+  mylog info "==== Customise WAS Liberty (was.config.sh)." 0
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel customise_wasliberty
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
-  SECONDS=0
-  local lf_starting_date=$(date);
-  mylog info "==== Customise WAS Liberty (was.config.sh)." 0
-
   if $MY_WASLIBERTY_CUSTOM; then
-    ${MY_WASLIBERTY_SCRIPTDIR}scripts/was.config.sh --call was_run_all
+    ${MY_WAS_LIBERTY_DEMODIR}scripts/was.config.sh --call was_run_all
   fi
 
-  local lf_ending_date=$(date)    
-  mylog info "==== Customisation of WAS Liberty [ended : $lf_ending_date and took : $SECONDS seconds]." 0
-
   trace_out $lf_tracelevel customise_wasliberty
+
+  local lf_ending_date=$(date)    
+  mylog info "==== Customisation of WAS Liberty (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
 # Customise ACE
 function customise_ace() {
+  SECONDS=0
+  local lf_starting_date=$(date);
+  mylog info "==== Customise ACE (ace.config.sh)." 0
+  
   local lf_tracelevel=2
   trace_in $lf_tracelevel customise_ace
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
-  SECONDS=0
-  local lf_starting_date=$(date);
-  mylog info "==== Customise ACE (ace.config.sh)." 0
-  
   # Takes all the templates associated with the capabilities and generate the files from the context variables
   # The files are generated into ./customisation/working/<capability>/config
   if $MY_ACE_CUSTOM; then
-    ${MY_ACE_SCRIPTDIR}scripts/ace.config.sh --call ace_run_all
+    ${MY_ACE_SIMPLE_DEMODIR}scripts/ace.config.sh --call ace_run_all
   fi
 
-  local lf_ending_date=$(date)
-  mylog info "==== Customisation of ace [ended : $lf_ending_date and took : $SECONDS seconds]." 0
-
   trace_out $lf_tracelevel customise_ace
+
+  local lf_ending_date=$(date)
+  mylog info "==== Customisation of ace (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
 # Customise APIC
 function customise_apic() {
+  SECONDS=0
+  local lf_starting_date=$(date);
+  mylog info "==== Customise APIC (apic.config.sh)." 0
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel customise_apic
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
-  SECONDS=0
-  local lf_starting_date=$(date);
-  mylog info "==== Customise APIC (apic.config.sh)." 0
-
   # Takes all the templates associated with the capabilities and generate the files from the context variables
   # The files are generated into ./customisation/working/<capability>/config
   if $MY_APIC_CUSTOM; then
     mylog info "==== Customise APIC (apic.config.sh)." 0
-    ${MY_APIC_SCRIPTDIR}scripts/apic.config.sh --call apic_run_all
+    ${MY_APIC_SIMPLE_DEMODIR}scripts/apic.config.sh --call apic_run_all
   fi
 
-  local lf_ending_date=$(date)
-  mylog info "==== Customisation of apic [ended : $lf_ending_date and took : $SECONDS seconds]." 0
-
   trace_out $lf_tracelevel customise_apic
+
+  local lf_ending_date=$(date)
+  mylog info "==== Customisation of apic (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
 # Customise IBM Event streams
 function customise_es() {
+  SECONDS=0
+  local lf_starting_date=$(date);
+  mylog info "==== Customise ES (es.config.sh)." 0
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel customise_es
 
   decho $lf_tracelevel "Parameters: |no parameters|"
-
-  SECONDS=0
-  local lf_starting_date=$(date);
-  mylog info "==== Customise ES (es.config.sh)." 0
 
   # start customization
   # Takes all the templates associated with the capabilities and generate the files from the context variables
@@ -1802,62 +1793,62 @@ function customise_es() {
     # SB]20231109 some generated files (yaml) are based on other generated files (properties), so :
     # - in template custom dirs, separate the files to two categories : scripts (*.properties) and config (*.yaml)
     # - generate first the *.properties files to be sourced then generate the *.yaml files
-    check_directory_exist_create "${MY_ES_GEN_CUSTOMDIR}scripts"
-    check_directory_exist_create "${MY_ES_GEN_CUSTOMDIR}config"
-    generate_files $MY_ES_SIMPLE_DEMODIR $MY_ES_GEN_CUSTOMDIR false
+    check_directory_exist_create "${MY_ES_WORKINGDIR}scripts"
+    check_directory_exist_create "${MY_ES_WORKINGDIR}config"
+    generate_files $MY_ES_SIMPLE_DEMODIR $MY_ES_WORKINGDIR false
 
     ${MY_ES_SIMPLE_DEMODIR}scripts/es.config.sh --call es_run_all
   fi
 
-  local lf_ending_date=$(date)
-  mylog info "==== Customisation of es [ended : $lf_ending_date and took : $SECONDS seconds]." 0
-
   trace_out $lf_tracelevel customise_es
+
+  local lf_ending_date=$(date)
+  mylog info "==== Customisation of es (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
 # Customise EEM
 function customise_eem() {
+  SECONDS=0
+  local lf_starting_date=$(date);
+  mylog info "==== Customise EEM (eem.config.sh)." 0
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel customise_eem
 
   decho $lf_tracelevel "Parameters: |no parameters|"
-
-  SECONDS=0
-  local lf_starting_date=$(date);
-  mylog info "==== Customise EEM (eem.config.sh)." 0
 
   if $MY_EEM_CUSTOM; then
     # launch custom script
     ${MY_EEM_SIMPLE_DEMODIR}scripts/eem.config.sh --call eem_run_all
   fi
 
-  local lf_ending_date=$(date)
-  mylog info "==== Customisation of eem [ended : $lf_ending_date and took : $SECONDS seconds]." 0
-
   trace_out $lf_tracelevel customise_eem
+
+  local lf_ending_date=$(date)
+  mylog info "==== Customisation of eem (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
 # Customise EGW
 function customise_egw() {
+  SECONDS=0
+  local lf_starting_date=$(date);
+  mylog info "==== Customise EGW (egw.config.sh)." 0
+  
   local lf_tracelevel=2
   trace_in $lf_tracelevel customise_egw
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
-  SECONDS=0
-  local lf_starting_date=$(date);
-  mylog info "==== Customise EGW (egw.config.sh)." 0
-  
   if $MY_EGW_CUSTOM; then
     mylog info "==== Place Holder."
   fi
 
-  local lf_ending_date=$(date)
-  mylog info "==== Customisation of egw [ended : $lf_ending_date and took : $SECONDS seconds]." 0
-
   trace_out $lf_tracelevel customise_egw
+
+  local lf_ending_date=$(date)
+  mylog info "==== Customisation of egw (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
@@ -1876,14 +1867,14 @@ function customise_flink_ep() {
 ################################################
 # Customise EP
 function customise_ep() {
+  SECONDS=0
+  local lf_starting_date=$(date);
+  mylog info "==== Customise EP (ep.config.sh)." 0
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel customise_ep
 
   decho $lf_tracelevel "Parameters: |no parameters|"
-
-  SECONDS=0
-  local lf_starting_date=$(date);
-  mylog info "==== Customise EP (ep.config.sh)." 0
 
   # Takes all the templates associated with the capabilities and generate the files from the context variables
   # The files are generated into ./customisation/working/<capability>/config
@@ -1892,68 +1883,68 @@ function customise_ep() {
     mylog info "==== Place Holder."
   fi
 
-  local lf_ending_date=$(date)
-  mylog info "==== Customisation of ep [ended : $lf_ending_date and took : $SECONDS seconds]." 0
-  
   trace_out $lf_tracelevel customise_ep
+
+  local lf_ending_date=$(date)
+  mylog info "==== Customisation of ep (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0  
 }
 
 ################################################
 # Customise Flink
 function customise_flink() {
+  SECONDS=0
+  local lf_starting_date=$(date);
+  mylog info "==== Customise FLINK (flink.config.sh)." 0
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel customise_flink
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
-  SECONDS=0
-  local lf_starting_date=$(date);
-  mylog info "==== Customise FLINK (flink.config.sh)." 0
-
   if $MY_FLINK_CUSTOM; then
     mylog info "==== Place Holder."
   fi
 
-  local lf_ending_date=$(date)
-  mylog info "==== Customisation of flink [ended : $lf_ending_date and took : $SECONDS seconds]." 0
-
   trace_out $lf_tracelevel customise_flink
+
+  local lf_ending_date=$(date)
+  mylog info "==== Customisation of flink (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
 # Customise Aspera HSTS
 function customise_hsts() {
+  SECONDS=0
+  local lf_starting_date=$(date);
+  mylog info "==== Customise HSTS (flink.config.sh)." 0
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel customise_hsts
 
   decho $lf_tracelevel "Parameters: |no parameters|"
-
-  SECONDS=0
-  local lf_starting_date=$(date);
-  mylog info "==== Customise HSTS (flink.config.sh)." 0
 
   # ibm aspera hsts
   if $MY_HSTS_CUSTOM; then
     mylog info "==== Place Holder."
   fi
 
-  local lf_ending_date=$(date)
-  mylog info "==== Customisation of hsts [ended : $lf_ending_date and took : $SECONDS seconds]." 0
-
   trace_out $lf_tracelevel customise_hsts
+
+  local lf_ending_date=$(date)
+  mylog info "==== Customisation of hsts (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
 # Customise MQ
 function customise_mq() {
+  SECONDS=0
+  local lf_starting_date=$(date);
+  mylog info "==== Customise MQ (mq.config.sh)." 0
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel customise_mq
 
   decho $lf_tracelevel "Parameters: |no parameters|"
-
-  SECONDS=0
-  local lf_starting_date=$(date);
-  mylog info "==== Customise MQ (mq.config.sh)." 0
 
   # Takes all the templates associated with the capabilities and generate the files from the context variables
   # The files are generated into ./customisation/working/<capability>/config
@@ -1963,27 +1954,27 @@ function customise_mq() {
       export MY_MQ_VERSION=$(oc ibm-pak list -o json | jq  --arg case "$MY_MQ_OPERATOR" '.[] | select (.name == $case ) | .latestAppVersion')
     fi
 
-    # launch custom script
-    ${MY_MQ_SCRIPTDIR}scripts/mq.config.sh --call mq_run_all
+    # launch custom script toto
+    ${MY_MQ_SIMPLE_DEMODIR}scripts/mq.config.sh --call mq_run_all
   fi
 
-  local lf_ending_date=$(date)
-  mylog info "==== Customisation of mq [ended : $lf_ending_date and took : $SECONDS seconds]." 0
-
   trace_out $lf_tracelevel customise_mq
+
+  local lf_ending_date=$(date)
+  mylog info "==== Customisation of mq (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
 # Customise Instana
 function customise_instana() {
+  SECONDS=0
+  local lf_starting_date=$(date);
+  mylog info "==== Customise INSTANA (instana.config.sh)." 0
+
   local lf_tracelevel=2
   trace_in $lf_tracelevel customise_instana
 
   decho $lf_tracelevel "Parameters: |no parameters|"
-
-  SECONDS=0
-  local lf_starting_date=$(date);
-  mylog info "==== Customise INSTANA (instana.config.sh)." 0
 
   # instana
   #SB]20230201 Ajout d'Instana
@@ -1992,10 +1983,10 @@ function customise_instana() {
     mylog info "==== Place Holder."
   fi
 
-  local lf_ending_date=$(date)
-  mylog info "==== Customisation of instana [ended : $lf_ending_date and took : $SECONDS seconds]." 0
-
   trace_out $lf_tracelevel customise_instana
+
+  local lf_ending_date=$(date)
+  mylog info "==== Customisation of instana (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
@@ -2021,18 +2012,17 @@ function create_edb_postgres_db() {
   local lf_in_db_description="$6"
   decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|\"$5\"|\"$6\"|"
   
-  check_directory_exist_create "${VAR_EDB_POSTGRES_WORKINGDIR}"
+  check_directory_exist_create "${MY_EDB_POSTGRES_WORKINGDIR}"
 
-  create_project "$VAR_POSTGRES_NAMESPACE" "EDB PostGreSQL project" "For EDB PostGreSQL" "${MY_RESOURCESDIR}" "${VAR_EDB_POSTGRES_WORKINGDIR}"
+  create_project "$VAR_POSTGRES_NAMESPACE" "EDB PostGreSQL project" "For EDB PostGreSQL" "${MY_RESOURCESDIR}" "${MY_EDB_POSTGRES_WORKINGDIR}"
 
   # Create a PostGreSQL DB secret
   export VAR_NAMESPACE=$VAR_POSTGRES_NAMESPACE
   export VAR_SECRET_NAME=$lf_in_secret_name
   export VAR_USERNAME=$lf_in_db_username
   export VAR_PASSWORD=$lf_in_db_password
-  
-  create_oc_resource "Secret" "${lf_in_secret_name}" "${MY_RESOURCESDIR}" "${VAR_EDB_POSTGRES_WORKINGDIR}" "secret.yaml" "$VAR_POSTGRES_NAMESPACE"
-  unset VAR_NAMESPACE VAR_SECRET_NAME  VAR_USERNAME VAR_PASSWORD
+  create_oc_resource "Secret" "${lf_in_secret_name}" "${MY_RESOURCESDIR}" "${MY_EDB_POSTGRES_WORKINGDIR}" "secret.yaml" "$VAR_POSTGRES_NAMESPACE"
+  unset VAR_NAMESPACE VAR_SECRET_NAME VAR_USERNAME VAR_PASSWORD
 
   # PostGreSQL DB
   export VAR_POSTGRES_CLUSTER="${lf_in_cluster_name}"
@@ -2046,11 +2036,17 @@ function create_edb_postgres_db() {
 
   # and this with EDB Postgres
   export VAR_POSTGRES_IMAGE_NAME=$(oc get packagemanifests -n $MY_CATALOGSOURCES_NAMESPACE --selector=$MY_POSTGRES_CATALOGSOURCE_NAME -o json | jq --arg channel "$MY_POSTGRES_CHL" '.items[].status.channels[] | select(.name == $channel)' | jq -r '.currentCSVDesc.relatedImages[]')
-  create_operand_instance "Cluster" "${lf_in_cluster_name}" "${MY_POSTGRES_DIR}" "${VAR_EDB_POSTGRES_WORKINGDIR}" "edb-postgres-cluster.yaml" "$VAR_POSTGRES_NAMESPACE" "{.status.conditions[?(@.type==\"Ready\")].status}" "True"
-  unset VAR_POSTGRES_CLUSTER VAR_POSTGRES_DATABASE VAR_POSTGRES_USER VAR_POSTGRES_SECRET VAR_POSTGRES_DATABASE_DESCRIPTION VAR_POSTGRES_IMAGE_NAME
+  create_operand_instance "${MY_POSTGRES_CRD_CLUSTER}" "${lf_in_cluster_name}" "${MY_POSTGRES_DIR}" "${MY_EDB_POSTGRES_WORKINGDIR}" "edb-postgres-cluster.yaml" "$VAR_POSTGRES_NAMESPACE" "{.status.conditions[?(@.type==\"Ready\")].status}" "True"
+  if oc -n $VAR_POSTGRES_NAMESPACE wait --for=condition=Ready pod -l k8s.enterprisedb.io/cluster=$lf_in_cluster_name --timeout=300s; then
+    echo "✅ All Pods are Ready!"
+  else
+    echo "❌ Timeout or error waiting for Pods to be Ready."
+    exit 1
+  fi
+  #unset VAR_POSTGRES_CLUSTER VAR_POSTGRES_DATABASE VAR_POSTGRES_USER VAR_POSTGRES_SECRET VAR_POSTGRES_DATABASE_DESCRIPTION VAR_POSTGRES_IMAGE_NAME
   
   # Authorize superuser access
-  oc -n $VAR_POSTGRES_NAMESPACE patch Cluster $lf_in_cluster_name --type=merge -p '{"spec":{"enableSuperuserAccess":true}}' | awk '{printf "%*s%s\n", NR * $SC_SPACES_COUNTER, "", $0}'
+  oc -n $VAR_POSTGRES_NAMESPACE patch "${MY_POSTGRES_CRD_CLUSTER}" $lf_in_cluster_name --type=merge -p '{"spec":{"enableSuperuserAccess":true}}' | awk '{printf "%*s%s\n", NR * $SC_SPACES_COUNTER, "", $0}'
 
   # Here after how to check the status of the PostGreSQL DB and connect to it
   # oc run pg-check --image=postgres:15 --restart=Never -- sleep 3600
@@ -2322,7 +2318,7 @@ function provision_cluster_init() {
 }
 
 ################################################
-# function for the installtion part of the script
+# function for the installation part of the script
 ################################################
 function install_part() {
   local lf_tracelevel=1
@@ -2416,7 +2412,7 @@ function run_all() {
   
   # Start customization capabilities
   # No need to customise navigator, intassembly, assetrepo
-  customise_part
+  #customise_part
 
   trace_out $lf_tracelevel run_all
 }
@@ -2425,6 +2421,10 @@ function run_all() {
 # main function
 # Main logic
 function main() {
+  local lf_starting_date=$(date)
+  local lf_satrting_date_in_seconds=$(date +%s)
+  mylog info "==== Installing CP4I Components (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+
   local lf_tracelevel=1
   trace_in $lf_tracelevel main
 
@@ -2432,10 +2432,6 @@ function main() {
     mylog error "No arguments provided. Use --all or --call function_name parameters, function_name parameters, ...."
     return 1
   fi
-
-  local lf_starting_date=$(date)
-  local lf_satrting_date_in_seconds=$(date +%s)
-  mylog info "==== Installing CP4I Components (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
   # Main script logic
   local lf_calls=""  # Initialize calls variable
@@ -2477,12 +2473,13 @@ function main() {
     fi
   fi
 
+  trace_out $lf_tracelevel main
+
   local lf_ending_date=$(date)
   local lf_ending_date_in_seconds=$(date +%s)
   local lf_duration=$((lf_ending_date_in_seconds - lf_satrting_date_in_seconds))
-  mylog info "==== Installation of CP4I Components. [ended : $lf_ending_date and took : $(($lf_duration / 60)) minutes and $(($lf_duration % 60)) seconds]." 0
+  mylog info "==== Installation of CP4I Components (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $(($lf_duration / 60)) minutes and $(($lf_duration % 60)) seconds]." 0
 
-  trace_out $lf_tracelevel main
   exit 0
 }
 

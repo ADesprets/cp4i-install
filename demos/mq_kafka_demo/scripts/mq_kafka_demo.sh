@@ -86,9 +86,9 @@ function create_qmgr_route () {
 function save_qmgr_tls () {
   trace_in 3 save_qmgr_tls
 
-  save_certificate $VAR_MQ_NAMESPACE ${VAR_QMGR}-secret tls.crt ${sc_mq_kafka_demo_workingdir}
-  save_certificate $VAR_MQ_NAMESPACE ${VAR_QMGR}-secret key.crt ${sc_mq_kafka_demo_workingdir}
-  save_certificate $VAR_MQ_NAMESPACE ${VAR_QMGR}-secret ca.crt ${sc_mq_kafka_demo_workingdir}
+  save_certificate ${VAR_QMGR}-secret tls.crt ${sc_mq_kafka_demo_workingdir} $VAR_MQ_NAMESPACE
+  save_certificate ${VAR_QMGR}-secret key.crt ${sc_mq_kafka_demo_workingdir} $VAR_MQ_NAMESPACE
+  save_certificate ${VAR_QMGR}-secret ca.crt ${sc_mq_kafka_demo_workingdir} $VAR_MQ_NAMESPACE
 
   local lf_ca_crt="${sc_mq_kafka_demo_workingdir}${VAR_QMGR}-secret.ca.crt.pem"	
   local lf_srv_crt="${sc_mq_kafka_demo_workingdir}${VAR_QMGR}-secret.tls.crt.pem"
@@ -172,7 +172,7 @@ function add_qmgr_crt_2_clnt_kdb () {
 
   mylog "info" "Adding     : qmgr certificate to the client key database"
 
-  save_certificate $VAR_MQ_NAMESPACE ${VAR_QMGR}-secret tls.crt ${sc_mq_kafka_demo_workingdir}
+  save_certificate ${VAR_QMGR}-secret tls.crt ${sc_mq_kafka_demo_workingdir} $VAR_MQ_NAMESPACE
   local lf_srv_crt="${sc_mq_kafka_demo_workingdir}${VAR_QMGR}-secret.tls.crt.pem"
   
   case $VAR_KEYDB_TYPE in
@@ -200,7 +200,7 @@ function add_ca_crt_2_clnt_kdb () {
 
   mylog "info" "Adding     : ca certificate to client kdb for $CLNT1"
   
-  save_certificate $VAR_MQ_NAMESPACE ${VAR_QMGR}-secret ca.crt ${sc_mq_kafka_demo_workingdir}
+  save_certificate ${VAR_QMGR}-secret ca.crt ${sc_mq_kafka_demo_workingdir} $VAR_MQ_NAMESPACE
   
   local lf_ca_crt="${sc_mq_kafka_demo_workingdir}${VAR_QMGR}-secret.ca.crt.pem"
 
@@ -253,21 +253,21 @@ function mq_kafka_demo_generate_certs() {
   create_oc_resource "Certificate" "kafka-client-cert" "${sc_mq_kafka_demo_tls_dir}" "${sc_mq_kafka_demo_workingdir}" "kafka_client_certificate.yaml" "$VAR_MQ_NAMESPACE"
 
 
-  #save_certificate $VAR_MQ_NAMESPACE ca-root-cert-secret tls.crt ${sc_mq_kafka_demo_workingdir}
-  #save_certificate $VAR_MQ_NAMESPACE ca-root-cert-secret key.crt ${sc_mq_kafka_demo_workingdir}
-  #save_certificate $VAR_MQ_NAMESPACE ca-root-cert-secret ca.crt ${sc_mq_kafka_demo_workingdir}
+  #save_certificate ca-root-cert-secret tls.crt ${sc_mq_kafka_demo_workingdir} $VAR_MQ_NAMESPACE
+  #save_certificate ca-root-cert-secret key.crt ${sc_mq_kafka_demo_workingdir} $VAR_MQ_NAMESPACE
+  #save_certificate ca-root-cert-secret ca.crt ${sc_mq_kafka_demo_workingdir} $VAR_MQ_NAMESPACE
 
-  #save_certificate $VAR_MQ_NAMESPACE ${VAR_QMGR}-secret tls.crt ${sc_mq_kafka_demo_workingdir}
-  #save_certificate $VAR_MQ_NAMESPACE ${VAR_QMGR}-secret key.crt ${sc_mq_kafka_demo_workingdir}
-  #save_certificate $VAR_MQ_NAMESPACE ${VAR_QMGR}-secret ca.crt ${sc_mq_kafka_demo_workingdir}
+  #save_certificate ${VAR_QMGR}-secret tls.crt ${sc_mq_kafka_demo_workingdir} $VAR_MQ_NAMESPACE
+  #save_certificate ${VAR_QMGR}-secret key.crt ${sc_mq_kafka_demo_workingdir} $VAR_MQ_NAMESPACE
+  #save_certificate ${VAR_QMGR}-secret ca.crt ${sc_mq_kafka_demo_workingdir} $VAR_MQ_NAMESPACE
 
-  #save_certificate $VAR_MQ_NAMESPACE jms-client-cert-secret tls.crt ${sc_mq_kafka_demo_workingdir}
-  #save_certificate $VAR_MQ_NAMESPACE jms-client-cert-secret key.crt ${sc_mq_kafka_demo_workingdir}
-  #save_certificate $VAR_MQ_NAMESPACE jms-client-cert-secret ca.crt ${sc_mq_kafka_demo_workingdir}
+  #save_certificate jms-client-cert-secret tls.crt ${sc_mq_kafka_demo_workingdir} $VAR_MQ_NAMESPACE
+  #save_certificate jms-client-cert-secret key.crt ${sc_mq_kafka_demo_workingdir} $VAR_MQ_NAMESPACE
+  #save_certificate jms-client-cert-secret ca.crt ${sc_mq_kafka_demo_workingdir} $VAR_MQ_NAMESPACE
 
-  #save_certificate $VAR_MQ_NAMESPACE kafka-client-cert-secret tls.crt ${sc_mq_kafka_demo_workingdir}
-  #save_certificate $VAR_MQ_NAMESPACE kafka-client-cert-secret key.crt ${sc_mq_kafka_demo_workingdir}
-  #save_certificate $VAR_MQ_NAMESPACE kafka-client-cert-secret ca.crt ${sc_mq_kafka_demo_workingdir}
+  #save_certificate kafka-client-cert-secret tls.crt ${sc_mq_kafka_demo_workingdir} $VAR_MQ_NAMESPACE
+  #save_certificate kafka-client-cert-secret key.crt ${sc_mq_kafka_demo_workingdir} $VAR_MQ_NAMESPACE
+  #save_certificate kafka-client-cert-secret ca.crt ${sc_mq_kafka_demo_workingdir} $VAR_MQ_NAMESPACE
 
   trace_out 3 mq_kafka_demo_generate_certs
 }
@@ -449,7 +449,7 @@ function mq_kafka_demo_init() {
   check_directory_exist_create  "${sc_mq_kafka_demo_workingdir}"
   
   ## CCDT tmpl file
-  sc_ccdt_tmpl_file="${MY_MQ_SCRIPTDIR}/tmpl/json/ccdt.json";
+  sc_ccdt_tmpl_file="${MY_MQ_SIMPLE_DEMODIR}/tmpl/json/ccdt.json";
   MQCCDTURL="${sc_mq_kafka_demo_workingdir}ccdt.json"
 
   trace_out 2 mq_kafka_demo_init

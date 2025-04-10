@@ -25,10 +25,10 @@ function eem_run_all () {
     decho $lf_tracelevel "oc -n $VAR_APIC_NAMESPACE get secret ${VAR_APIC_INSTANCE_NAME}-ingress-ca -o=jsonpath=\"{.data['ca\.crt']}\""
     lf_apic_ca_ingress=$(oc -n $VAR_APIC_NAMESPACE get secret ${VAR_APIC_INSTANCE_NAME}-ingress-ca -o=jsonpath="{.data['ca\.crt']}")
     export EEM_APIC_INGRESS_CA_CERT=${lf_apic_ca_ingress}
-    adapt_file ${MY_EEM_SIMPLE_DEMODIR}config/ ${MY_EEM_GEN_CUSTOMDIR}config/ apim-cpd.yaml
+    adapt_file ${MY_EEM_SIMPLE_DEMODIR}config/ ${MY_EEM_WORKINGDIR}config/ apim-cpd.yaml
   
     # Create Secret to access API Connect from EEM.
-    create_oc_resource "Secret" "$VAR_EEM_APIC_INGRESS_CA_CERT_SECRET_NAME" "${MY_EEM_SIMPLE_DEMODIR}config/" "${MY_EEM_GEN_CUSTOMDIR}config/" "apim-cpd.yaml" "$VAR_EEM_NAMESPACE"
+    create_oc_resource "Secret" "$VAR_EEM_APIC_INGRESS_CA_CERT_SECRET_NAME" "${MY_EEM_SIMPLE_DEMODIR}config/" "${MY_EEM_WORKINGDIR}config/" "apim-cpd.yaml" "$VAR_EEM_NAMESPACE"
   
     # 4) Update cp4i-eem CRD
     # spec.manager
@@ -54,9 +54,9 @@ function eem_run_all () {
   fi
   
   # 6) Get Certificates for API connect
-  save_certificate ${VAR_EEM_NAMESPACE} cp4i-eem-ibm-eem-manager ca.crt ${MY_EEM_WORKINGDIR}
-  save_certificate ${VAR_EEM_NAMESPACE} cp4i-eem-ibm-eem-manager tls.crt ${MY_EEM_WORKINGDIR}
-  save_certificate ${VAR_EEM_NAMESPACE} cp4i-eem-ibm-eem-manager tls.key ${MY_EEM_WORKINGDIR}
+  save_certificate cp4i-eem-ibm-eem-manager ca.crt ${MY_EEM_WORKINGDIR} ${VAR_EEM_NAMESPACE}
+  save_certificate cp4i-eem-ibm-eem-manager tls.crt ${MY_EEM_WORKINGDIR} ${VAR_EEM_NAMESPACE} 
+  save_certificate cp4i-eem-ibm-eem-manager tls.key ${MY_EEM_WORKINGDIR} ${VAR_EEM_NAMESPACE}
   
   # 7) TlS Profile in APIC EMM Client/EEM Trust
   # Create a TLS Client Profile (eemclientprofile)
@@ -77,7 +77,7 @@ function eem_run_all () {
 
   local lf_ending_date=$(date)
     
-  mylog info "==== Customisation of eem [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+  mylog info "==== Customisation of eem (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
   trace_out $lf_tracelevel eem_run_all
 }
 
@@ -172,7 +172,7 @@ sc_provision_constant_properties_file="${PROVISION_SCRIPTDIR}properties/cp4i-con
 sc_provision_variable_properties_file="${PROVISION_SCRIPTDIR}properties/cp4i-variables.properties"
 sc_provision_lib_file="${PROVISION_SCRIPTDIR}lib.sh"
 sc_component_properties_file="${sc_component_script_dir}../properties/eem.properties"
-sc_provision_preambule_file="${PROVISION_SCRIPTDIR}preambule.properties"
+sc_provision_preambule_file="${PROVISION_SCRIPTDIR}properties/preambule.properties"
 
 # SB]20250319 Je suis obligé d'utiliser set -a et set +a parceque à cet instant je n'ai pas accès à la fonction read_config_file
 # load script parrameters fil

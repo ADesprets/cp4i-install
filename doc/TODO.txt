@@ -80,22 +80,20 @@ Comment gérer les inter-dépendances entre chaque capability
 Stucture
 	ACE
 		en dessous d'un bar
-			D:\CurrentProjects\CP4I\Installation\cp4i-install\customisation\ACE\config
-			D:\CurrentProjects\CP4I\Installation\cp4i-install\customisation\ACE\scripts
-			D:\CurrentProjects\CP4I\Installation\cp4i-install\customisation\ACE\config\ace.properties
-			D:\CurrentProjects\CP4I\Installation\cp4i-install\customisation\ACE\scripts\ace.config.sh
-			D:\CurrentProjects\CP4I\Installation\cp4i-install\customisation\ACE\scripts\barfiles
-			D:\CurrentProjects\CP4I\Installation\cp4i-install\customisation\ACE\scripts\barfiles\HTTPEchoApp
-			D:\CurrentProjects\CP4I\Installation\cp4i-install\customisation\ACE\scripts\barfiles\HTTPEchoApp\configurationtypes
-			D:\CurrentProjects\CP4I\Installation\cp4i-install\customisation\ACE\scripts\barfiles\HTTPEchoApp\tmpl
-			D:\CurrentProjects\CP4I\Installation\cp4i-install\customisation\ACE\scripts\barfiles\HTTPEchoApp\configurationtypes\barauth.json
-			D:\CurrentProjects\CP4I\Installation\cp4i-install\customisation\ACE\scripts\barfiles\HTTPEchoApp\configurationtypes\serverconf.txt
-			D:\CurrentProjects\CP4I\Installation\cp4i-install\customisation\ACE\scripts\barfiles\HTTPEchoApp\tmpl\barauth.yaml
-			D:\CurrentProjects\CP4I\Installation\cp4i-install\customisation\ACE\scripts\barfiles\HTTPEchoApp\tmpl\integrationruntime.yaml
-			D:\CurrentProjects\CP4I\Installation\cp4i-install\customisation\ACE\scripts\barfiles\HTTPEchoApp\tmpl\serverconf.yaml
+			D:\CurrentProjects\CP4I\Installation\cp4i-install\demos\ace_simple\properties
+			D:\CurrentProjects\CP4I\Installation\cp4i-install\demos\ace_simple\scripts
+			D:\CurrentProjects\CP4I\Installation\cp4i-install\demos\ace_simple\properties\ace.properties
+			D:\CurrentProjects\CP4I\Installation\cp4i-install\demos\ace_simple\scripts\ace.config.sh
+			D:\CurrentProjects\CP4I\Installation\cp4i-install\demos\ace_simple\scripts\barfiles
+			D:\CurrentProjects\CP4I\Installation\cp4i-install\demos\ace_simple\scripts\barfiles\HTTPEchoApp
+			D:\CurrentProjects\CP4I\Installation\cp4i-install\demos\ace_simple\scripts\barfiles\HTTPEchoApp\configurationtypes
+			D:\CurrentProjects\CP4I\Installation\cp4i-install\demos\ace_simple\scripts\barfiles\HTTPEchoApp\tmpl
+			D:\CurrentProjects\CP4I\Installation\cp4i-install\demos\ace_simple\scripts\barfiles\HTTPEchoApp\configurationtypes\barauth.json
+			D:\CurrentProjects\CP4I\Installation\cp4i-install\demos\ace_simple\scripts\barfiles\HTTPEchoApp\configurationtypes\serverconf.txt
+			D:\CurrentProjects\CP4I\Installation\cp4i-install\demos\ace_simple\scripts\barfiles\HTTPEchoApp\tmpl\barauth.yaml
+			D:\CurrentProjects\CP4I\Installation\cp4i-install\demos\ace_simple\scripts\barfiles\HTTPEchoApp\tmpl\integrationruntime.yaml
+			D:\CurrentProjects\CP4I\Installation\cp4i-install\demos\ace_simple\scripts\barfiles\HTTPEchoApp\tmpl\serverconf.yaml
 
-
-Customisation
 Open SVC
 Latency between DCs
 

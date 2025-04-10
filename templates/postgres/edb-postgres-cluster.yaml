@@ -1,24 +1,41 @@
 apiVersion: postgresql.k8s.enterprisedb.io/v1
 kind: Cluster
 metadata:
-  name: $VAR_POSTGRES_CLUSTER
-  namespace: $VAR_POSTGRES_NAMESPACE
+  name: "${VAR_POSTGRES_CLUSTER}"                     # e.g., "my-postgres-cluster"
+  namespace: "${VAR_POSTGRES_NAMESPACE}"              # e.g., "db-namespace"
 spec:
-  description: $VAR_POSTGRES_DATABASE_DESCRIPTION
-  instances: 2
-  storage:
-    size: 1Gi
-    storageClass: $MY_BLOCK_STORAGE_CLASS
-  imageName: $VAR_POSTGRES_IMAGE_NAME
+  description: "${VAR_POSTGRES_DATABASE_DESCRIPTION}" # e.g., "Production PostgreSQL Cluster"
+  instances: 1
+  imageName: "${VAR_POSTGRES_IMAGE_NAME}"             # e.g., "docker.io/enterprisedb/postgresql:16.2"
   enableSuperuserAccess: true
   logLevel: info
-  startDelay: 3600
-  stopDelay: 1800
-  smartShutdownTimeout: 180
+  startDelay: 3600                                    # Delay (seconds) before starting primary instance
+  stopDelay: 1800                                     # Delay (seconds) before stopping instances
+  smartShutdownTimeout: 180                           # Timeout (seconds) for graceful shutdown
+  # Storage Configuration
+  storage:
+    size: "1Gi"
+    storageClass: "${MY_BLOCK_STORAGE_CLASS}"         # e.g., "ocs-storagecluster-ceph-rbd"
+  # Environment Variables (for PostgreSQL container)
+  containers:
+    env:
+      - name: POSTGRES_USER
+        value: "${VAR_POSTGRES_USER}"                 # e.g., "postgres"
+      - name: POSTGRES_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: "${VAR_POSTGRES_SECRET}"            # e.g., "postgresql-creds"
+            key: password
+      - name: POSTGRES_DB
+        value: "$VAR_POSTGRES_DATABASE"               # e.g., "appdb"
+      - name: PGDATA
+        value: "/var/lib/pgsql/data/pgdata"           # PostgreSQL data directory
+  # PostgreSQL Tuning Parameters
   postgresql:
     parameters:
       shared_buffers: "128MB"
       max_connections: "100"
+  # Resource Limits
   resources:
     limits:
       cpu: 200m
@@ -26,10 +43,11 @@ spec:
     requests:
       cpu: 200m
       memory: 512Mi
+  # Bootstrap Configuration (initial DB setup)
   bootstrap:
     initdb:
-      database: $VAR_POSTGRES_DATABASE
-      encoding: UTF8
-      owner: $VAR_POSTGRES_USER
-#      secret:
-#        name: $VAR_POSTGRES_SECRET
+      database: "${VAR_POSTGRES_DATABASE}"          # Must match POSTGRES_DB
+      encoding: "UTF8"
+      owner: "${VAR_POSTGRES_USER}"                 # Must match POSTGRES_USER
+      secret:
+        name: "${VAR_POSTGRES_SECRET}"              # Secret with credentials        

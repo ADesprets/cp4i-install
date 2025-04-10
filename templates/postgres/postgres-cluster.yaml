@@ -31,5 +31,5 @@ spec:
       database: $VAR_POSTGRES_DATABASE
       encoding: UTF8
       owner: $VAR_POSTGRES_USER
-#      secret:
-#        name: $VAR_POSTGRES_SECRET
+      secret:
+        name: $VAR_POSTGRES_SECRET

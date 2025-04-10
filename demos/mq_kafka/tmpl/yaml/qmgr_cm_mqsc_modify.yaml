@@ -1,0 +1,38 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: $VAR_MQSC_MODIFY
+  namespace: $VAR_MQ_NAMESPACE
+data:
+  ${VAR_QMGR}.modify: |+
+    *
+    * setup queues
+    *
+
+    * add the queue that Kafka Connect will use
+    DEFINE QLOCAL(COMMANDS.COPY) REPLACE
+    * alter the queue that the JMS app puts to, so that it streams a copy of all messages to the Kafka Connect queue
+    ALTER QLOCAL(COMMANDS) STREAMQ('COMMANDS.COPY') STRMQOS(MUSTDUP)
+
+
+    *
+    * setup channel
+    *
+
+    * the channel that Kafka Connect will use
+    DEFINE CHANNEL(KAFKA.SVRCONN) CHLTYPE(SVRCONN) TRPTYPE(TCP) SSLCAUTH(OPTIONAL) SSLCIPH('ANY_TLS12_OR_HIGHER') REPLACE
+
+
+    *
+    * setup security
+    *
+
+    * Kafka Connect has to use the channel created for it
+    SET CHLAUTH(KAFKA.SVRCONN) TYPE(BLOCKUSER) USERLIST(*KAFKAUSER) WARN(YES) ACTION(REPLACE)
+
+    REFRESH SECURITY
+
+    * Kafka Connect should be able to connect to the qmgr, and get messages from COMMANDS.COPY
+    SET AUTHREC OBJTYPE(QMGR) GROUP('kafkausers') AUTHADD(CONNECT, INQ)
+    SET AUTHREC OBJTYPE(QUEUE) PROFILE(COMMANDS.COPY) GROUP('kafkausers') AUTHADD(ALLMQI)
+

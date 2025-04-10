@@ -478,7 +478,7 @@ function mq_kafka_demo_init() {
   check_directory_exist_create  "${sc_mq_kafka_demo_workingdir}"
   
   ## CCDT tmpl file
-  sc_ccdt_tmpl_file="${MY_MQ_SCRIPTDIR}/tmpl/json/ccdt.json";
+  sc_ccdt_tmpl_file="${MY_MQ_SIMPLE_DEMODIR}/tmpl/json/ccdt.json";
   MQCCDTURL="${sc_mq_kafka_demo_workingdir}ccdt.json"
 
   trace_out $lf_tracelevel mq_kafka_demo_init
@@ -557,7 +557,7 @@ function main() {
 
 # the following script returns the absolute path of this script independently from using it directly or calling it from another script
 sc_component_script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/"
-export VAR_MQ_KAFKA_DEMO_WORKINGDIR="${sc_component_script_dir}working/"
+#export MY_MQ_KAFKA_DEMO_WORKINGDIR="${sc_component_script_dir}working/"
 
 PROVISION_SCRIPTDIR="$( cd "$( dirname "${sc_component_script_dir}../../../../" )" && pwd )/"
 sc_provision_script_parameters_file="${PROVISION_SCRIPTDIR}script-parameters.properties"

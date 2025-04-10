@@ -30,7 +30,7 @@ import org.apache.kafka.common.errors.WakeupException;
  * until the program is stopped with a ctrl-C.
  * To run this class, you will need to set: 
  * - The certificate es-cert.p12 located in customisation\ES\client\src\main\resources\es-cert.p12
- * copy D:\CurrentProjects\CP4I\Installation\cp4i-install\tmp\es-cert.p12 D:\CurrentProjects\CP4I\Installation\cp4i-install\customisation\ES\client\src\main\resources\es-cert.p12
+ * copy .\tmp\es-cert.p12 .\demos\es_simple\client\src\main\resources\es-cert.p12
  * - The trust store password defined in ConsumerConfiguration (line 52)
  * - The credentials defined in ConsumerConfiguration (line 62)
  * - The broker host defined in launch.json
