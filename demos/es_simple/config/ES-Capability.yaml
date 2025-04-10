@@ -6,7 +6,7 @@ metadata:
   labels:
     backup.eventstreams.ibm.com/component: eventstreams
 spec:
-  version: 11.6.1
+  version: latest
   license: 
     license: L-QYVA-B365MB
     accept: true

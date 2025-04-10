@@ -1797,7 +1797,8 @@ function customise_es() {
     check_directory_exist_create "${MY_ES_WORKINGDIR}config"
     generate_files $MY_ES_SIMPLE_DEMODIR $MY_ES_WORKINGDIR false
 
-    ${MY_ES_SIMPLE_DEMODIR}scripts/es.config.sh --call es_run_all
+    # ${MY_ES_SIMPLE_DEMODIR}scripts/es.config.sh --call es_run_all
+    ${MY_ES_MM2_DEMODIR}scripts/es.config.sh --call es_run_all
   fi
 
   trace_out $lf_tracelevel customise_es
@@ -2304,6 +2305,7 @@ function provision_cluster_init() {
   export VAR_COMMON_NAME=$VAR_SAN_DNS
 
   # create PVC for registry
+  echo ">>>MY_WORKINGDIR: ${MY_WORKINGDIR}"
   create_operand_instance "PersistentVolumeClaim" "registry-storage" "${MY_RESOURCESDIR}" "${MY_WORKINGDIR}" "registry_pvc.yaml" "openshift-image-registry" "{.status.phase}" "Bound"
   oc patch configs.imageregistry.operator.openshift.io/cluster --type=merge -p '{"spec":{"storage":{"pvc":{"claim":"registry-storage"}}}}'
 
@@ -2525,7 +2527,7 @@ set +a
 # load helper functions
 . "${sc_provision_lib_file}"
 
-trap 'display_access_info' EXIT
+# trap 'display_access_info' EXIT
 
 ######################################################
 # main entry

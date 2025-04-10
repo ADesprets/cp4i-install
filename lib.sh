@@ -766,7 +766,7 @@ function check_create_oc_yaml() {
   adapt_file $lf_in_source_directory $lf_in_target_directory $lf_in_yaml_file
 
   if $MY_APPLY_FLAG; then
-    mylog info "Creating/Updating ${lf_in_type}/${lf_in_cr_name} using ${lf_target_relative_path}${lf_in_yaml_file} in namespace ${lf_in_namespace}"
+    mylog info "Creating/Updating ${lf_in_type}/${lf_in_cr_name} using ${lf_in_target_directory}/${lf_in_yaml_file} in namespace ${lf_in_namespace}"
     oc apply -f "${lf_in_target_directory}${lf_in_yaml_file}" || exit 1
     wait_for_resource $lf_in_type $lf_in_cr_name $lf_in_namespace
   fi
