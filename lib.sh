@@ -1570,9 +1570,11 @@ function create_operand_instance() {
   local lf_in_path=$7
   local lf_in_state=$8
 
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$$3\"|\"$4\"|\"$5\"|\"$6\"|\"$7\"|\"$8\"|"
+
+  echo "AD: this code doe not work"
   local lf_source_relative_path=$(echo "${lf_in_source_directory#"$PROVISION_SCRIPTDIR"}")
   local lf_target_relative_path=$(echo "${lf_in_target_directory#"$MY_WORKINGDIR"}")
-  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$lf_source_relative_path\"|\"$lf_target_relative_path\"|\"$5\"|\"$6\"|\"$7\"|\"$8\"|"
 
   if [[ $# -ne 8 ]]; then
     mylog error "You have to provide 6 arguments: type, resource, source directory, target directory, yaml file, namespace, jsonpath and state"

@@ -35,7 +35,6 @@ function create_qmgr_configmaps () {
 
   create_oc_resource "ConfigMap" "$VAR_MQSC_OBJECTS_CM" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}" "qmgr_cm_mqsc.yaml" "$VAR_MQ_NAMESPACE"
   create_oc_resource "ConfigMap" "$VAR_AUTH_CM" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}" "qmgr_cm_mqsc_auth.yaml" "$VAR_MQ_NAMESPACE"
-  create_oc_resource "ConfigMap" "$VAR_INI_CM" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}" "qmgr_cm_ini.yaml" "$VAR_MQ_NAMESPACE"
   create_oc_resource "ConfigMap" "$VAR_WEBCONFIG_CM" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}" "qmgr_cm_web.yaml" "$VAR_MQ_NAMESPACE"
 
   trace_out $lf_tracelevel create_qmgr_configmaps
