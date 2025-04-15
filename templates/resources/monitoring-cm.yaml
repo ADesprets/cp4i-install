@@ -1,7 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: $MY_MONITORING_CM_NAME
-  namespace: $MY_OPENSHIFT_MONITORING_NAMESPACE
-data:
-  config.yaml: |

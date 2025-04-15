@@ -556,7 +556,7 @@ function install_lic_svc() {
 
     create_project "$MY_LICENSE_SERVICE_NAMESPACE"  "${MY_LICENSE_SERVICE_NAMESPACE} project" "For License Service" "${MY_RESOURCESDIR}" "${MY_LICENSE_SERVICE_WORKINGDIR}"
 
-    check_add_cs_ibm_pak $MY_LICENSE_SERVICE_CASE $MY_LICENSE_SERVICE_OPERATOR amd64
+    check_add_cs_ibm_pak $MY_LICENSE_SERVICE_CASE $MY_LICENSE_SERVICE_OPERATOR $MY_LICENSE_SERVICE_CATALOGSOURCE_LABEL amd64 $MY_LICENSE_SERVICE_VERSION
     if [[ -z $MY_LICENSE_SERVICE_VERSION ]]; then
       export MY_LICENSE_SERVICE_VERSION=$VAR_APP_VERSION
       unset VAR_APP_VERSION
@@ -620,7 +620,7 @@ function install_lic_reporter_svc() {
 
     create_project "$MY_LICENSE_SERVICE_REPORTER_NAMESPACE" "${MY_LICENSE_SERVICE_REPORTER_NAMESPACE} project" "For License Service Reporter" "${MY_RESOURCESDIR}" "${MY_LICENSE_SERVICE_REPORTER_WORKINGDIR}"
 
-    check_add_cs_ibm_pak $MY_LICENSE_SERVICE_REPORTER_CASE $MY_LICENSE_SERVICE_REPORTER_OPERATOR amd64
+    check_add_cs_ibm_pak $MY_LICENSE_SERVICE_REPORTER_CASE $MY_LICENSE_SERVICE_REPORTER_OPERATOR $MY_LICENSE_SERVICE_REPORTER_CATALOGSOURCE_LABEL amd64
     if [[ -z $MY_LICENSE_SERVICE_REPORTER_VERSION ]]; then
       export MY_LICENSE_SERVICE_REPORTER_VERSION=$VAR_APP_VERSION
       unset VAR_APP_VERSION
@@ -701,7 +701,7 @@ function install_fs() {
     create_project "$MY_COMMONSERVICES_NAMESPACE" "$MY_COMMONSERVICES_NAMESPACE project" "For the common services" "${MY_RESOURCESDIR}" "${MY_COMMONSERVICES_WORKINGDIR}"
 
     # ibm-cp-common-services
-    check_add_cs_ibm_pak $MY_COMMONSERVICES_CASE $MY_COMMONSERVICES_OPERATOR amd64 $MY_COMMONSERVICES_VERSION
+    check_add_cs_ibm_pak $MY_COMMONSERVICES_CASE $MY_COMMONSERVICES_OPERATOR $MY_COMMONSERVICES_CATALOGSOURCE_LABEL amd64 $MY_COMMONSERVICES_VERSION
     if [[ -z $MY_COMMONSERVICES_VERSION ]]; then
       export MY_COMMONSERVICES_VERSION=$VAR_APP_VERSION
       unset VAR_APP_VERSION
@@ -799,7 +799,7 @@ function install_wasliberty() {
     create_project "$VAR_WASLIBERTY_NAMESPACE" "$VAR_WASLIBERTY_NAMESPACE project" "For WebSphere Liberty Application Server" "${MY_RESOURCESDIR}" "${MY_WASLIBERTY_WORKINGDIR}"
 
     # add catalog sources using ibm_pak plugin
-    check_add_cs_ibm_pak $MY_WASLIBERTY_CASE $MY_WASLIBERTY_OPERATOR amd64
+    check_add_cs_ibm_pak $MY_WASLIBERTY_CASE $MY_WASLIBERTY_OPERATOR $MY_WASLIBERTY_CATALOGSOURCE_LABEL amd64
     if [[ -z $MY_WASLIBERTY_VERSION ]]; then
       export MY_WASLIBERTY_VERSION=$VAR_APP_VERSION
       unset VAR_APP_VERSION
@@ -842,7 +842,7 @@ function install_navigator() {
     check_directory_exist_create "${MY_NAVIGATOR_WORKINGDIR}"
 
     # add catalog sources using ibm_pak plugin
-    check_add_cs_ibm_pak $MY_NAVIGATOR_CASE $MY_NAVIGATOR_OPERATOR amd64
+    check_add_cs_ibm_pak $MY_NAVIGATOR_CASE $MY_NAVIGATOR_OPERATOR $MY_NAVIGATOR_CATALOGSOURCE_LABEL amd64
     if [[ -z $MY_NAVIGATOR_VERSION ]]; then
       export MY_NAVIGATOR_VERSION=$VAR_APP_VERSION
       unset VAR_APP_VERSION
@@ -890,7 +890,7 @@ function install_assetrepo() {
     check_directory_exist_create "${MY_ASSETREPO_WORKINGDIR}"
 
     # add catalog sources using ibm_pak plugin
-    check_add_cs_ibm_pak $MY_ASSETREPO_CASE $MY_ASSETREPO_OPERATOR amd64
+    check_add_cs_ibm_pak $MY_ASSETREPO_CASE $MY_ASSETREPO_OPERATOR $MY_ASSETREPO_CATALOGSOURCE_LABEL amd64
     if [[ -z $MY_ASSETREPO_VERSION ]]; then
       export MY_ASSETREPO_VERSION=$VAR_APP_VERSION
       unset VAR_APP_VERSION
@@ -967,7 +967,7 @@ function install_ace() {
     create_project "${VAR_ACE_NAMESPACE}" "${VAR_ACE_NAMESPACE} project" "For App Connect" "${MY_RESOURCESDIR}" "${MY_ACE_WORKINGDIR}"
 
     # add catalog sources using ibm_pak plugin
-    check_add_cs_ibm_pak $MY_ACE_CASE $MY_ACE_OPERATOR amd64
+    check_add_cs_ibm_pak $MY_ACE_CASE $MY_ACE_OPERATOR $MY_ACE_CATALOGSOURCE_LABEL amd64
     if [[ -z $MY_ACE_VERSION ]]; then
       export MY_ACE_VERSION=$VAR_APP_VERSION
       unset VAR_APP_VERSION
@@ -983,7 +983,7 @@ function install_ace() {
     
     create_operand_instance "SwitchServer" "${VAR_ACE_SWITCHSERVER_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_ACE_WORKINGDIR}" "ACE-SwitchServer-Capability.yaml" "$VAR_ACE_NAMESPACE" "{.status.conditions[0].type}" "Ready"
 
-    create_operand_instance "Dashboard" "${VAR_ACE_NAMESPACE}-ace-db" "${MY_OPERANDSDIR}" "${MY_ACE_WORKINGDIR}" "ACE-Dashboard-Capability.yaml" "$VAR_ACE_NAMESPACE" "{.status.conditions[0].type}" "Ready"
+    create_operand_instance "Dashboard" "${VAR_ACE_DASHBOARD_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_ACE_WORKINGDIR}" "ACE-Dashboard-Capability.yaml" "$VAR_ACE_NAMESPACE" "{.status.conditions[0].type}" "Ready"
 
     create_operand_instance "DesignerAuthoring" "${VAR_ACE_DESIGNER_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_ACE_WORKINGDIR}" "ACE-Designer-Capability.yaml" "$VAR_ACE_NAMESPACE" "{.status.phase}" "Ready"
   fi
@@ -1015,7 +1015,7 @@ function install_apic() {
     create_project "${VAR_APIC_NAMESPACE}" "${VAR_APIC_NAMESPACE} project" "For API ConnectC" "${MY_RESOURCESDIR}" "${MY_APIC_WORKINGDIR}"
 
     # add catalog sources using ibm_pak plugin
-    check_add_cs_ibm_pak $MY_APIC_CASE $MY_APIC_OPERATOR amd64
+    check_add_cs_ibm_pak $MY_APIC_CASE $MY_APIC_OPERATOR $MY_APIC_CATALOGSOURCE_LABEL amd64
     if [[ -z $MY_APIC_VERSION ]]; then
       export MY_APIC_VERSION=$VAR_APP_VERSION
       unset VAR_APP_VERSION
@@ -1191,7 +1191,7 @@ function install_es() {
     # SB]20250221 : problem with IBM Eventstreams, the command oc ibm-pak list does not return the "latest" version of the pak
     # this command used in lib.sh to return the latest version of the pak: lf_app_version=$(oc ibm-pak list --case-name $lf_in_case_name -o json | jq --arg v "$lf_in_case_version" '.versions[$v].appVersion')
     # when used with "latest" returns null, so we need to set the version of the pak in the variable MY_ES_VERSION
-    check_add_cs_ibm_pak $MY_ES_CASE $MY_ES_OPERATOR amd64
+    check_add_cs_ibm_pak $MY_ES_CASE $MY_ES_OPERATOR $MY_ES_CATALOGSOURCE_LABEL amd64
     if [[ -z $MY_ES_VERSION ]]; then
       export MY_ES_VERSION=$VAR_APP_VERSION
       unset VAR_APP_VERSION
@@ -1235,7 +1235,7 @@ function install_eem() {
     ## event endpoint management
     ## to get the name of the pak to use : oc ibm-pak list
     ## https://ibm.github.io/event-automation/eem/installing/installing/, chapter : Install the operator by using the CLI (oc ibm-pak)
-    check_add_cs_ibm_pak $MY_EEM_OPERATOR $MY_EEM_OPERATOR amd64
+    check_add_cs_ibm_pak $MY_EEM_OPERATOR $MY_EEM_OPERATOR $MY_EEM_CATALOGSOURCE_LABEL amd64
     if [[ -z $MY_EEM_VERSION ]]; then
       export MY_EEM_VERSION=$VAR_APP_VERSION
       unset VAR_APP_VERSION
@@ -1280,10 +1280,6 @@ function install_eem() {
       local lf_varb64=$(cat "${MY_EEM_WORKINGDIR}config/local-user-roles.yaml" | base64 -w0)
       oc -n $VAR_EEM_NAMESPACE patch secret "${VAR_EEM_INSTANCE_NAME}-ibm-eem-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$lf_varb64\"}]"
     fi
-
-    # Thgis URL to be used by the EventGateway
-    export VAR_EEM_MANAGER_GATEWAY_ROUTE=$(oc -n $VAR_EEM_NAMESPACE get eem ${VAR_EEM_INSTANCE_NAME} -o jsonpath='{.status.endpoints}' | jq -r '.[] | select (.name=="gateway").uri')
-
   fi
   
   trace_out $lf_tracelevel install_eem
@@ -1311,9 +1307,10 @@ function install_egw() {
 
     create_project "${VAR_EGW_NAMESPACE}" "${VAR_EGW_NAMESPACE} project" "For Event Endpoint Gateway" "${MY_RESOURCESDIR}" "${MY_EGW_WORKINGDIR}"
 
-    #export VAR_EEM_MANAGER_GATEWAY_ROUTE=$(oc -n $VAR_EEM_NAMESPACE get eem ${VAR_EEM_INSTANCE_NAME} -o jsonpath='{.status.endpoints[1].uri}')
-    create_operand_instance "EventGateway" "${VAR_EGW_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_EGW_WORKINGDIR}" "EG-Capability.yaml" "${VAR_EGW_NAMESPACE}" "{.status.phase}" "Running"
+    # This URL to be used by the EventGateway
+    export VAR_EEM_MANAGER_GATEWAY_ROUTE=$(oc -n $VAR_EEM_NAMESPACE get eem ${VAR_EEM_INSTANCE_NAME} -o jsonpath='{.status.endpoints}' | jq -r '.[] | select (.name=="gateway").uri')
 
+    create_operand_instance "EventGateway" "${VAR_EGW_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_EGW_WORKINGDIR}" "EG-Capability.yaml" "${VAR_EGW_NAMESPACE}" "{.status.phase}" "Running"
   fi
 
   trace_out $lf_tracelevel install_egw
@@ -1344,7 +1341,7 @@ function install_ep() {
     create_project "${VAR_EP_NAMESPACE}" "${VAR_EP_NAMESPACE} project" "For Event Processing" "${MY_RESOURCESDIR}" "${MY_EP_WORKINGDIR}"
 
     # add catalog sources using ibm_pak plugin
-    check_add_cs_ibm_pak $MY_EP_CASE $MY_EP_OPERATOR amd64
+    check_add_cs_ibm_pak $MY_EP_CASE $MY_EP_OPERATOR $MY_EP_CATALOGSOURCE_LABEL amd64
     if [[ -z $MY_EP_VERSION ]]; then
       export MY_EP_VERSION=$VAR_APP_VERSION
       unset VAR_APP_VERSION
@@ -1460,7 +1457,7 @@ function install_flink() {
     ## SB]20231020 For Flink and Event processing first you have to apply the catalog source to your cluster :
     ## https://ibm.github.io/event-automation/ep/installing/installing/, Chapter Applying catalog sources to your cluster
     # event flink
-    check_add_cs_ibm_pak $MY_FLINK_CASE $MY_FLINK_OPERATOR amd64
+    check_add_cs_ibm_pak $MY_FLINK_CASE $MY_FLINK_OPERATOR $MY_FLINK_CATALOGSOURCE_LABEL amd64
     if [[ -z $MY_FLINK_VERSION ]]; then
       export MY_FLINK_VERSION=$VAR_APP_VERSION
       unset VAR_APP_VERSION
@@ -1534,7 +1531,7 @@ function install_hsts() {
     export MY_ASPERA_LICENSE_FILE="${MY_PRIVATEDIR}aspera-license"
 
     # add catalog sources using ibm_pak plugin
-    check_add_cs_ibm_pak $MY_HSTS_CASE $MY_HSTS_OPERATOR amd64
+    check_add_cs_ibm_pak $MY_HSTS_CASE $MY_HSTS_OPERATOR $MY_HSTS_CATALOGSOURCE_LABEL amd64
     if [[ -z $MY_HSTS_VERSION ]]; then
       export MY_HSTS_VERSION=$VAR_APP_VERSION
       unset VAR_APP_VERSION
@@ -1578,7 +1575,7 @@ function install_mq() {
     create_project "$VAR_MQ_NAMESPACE" "$VAR_MQ_NAMESPACE project" "For MQ" "${MY_RESOURCESDIR}" "${MY_MQ_WORKINGDIR}"
 
     # add catalog sources using ibm_pak plugin
-    check_add_cs_ibm_pak $MY_MQ_CASE $MY_MQ_OPERATOR amd64
+    check_add_cs_ibm_pak $MY_MQ_CASE $MY_MQ_OPERATOR $MY_MQ_CATALOGSOURCE_LABEL amd64
     if [[ -z $MY_MQ_VERSION ]]; then
       export MY_MQ_VERSION=$VAR_APP_VERSION
       unset VAR_APP_VERSION
@@ -1707,7 +1704,7 @@ function customise_wasliberty() {
   decho $lf_tracelevel "Parameters: |no parameters|"
 
   if $MY_WASLIBERTY_CUSTOM; then
-    ${MY_WAS_LIBERTY_DEMODIR}scripts/was.config.sh --call was_run_all
+    ${MY_WASLIBERTY_DEMODIR}scripts/was.config.sh --call was_run_all
   fi
 
   trace_out $lf_tracelevel customise_wasliberty
@@ -2361,14 +2358,14 @@ function install_part() {
   install_es
   install_eem
   install_egw
-
   # https://ibm.github.io/event-automation/ep/installing/overview/, there is an installation order, flink then event processing
   # so we created a function to call them in the right order
   install_flink_ep
-  install_hsts
   install_mq
-  install_instana
+  install_hsts
   install_apic_graphql
+
+  install_instana
   install_cluster_monitoring
 
   #test_keycloak

@@ -133,7 +133,7 @@ function was_run_all () {
   prepare_internal_registry
   # Build the image
   if $MY_WASLIBERTY_CUSTOM_BUILD; then
-    pushd ${MY_WAS_LIBERTY_DEMODIR} > /dev/null 2>&1
+    pushd ${MY_WASLIBERTY_DEMODIR} > /dev/null 2>&1
     mylog info "==== Compile code and build docker image." 1>&2
     compile_code
     was_build_image

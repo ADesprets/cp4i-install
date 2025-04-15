@@ -1,8 +1,0 @@
-apiVersion: cp4i.ibm.com/v1
-kind: Cp4iServicesBinding
-metadata:
-  name: manual-binding-for-iam
-  namespace: $MY_OC_PROJECT
-spec:
-  integrationKeycloak:
-    enabled: true

@@ -1,36 +1,272 @@
-  ################################################
-# @param 1: namespace 
-function display_access_info_es() {
-  local lf_tracelevel=5
-  trace_in $lf_tracelevel display_access_info_es
+################################################
+# Check pod status
+function check_pod_status() {
+  local lf_tracelevel=3
+	trace_in $lf_tracelevel check_pod_status
 
-  local lf_in_namespace=$1
+  local lf_in_label_selector="$1"
+  local lf_in_namespace="$2"
 
-  decho $lf_tracelevel "Parameters:\"$1\"|"
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|"
 
-  if [[ $# -ne 1 ]]; then
-    mylog error "You have to provide one argument : namespace"
-    trace_out $lf_tracelevel display_access_info_es
-    exit  1
+  local lf_pods lf_statuses lf_all_true lf_status
+ 
+  if [[ $# -ne 2 ]]; then
+    mylog error "You have to provide 2 arguments: label selector and namespace"
+    trace_out $lf_tracelevel check_pod_status
+    exit 1
+  fi
+
+  # Get pods with the specified label selector
+  lf_pods=$(oc get pods -n "$lf_in_namespace" --selector="$lf_in_label_selector" -o json)
+  
+  # Extract the status conditions we care about
+  lf_statuses=$(echo "$lf_pods" | jq -r '.items[].status.conditions[] | select(.type == "Ready").status')
+  
+  # Check if all lf_statuses are "True"
+  lf_all_true=true
+  for lf_status in $lf_statuses; do
+    if [ "$lf_status" != "True" ]; then
+      lf_all_true=false
+      break
+    fi
+  done
+
+	trace_out $lf_tracelevel check_pod_status
+
+  if $lf_all_true ; then 
+    return 0
+  else
+    return 1
+  fi
+
+}  
+
+################################################
+# Wait for the catalog source to be ready
+function wait_for_catalogsource_2be_ready() {
+  local lf_tracelevel=3
+	trace_in $lf_tracelevel wait_for_catalogsource_2be_ready
+
+  local lf_in_label_selector="$1"
+  local lf_in_max_retries="$2"
+  local lf_in_delay_seconds="$3"
+  local lf_in_namespace="$4"
+
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|"
+  local lf_count
+
+  if [[ $# -ne 4 ]]; then
+    mylog error "You have to provide 4 arguments: label selector, max retries, delay in seconds and namespace"
+    trace_out $lf_tracelevel wait_for_catalogsource_2be_ready
+    exit 1
+  fi
+  
+  # Main retry loop
+  lf_count=0
+  while [ $lf_count -lt $lf_in_max_retries ]; do
+    # Check if all catalog source pods are ready
+    check_pod_status "${lf_in_label_selector}" "${lf_in_namespace}"
+    if [[ $? -eq 0 ]] ; then
+      mylog info "All catalog source pods are ready"
+      trace_out $lf_tracelevel wait_for_catalogsource_2be_ready
+      return 0
+    fi
+    echo -ne "\rWaiting for catalog source pods to be ready... (attempt $((lf_count+1))/$lf_in_max_retries)"
+    sleep $lf_in_delay_seconds
+    lf_count=$((lf_count+1))
+  done
+  
+  mylog error "Timeout reached while waiting for catalog source pods to be ready"
+	trace_out $lf_tracelevel wait_for_catalogsource_2be_ready
+
+  return 1
+}
+
+################################################
+# Display information to access CP4I
+function display_access_info() {
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel display_access_info_ace
+
+  mylog info "==== Displaying Access Info to CP4I." 0
+
+  # Initialisation of the bookmark
+  echo ${BOOKMARK_PROLOGUE} > ${MY_WORKINGDIR}/bookmarks.html
+
+  # Mailhog
+  local lf_mailhog_hostname
+  lf_mailhog_hostname=$(oc -n ${VAR_MAIL_NAMESPACE} get route ${VAR_MAIL_ROUTE} -o jsonpath='{.spec.host}')
+  mylog info "MailHog accessible at http://${lf_mailhog_hostname}" 0
+  echo "<DT><A HREF=http://${lf_mailhog_hostname}>MailHog</A>" >> ${MY_WORKINGDIR}/bookmarks.html
+
+  # Keycloak
+  lf_keycloak_admin_ui=$(oc -n $MY_COMMONSERVICES_NAMESPACE get route keycloak -o jsonpath='{.spec.host}')
+  mylog info "Keycloak admin UI URL: https://${lf_keycloak_admin_ui}" 0
+  echo "<DT><A HREF=https://${lf_keycloak_admin_ui}>Keycloak Admin UI</A>" >> ${MY_WORKINGDIR}/bookmarks.html
+  lf_keycloak_admin_pwd=$(oc -n $MY_COMMONSERVICES_NAMESPACE get secret cs-keycloak-initial-admin -o jsonpath={.data.password} | base64 -d)
+  mylog info "Keycloak admin password: $lf_keycloak_admin_pwd" 0
+  
+  # CP4I Platform Navigator
+  local lf_temp_integration_admin_pwd cp4i_url
+  if $MY_NAVIGATOR_INSTANCE; then
+    lf_temp_integration_admin_pwd=$(oc -n $MY_COMMONSERVICES_NAMESPACE get secret integration-admin-initial-temporary-credentials -o jsonpath={.data.password} | base64 -d)
+    mylog info "Integration admin, user: integration-admin, password: ${lf_temp_integration_admin_pwd}" 0
+    cp4i_url=$(oc -n $VAR_NAVIGATOR_NAMESPACE get platformnavigator cp4i-navigator -o jsonpath='{range .status.endpoints[?(@.name=="navigator")]}{.uri}{end}')
+    mylog info "CP4I Platform UI URL: $cp4i_url" 0
+    echo "<DT><A HREF=${cp4i_url}>CP4I Platform UI</A>" >> ${MY_WORKINGDIR}/bookmarks.html 
+  fi
+
+  # App Connect Entreprise
+  local lf_ace_ui_db_url lf_ace_ui_dg_url
+  if $MY_ACE; then
+    lf_ace_ui_db_url=$(oc -n $VAR_ACE_NAMESPACE get Dashboard -o=jsonpath='{.items[?(@.kind=="Dashboard")].status.adminUiUrl}')
+    mylog info "ACE Dahsboard UI endpoint: $lf_ace_ui_db_url" 0
+    echo "<DT><A HREF=${lf_ace_ui_db_url}>ACE Dashboard UI</A>" >> ${MY_WORKINGDIR}/bookmarks.html
+    lf_ace_ui_dg_url=$(oc -n $VAR_ACE_NAMESPACE get DesignerAuthoring -o=jsonpath='{.items[?(@.kind=="DesignerAuthoring")].status.endpoints[?(@.name=="ui")].uri}')
+    mylog info "ACE Designer UI endpoint: $lf_ace_ui_dg_url" 0
+    echo "<DT><A HREF=${lf_ace_ui_dg_url}>ACE Designer UI</A>" >> ${MY_WORKINGDIR}/bookmarks.html
+  fi
+
+  # API Connect
+  local lf_gtw_url lf_apic_gtw_admin_pwd_secret_name lf_cm_admin_pwd lf_cm_url lf_cm_admin_pwd_secret_name lf_cm_admin_pwd lf_mgr_url lf_ptl_url lf_jwks_url
+  if $MY_APIC; then
+    lf_gtw_url=$(oc -n $VAR_APIC_NAMESPACE get GatewayCluster -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].status.endpoints[?(@.name=="gateway")].uri}')
+    mylog info "APIC Gateway endpoint: ${lf_gtw_url}" 0
+    lf_gtw_webconsole_url=$(oc -n $VAR_APIC_NAMESPACE get Route ${VAR_APIC_GW_ROUTE_NAME} -o=jsonpath='{.spec.host}')
+    mylog info "APIC Gateway web console endpoint: https://${lf_gtw_webconsole_url}" 0
+    echo "<DT><A HREF=https://${lf_gtw_webconsole_url}>APIC Gateway Web Console</A>" >> ${MY_WORKINGDIR}/bookmarks.html
+    lf_apic_gtw_admin_pwd_secret_name=$(oc -n $VAR_APIC_NAMESPACE get GatewayCluster -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].spec.adminUser.secretName}')
+    lf_cm_admin_pwd=$(oc -n $VAR_APIC_NAMESPACE get secret ${lf_apic_gtw_admin_pwd_secret_name} -o jsonpath={.data.password} | base64 -d)
+    mylog info "APIC Gateway admin password: ${lf_cm_admin_pwd}" 0
+    lf_cm_url=$(oc -n $VAR_APIC_NAMESPACE get APIConnectCluster -o=jsonpath='{.items[?(@.kind=="APIConnectCluster")].status.endpoints[?(@.name=="admin")].uri}')
+    mylog info "APIC Cloud Manager endpoint: ${lf_cm_url}" 0
+    echo "<DT><A HREF=${lf_cm_url}>APIC Cloud Manager UI</A>" >> ${MY_WORKINGDIR}/bookmarks.html
+    lf_cm_admin_pwd_secret_name=$(oc -n $VAR_APIC_NAMESPACE get ManagementCluster -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].spec.adminUser.secretName}')
+    lf_cm_admin_pwd=$(oc -n $VAR_APIC_NAMESPACE get secret ${lf_cm_admin_pwd_secret_name} -o jsonpath='{.data.password}' | base64 -d)
+    mylog info "APIC Cloud Manager admin password: ${lf_cm_admin_pwd}" 0
+    lf_mgr_url=$(oc -n $VAR_APIC_NAMESPACE get APIConnectCluster -o=jsonpath='{.items[?(@.kind=="APIConnectCluster")].status.endpoints[?(@.name=="ui")].uri}')
+    echo "<DT><A HREF=${lf_mgr_url}>APIC API Manager UI</A>" >> ${MY_WORKINGDIR}/bookmarks.html
+    mylog info "APIC API Manager endpoint: ${lf_mgr_url}" 0
+    lf_ptl_url=$(oc -n $VAR_APIC_NAMESPACE get PortalCluster -o=jsonpath='{.items[?(@.kind=="PortalCluster")].status.endpoints[?(@.name=="portalWeb")].uri}')
+    mylog info "APIC Web Portal root endpoint: ${lf_ptl_url}" 0
+    lf_jwks_url=$(oc -n $VAR_APIC_NAMESPACE get APIConnectCluster -o=jsonpath='{.items[?(@.kind=="APIConnectCluster")].status.endpoints[?(@.name=="jwksUrl")].uri}')
+    mylog info "APIC jwksUrl endpoint for EEM: ${lf_jwks_url}" 0
   fi
 
   # Event Streams
   local lf_es_ui_url lf_es_admin_url lf_es_apicurioregistry_url lf_es_restproducer_url lf_es_bootstrap_urls lf_es_admin_pwd
-  lf_es_ui_url=$(oc -n $lf_in_namespace get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="ui")].uri}')
-  mylog info "Event Streams Management UI endpoint: ${lf_es_ui_url}" 0
-  lf_es_admin_url=$(oc -n $lf_in_namespace get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="admin")].uri}')
-  mylog info "Event Streams Management admin endpoint: ${lf_es_admin_url}" 0
-  lf_es_apicurioregistry_url=$(oc -n $lf_in_namespace get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="apicurioregistry")].uri}')
-  mylog info "Event Streams Management apicurio registry endpoint: ${lf_es_apicurioregistry_url}" 0
-  lf_es_restproducer_url=$(oc -n $lf_in_namespace get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="restproducer")].uri}')
-  mylog info "Event Streams Management REST Producer endpoint: ${lf_es_restproducer_url}" 0
-  lf_es_bootstrap_urls=$(oc -n $lf_in_namespace get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.kafkaListeners[*].bootstrapServers}')
-  mylog info "Event Streams Bootstraps servers endpoints: ${lf_es_bootstrap_urls}" 0
-  lf_es_admin_pwd=$(oc -n $lf_in_namespace get secret es-admin -o jsonpath={.data.password} | base64 -d)
-  mylog info "Event Streams UI Credentials: es-admin/${lf_es_admin_pwd}" 0
+  if $MY_ES; then
+    lf_es_ui_url=$(oc -n $VAR_ES_NAMESPACE get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="ui")].uri}')
+    mylog info "Event Streams Management UI endpoint: ${lf_es_ui_url}" 0
+    echo  "<DT><A HREF=${lf_es_ui_url}>Event Streams Management UI</A>" >> ${MY_WORKINGDIR}/bookmarks.html
+    lf_es_admin_url=$(oc -n $VAR_ES_NAMESPACE get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="admin")].uri}')
+    mylog info "Event Streams Management admin endpoint: ${lf_es_admin_url}" 0
+    lf_es_apicurioregistry_url=$(oc -n $VAR_ES_NAMESPACE get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="apicurioregistry")].uri}')
+    mylog info "Event Streams Management apicurio registry endpoint: ${lf_es_apicurioregistry_url}" 0
+    lf_es_restproducer_url=$(oc -n $VAR_ES_NAMESPACE get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="restproducer")].uri}')
+    mylog info "Event Streams Management REST Producer endpoint: ${lf_es_restproducer_url}" 0
+    lf_es_bootstrap_urls=$(oc -n $VAR_ES_NAMESPACE get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.kafkaListeners[*].bootstrapServers}')
+    mylog info "Event Streams Bootstraps servers endpoints: ${lf_es_bootstrap_urls}" 0
+    lf_es_admin_pwd=$(oc -n $VAR_ES_NAMESPACE get secret es-admin -o jsonpath={.data.password} | base64 -d)
+    mylog info "Event Streams UI Credentials: es-admin/${lf_es_admin_pwd}" 0
+  fi
+
+  # Event Endpoint Management
+  local lf_eem_ui_url lf_eem_lf_gtw_url
+  if $MY_EEM; then
+    lf_eem_ui_url=$(oc -n $VAR_EEM_NAMESPACE get EventEndpointManagement -o=jsonpath='{.items[?(@.kind=="EventEndpointManagement")].status.endpoints[?(@.name=="ui")].uri}')
+    mylog info "Event Endpoint Management UI endpoint: ${lf_eem_ui_url}" 0
+    echo  "<DT><A HREF=${lf_eem_ui_url}>Event Endpoint Management UI</A>" >> ${MY_WORKINGDIR}/bookmarks.html
+    lf_eem_lf_gtw_url=$(oc -n $VAR_EEM_NAMESPACE get EventEndpointManagement -o=jsonpath='{.items[?(@.kind=="EventEndpointManagement")].status.endpoints[?(@.name=="gateway")].uri}')
+    mylog info "Event Endpoint Management Gateway endpoint: ${lf_eem_lf_gtw_url}" 0
+    mylog info "The credentials are defined in the file ./customisation/EP/config/user-credentials.yaml" 0
+  fi
+
+  # Event Processing
+  local lf_ep_ui_url
+  if $MY_EP; then
+    lf_ep_ui_url=$(oc -n $VAR_EP_NAMESPACE get EventProcessing -o=jsonpath='{.items[?(@.kind=="EventProcessing")].status.endpoints[?(@.name=="ui")].uri}')
+    mylog info "Event Processing UI endpoint: ${lf_ep_ui_url}" 0
+    echo "<DT><A HREF=${lf_ep_ui_url}>Event Processing UI</A>" >> ${MY_WORKINGDIR}/bookmarks.html
+    mylog info "The credentials are defined in the file ./customisation/EP/config/user-credentials.yaml" 0
+  fi
   
-  trace_out $lf_tracelevel display_access_info_es
+  # LDAP
+  local lf_ldap_hostname lf_ldap_port
+  if $MY_LDAP; then
+    read_config_file "${MY_YAMLDIR}ldap/ldap_dit.properties"
+    lf_ldap_hostname=$(oc -n ${VAR_LDAP_NAMESPACE} get route ${VAR_LDAP_ROUTE} -o jsonpath='{.spec.host}')
+    lf_ldap_port=$(oc -n ${VAR_LDAP_NAMESPACE} get route ${VAR_LDAP_ROUTE} -o jsonpath='{.spec.port.targetPort}')
+    mylog info "LDAP hostname:port: ${lf_ldap_hostname}:${lf_ldap_port}" 0
+    echo  "<DT><A HREF=ldap://${lf_ldap_hostname}:${lf_ldap_port}>LDAP</A>" >> ${MY_WORKINGDIR}/bookmarks.html
+    mylog info "LDAP admin dn/password: ${MY_LDAP_ADMIN_DN}/${MY_LDAP_ADMIN_PASSWORD}" 0
+  fi
+
+  # Assets Repository
+  local lf_ar_ui_url
+  if $MY_ASSETREPO; then
+    lf_ar_ui_url=$(oc -n $VAR_ASSETREPO_NAMESPACE get AssetRepository -o=jsonpath='{.items[?(@.kind=="AssetRepository")].status.endpoints[?(@.name=="ui")].uri}')
+    mylog info "Asset Repository UI endpoint: ${lf_ar_ui_url}" 0
+    echo  "<DT><A HREF=${lf_ar_ui_url}>Asset Repository UI</A>" >> ${MY_WORKINGDIR}/bookmarks.html
+  fi
+
+  # DataPower
+  if $MY_DPGW; then
+    mylog info "Datapower Gateway UI endpoint/admin password are the same as : APIC Gateway endpoint/APIC Gateway admin password" 0
+  fi
+
+  # MQ
+  local lf_mq_admin_url
+  if $MY_MQ; then
+    if $MY_MESSAGINGSERVER; then
+      lf_mq_qm_url=$(oc -n $VAR_MQ_NAMESPACE get MessagingServer ${VAR_MSGSRV_INSTANCE_NAME} -o jsonpath='{.status.adminUiUrl}')
+    fi
+
+    lf_mq_admin_url=$(oc -n $VAR_MQ_NAMESPACE get QueueManager $VAR_MQ_INSTANCE_NAME -o jsonpath='{.status.adminUiUrl}')
+    mylog info "MQ Management Console : ${lf_mq_admin_url}" 0
+    echo  "<DT><A HREF=${lf_mq_admin_url}>MQ Management Console</A>" >> ${MY_WORKINGDIR}/bookmarks.html
+
+    local lf_mq_authentication_method=$(oc -n $VAR_MQ_NAMESPACE get qmgr $VAR_MQ_INSTANCE_NAME -o jsonpath='{.spec.web.console.authentication.provider}')
+    if [[ $lf_mq_authentication_method == "manual" ]]; then
+      #TOTO# : we suppose here that the user is mqadmin !!!!
+      lf_mq_admin_password=$(oc -n $VAR_MQ_NAMESPACE get cm $VAR_WEBCONFIG_CM -o jsonpath='{.data.mqwebuser\.xml}' | yq -p=xml -o=json | jq -r '.server.basicRegistry.user[] | select(.["+@name"]=="mqadmin") | .["+@password"]')
+      #echo "oc -n $VAR_MQ_NAMESPACE get cm $VAR_WEBCONFIG_CM -o jsonpath='{.data.mqwebuser\.xml}' | yq -p=xml -o=json" #| jq -r '.server.basicRegistry.user[] | select(.["+@name"]=="mqadmin") | .["+@password"]'
+      mylog info "MQ Management Console authentication method: $lf_mq_authentication_method|user=mqadmin|password=$lf_mq_admin_password" 0
+      mylog info "MQ admin/password: mqadmin/${lf_mq_admin_password}" 0
+    else
+      mylog info "MQ Management Console authentication method: $lf_mq_authentication_method" 0
+    fi
+  fi
+
+  # WebSphere Application Server
+  local lf_was_liberty_app_demo_url
+  if $MY_WASLIBERTY_CUSTOM; then
+    lf_was_liberty_app_demo_url=$(oc -n $VAR_WASLIBERTY_NAMESPACE get route demo -o jsonpath='{.status.ingress[0].host}')
+    mylog info "WAS Liberty $MY_WASLIBERTY_APP_NAME application URL : https://${lf_was_liberty_app_demo_url}/$MY_WASLIBERTY_APP_NAME" 0
+    echo "<DT><A HREF=https://${lf_was_liberty_app_demo_url}/$MY_WASLIBERTY_APP_NAME>WAS Liberty $MY_WASLIBERTY_APP_NAME application</A>" >> ${MY_WORKINGDIR}/bookmarks.html
+  fi
+
+  # ILS - IBM Licensing Service and ILR - IBM Licensing Reporter
+  local lf_licensing_service_url lf_licensing_secret_token lf_licensing_service_reporter_url lf_licensing_reporter_password
+  if $MY_LIC_SRV; then
+    lf_licensing_service_url=$(oc -n ${MY_LICENSE_SERVICE_NAMESPACE} get Route -o=jsonpath='{.items[?(@.metadata.name=="ibm-licensing-service-instance")].spec.host}')
+    mylog info "Licensing service endpoint: https://${lf_licensing_service_url}" 0
+    echo "<DT><A HREF=https://${lf_licensing_service_url}>Licensing Service</A>" >> ${MY_WORKINGDIR}/bookmarks.html
+    lf_licensing_secret_token=$(oc -n ${MY_LICENSE_SERVICE_NAMESPACE} get secret ibm-licensing-token -o jsonpath='{.data.token}' | base64 -d)
+    mylog info "Licensing service token: ${lf_licensing_secret_token}" 0
+    lf_licensing_service_reporter_url=$(oc -n ${MY_LICENSE_SERVICE_REPORTER_NAMESPACE} get Route ibm-lsr-console -o=jsonpath='{.status.ingress[0].host}')
+    mylog info "Licensing service reporter console endpoint: https://${lf_licensing_service_reporter_url}/license-service-reporter/" 0
+    echo "<DT><A HREF=https://${lf_licensing_service_reporter_url}/license-service-reporter/>Licensing Service Reporter</A>" >> ${MY_WORKINGDIR}/bookmarks.html
+    lf_licensing_reporter_password=$(oc -n ${MY_LICENSE_SERVICE_REPORTER_NAMESPACE} get secret ibm-license-service-reporter-credentials -o jsonpath='{.data.password}' | base64 -d)
+    mylog info "Licensing service reporter credential: license-administrator/${lf_licensing_reporter_password}" 0
+  fi
+
+  echo ${BOOKMARK_EPILOGUE} >> ${MY_WORKINGDIR}/bookmarks.html
+
+  trace_out $lf_tracelevel display_access_info
 }
+
 #############################################################
 # Function to process array of (object id, yaml file)
 # @param 1: type
@@ -49,9 +285,9 @@ function create_oc_objects() {
   local lf_in_namespace=$4
   local -n lf_in_arr_ref=$5
 
-  local lf_source_relative_path=$(echo "${lf_in_source_directory#"$PROVISION_SCRIPTDIR"}")
-  local lf_target_relative_path=$(echo "${lf_in_target_directory#"$MY_WORKINGDIR"}")
-  decho $lf_tracelevel "Parameters:\"$1\"|\"$lf_source_relative_path\"|\"$lf_target_relative_path\"|\"$4\"|\"$5\"|"
+  #local lf_source_relative_path=$(echo "${lf_in_source_directory#"$PROVISION_SCRIPTDIR"}")
+  #local lf_target_relative_path=$(echo "${lf_in_target_directory#"$MY_WORKINGDIR"}")
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|\"$5\"|"
 
   local lf_length=${#lf_in_arr_ref[@]}
   local lf_obj_id lf_in_file
@@ -332,10 +568,8 @@ function save_certificate() {
   local lf_in_target_directory=$3
   local lf_in_ns=$4
 
-  check_directory_exist_create $lf_in_target_directory
-
-  local lf_target_relative_path=$(echo "${lf_in_target_directory#"$MY_WORKINGDIR"}")
-  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$lf_target_relative_path\"|\"$4\"|"
+  #local lf_target_relative_path=$(echo "${lf_in_target_directory#"$MY_WORKINGDIR"}")
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|"
 
   if [[ $# -ne 4 ]]; then
     mylog error "You have to provide 4 arguments : secret_name, data_name, destination directory and namespace"
@@ -741,7 +975,7 @@ function add_ibm_entitlement() {
 # @param 5: yaml: the file with the definition of the resource, example: "Navigator-Sub.yaml"
 # @param 6: namespace
 function check_create_oc_yaml() {
-  local lf_tracelevel=3
+  local lf_tracelevel=4
   trace_in $lf_tracelevel  check_create_oc_yaml
 
   local lf_in_type="$1"
@@ -751,9 +985,9 @@ function check_create_oc_yaml() {
   local lf_in_yaml_file="$5"
   local lf_in_namespace="$6"
 
-  local lf_source_relative_path=$(echo "${lf_in_source_directory#"$PROVISION_SCRIPTDIR"}")
-  local lf_target_relative_path=$(echo "${lf_in_target_directory#"$MY_WORKINGDIR"}") 
-  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$lf_source_relative_path\"|\"$lf_target_relative_path\"|\"$5\"|\"$6\"|"
+  #local lf_source_relative_path=$(echo "${lf_in_source_directory#"$PROVISION_SCRIPTDIR"}")
+  #local lf_target_relative_path=$(echo "${lf_in_target_directory#"$MY_WORKINGDIR"}") 
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|\"$5\"|\"$6\"|"
 
   if [[ $# -ne 6 ]]; then
     mylog error "You have to provide 6 arguments: type, resource, source directory, destination directory, yaml file and namespace"
@@ -766,7 +1000,7 @@ function check_create_oc_yaml() {
   adapt_file $lf_in_source_directory $lf_in_target_directory $lf_in_yaml_file
 
   if $MY_APPLY_FLAG; then
-    mylog info "Creating/Updating ${lf_in_type}/${lf_in_cr_name} using ${lf_in_target_directory}/${lf_in_yaml_file} in namespace ${lf_in_namespace}"
+    mylog info "Creating/Updating ${lf_in_type}/${lf_in_cr_name} using ${lf_in_target_directory}${lf_in_yaml_file} in namespace ${lf_in_namespace}"
     oc apply -f "${lf_in_target_directory}${lf_in_yaml_file}" || exit 1
     wait_for_resource $lf_in_type $lf_in_cr_name $lf_in_namespace
   fi
@@ -827,7 +1061,6 @@ function deploy_openldap() {
   # deploy openldap and take in account the PVCs just created
   # check that deployment of openldap was not done
   create_oc_resource "Deployment" "${lf_in_name}" "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}" "ldap_deployment.yaml" "$VAR_LDAP_NAMESPACE"
-  #create_oc_resource "Deployment" "${lf_in_name}" "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}" "ldap_deployment-dinkel.yaml" "$VAR_LDAP_NAMESPACE"
   oc -n ${VAR_LDAP_NAMESPACE} get deployment.apps/openldap -o json | jq '. | del(."status")' >${MY_LDAP_WORKINGDIR}openldap.json
 
   read_config_file "${MY_YAMLDIR}ldap/ldap_dit.properties"
@@ -843,8 +1076,8 @@ function deploy_mail() {
   local lf_tracelevel=3
   trace_in $lf_tracelevel deploy_mail
 
-  create_oc_resource "Deployment" "${MY_MAIL_DEPLOYMENT}" "${MY_YAMLDIR}mail/" "${VAR_MAIL_WORKINGDIR}" "mail_deployment.yaml" "$VAR_MAIL_NAMESPACE"
-  #oc -n ${VAR_MAIL_NAMESPACE} get deployment.apps/${MY_MAIL_DEPLOYMENT} -o json | jq '. | del(."status")' >${VAR_MAIL_WORKINGDIR}mailhog.json
+  create_oc_resource "Deployment" "${MY_MAIL_DEPLOYMENT}" "${MY_YAMLDIR}mail/" "${MY_MAIL_WORKINGDIR}" "mail_deployment.yaml" "$VAR_MAIL_NAMESPACE"
+  #oc -n ${VAR_MAIL_NAMESPACE} get deployment.apps/${MY_MAIL_DEPLOYMENT} -o json | jq '. | del(."status")' >${MY_MAIL_WORKINGDIR}mailhog.json
 
   trace_out $lf_tracelevel deploy_mail
 }
@@ -868,8 +1101,8 @@ function add_ldap_entry_if_not_exists() {
   local lf_in_entry_content="$5"
   local lf_in_tmp_ldif_file="$6"
 
-  local lf_tmp_ldif_file_relative_path=$(echo "${lf_in_tmp_ldif_file#"$PROVISION_SCRIPTDIR"}")
-  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|\"$5\"|\"$lf_tmp_ldif_file_relative_path\"|"
+  #local lf_tmp_ldif_file_relative_path=$(echo "${lf_in_tmp_ldif_file#"$PROVISION_SCRIPTDIR"}")
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|\"$5\"|\"$6\"|"
 
   if [[ $# -ne 6 ]]; then
     mylog error "You have to provide 6 arguments: ldap server, admin DN, admin password, entry DN, entry content and ldif file"
@@ -909,8 +1142,8 @@ function add_ldif_file () {
   local lf_in_admin_password="$3"
   local lf_in_ldif_file="$4"
 
-  local lf_ldif_file_relative_path=$(echo "${lf_in_ldif_file#"$MY_WORKINGDIR"}")
-  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$lf_ldif_file_relative_path\"|"  
+  #local lf_ldif_file_relative_path=$(echo "${lf_in_ldif_file#"$MY_WORKINGDIR"}")
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|"  
 
   if [[ $# -ne 4 ]]; then
     mylog error "You have to provide 4 arguments: ldap server, admin DN, admin password and ldif file"
@@ -992,9 +1225,9 @@ function load_users_2_ldap_server() {
   local lf_in_target_directory="$2"
   local lf_in_file="$3"
 
-  local lf_source_relative_path=$(echo "${lf_in_source_directory#"$PROVISION_SCRIPTDIR"}")
-  local lf_target_relative_path=$(echo "${lf_in_target_directory#"$MY_WORKINGDIR"}")
-  decho $lf_tracelevel "Parameters:\"$lf_source_relative_path\"|\"$lf_target_relative_path\"|\"$3\"|"
+  #local lf_source_relative_path=$(echo "${lf_in_source_directory#"$PROVISION_SCRIPTDIR"}")
+  #local lf_target_relative_path=$(echo "${lf_in_target_directory#"$MY_WORKINGDIR"}")
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|"
 
   if [[ $# -ne 3 ]]; then
     mylog error "You have to provide 3 arguments : source directory, target directory and ldif file"
@@ -1030,8 +1263,8 @@ function create_mail_service() {
   local lf_in_source_directory="$1"
   local lf_in_file="$2"
 
-  local lf_source_relative_path=$(echo "${lf_in_source_directory#"$PROVISION_SCRIPTDIR"}")
-  decho $lf_tracelevel "Parameters:\"$lf_source_relative_path\"|\"$2\"|"
+  #local lf_source_relative_path=$(echo "${lf_in_source_directory#"$PROVISION_SCRIPTDIR"}")
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|"
 
   if [[ $# -ne 2 ]]; then
     mylog error "You have to provide 2 arguments : source directory and file"
@@ -1040,7 +1273,7 @@ function create_mail_service() {
   fi
 
   # Create the service to expose the mailhog server
-  create_oc_resource "Service" "${VAR_MAIL_SERVICE}" "$lf_in_source_directory" "${VAR_MAIL_WORKINGDIR}" "$lf_in_file" "${VAR_MAIL_NAMESPACE}"
+  create_oc_resource "Service" "${VAR_MAIL_SERVICE}" "$lf_in_source_directory" "${MY_MAIL_WORKINGDIR}" "$lf_in_file" "${VAR_MAIL_NAMESPACE}"
 
   trace_out $lf_tracelevel create_mail_service
 }
@@ -1055,8 +1288,8 @@ function create_mail_route() {
   local lf_in_source_directory="$1"
   local lf_in_file="$2"
 
-  local lf_source_relative_path=$(echo "${lf_in_source_directory#"$PROVISION_SCRIPTDIR"}")
-  decho $lf_tracelevel "Parameters:\"$lf_source_relative_path\"|\"$2\"|"
+  #local lf_source_relative_path=$(echo "${lf_in_source_directory#"$PROVISION_SCRIPTDIR"}")
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|"
 
   if [[ $# -ne 2 ]]; then
     mylog error "You have to provide 2 arguments : source directory and file"
@@ -1065,12 +1298,12 @@ function create_mail_route() {
   fi
 
   # Create the route to access the mail server
-  create_oc_resource "Route" "${VAR_MAIL_ROUTE}" "$lf_in_source_directory" "${VAR_MAIL_WORKINGDIR}" "$lf_in_file" "${VAR_MAIL_NAMESPACE}"
+  create_oc_resource "Route" "${VAR_MAIL_ROUTE}" "$lf_in_source_directory" "${MY_MAIL_WORKINGDIR}" "$lf_in_file" "${VAR_MAIL_NAMESPACE}"
 
   # expose service externaly and get host and port
   #oc -n ${VAR_MAIL_NAMESPACE} get service ${VAR_MAIL_SERVICE} -o json | \
   #   jq '.spec.ports |= map(if .name == "1025-tcp" then . + { "nodePort": 31025 } else . end)' | \
-  #   jq '.spec.ports |= map(if .name == "8025-tcp" then . + { "nodePort": 38025 } else . end)' >${VAR_MAIL_WORKINGDIR}mail-service.json
+  #   jq '.spec.ports |= map(if .name == "8025-tcp" then . + { "nodePort": 38025 } else . end)' >${MY_MAIL_WORKINGDIR}mail-service.json
 
   export VAR_MAIL_HOSTNAME=$(oc -n ${VAR_MAIL_NAMESPACE} get route ${VAR_MAIL_ROUTE} -o jsonpath='{.spec.host}')
 
@@ -1093,9 +1326,9 @@ function create_project() {
   local lf_in_source_directory="$4"
   local lf_in_target_directory="$5"
 
-  local lf_source_relative_path=$(echo "${lf_in_source_directory#"$PROVISION_SCRIPTDIR"}")
-  local lf_target_relative_path=$(echo "${lf_in_target_directory#"$MY_WORKINGDIR"}")
-  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$lf_source_relative_path\"|\"$lf_target_relative_path\"|"
+  #local lf_source_relative_path=$(echo "${lf_in_source_directory#"$PROVISION_SCRIPTDIR"}")
+  #local lf_target_relative_path=$(echo "${lf_in_target_directory#"$MY_WORKINGDIR"}")
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|\"$5\"|"
 
   if [[ $# -ne 5 ]]; then
     mylog error "You have to provide 5 arguments: resource name, display name; description, source director and target directory"
@@ -1181,20 +1414,22 @@ function wait_for_resource() {
 # https://ibm.github.io/cloud-pak/
 # @param 1: the case name
 # @param 2: the operator name (in most cases it's the same as the case name
-# @param 3: This is the arch (amd64 for example)
-# @param 4: This is the version of the channel. It is an optional parameter, if ommited it is retrieved, else used values from invocation
+# @param 3: This is the catalog source label
+# @param 4: This is the arch (amd64 for example)
+# @param 5: This is the version of the channel. It is an optional parameter, if ommited it is retrieved, else used values from invocation
 function check_add_cs_ibm_pak() {
   local lf_tracelevel=3
   trace_in $lf_tracelevel check_add_cs_ibm_pak
 
   local lf_in_case_name="$1"
   local lf_in_operator_name="$2"
-  local lf_in_arch="$3"
-  local lf_in_case_version="$4"
-  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|"
+  local lf_in_catalogsource_label="$3"
+  local lf_in_arch="$4"
+  local lf_in_case_version="$5"
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|\"$5\"|"
 
-  if [[ $# -ne 3 && $# -ne 4 ]] ; then
-    mylog error "You have to provide 3 or 4 arguments: case name, operator name, arch and optional case version"
+  if [[ $# -ne 4 && $# -ne 5 ]] ; then
+    mylog error "You have to provide 4 or 5 arguments: case name, operator name, catalog source label, arch and optional case version"
     trace_out $lf_tracelevel check_add_cs_ibm_pak
     exit  1
   fi
@@ -1246,10 +1481,11 @@ function check_add_cs_ibm_pak() {
   export VAR_CATALOG_SOURCE=$lf_catalogsource
   if $MY_APPLY_FLAG; then 
     oc apply -f $lf_file || exit 1
-  fi
 
-  # wait for the availability of the catalogsource
-  wait_for_resource "packagemanifest" "${lf_in_operator_name}" "$MY_CATALOGSOURCES_NAMESPACE"
+    # wait for the availability of the catalogsource
+    #wait_for_resource "packagemanifest" "${lf_in_operator_name}" "$MY_CATALOGSOURCES_NAMESPACE"
+    wait_for_catalogsource_2be_ready "${lf_in_catalogsource_label}" "${MY_MAX_RETRIES}" "${MY_DELAY_SECONDS}" "${MY_CATALOGSOURCES_NAMESPACE}"
+  fi
 
   trace_out $lf_tracelevel check_add_cs_ibm_pak
 }
@@ -1269,9 +1505,9 @@ function generate_files() {
   local lf_in_target_directory=$2
   local lf_in_transform=$3
 
-  local lf_source_relative_path=$(echo "${lf_in_source_directory#"$PROVISION_SCRIPTDIR"}")
-  local lf_target_relative_path=$(echo "${lf_in_target_directory#"$MY_WORKINGDIR"}")
-  decho $lf_tracelevel "Parameters:\"$lf_source_relative_path\"|\"$lf_target_relative_path\"|\"$3\"|"
+  #local lf_source_relative_path=$(echo "${lf_in_source_directory#"$PROVISION_SCRIPTDIR"}")
+  #local lf_target_relative_path=$(echo "${lf_in_target_directory#"$MY_WORKINGDIR"}")
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|"
 
   if [[ $# -ne 3 ]]; then
     mylog error "You have to provide 3 arguments: source directory, destination directory and boolean (true|false)"
@@ -1293,10 +1529,10 @@ function generate_files() {
 
   local lf_nfiles lf_file lf_filename
 
-  decho $lf_tracelevel "lf_config_customdir: ${lf_source_relative_path}config/"
-  decho $lf_tracelevel "lf_scripts_customdir: ${lf_source_relative_path}scripts/"
-  decho $lf_tracelevel "lf_config_gendir: ${lf_target_relative_path}config/"
-  decho $lf_tracelevel "lf_scripts_gendir: ${lf_target_relative_path}scripts/"
+  decho $lf_tracelevel "lf_config_customdir: ${lf_in_source_directory}config/"
+  decho $lf_tracelevel "lf_scripts_customdir: ${lf_in_source_directory}scripts/"
+  decho $lf_tracelevel "lf_config_gendir: ${lf_in_target_directory}config/"
+  decho $lf_tracelevel "lf_scripts_gendir: ${lf_in_target_directory}scripts/"
 
   # set -a
   check_directory_contains_files $lf_scripts_customdir
@@ -1345,9 +1581,9 @@ function adapt_file() {
   local lf_in_target_directory=$2
   local lf_in_filename=$3
 
-  local lf_source_relative_path=$(echo "${lf_in_source_directory#"$PROVISION_SCRIPTDIR"}")
-  local lf_target_relative_path=$(echo "${lf_in_target_directory#"$MY_WORKINGDIR"}")
-  decho $lf_tracelevel "Parameters:\"$lf_source_relative_path\"|\"$lf_target_relative_path\"|\"$3\"|"
+  #local lf_source_relative_path=$(echo "${lf_in_source_directory#"$PROVISION_SCRIPTDIR"}")
+  #local lf_target_relative_path=$(echo "${lf_in_target_directory#"$MY_WORKINGDIR"}")
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|"
 
   if [[ $# -ne 3 ]]; then
     mylog error "You have to provide 3 arguments: source directory, destination directory and file"
@@ -1382,8 +1618,8 @@ function create_certificate_chain() {
   local lf_in_workingdir="$5"
   local lf_in_namespace="$6"
 
-  local lf_working_relative_path=$(echo "${lf_in_workingdir#"$MY_WORKINGDIR"}")
-  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|\"$lf_working_relative_path\"|\"$6\"|"
+  #local lf_working_relative_path=$(echo "${lf_in_workingdir#"$MY_WORKINGDIR"}")
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|\"$5\"|\"$6\"|"
   
   if [[ $# -ne 6 ]]; then
     mylog error "You have to provide 6 arguments: issuer name, root cert, label, cert name, working directory and namespace"
@@ -1448,10 +1684,10 @@ function accept_license_fs() {
     exit  1
   fi
   
-  mylog info "Accepting license for ${lf_in_cr_name}/${lf_in_type} in namespace $lf_in_namespace"
+  mylog info "Accepting license for ${lf_in_type}/${lf_in_cr_name} in namespace $lf_in_namespace"
   decho $lf_tracelevel "oc -n ${lf_in_namespace} get ${lf_in_type} ${lf_in_cr_name} -o jsonpath='{.spec.license.accept}'"
   local lf_accept=$(oc -n ${lf_in_namespace} get ${lf_in_type} ${lf_in_cr_name} -o jsonpath='{.spec.license.accept}')
-  decho $lf_tracelevel "accept=$accept"
+  decho $lf_tracelevel "accept=$lf_accept"
   if [[ $lf_accept == "true" ]]; then
     mylog info "license already accepted." 1>&2
   else
@@ -1504,9 +1740,9 @@ function create_oc_resource() {
   local lf_in_yaml_file="$5"
   local lf_in_namespace="$6"
 
-  local lf_source_relative_path=$(echo "${lf_in_source_directory#"$PROVISION_SCRIPTDIR"}")
-  local lf_target_relative_path=$(echo "${lf_in_target_directory#"$MY_WORKINGDIR"}")
-  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$lf_source_relative_path\"|\"$lf_target_relative_path\"|\"$5\"|\"$6\"|"
+  #local lf_source_relative_path=$(echo "${lf_in_source_directory#"$PROVISION_SCRIPTDIR"}")
+  #local lf_target_relative_path=$(echo "${lf_in_target_directory#"$MY_WORKINGDIR"}")
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|\"$5\"|\"$6\"|"
 
   if [[ $# -ne 6 ]]; then
     mylog error "You have to provide 6 arguments: type, resource, namespace, source directory, target directory, file and namespace"
@@ -1570,11 +1806,9 @@ function create_operand_instance() {
   local lf_in_path=$7
   local lf_in_state=$8
 
-  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$$3\"|\"$4\"|\"$5\"|\"$6\"|\"$7\"|\"$8\"|"
-
-  echo "AD: this code doe not work"
-  local lf_source_relative_path=$(echo "${lf_in_source_directory#"$PROVISION_SCRIPTDIR"}")
-  local lf_target_relative_path=$(echo "${lf_in_target_directory#"$MY_WORKINGDIR"}")
+  #local lf_source_relative_path=$(echo "${lf_in_source_directory#"$PROVISION_SCRIPTDIR"}")
+  #local lf_target_relative_path=$(echo "${lf_in_target_directory#"$MY_WORKINGDIR"}")
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|\"$5\"|\"$6\"|\"$7\"|\"$8\"|"
 
   if [[ $# -ne 8 ]]; then
     mylog error "You have to provide 6 arguments: type, resource, source directory, target directory, yaml file, namespace, jsonpath and state"
@@ -1610,12 +1844,12 @@ function create_operator_instance() {
   local lf_in_target_directory="$4"
   local lf_in_namespace="$5"
 
-  local lf_source_relative_path=$(echo "${lf_in_source_directory#"$PROVISION_SCRIPTDIR"}")
-  local lf_target_relative_path=$(echo "${lf_in_target_directory#"$MY_WORKINGDIR"}")
-  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$lf_source_relative_path\"|\"$lf_target_relative_path\"|\"$5\"|"
+  #local lf_source_relative_path=$(echo "${lf_in_source_directory#"$PROVISION_SCRIPTDIR"}")
+  #local lf_target_relative_path=$(echo "${lf_in_target_directory#"$MY_WORKINGDIR"}")
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|\"$5\"|"
 
   if [[ $# -ne 5 ]]; then
-    mylog error "You have to provide 6 arguments: operator, catalog source, source directory, target directory and namespace"
+    mylog error "You have to provide 5 arguments: operator, catalog source, source directory, target directory and namespace"
     trace_out $lf_tracelevel create_operand_instance
     exit  1
   fi
@@ -1631,6 +1865,21 @@ function create_operator_instance() {
   #                  '.items[] | select(.metadata.name==$op and .status.catalogSource==$cs) | .status.defaultChannel' $MY_RAM_MANIFEST_FILE)
   #lf_csv_name=$(jq -r --arg op "$VAR_OPERATOR_NAME" --arg cs "$VAR_CATALOG_SOURCE_NAME" \
   #              '.items[] | select(.metadata.name==$op and .status.catalogSource==$cs) | .status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV' $MY_RAM_MANIFEST_FILE)
+
+  # Wait for operator to appear in catalog
+  local lf_timeout=$MY_MAX_TIMEOUT
+  local lf_interval=$MY_DELAY_SECONDS
+  while [[ $lf_timeout -gt 0 ]]; do
+    if oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $VAR_OPERATOR_NAME &>/dev/null; then
+      break
+    fi
+    sleep $lf_interval
+    lf_timeout=$((lf_timeout - lf_interval))
+  done
+
+  # Verify operator is ready
+  oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $VAR_OPERATOR_NAME -o json | jq -e '.status.channels' >/dev/null || { echo "Operator not ready"; exit 1; }
+
   lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest -o json | \
                     jq -r --arg op "$VAR_OPERATOR_NAME" --arg cs "$VAR_CATALOG_SOURCE_NAME" \
                     '.items[] | select(.metadata.name==$op and .status.catalogSource==$cs) | .status.defaultChannel')

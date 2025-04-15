@@ -121,7 +121,7 @@ function es_run_all () {
 
   local lf_ending_date=$(date)
     
-  mylog info "==== Customisation of es (${FUNCNAME[0]})[ended : $lf_ending_date and took : $SECONDS seconds]." 0
+  mylog info "==== Customisation of es [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 
   trace_out $lf_tracelevel es_run_all
 }
