@@ -16,7 +16,7 @@ function check_file () {
 	fi
 }
 
-. ../config/apic.properties
+. ../resources/apic.properties
 
 # Check if connexion to cluster is ok
 gi=$(kubectl get nodes)

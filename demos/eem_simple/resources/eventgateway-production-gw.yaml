@@ -1,0 +1,41 @@
+apiVersion: events.ibm.com/v1beta1
+kind: EventGateway
+metadata:
+  name: evg
+  namespace: cp4i
+spec:
+  license:
+    accept: true
+    license: L-HRZF-DWHH7A
+    metric: VIRTUAL_PROCESSOR_CORE
+    use: EventAutomationNonProduction
+  template:
+    pod:
+      spec:
+        containers:
+          - resources:
+              limits:
+                cpu: '1'
+                memory: 1Gi
+              requests:
+                cpu: '0.5'
+                memory: 512Mi
+            name: egw
+  tls:
+    caSecretName: 'apic-integration-ibm-eem-manager-ca'
+    secretName: ''
+  managerEndpoint: >-
+    https://apic-integration-ibm-eem-gateway-cp4i.cp4iad22023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud
+  gatewayGroupName: my-eemgw-group
+  gatewayID: eemgw1
+
+
+spec.tls.caSecretName field is updated with the name of a secret that contains the root CA certificate.
+Important: The caSecretName of an Event Gateway instance must be the same as the caSecretName of the Event Endpoint Management instance you referred to when setting the endpoint URI in spec.ManagerEndpoint. If you are using the operator-provided certificate, enter the value as <my-instance>-ibm-eem-manager-ca.
+
+oc get secret | grep "\-ibm\-eem\-manager\-ca"
+apic-integration-ibm-eem-manager-ca
+
+
+spec.ManagerEndpoint is set to the gateway API endpoint URI of an Event Endpoint Management Manager (EventEndpointManagement) instance. The gateway API endpoint will contain ibm-eem-gateway in the URL.
+oc -n cp4i get EventEndpointManagement apic-integration --output=jsonpath='{.status.endpoints[?(@.name=="gateway")].uri}'

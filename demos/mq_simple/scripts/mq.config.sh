@@ -76,7 +76,7 @@ function create_qmgr () {
     # Creating MQ MessagingServer instance
     create_operand_instance "MessagingServer" "${VAR_MSGSRV_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_MQ_WORKINGDIR}" "MessagingServer-Capability.yaml" "$VAR_MQ_NAMESPACE" "{.status.conditions[0].type}" "Ready"
   else 
-    create_operand_instance "QueueManager" "${VAR_QMGR}" "${MY_MQ_SIMPLE_DEMODIR}tmpl" "${MY_MQ_WORKINGDIR}" "qmgr.yaml" "$VAR_MQ_NAMESPACE" "{.status.phase}" "Running"
+    create_operand_instance "QueueManager" "${VAR_QMGR}" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}" "qmgr.yaml" "$VAR_MQ_NAMESPACE" "{.status.phase}" "Running"
   fi
   
   trace_out $lf_tracelevel create_qmgr

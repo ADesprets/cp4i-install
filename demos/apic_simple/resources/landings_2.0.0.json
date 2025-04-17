@@ -1,0 +1,121 @@
+{
+    "asyncapi": "2.0.0",
+    "channels": {
+        "FLIGHT.LANDINGS": {
+            "subscribe": {
+                "bindings": {
+                    "kafka": {
+                        "clientId": {
+                            "enum": [
+                                "6d301767-3301-4dd6-bfaf-4de05025a2d7"
+                            ],
+                            "type": "string"
+                        }
+                    }
+                },
+                "message": {
+                    "contentType": "application/json",
+                    "description": "This API provides a stream of events based on the landing of planes at Acme airport. Each time an airplane lands, an event will be emitted with the details of the flight.",
+                    "examples": [
+                        {
+                            "payload": "{\"event\": \"41FCE954A83C\", \"flight\": \"AC300\", \"terminal\": \"2\", \"passengers\": 88}\n"
+                        }
+                    ],
+                    "name": "landingEvent",
+                    "payload": {
+                        "additionalProperties": false,
+                        "properties": {
+                            "eventid": {
+                                "description": "unique id for the landing event",
+                                "pattern": "^[0-9A-F]{12}$",
+                                "type": "string"
+                            },
+                            "flight": {
+                                "description": "ID for the flight that has landed",
+                                "pattern": "^AC[1-9]{2,3}$",
+                                "type": "string"
+                            },
+                            "passengers": {
+                                "description": "Number of passengers on the flight",
+                                "type": "integer"
+                            },
+                            "terminal": {
+                                "description": "which terminal the flight has landed at",
+                                "enum": [
+                                    "1",
+                                    "2",
+                                    "3",
+                                    "4",
+                                    "5"
+                                ],
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "eventid",
+                            "flight",
+                            "terminal",
+                            "passengers"
+                        ],
+                        "type": "object"
+                    },
+                    "schemaFormat": "application/vnd.aai.asyncapi;version=2.0.0",
+                    "summary": "Flight landing information",
+                    "title": "Flight landing event"
+                }
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "X-IBM-Client-Id": {
+                "description": "The credential provided should be in SASL-PLAIN format",
+                "type": "userPassword"
+            }
+        }
+    },
+    "info": {
+        "description": "Events emitted when a flight lands. Event information includes basic information about the flight.",
+        "title": "Landings",
+        "version": "2.0.0",
+        "x-ibm-name": "landings"
+    },
+    "servers": {
+        "broker_0": {
+            "protocol": "kafka-secure",
+            "security": [
+                {
+                    "X-IBM-Client-Id": [
+                    ]
+                }
+            ],
+            "url": "apic1-egw-event-gw-client-cp4i.apps.ocp46.tec.uk.ibm.com:443"
+        }
+    },
+    "x-ibm-configuration": {
+        "assembly": {
+            "execute": [
+                {
+                    "invoke-kafka": {
+                        "bootstrap.servers": "apic1-egw-event-gw-client-cp4i.apps.ocp46.tec.uk.ibm.com:443",
+                        "clusterconfigid": "85646a72-c8ef-4099-ae19-9050e0046c58",
+                        "sasl.mechanism": "SCRAM-SHA-256",
+                        "security.protocol": "SASL_SSL",
+                        "title": "invoke-kafka",
+                        "version": "1.0.0"
+                    }
+                }
+            ]
+        },
+        "cors": {
+            "enabled": false
+        },
+        "enforced": true,
+        "gateway": "event-gateway",
+        "phase": "realized",
+        "properties": {
+        },
+        "testable": false,
+        "type": "asyncapi"
+    }
+}

@@ -23,10 +23,10 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.ibm.mq.samples.jms</groupId>
-  <artifactId>mq-dev-patterns</artifactId>
+  <artifactId>mq-kafka</artifactId>
   <version>0.1.0</version>
 
-  <name>mq-dev-patterns</name>
+  <name>mq-kafka</name>
   <url>https://github.com/ibm-messaging/mq-dev-patterns/</url>
 
   <properties>

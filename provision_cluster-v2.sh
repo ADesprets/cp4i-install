@@ -30,30 +30,30 @@ function install_sftp() {
     mylog check "Checking Secret for credential ${VAR_SFTP_SERVER_NAMESPACE}-sftp-creds-secret" 1>&2
     if ! oc -n ${VAR_SFTP_SERVER_NAMESPACE} get secret "${VAR_SFTP_SERVER_NAMESPACE}-sftp-creds-secret" >/dev/null 2>&1; then
       generate_password 32
-      adapt_file ${MY_SFTP_SCRIPTDIR}config/ ${MY_SFTP_WORKINGDIR}config/ users.conf
+      adapt_file ${MY_SFTP_SCRIPTDIR}resources/ ${MY_SFTP_WORKINGDIR}resources/ users.conf
       unset USER_PASSWORD_GEN
-      oc -n $VAR_SFTP_SERVER_NAMESPACE create secret generic "${VAR_SFTP_SERVER_NAMESPACE}-sftp-creds-secret" --from-file=${MY_SFTP_WORKINGDIR}config/users.conf
+      oc -n $VAR_SFTP_SERVER_NAMESPACE create secret generic "${VAR_SFTP_SERVER_NAMESPACE}-sftp-creds-secret" --from-file=${MY_SFTP_WORKINGDIR}resources/users.conf
     fi
   
     # Create configmap with SSH keys
     mylog check "Checking ConfigMap for ssh keys ${VAR_SFTP_SERVER_NAMESPACE}-ssh-conf-cm" 1>&2
     if ! oc -n ${VAR_SFTP_SERVER_NAMESPACE} get configmap "${VAR_SFTP_SERVER_NAMESPACE}-ssh-conf-cm" >/dev/null 2>&1; then
-      ssh-keygen -t ed25519 -f ${MY_SFTP_WORKINGDIR}config/ssh_host_ed25519_key < /dev/null
-      ssh-keygen -t rsa -b 4096 -f ${MY_SFTP_WORKINGDIR}config/ssh_host_rsa_key < /dev/null
-      adapt_file ${MY_SFTP_SCRIPTDIR}config/ ${MY_SFTP_WORKINGDIR}config/ sshd_config
+      ssh-keygen -t ed25519 -f ${MY_SFTP_WORKINGDIR}resources/ssh_host_ed25519_key < /dev/null
+      ssh-keygen -t rsa -b 4096 -f ${MY_SFTP_WORKINGDIR}resources/ssh_host_rsa_key < /dev/null
+      adapt_file ${MY_SFTP_SCRIPTDIR}resources/ ${MY_SFTP_WORKINGDIR}resources/ sshd_config
       local lf_apply_cmd="oc -n $VAR_SFTP_SERVER_NAMESPACE create configmap ${VAR_SFTP_SERVER_NAMESPACE}-ssh-conf-cm \
-        --from-file=${MY_SFTP_WORKINGDIR}config/ssh_host_ed25519_key \
-        --from-file=${MY_SFTP_WORKINGDIR}config/ssh_host_ed25519_key.pub \
-        --from-file=${MY_SFTP_WORKINGDIR}config/ssh_host_rsa_key \
-        --from-file=${MY_SFTP_WORKINGDIR}config/ssh_host_rsa_key.pub \
-        --from-file=${MY_SFTP_WORKINGDIR}config/sshd_config"
+        --from-file=${MY_SFTP_WORKINGDIR}resources/ssh_host_ed25519_key \
+        --from-file=${MY_SFTP_WORKINGDIR}resources/ssh_host_ed25519_key.pub \
+        --from-file=${MY_SFTP_WORKINGDIR}resources/ssh_host_rsa_key \
+        --from-file=${MY_SFTP_WORKINGDIR}resources/ssh_host_rsa_key.pub \
+        --from-file=${MY_SFTP_WORKINGDIR}resources/sshd_config"
 
       oc -n $VAR_SFTP_SERVER_NAMESPACE create configmap ${VAR_SFTP_SERVER_NAMESPACE}-ssh-conf-cm \
-        --from-file=${MY_SFTP_WORKINGDIR}config/ssh_host_ed25519_key \
-        --from-file=${MY_SFTP_WORKINGDIR}config/ssh_host_ed25519_key.pub \
-        --from-file=${MY_SFTP_WORKINGDIR}config/ssh_host_rsa_key \
-        --from-file=${MY_SFTP_WORKINGDIR}config/ssh_host_rsa_key.pub \
-        --from-file=${MY_SFTP_WORKINGDIR}config/sshd_config
+        --from-file=${MY_SFTP_WORKINGDIR}resources/ssh_host_ed25519_key \
+        --from-file=${MY_SFTP_WORKINGDIR}resources/ssh_host_ed25519_key.pub \
+        --from-file=${MY_SFTP_WORKINGDIR}resources/ssh_host_rsa_key \
+        --from-file=${MY_SFTP_WORKINGDIR}resources/ssh_host_rsa_key.pub \
+        --from-file=${MY_SFTP_WORKINGDIR}resources/sshd_config
     fi
   
     # Check security context constraint
@@ -76,13 +76,13 @@ function install_sftp() {
     unset VAR_PVC_NAME VAR_PVC_NAME VAR_PVC_STORAGE_CLASS
 
     # Create deployment including the resources generated
-    create_oc_resource "Deployment" "${VAR_SFTP_SERVER_NAMESPACE}-sftp-server" "${MY_SFTP_SCRIPTDIR}config/" "${MY_SFTP_WORKINGDIR}config/" "sftp_dep.yaml" "$VAR_SFTP_SERVER_NAMESPACE"
+    create_oc_resource "Deployment" "${VAR_SFTP_SERVER_NAMESPACE}-sftp-server" "${MY_SFTP_SCRIPTDIR}resources/" "${MY_SFTP_WORKINGDIR}resources/" "sftp_dep.yaml" "$VAR_SFTP_SERVER_NAMESPACE"
   
     # Create the service to expose the SFTP server
-    create_oc_resource "Service" "${VAR_SFTP_SERVER_NAMESPACE}-sftp-service" "${MY_SFTP_SCRIPTDIR}config/" "${MY_SFTP_WORKINGDIR}config/" "sftp_svc.yaml" "$VAR_SFTP_SERVER_NAMESPACE"
+    create_oc_resource "Service" "${VAR_SFTP_SERVER_NAMESPACE}-sftp-service" "${MY_SFTP_SCRIPTDIR}resources/" "${MY_SFTP_WORKINGDIR}resources/" "sftp_svc.yaml" "$VAR_SFTP_SERVER_NAMESPACE"
 
     # Create the route to expose the SFTP server
-    create_oc_resource "Route" "${VAR_SFTP_SERVER_NAMESPACE}-sftp-route" "${MY_SFTP_SCRIPTDIR}config/" "${MY_SFTP_WORKINGDIR}config/" "sftp_route.yaml" "$VAR_SFTP_SERVER_NAMESPACE"
+    create_oc_resource "Route" "${VAR_SFTP_SERVER_NAMESPACE}-sftp-route" "${MY_SFTP_SCRIPTDIR}resources/" "${MY_SFTP_WORKINGDIR}resources/" "sftp_route.yaml" "$VAR_SFTP_SERVER_NAMESPACE"
   fi
 
   trace_out $lf_tracelevel install_sftp
@@ -754,9 +754,9 @@ function install_openliberty() {
 
     # TODO Check that is this value
     export WATCH_NAMESPACE='""'
-    adapt_file ${MY_OPENLIBERTY_SCRIPTDIR}config/ ${MY_OPENLIBERTY_WORKINGDIR}config/ openliberty-app-rbac-watch-all.yaml
-    adapt_file ${MY_OPENLIBERTY_SCRIPTDIR}config/ ${MY_OPENLIBERTY_WORKINGDIR}config/ openliberty-app-crd.yaml
-    adapt_file ${MY_OPENLIBERTY_SCRIPTDIR}config/ ${MY_OPENLIBERTY_WORKINGDIR}config/ openliberty-app-operator.yaml
+    adapt_file ${MY_OPENLIBERTY_SCRIPTDIR}resources/ ${MY_OPENLIBERTY_WORKINGDIR}resources/ openliberty-app-rbac-watch-all.yaml
+    adapt_file ${MY_OPENLIBERTY_SCRIPTDIR}resources/ ${MY_OPENLIBERTY_WORKINGDIR}resources/ openliberty-app-crd.yaml
+    adapt_file ${MY_OPENLIBERTY_SCRIPTDIR}resources/ ${MY_OPENLIBERTY_WORKINGDIR}resources/ openliberty-app-operator.yaml
 
     # Creating Open Liberty operator subscription (Check arbitrarely one resource, the deployment of the operator)
     local lf_octype='deployment'
@@ -766,9 +766,9 @@ function install_openliberty() {
     mylog check "Checking ${lf_name}/${lf_octype} in ${VAR_OPENLIBERTY_NAMESPACE}"
     if ! oc -n ${VAR_OPENLIBERTY_NAMESPACE} get ${lf_octype} ${lf_name} >/dev/null 2>&1; then
       if $MY_APPLY_FLAG; then     
-        oc apply --server-side -f ${MY_OPENLIBERTY_WORKINGDIR}config/openliberty-app-crd.yaml
-        oc apply -f ${MY_OPENLIBERTY_WORKINGDIR}config/openliberty-app-rbac-watch-all.yaml
-        oc -n ${VAR_OPENLIBERTY_NAMESPACE} apply -f ${MY_OPENLIBERTY_WORKINGDIR}config/openliberty-app-operator.yaml
+        oc apply --server-side -f ${MY_OPENLIBERTY_WORKINGDIR}resources/openliberty-app-crd.yaml
+        oc apply -f ${MY_OPENLIBERTY_WORKINGDIR}resources/openliberty-app-rbac-watch-all.yaml
+        oc -n ${VAR_OPENLIBERTY_NAMESPACE} apply -f ${MY_OPENLIBERTY_WORKINGDIR}resources/openliberty-app-operator.yaml
       fi
     fi
   fi
@@ -1261,23 +1261,23 @@ function install_eem() {
     ## Creating EEM users and roles
     if $MY_KEYCLOAK_INTEGRATION; then
       # generate properties files
-      adapt_file ${MY_EEM_SIMPLE_DEMODIR}config/ ${MY_EEM_WORKINGDIR}config/ keycloak-user-roles
+      adapt_file ${MY_EEM_SIMPLE_DEMODIR}resources/ ${MY_EEM_WORKINGDIR}resources/ keycloak-user-roles
       # keycloak user roles
-      local lf_varb64=$(cat "${MY_EEM_WORKINGDIR}config/keycloak-user-roles.yaml" | base64 -w0)
+      local lf_varb64=$(cat "${MY_EEM_WORKINGDIR}resources/keycloak-user-roles.yaml" | base64 -w0)
       oc -n $VAR_EEM_NAMESPACE patch secret "${VAR_EEM_INSTANCE_NAME}-ibm-eem-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$lf_varb64\"}]"
     else
       # generate properties files
-      adapt_file ${MY_EEM_SIMPLE_DEMODIR}config/ ${MY_EEM_WORKINGDIR}config/ local-user-credentials.yaml
-      adapt_file ${MY_EEM_SIMPLE_DEMODIR}config/ ${MY_EEM_WORKINGDIR}config/ local-user-roles.yaml
+      adapt_file ${MY_EEM_SIMPLE_DEMODIR}resources/ ${MY_EEM_WORKINGDIR}resources/ local-user-credentials.yaml
+      adapt_file ${MY_EEM_SIMPLE_DEMODIR}resources/ ${MY_EEM_WORKINGDIR}resources/ local-user-roles.yaml
       # base64 generates an error ": illegal base64 data at input byte 76". Solution found here : https://bugzilla.redhat.com/show_bug.cgi?id=1809431. use base64 -w0
       # local user credentials
       wait_for_resource "Secret" "${VAR_EEM_INSTANCE_NAME}-ibm-eem-user-credentials" "$VAR_EEM_NAMESPACE"
-      local lf_varb64=$(cat "${MY_EEM_WORKINGDIR}config/local-user-credentials.yaml" | base64 -w0)
+      local lf_varb64=$(cat "${MY_EEM_WORKINGDIR}resources/local-user-credentials.yaml" | base64 -w0)
       oc -n $VAR_EEM_NAMESPACE patch secret "${VAR_EEM_INSTANCE_NAME}-ibm-eem-user-credentials" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-credentials.json\" ,\"value\" : \"$lf_varb64\"}]"
       
       # local user roles
       wait_for_resource "Secret" "${VAR_EEM_INSTANCE_NAME}-ibm-eem-user-roles" "$VAR_EEM_NAMESPACE"
-      local lf_varb64=$(cat "${MY_EEM_WORKINGDIR}config/local-user-roles.yaml" | base64 -w0)
+      local lf_varb64=$(cat "${MY_EEM_WORKINGDIR}resources/local-user-roles.yaml" | base64 -w0)
       oc -n $VAR_EEM_NAMESPACE patch secret "${VAR_EEM_INSTANCE_NAME}-ibm-eem-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$lf_varb64\"}]"
     fi
   fi
@@ -1382,10 +1382,10 @@ function install_ep() {
       wait_for_resource "Secret" "${VAR_EP_INSTANCE_NAME}-ibm-ep-user-roles" "$VAR_EP_NAMESPACE"
 
       # generate properties files
-      adapt_file ${MY_EP_SCRIPTDIR}config/ ${MY_EP_WORKINGDIR}config/ user-roles.yaml
+      adapt_file ${MY_EP_SCRIPTDIR}resources/ ${MY_EP_WORKINGDIR}resources/ user-roles.yaml
   
       # user roles
-      lf_varb64=$(cat "${MY_EP_WORKINGDIR}config/user-roles.yaml" | base64 -w0)
+      lf_varb64=$(cat "${MY_EP_WORKINGDIR}resources/user-roles.yaml" | base64 -w0)
       if $MY_APPLY_FLAG; then
         oc -n $VAR_EP_NAMESPACE patch secret ${VAR_EP_INSTANCE_NAME}-ibm-ep-user-roles --type=merge -p "{\"data\":{\"user-mapping.json\":\"$lf_varb64\"}}"
   
@@ -1411,17 +1411,17 @@ function install_ep() {
       wait_for_resource "Secret" "${VAR_EP_INSTANCE_NAME}-ibm-ep-user-credentials" "$VAR_EP_NAMESPACE"
 
       # generate properties files
-      adapt_file ${MY_EP_SIMPLE_DEMODIR}config/ ${MY_EP_WORKINGDIR}config/ user-credentials.yaml
-      adapt_file ${MY_EP_SIMPLE_DEMODIR}config/ ${MY_EP_WORKINGDIR}config/ user-roles.yaml
+      adapt_file ${MY_EP_SIMPLE_DEMODIR}resources/ ${MY_EP_WORKINGDIR}resources/ user-credentials.yaml
+      adapt_file ${MY_EP_SIMPLE_DEMODIR}resources/ ${MY_EP_WORKINGDIR}resources/ user-roles.yaml
   
       # user credentials
-      local lf_varb64=$(cat "${MY_EP_WORKINGDIR}config/user-credentials.yaml" | base64 -w0)
+      local lf_varb64=$(cat "${MY_EP_WORKINGDIR}resources/user-credentials.yaml" | base64 -w0)
       if $MY_APPLY_FLAG; then
         oc -n $VAR_EP_NAMESPACE patch secret ${VAR_EP_INSTANCE_NAME}-ibm-ep-user-credentials --type=merge -p "{\"data\":{\"user-mapping.json\":\"$lf_varb64\"}}"
       fi
   
       # user roles
-      lf_varb64=$(cat "${MY_EP_WORKINGDIR}config/user-roles.yaml" | base64 -w0)
+      lf_varb64=$(cat "${MY_EP_WORKINGDIR}resources/user-roles.yaml" | base64 -w0)
       if $MY_APPLY_FLAG; then
         oc -n $VAR_EP_NAMESPACE patch secret ${VAR_EP_INSTANCE_NAME}-ibm-ep-user-roles --type=merge -p "{\"data\":{\"user-mapping.json\":\"$lf_varb64\"}}"
       fi
@@ -2152,7 +2152,7 @@ function display_access_info() {
     echo  "<DT><A HREF=${lf_eem_ui_url}>Event Endpoint Management UI</A>" >> ${MY_WORKINGDIR}/bookmarks.html
     lf_eem_lf_gtw_url=$(oc -n $VAR_EEM_NAMESPACE get EventEndpointManagement -o=jsonpath='{.items[?(@.kind=="EventEndpointManagement")].status.endpoints[?(@.name=="gateway")].uri}')
     mylog info "Event Endpoint Management Gateway endpoint: ${lf_eem_lf_gtw_url}" 0
-    mylog info "The credentials are defined in the file ./customisation/EP/config/user-credentials.yaml" 0
+    mylog info "The credentials are defined in the file ./customisation/EP/resources/user-credentials.yaml" 0
   fi
 
   # Event Processing
@@ -2161,7 +2161,7 @@ function display_access_info() {
     lf_ep_ui_url=$(oc -n $VAR_EP_NAMESPACE get EventProcessing -o=jsonpath='{.items[?(@.kind=="EventProcessing")].status.endpoints[?(@.name=="ui")].uri}')
     mylog info "Event Processing UI endpoint: ${lf_ep_ui_url}" 0
     echo "<DT><A HREF=${lf_ep_ui_url}>Event Processing UI</A>" >> ${MY_WORKINGDIR}/bookmarks.html
-    mylog info "The credentials are defined in the file ./customisation/EP/config/user-credentials.yaml" 0
+    mylog info "The credentials are defined in the file ./customisation/EP/resources/user-credentials.yaml" 0
   fi
   
   # LDAP

@@ -9,7 +9,7 @@ function create_issuer () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel create_issuer
   
-  create_oc_resource "Issuer" "${VAR_QMGR}-issuer" "${MY_TLS_SCRIPTDIR}config/" "${sc_mq_kafka_demo_workingdir}" "Issuer_ca.yaml" "${VAR_MQ_NAMESPACE}"
+  create_oc_resource "Issuer" "${VAR_QMGR}-issuer" "${MY_TLS_SCRIPTDIR}resources/" "${sc_mq_kafka_demo_workingdir}" "Issuer_ca.yaml" "${VAR_MQ_NAMESPACE}"
 
    trace_out $lf_tracelevel create_issuer
 }

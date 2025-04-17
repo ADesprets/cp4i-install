@@ -224,7 +224,7 @@ sc_provision_script_parameters_file="${PROVISION_SCRIPTDIR}script-parameters.pro
 sc_provision_constant_properties_file="${PROVISION_SCRIPTDIR}properties/cp4i-constants.properties"
 sc_provision_variable_properties_file="${PROVISION_SCRIPTDIR}properties/cp4i-variables.properties"
 sc_provision_lib_file="${PROVISION_SCRIPTDIR}lib.sh"
-sc_component_properties_file="${sc_component_script_dir}../config/olp.properties"
+sc_component_properties_file="${sc_component_script_dir}../resources/olp.properties"
 sc_provision_preambule_file="${PROVISION_SCRIPTDIR}properties/preambule.properties"
 
 # SB]20250319 Je suis obligé d'utiliser set -a et set +a parceque à cet instant je n'ai pas accès à la fonction read_config_file

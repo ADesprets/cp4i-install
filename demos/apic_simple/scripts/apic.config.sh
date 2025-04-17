@@ -288,16 +288,16 @@ function create_apic_resources() {
     # get the gateway route in order to provide the endpoint of the fake URL authentication api which should be published
     gtw_url=$(oc -n ${apic_project} get GatewayCluster -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].status.endpoints[?(@.name=="gateway")].uri}')
     export APIC_EP_GTW=${gtw_url}
-    adapt_file ${MY_APIC_SIMPLE_DEMODIR}config/ ${MY_APIC_WORKINGDIR}config/ AuthenticationURL_Registry_res.json
+    adapt_file ${MY_APIC_SIMPLE_DEMODIR}resources/ ${MY_APIC_WORKINGDIR}resources/ AuthenticationURL_Registry_res.json
 
-    decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/user-registries\" -H 'accept: application/json' -H \"authorization: Bearer cm_token\" -H 'content-type: application/json' -H \"Connection: keep-alive\" --compressed --data-binary \"@${MY_APIC_WORKINGDIR}config/AuthenticationURL_Registry_res.json\""
+    decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/user-registries\" -H 'accept: application/json' -H \"authorization: Bearer cm_token\" -H 'content-type: application/json' -H \"Connection: keep-alive\" --compressed --data-binary \"@${MY_APIC_WORKINGDIR}resources/AuthenticationURL_Registry_res.json\""
     registryURLfakeAPI=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/user-registries" \
       -H 'accept: application/json' \
       -H "authorization: Bearer $lf_cm_token" \
       -H 'content-type: application/json' \
       -H "Connection: keep-alive" \
       --compressed \
-      --data-binary "@${MY_APIC_WORKINGDIR}config/AuthenticationURL_Registry_res.json")
+      --data-binary "@${MY_APIC_WORKINGDIR}resources/AuthenticationURL_Registry_res.json")
   else
     mylog info "URL Fake Authentication URL registry already exists, do not load it."
   fi
@@ -321,14 +321,14 @@ function create_apic_resources() {
   # Add it if not already added TODO if
   if [ 2 -gt 3 ]; then
     lf_apicpath=api/catalogs/$org/$catalog/configured-api-user-registries
-    adapt_file ${MY_APIC_SIMPLE_DEMODIR}config/ ${MY_APIC_WORKINGDIR}config/ ConfiguredUserRegistry_res.json
+    adapt_file ${MY_APIC_SIMPLE_DEMODIR}resources/ ${MY_APIC_WORKINGDIR}resources/ ConfiguredUserRegistry_res.json
     curl -sk "${PLATFORM_API_URL}${lf_apicpath}" \
       -H 'accept: application/json' \
       -H "authorization: Bearer $lf_am_token" \
       -H 'content-type: application/json' \
       -H "Connection: keep-alive" \
       --compressed \
-      --data-binary "@${MY_APIC_WORKINGDIR}config/ConfiguredUserRegistry_res.json"
+      --data-binary "@${MY_APIC_WORKINGDIR}resources/ConfiguredUserRegistry_res.json"
   fi
 
   # Check if the oauth provider has already been added
@@ -342,7 +342,7 @@ function create_apic_resources() {
     admin_url=$(curl -sk "${PLATFORM_API_URL}${lf_apicpath}" -H "Authorization: Bearer $lf_cm_token" -H 'Accept: application/json' | jq -r .)
     export APIC_URL_REGISTRY_NAME=$lf_urlregistryname
     export APIC_ADMIN_URL=$admin_url
-    adapt_file ${MY_APIC_SIMPLE_DEMODIR}config/ ${MY_APIC_WORKINGDIR}config/ NativeOAuthProvider_res.json
+    adapt_file ${MY_APIC_SIMPLE_DEMODIR}resources/ ${MY_APIC_WORKINGDIR}resources/ NativeOAuthProvider_res.json
     lf_apicpath=api/orgs/$lf_org/oauth-providers
     oauthProvider=$(curl -sk "${PLATFORM_API_URL}${lf_apicpath}" \
       -H 'accept: application/json' \
@@ -350,7 +350,7 @@ function create_apic_resources() {
       -H 'content-type: application/json' \
       -H "Connection: keep-alive" \
       --compressed \
-      --data-binary "@${MY_APIC_WORKINGDIR}config/NativeOAuthProvider_res.json" | jq .url)
+      --data-binary "@${MY_APIC_WORKINGDIR}resources/NativeOAuthProvider_res.json" | jq .url)
     decho $lf_tracelevel "oauthProvider: $oauthProvider"
   fi
 
@@ -370,14 +370,14 @@ function create_apic_resources() {
     lf_org=APIC_PROVIDER_ORG
     lf_apicpath=api/catalogs/$org/$catalog/configured-oauth-providers
     export APIC_OAUTH_PROVIDER=$oauthProviderURL
-    adapt_file ${MY_APIC_SIMPLE_DEMODIR}config/ ${MY_APIC_WORKINGDIR}config/ ConfiguredOAuthProvider_res.json
+    adapt_file ${MY_APIC_SIMPLE_DEMODIR}resources/ ${MY_APIC_WORKINGDIR}resources/ ConfiguredOAuthProvider_res.json
     curl -sk "${PLATFORM_API_URL}${lf_apicpath}" \
       -H 'accept: application/json' \
       -H "authorization: Bearer $lf_am_token" \
       -H 'content-type: application/json' \
       -H "Connection: keep-alive" \
       --compressed \
-      --data-binary "@${MY_APIC_WORKINGDIR}config/ConfiguredOAuthProvider_res.json"
+      --data-binary "@${MY_APIC_WORKINGDIR}resources/ConfiguredOAuthProvider_res.json"
   fi
 
   trace_out $lf_tracelevel create_apic_resources
@@ -402,12 +402,12 @@ api_files=("ping-api_1.0.0.json" "ibm-sample-order-api_1.0.0.json" "stock_1.0.0.
 
 for index in ${!api_names[@]}
   do
-    adapt_file ${MY_APIC_SIMPLE_DEMODIR}config/ ${MY_APIC_WORKINGDIR}config/ ${api_files[$index]}
+    adapt_file ${MY_APIC_SIMPLE_DEMODIR}resources/ ${MY_APIC_WORKINGDIR}resources/ ${api_files[$index]}
     decho $lf_tracelevel "curl -sk \"${platform_api_url}api/orgs/${apic_provider_org}/drafts/draft-apis/${api_names[$index]}?fields=url\" -H \"Authorization: Bearer <token>\" -H 'Accept: application/json'"
     local api_uri_result=$(curl -sk "${platform_api_url}api/orgs/${apic_provider_org}/drafts/draft-apis/${api_names[$index]}?fields=url" -H "Authorization: Bearer $token" -H 'Accept: application/json' | jq -r .total_results)
     if [[ $api_uri_result -eq 0 ]]; then
       mylog info "Load ${api_names[$index]} API as a draft"
-      local api_content=`cat ${MY_APIC_WORKINGDIR}config/${api_files[$index]}`;
+      local api_content=`cat ${MY_APIC_WORKINGDIR}resources/${api_files[$index]}`;
       draftAPI=$(curl -sk "https://${EP_APIC_MGR}/api/orgs/${apic_provider_org}/drafts/draft-apis?gateway_type=datapower-api-gateway&api_type=rest" \
         -H 'accept: application/json' \
         -H "authorization: Bearer $token" \
@@ -501,7 +501,7 @@ function download_tools () {
   esac
 
   pushd "${MY_APIC_WORKINGDIR}config"
-  if test ! -e "${MY_APIC_WORKINGDIR}config/${lf_file2download}";then
+  if test ! -e "${MY_APIC_WORKINGDIR}resources/${lf_file2download}";then
   	mylog info "Downloading toolkit for $MY_PLATFORM platform" 1>&2
     apic_mgmt_client_downloads_server_pod="$(oc -n ${apic_project} get po -l app.kubernetes.io/name=client-downloads-server,app.kubernetes.io/part-of=${apic_instance} -o=jsonpath='{.items[0].metadata.name}')"
     # SB]20240207 using absolute path generate the following error on windows : error: one of src or dest must be a local file specification
@@ -533,13 +533,13 @@ function create_cm_token(){
   # The goal is to get the apikey defined in the realm provider/common-services, get the credentials for the toolkit, then use the token endpoint to get an oauth token for Cloud Manager from API Key
   TOOLKIT_CLIENT_ID=$(echo ${APIC_CRED} | jq -r .id)
   TOOLKIT_CLIENT_SECRET=$(echo ${APIC_CRED} | jq -r .secret)
-  mylog info "Creating ${MY_APIC_WORKINGDIR}config/creds.json" 1>&2
-  echo "{\"username\": \"admin\", \"password\": \"$APIC_CM_ADMIN_PASSWORD\", \"realm\": \"admin/default-idp-1\", \"client_id\": \"$TOOLKIT_CLIENT_ID\", \"client_secret\": \"$TOOLKIT_CLIENT_SECRET\", \"grant_type\": \"password\"}" > "${MY_APIC_WORKINGDIR}config/creds.json"
+  mylog info "Creating ${MY_APIC_WORKINGDIR}resources/creds.json" 1>&2
+  echo "{\"username\": \"admin\", \"password\": \"$APIC_CM_ADMIN_PASSWORD\", \"realm\": \"admin/default-idp-1\", \"client_id\": \"$TOOLKIT_CLIENT_ID\", \"client_secret\": \"$TOOLKIT_CLIENT_SECRET\", \"grant_type\": \"password\"}" > "${MY_APIC_WORKINGDIR}resources/creds.json"
   
   cmToken=$(curl -ks -X POST "${PLATFORM_API_URL}api/token" \
    -H 'Content-Type: application/json' \
    -H 'Accept: application/json' \
-   --data-binary "@${MY_APIC_WORKINGDIR}config/creds.json")
+   --data-binary "@${MY_APIC_WORKINGDIR}resources/creds.json")
   
   # decho $lf_tracelevel "cmToken: $cmToken"
 
@@ -605,7 +605,7 @@ function apic_run_all () {
   
   # Will create both directories needed later on toto
   adapt_file ${MY_APIC_SIMPLE_DEMODIR}properties/ ${MY_APIC_WORKINGDIR}properties/ apic.properties
-  adapt_file ${MY_APIC_SIMPLE_DEMODIR}config/ ${MY_APIC_WORKINGDIR}config/ web-mgmt.cfg
+  adapt_file ${MY_APIC_SIMPLE_DEMODIR}resources/ ${MY_APIC_WORKINGDIR}resources/ web-mgmt.cfg
   
   read_config_file "${MY_APIC_WORKINGDIR}properties/apic.properties"
   
@@ -623,7 +623,7 @@ function apic_run_all () {
   # always download the credential.json
   # if test ! -e "~/.apiconnect/config-apim";then
   mylog info "Downloading apic config json file" 1>&2
-  curl -ks "${TOOLKIT_CREDS_URL}" -H "Authorization: Bearer ${access_token}" -H "Accept: application/json" -H "Content-Type: application/json" -o "${MY_APIC_WORKINGDIR}config/fullcreds.json"
+  curl -ks "${TOOLKIT_CREDS_URL}" -H "Authorization: Bearer ${access_token}" -H "Accept: application/json" -H "Content-Type: application/json" -o "${MY_APIC_WORKINGDIR}resources/fullcreds.json"
   
   # Get ClusterIP of the mail service
   create_mail_server "${APIC_SMTP_SERVER}" "${APIC_SMTP_SERVER_PORT}"

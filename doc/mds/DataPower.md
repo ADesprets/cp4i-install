@@ -97,7 +97,7 @@ Operator scripts:
 
 temporary:///
   gitops/
-    config/
+    resources/
       in/           # On gitops-read, location to put configuration. Watched by configuration sequence.
       out/          # On gitops-write, location to put templated configuration to be committed to Git.
       staging/      # Location to put the source from Git to resolve any templated fields.

@@ -16,7 +16,7 @@ function check_file () {
 	fi
 }
 
-. ../config/apic.properties
+. ../resources/apic.properties
 
 echo " -- Existing instance --"
 echo " "

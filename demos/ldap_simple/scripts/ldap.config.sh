@@ -68,7 +68,7 @@ function ldap_run_all () {
 
   # Build the image
   if $MY_LDAP_CUSTOM_BUILD; then
-    pushd ${MY_LDAP_SIMPLE_DEMODIR}config/ > /dev/null 2>&1
+    pushd ${MY_LDAP_SIMPLE_DEMODIR}resources/ > /dev/null 2>&1
     ldap_build_image
     popd > /dev/null 2>&1
   fi
@@ -193,7 +193,7 @@ sc_provision_variable_properties_file="${PROVISION_SCRIPTDIR}properties/cp4i-var
 sc_provision_preambule_file="${PROVISION_SCRIPTDIR}properties/preambule.properties"
 sc_provision_user_properties_file="${PROVISION_SCRIPTDIR}private/user.properties"
 sc_provision_lib_file="${PROVISION_SCRIPTDIR}lib.sh"
-sc_component_properties_file="${sc_component_script_dir}../config/ldap.properties"
+sc_component_properties_file="${sc_component_script_dir}../resources/ldap.properties"
 
 # SB]20250319 Je suis obligé d'utiliser set -a et set +a parceque à cet instant je n'ai pas accès à la fonction read_config_file
 # load script parrameters fil

@@ -26,8 +26,8 @@ function create_kafka_topics () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel create_kafka_topics
 
-  local lf_source_directory="${MY_ES_SIMPLE_DEMODIR}config/"
-  local lf_target_directory="${MY_ES_WORKINGDIR}config/"
+  local lf_source_directory="${MY_ES_SIMPLE_DEMODIR}resources/"
+  local lf_target_directory="${MY_ES_WORKINGDIR}resources/"
 
   # Creation of the Topics used for taxi demo
   mylog info "Creating topics"
@@ -57,8 +57,8 @@ function create_kafka_users () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel create_kafka_users
 
-  local lf_source_directory="${MY_ES_SIMPLE_DEMODIR}config/"
-  local lf_target_directory="${MY_ES_WORKINGDIR}config/"
+  local lf_source_directory="${MY_ES_SIMPLE_DEMODIR}resources/"
+  local lf_target_directory="${MY_ES_WORKINGDIR}resources/"
 
   # Creation of a Kafka user
   create_oc_resource "KafkaUser" "es-admin" "${lf_source_directory}" "${lf_target_directory}" "es-admin-user.yaml" "$VAR_ES_NAMESPACE"
@@ -78,8 +78,8 @@ function create_kafka_connector () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel create_kafka_connector
 
-  local lf_source_directory="${MY_ES_SIMPLE_DEMODIR}config/"
-  local lf_target_directory="${MY_ES_WORKINGDIR}config/"
+  local lf_source_directory="${MY_ES_SIMPLE_DEMODIR}resources/"
+  local lf_target_directory="${MY_ES_WORKINGDIR}resources/"
 
   # Create KafkaConnect and KafkaConnector in $ES_APPS_PROJECT project
   mylog info "Create Kafka Connect for datagen, and MQ connectors"
@@ -216,7 +216,7 @@ sc_provision_script_parameters_file="${PROVISION_SCRIPTDIR}script-parameters.pro
 sc_provision_constant_properties_file="${PROVISION_SCRIPTDIR}properties/cp4i-constants.properties"
 sc_provision_variable_properties_file="${PROVISION_SCRIPTDIR}properties/cp4i-variables.properties"
 sc_provision_lib_file="${PROVISION_SCRIPTDIR}lib.sh"
-sc_component_properties_file="${sc_component_script_dir}../config/es.properties"
+sc_component_properties_file="${sc_component_script_dir}../resources/es.properties"
 sc_provision_preambule_file="${PROVISION_SCRIPTDIR}properties/preambule.properties"
 
 # SB]20250319 Je suis obligé d'utiliser set -a et set +a parceque à cet instant je n'ai pas accès à la fonction read_config_file

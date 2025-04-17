@@ -1,0 +1,53 @@
+apiVersion: apps.openliberty.io/v1
+kind: OpenLibertyApplication
+metadata:
+  name: mysystem
+  labels:
+    name: mysystem
+spec:
+  applicationImage: >-
+    ${MY_IMAGE_REGISTRY}/${MY_IMAGE_REGISTRY_NS1}/oljaxrs:1.0
+  applicationName: mysystem
+  pullPolicy: IfNotPresent
+  pullSecret: my-image-registry-secret
+  service:
+    port: 9443
+    type: ClusterIP
+  manageTLS: true
+  replicas: 1
+  expose: true
+  route:
+    pathType: ImplementationSpecific
+  env:
+    - name: WLP_LOGGING_MESSAGE_FORMAT
+      value: "json"
+    - name: WLP_LOGGING_MESSAGE_SOURCE
+      value: "message,trace,accessLog,ffdc,audit"
+  probes:
+    startup:
+      failureThreshold: 12
+      httpGet:
+        path: /health/started
+        port: 9443
+        scheme: HTTPS
+      initialDelaySeconds: 30
+      periodSeconds: 2
+      timeoutSeconds: 10
+    liveness:
+      failureThreshold: 12
+      httpGet:
+        path: /health/live
+        port: 9443
+        scheme: HTTPS
+      initialDelaySeconds: 30
+      periodSeconds: 2
+      timeoutSeconds: 10
+    readiness:
+      failureThreshold: 12
+      httpGet:
+        path: /health/ready
+        port: 9443
+        scheme: HTTPS
+      initialDelaySeconds: 30
+      periodSeconds: 2
+      timeoutSeconds: 10

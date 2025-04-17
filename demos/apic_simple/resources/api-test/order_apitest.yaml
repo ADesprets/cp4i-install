@@ -1,0 +1,45 @@
+info:
+    testName: Order
+    version: 2
+configs:
+    globalVariables:
+        basePath: org1/sandbox/order
+        domain: cp4i-apic-gw-gateway-cp4i.apps.67de800e0fe34465b3ff346f.eu1.techzone.ibm.com
+        protocol: https://
+    inputs:
+        - default:
+            X-IBM-Client-Id: 14580e3319d5900d10a2726f632f3cf2
+            orderNumber: "551138279555072"
+steps:
+    - type: request
+      method: get
+      url: '{{ protocol }}{{ domain }}/{{ basePath }}/{{ orderNumber }}'
+      mode: json
+      headers:
+        X-IBM-Client-Id: '{{ X-IBM-Client-Id }}'
+      insecureSkipVerify: true
+    - type: assert-equals
+      expression: _response_statusCode
+      value: "200"
+      stoponfail: "false"
+    - type: assert-equals
+      expression: _response_header_Content-Type
+      value: application/json
+    - type: assert-is
+      expression: .status
+      value: string
+    - type: assert-equals
+      expression: .status
+      value: SHIPPED
+    - type: assert-is
+      expression: .tracking_reference
+      value: string
+    - type: assert-is
+      expression: .created_at
+      value: string
+    - type: assert-is
+      expression: .order_number
+      value: string
+    - type: assert-is
+      expression: .shipped_at
+      value: string

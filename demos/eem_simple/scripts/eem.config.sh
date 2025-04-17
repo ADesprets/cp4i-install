@@ -25,10 +25,10 @@ function eem_run_all () {
     decho $lf_tracelevel "oc -n $VAR_APIC_NAMESPACE get secret ${VAR_APIC_INSTANCE_NAME}-ingress-ca -o=jsonpath=\"{.data['ca\.crt']}\""
     lf_apic_ca_ingress=$(oc -n $VAR_APIC_NAMESPACE get secret ${VAR_APIC_INSTANCE_NAME}-ingress-ca -o=jsonpath="{.data['ca\.crt']}")
     export EEM_APIC_INGRESS_CA_CERT=${lf_apic_ca_ingress}
-    adapt_file ${MY_EEM_SIMPLE_DEMODIR}config/ ${MY_EEM_WORKINGDIR}config/ apim-cpd.yaml
+    adapt_file ${MY_EEM_SIMPLE_DEMODIR}resources/ ${MY_EEM_WORKINGDIR}resources/ apim-cpd.yaml
   
     # Create Secret to access API Connect from EEM.
-    create_oc_resource "Secret" "$VAR_EEM_APIC_INGRESS_CA_CERT_SECRET_NAME" "${MY_EEM_SIMPLE_DEMODIR}config/" "${MY_EEM_WORKINGDIR}config/" "apim-cpd.yaml" "$VAR_EEM_NAMESPACE"
+    create_oc_resource "Secret" "$VAR_EEM_APIC_INGRESS_CA_CERT_SECRET_NAME" "${MY_EEM_SIMPLE_DEMODIR}resources/" "${MY_EEM_WORKINGDIR}resources/" "apim-cpd.yaml" "$VAR_EEM_NAMESPACE"
   
     # 4) Update cp4i-eem CRD
     # spec.manager

@@ -1,0 +1,137 @@
+properties:
+- items:
+  - name: order_id
+    semantic: id
+  json_ptr: '#/definitions/Order'
+- items:
+  - name: customer_id
+    semantic: id
+  json_ptr: '#/definitions/Customer'
+- items:
+  - name: name
+    semantic: name
+  json_ptr: '#/definitions/ErrorTarget'
+- items:
+  - name: message
+    semantic: sentence
+  json_ptr: '#/definitions/ErrorItem'
+- items:
+  - name: phone
+    semantic: phone_number
+  - name: last_name
+    semantic: last_name
+  - name: first_name
+    semantic: first_name
+  - name: email
+    semantic: email
+  - name: username
+    semantic: username
+  json_ptr: '#/definitions/CustomerDetail'
+- items:
+  - name: customer_id
+    semantic: id
+  - name: ship_date
+    semantic: date
+  json_ptr: '#/definitions/OrderDetail'
+- items:
+  - name: book_id
+    semantic: id
+  - name: author_id
+    semantic: id
+  json_ptr: '#/definitions/Book'
+- items:
+  - name: date
+    semantic: date
+  - name: language
+    semantic: language
+  json_ptr: '#/definitions/BookDetail'
+resources:
+  AuthorSearchResult:
+    dependencies: []
+    operations:
+      pure:
+      - json_ptr: '#/paths/~1services~1author/post'
+    schemas:
+      primary:
+        json_ptr: '#/definitions/AuthorSearchResult'
+  Book:
+    dependencies: []
+    operations:
+      create:
+      - json_ptr: '#/paths/~1books/post'
+      delete:
+      - json_ptr: '#/paths/~1books~1{book_id}/delete'
+      retrieve:
+      - json_ptr: '#/paths/~1books~1{book_id}/get'
+      update:
+      - json_ptr: '#/paths/~1books~1{book_id}/put'
+    properties:
+      id_name: $.book_id
+    schemas:
+      primary:
+        json_ptr: '#/definitions/Book'
+  CategorySearchResult:
+    dependencies: []
+    operations:
+      pure:
+      - json_ptr: '#/paths/~1services~1category/post'
+    schemas:
+      primary:
+        json_ptr: '#/definitions/CategorySearchResult'
+  Customer:
+    dependencies: []
+    operations:
+      create:
+      - json_ptr: '#/paths/~1customers/post'
+      delete:
+      - json_ptr: '#/paths/~1customers~1{customer_id}/delete'
+      retrieve:
+      - json_ptr: '#/paths/~1customers~1{customer_id}/get'
+      update:
+      - json_ptr: '#/paths/~1customers~1{customer_id}/put'
+    properties:
+      id_name: $.customer_id
+    schemas:
+      primary:
+        json_ptr: '#/definitions/Customer'
+  Order:
+    dependencies:
+    - dependee_deletion: mutual
+      name: Customer
+      references:
+      - in: path
+        json_ptr: '#/paths/~1customers~1{customer_id}~1orders~1{order_id}/get/parameters[0]'
+        name: customer_id
+      - in: body
+        json_ptr: '#/definitions/OrderDetail/properties/customer_id'
+        name: $.customer_id
+      required: true
+    - dependee_deletion: mutual
+      name: Book
+      references:
+      - in: body
+        json_ptr: '#/definitions/OrderDetail/properties/book_ids/items'
+        name: $.book_ids[0]
+      required: true
+    operations:
+      create:
+      - json_ptr: '#/paths/~1customers~1{customer_id}~1orders/post'
+      delete:
+      - json_ptr: '#/paths/~1customers~1{customer_id}~1orders~1{order_id}/delete'
+      retrieve:
+      - json_ptr: '#/paths/~1customers~1{customer_id}~1orders~1{order_id}/get'
+      update:
+      - json_ptr: '#/paths/~1customers~1{customer_id}~1orders~1{order_id}/put'
+    properties:
+      id_name: $.order_id
+    schemas:
+      primary:
+        json_ptr: '#/definitions/Order'
+  ServiceUsage:
+    dependencies: []
+    operations:
+      pure:
+      - json_ptr: '#/paths/~1services~1usage/post'
+    schemas:
+      primary:
+        json_ptr: '#/definitions/ServiceUsage'

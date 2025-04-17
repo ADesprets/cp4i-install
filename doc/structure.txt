@@ -6,6 +6,9 @@ PROVISION_SCRIPTDIR Where is the provision_cluster-v2.sh shell (root of the scri
 MY_WORKINGDIR Folder where the files are generated, under this folder for each component, there is a folder associated with that component and also a DEMOS folder.
 XXX_DEMODIR For each scenario, a folder with the subdirectoires used for the scenario template, certificates, etc ... NOT generated files
 
+resources = json ou yaml ou autres? used by product administrative interface or client interface
+tmpl = yaml (or json) whch has a corresponding CRD
+
 -----------------------------------------------------------------------------------
 Main directories fro templates, operators, operands
 MY_YAMLDIR="${PROVISION_SCRIPTDIR}templates/"

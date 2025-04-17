@@ -437,7 +437,7 @@ starting=$(date);
 
 # end with / on purpose (if var not defined, uses CWD - Current Working Directory)
 scriptdir=$(dirname "$0")/
-configdir="${scriptdir}../config/"
+configdir="${scriptdir}../resources/"
 libdir="${scriptdir}../../../"
 MY_WORKINGDIR="${scriptdir}../../../working/"
 

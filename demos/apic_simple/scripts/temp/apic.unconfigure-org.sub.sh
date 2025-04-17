@@ -14,7 +14,7 @@ starting=$(date);
 SECONDS=0
 
 pwd
-. ../config/apic.properties
+. ../resources/apic.properties
 
 # Check if connexion to cluster is ok
 gi=$(kubectl get nodes)

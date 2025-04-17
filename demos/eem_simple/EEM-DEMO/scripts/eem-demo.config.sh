@@ -1,7 +1,7 @@
 
 # end with / on purpose (if var not defined, uses CWD - Current Working Directory)
 scriptdir=$(dirname "$0")/
-configdir="${scriptdir}../config/"
+configdir="${scriptdir}../resources/"
 PROVISION_SCRIPTDIR="${scriptdir}../../../"
 
 # load helper functions
@@ -39,8 +39,8 @@ SECONDS=0
 		hostname=`oc -n ${ns} get route openldap-external -o jsonpath='{.spec.host}'`
 
 		# load users and groups into LDAP
-		load_users_2_ldap_server "${MY_YAMLDIR}config/" ${MY_WORKINGDIR} "Import.tmpl"
-		#envsubst < "${MY_YAMLDIR}config/Import.tmpl" > "${MY_YAMLDIR}config/Import.ldiff"
+		load_users_2_ldap_server "${MY_YAMLDIR}resources/" ${MY_WORKINGDIR} "Import.tmpl"
+		#envsubst < "${MY_YAMLDIR}resources/Import.tmpl" > "${MY_YAMLDIR}resources/Import.ldiff"
 		#$MY_LDAP_COMMAND -H ldap://$hostname:$port -D "$MY_LDAP_ADMIN_DN" -w "$MY_LDAP_ADMIN_PASSWORD" -f ${MY_YAMLDIR}kube_resources/ldap_users.ldif
 	  fi
 	fi

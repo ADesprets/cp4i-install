@@ -1,0 +1,24 @@
+apiVersion: datapower.ibm.com/v1beta3
+kind: DataPowerService
+metadata:
+  name: gitopstestdp
+  labels:
+    backup.datapower.ibm.com/component: datapowerservice
+  namespace: datapower
+spec:
+  license:
+    accept: true
+    license: L-EYGU-PVGRBC
+    use: nonproduction
+  resources:
+    limits:
+      memory: 4Gi
+    requests:
+      cpu: 1
+      memory: 4Gi
+  users:
+    - accessLevel: privileged
+      name: admin
+      passwordSecret: dpadmincreds
+  replicas: 1
+  version: 10.6.0.1

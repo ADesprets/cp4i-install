@@ -180,7 +180,7 @@ function display_access_info() {
     echo  "<DT><A HREF=${lf_eem_ui_url}>Event Endpoint Management UI</A>" >> ${MY_WORKINGDIR}/bookmarks.html
     lf_eem_lf_gtw_url=$(oc -n $VAR_EEM_NAMESPACE get EventEndpointManagement -o=jsonpath='{.items[?(@.kind=="EventEndpointManagement")].status.endpoints[?(@.name=="gateway")].uri}')
     mylog info "Event Endpoint Management Gateway endpoint: ${lf_eem_lf_gtw_url}" 0
-    mylog info "The credentials are defined in the file ./customisation/EP/config/user-credentials.yaml" 0
+    mylog info "The credentials are defined in the file ./customisation/EP/resources/user-credentials.yaml" 0
   fi
 
   # Event Processing
@@ -189,7 +189,7 @@ function display_access_info() {
     lf_ep_ui_url=$(oc -n $VAR_EP_NAMESPACE get EventProcessing -o=jsonpath='{.items[?(@.kind=="EventProcessing")].status.endpoints[?(@.name=="ui")].uri}')
     mylog info "Event Processing UI endpoint: ${lf_ep_ui_url}" 0
     echo "<DT><A HREF=${lf_ep_ui_url}>Event Processing UI</A>" >> ${MY_WORKINGDIR}/bookmarks.html
-    mylog info "The credentials are defined in the file ./customisation/EP/config/user-credentials.yaml" 0
+    mylog info "The credentials are defined in the file ./customisation/EP/resources/user-credentials.yaml" 0
   fi
   
   # LDAP
@@ -1522,16 +1522,16 @@ function generate_files() {
   # - in template custom dirs, separate the files to two categories : scripts (*.properties) and config (*.yaml or .json)
   # - generate first the *.properties files to be sourced then generate the *.yaml/*.json files
 
-  local lf_config_customdir="${lf_in_source_directory}config/"
+  local lf_config_customdir="${lf_in_source_directory}resources/"
   local lf_scripts_customdir="${lf_in_source_directory}scripts/"
-  local lf_config_gendir="${lf_in_target_directory}config/"
+  local lf_config_gendir="${lf_in_target_directory}resources/"
   local lf_scripts_gendir="${lf_in_target_directory}scripts/"
 
   local lf_nfiles lf_file lf_filename
 
-  decho $lf_tracelevel "lf_config_customdir: ${lf_in_source_directory}config/"
+  decho $lf_tracelevel "lf_config_customdir: ${lf_in_source_directory}resources/"
   decho $lf_tracelevel "lf_scripts_customdir: ${lf_in_source_directory}scripts/"
-  decho $lf_tracelevel "lf_config_gendir: ${lf_in_target_directory}config/"
+  decho $lf_tracelevel "lf_config_gendir: ${lf_in_target_directory}resources/"
   decho $lf_tracelevel "lf_scripts_gendir: ${lf_in_target_directory}scripts/"
 
   # set -a
@@ -1634,11 +1634,11 @@ function create_certificate_chain() {
   # Create both Issuers
   local lf_tls_ca_issuer_name=${lf_in_namespace}-${lf_in_issuername}-ca     # TLS_CA_ISSUER_NAME
   local lf_tls_root_cert_name=${lf_in_namespace}-${lf_in_root_cert_name}-ca # TLS_ROOT_CERT_NAME
-  create_oc_resource "Issuer" "$lf_tls_ca_issuer_name" "${MY_TLS_SCRIPTDIR}config/" "${lf_in_workingdir}" "Issuer_ca.yaml" "$lf_in_namespace"
+  create_oc_resource "Issuer" "$lf_tls_ca_issuer_name" "${MY_TLS_SCRIPTDIR}resources/" "${lf_in_workingdir}" "Issuer_ca.yaml" "$lf_in_namespace"
   
   local lf_tls_cert_issuer_name=${lf_in_namespace}-${lf_in_issuername}-tls   # TLS_CERT_ISSUER_NAME
   export VAR_SECRET=$lf_tls_root_cert_name
-  create_oc_resource "Issuer" "$lf_tls_cert_issuer_name" "${MY_TLS_SCRIPTDIR}config/" "${lf_in_workingdir}" "Issuer_non_ca.yaml" "$lf_in_namespace"
+  create_oc_resource "Issuer" "$lf_tls_cert_issuer_name" "${MY_TLS_SCRIPTDIR}resources/" "${lf_in_workingdir}" "Issuer_non_ca.yaml" "$lf_in_namespace"
   unser VAR_SECRET
 
   # For Self-signed Certificate and Root Certificate
@@ -1646,7 +1646,7 @@ function create_certificate_chain() {
   export VAR_ISSUER=${lf_tls_ca_issuer_name}
   export VAR_SECRET=${lf_tls_root_cert_name}
   export VAR_LABEL=${lf_in_tls_label1}
-  create_oc_resource "Certificate" "$lf_tls_root_cert_name" "${MY_TLS_SCRIPTDIR}config/" "${lf_in_workingdir}" "CACertificate.yaml" "$lf_in_namespace"
+  create_oc_resource "Certificate" "$lf_tls_root_cert_name" "${MY_TLS_SCRIPTDIR}resources/" "${lf_in_workingdir}" "CACertificate.yaml" "$lf_in_namespace"
   unset VAR_COMMON_NAME VAR_ISSUER VAR_SECRET VAR_LABEL
 
   # For TLS Certificate
@@ -1655,8 +1655,8 @@ function create_certificate_chain() {
   export VAR_ISSUER=${lf_tls_cert_issuer_name}
   export VAR_SECRET=${lf_tls_cert_name}
   export VAR_LABEL=${lf_in_tls_label1}
-  export VAR_INGRESS=$(oc get ingresses.config/cluster -o jsonpath='{.spec.domain}')
-  create_oc_resource "Certificate" "$lf_tls_cert_name" "${MY_TLS_SCRIPTDIR}config/" "${lf_in_workingdir}" "TLSCertificate.yaml" "$lf_in_namespace"
+  export VAR_INGRESS=$(oc get ingresses.resources/cluster -o jsonpath='{.spec.domain}')
+  create_oc_resource "Certificate" "$lf_tls_cert_name" "${MY_TLS_SCRIPTDIR}resources/" "${lf_in_workingdir}" "TLSCertificate.yaml" "$lf_in_namespace"
   unset VAR_COMMON_NAME VAR_ISSUER VAR_SECRET VAR_LABEL VAR_INGRESS
 
   trace_out $lf_tracelevel create_certificate_chain
@@ -1870,27 +1870,43 @@ function create_operator_instance() {
   local lf_timeout=$MY_MAX_TIMEOUT
   local lf_interval=$MY_DELAY_SECONDS
   while [[ $lf_timeout -gt 0 ]]; do
-    if oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $VAR_OPERATOR_NAME &>/dev/null; then
+    lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest -o json | \
+                      jq -r --arg op "$VAR_OPERATOR_NAME" --arg cs "$VAR_CATALOG_SOURCE_NAME" \
+                      '.items[] | select(.metadata.name==$op and .status.catalogSource==$cs) | .status.defaultChannel')
+    
+    if [[ -n "$lf_operator_chl" ]]; then
+      decho $lf_tracelevel "Channel:\"$lf_operator_chl\" for operator \"$VAR_OPERATOR_NAME\""
       break
     fi
     sleep $lf_interval
     lf_timeout=$((lf_timeout - lf_interval))
   done
+  
+  if [[ $lf_timeout -le 0 ]]; then
+    mylog error "Timeout waiting channel:\"$lf_operator_chl\" for operator \"$VAR_OPERATOR_NAME\" to appear in catalog"
+    exit 1
+  fi
 
-  # Verify operator is ready
-  oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $VAR_OPERATOR_NAME -o json | jq -e '.status.channels' >/dev/null || { echo "Operator not ready"; exit 1; }
-
-  lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest -o json | \
-                    jq -r --arg op "$VAR_OPERATOR_NAME" --arg cs "$VAR_CATALOG_SOURCE_NAME" \
-                    '.items[] | select(.metadata.name==$op and .status.catalogSource==$cs) | .status.defaultChannel')
-  decho $lf_tracelevel "Channel:\"$lf_operator_chl\" for operator \"$VAR_OPERATOR_NAME\""
-
-  lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest -o json | \
+  # Wait for operator csv to appear in catalog
+  local lf_timeout=$MY_MAX_TIMEOUT
+  local lf_interval=$MY_DELAY_SECONDS
+  while [[ $lf_timeout -gt 0 ]]; do
+    lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest -o json | \
                 jq -r --arg op "$VAR_OPERATOR_NAME" --arg cs "$VAR_CATALOG_SOURCE_NAME" \
                 '.items[] | select(.metadata.name==$op and .status.catalogSource==$cs) | .status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
-  decho $lf_tracelevel "Installed version:\"$lf_csv_name\" for operator \"$VAR_OPERATOR_NAME\""
-
-  local lf_strategy="Automatic"
+    
+    if [[ -n "$lf_csv_name" ]]; then
+      decho $lf_tracelevel "Installed version:\"$lf_csv_name\" for operator \"$VAR_OPERATOR_NAME\""
+      break
+    fi
+    sleep $lf_interval
+    lf_timeout=$((lf_timeout - lf_interval))
+  done
+  
+  if [[ $lf_timeout -le 0 ]]; then
+    mylog error "Timeout waiting version:\"$lf_csv_name\" for operator \"$VAR_OPERATOR_NAME\" to appear in catalog"
+    exit 1
+  fi
 
   # export are important because they are used to replace the variable in the subscription.yaml (envsubst command)
   export VAR_OPERATOR_CHL=$lf_operator_chl
