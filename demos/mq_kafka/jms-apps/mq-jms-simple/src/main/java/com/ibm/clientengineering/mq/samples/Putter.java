@@ -1,7 +1,5 @@
 package com.ibm.clientengineering.mq.samples;
 
-import java.util.Date;
-
 import javax.jms.Connection;
 import javax.jms.Destination;
 import javax.jms.Message;

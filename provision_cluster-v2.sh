@@ -1417,7 +1417,7 @@ function install_ep() {
       # user credentials
       local lf_varb64=$(cat "${MY_EP_WORKINGDIR}resources/user-credentials.yaml" | base64 -w0)
       if $MY_APPLY_FLAG; then
-        oc -n $VAR_EP_NAMESPACE patch secret ${VAR_EP_INSTANCE_NAME}-ibm-ep-user-credentials --type=merge -p "{\"data\":{\"user-mapping.json\":\"$lf_varb64\"}}"
+        oc -n $VAR_EP_NAMESPACE patch secret ${VAR_EP_INSTANCE_NAME}-ibm-ep-user-credentials --type=merge -p "{\"data\":{\"user-credentials.json\":\"$lf_varb64\"}}"
       fi
   
       # user roles
