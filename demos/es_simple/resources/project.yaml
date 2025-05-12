@@ -1,7 +1,0 @@
-apiVersion: project.openshift.io/v1
-kind: Project
-metadata:
-  name: ad
-  annotations:
-    openshift.io/description: For MQ customisation
-    openshift.io/display-name: ad project

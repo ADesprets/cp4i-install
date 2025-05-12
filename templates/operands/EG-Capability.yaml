@@ -9,7 +9,7 @@ spec:
     license: $MY_EGW_LIC
     metric: VIRTUAL_PROCESSOR_CORE
     use: $MY_EGW_LIC_USAGE
-  managerEndpoint: $VAR_EEM_MANAGER_GATEWAY_ROUTE
+  managerEndpoint: ${VAR_EEM_MANAGER_GATEWAY_ROUTE}
   gatewayGroupName: ${VAR_EGW_INSTANCE_GRP_NAME}
   gatewayID: ${VAR_EGW_INSTANCE_NAME}
   tls:

@@ -8,7 +8,8 @@
 function create_issuer () {
   trace_in 3 create_issuer
   
-  create_oc_resource "Issuer" "${VAR_QMGR}-issuer" "${MY_RESOURCESDIR}" "${sc_mq_kafka_demo_workingdir}" "self-signed-issuer.yaml" "${VAR_MQ_NAMESPACE}"
+  #create_oc_resource "Issuer" "${VAR_QMGR}-issuer" "${MY_RESOURCESDIR}" "${sc_mq_kafka_demo_workingdir}" "self-signed-issuer.yaml" "${VAR_MQ_NAMESPACE}"
+  create_oc_resource "Issuer" "${VAR_QMGR}-issuer" "${MY_MQ_KAFKA_DEMODIR}tls/" "$MY_MQ_WORKINGDIR" "issuer.yaml" "${VAR_MQ_NAMESPACE}"
 
    trace_out 3 create_issuer
 }
@@ -368,7 +369,7 @@ function mq_kafka_demo_run_all () {
   local lf_starting_date=$(date);
 
   check_directory_exist_create "${sc_mq_kafka_demo_workingdir}"
-  create_project "${VAR_MQ_NAMESPACE}" "${VAR_MQ_NAMESPACE} project" "For mq kafka demo" "${MY_RESOURCESDIR}" "${sc_mq_kafka_demo_workingdir}"  
+  create_project "${VAR_MQ_NAMESPACE}" "${VAR_MQ_NAMESPACE} project" "For MQ kafka demo" "${MY_RESOURCESDIR}" "${sc_mq_kafka_demo_workingdir}"  
 
   # This demo is based on the following one :  https://github.com/dalelane/mq-kafka-connect-tutorial
   # in case it it's not already installed (happy with idempotence !!!)

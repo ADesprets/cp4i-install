@@ -4,6 +4,7 @@ metadata:
   name: registry-storage
   namespace: openshift-image-registry
 spec:
+  storageClassName: $MY_FILE_STORAGE_CLASS
   accessModes:
     - ReadWriteMany
   resources:

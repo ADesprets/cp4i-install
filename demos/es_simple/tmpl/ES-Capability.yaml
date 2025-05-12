@@ -46,10 +46,23 @@ spec:
           configMapKeyRef:
             key: kafka-metrics-config.yaml
             name: ${VAR_ES_METRICS_CM}
-      storage:
-        type: persistent-claim
-        class: $MY_BLOCK_STORAGE_CLASS
-        size: 20Gi
+    nodePools:
+      - name: kafka
+        roles:
+          - broker
+        replicas: 3
+        storage:
+          type: persistent-claim
+          class: $MY_BLOCK_STORAGE_CLASS
+          size: 20Gi
+    zookeeper:
+      replicas: 1
+      metricsConfig:
+        type: jmxPrometheusExporter
+        valueFrom:
+          configMapKeyRef:
+            key: zookeeper-metrics-config.yaml
+            name: ${VAR_ES_METRICS_CM}
       storage:
         type: persistent-claim
         class: $MY_BLOCK_STORAGE_CLASS

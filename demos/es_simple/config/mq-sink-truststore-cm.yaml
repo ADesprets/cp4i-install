@@ -1,9 +1,0 @@
-yaml
-   apiVersion: v1
-   kind: ConfigMap
-   metadata:
-     name: mq-sink-truststore
-   data:
-     truststore.jks: |
-       Base64-encoded contents of your truststore file
-   

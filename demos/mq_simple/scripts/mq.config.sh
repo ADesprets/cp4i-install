@@ -244,7 +244,9 @@ function mq_init() {
   export VAR_MQSC_OBJECTS_CM="${VAR_QMGR}-mqsc-cm"
   export MY_MQ_DEMO_NAMESPACE="${VAR_MQ_NAMESPACE}"
 
- 
+  sc_mq_simple_workingdir="${sc_component_script_dir}working/${VAR_QMGR}/"
+  check_directory_exist_create  "${sc_mq_simple_workingdir}"
+
   check_directory_exist_create  "${MY_MQ_WORKINGDIR}generated/${VAR_QMGR}"
   sc_qmgr_custom_gendir="${MY_MQ_WORKINGDIR}generated/${VAR_QMGR}/"
   
@@ -364,6 +366,8 @@ set +a
 
 # load helper functions
 . "${sc_provision_lib_file}"
+
+install_mq 
 
 mq_init
 

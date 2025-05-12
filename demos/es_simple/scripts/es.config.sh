@@ -8,7 +8,7 @@ function create_es() {
   if $MY_ES; then
 
     # Creating Event Streams instance
-    create_operand_instance "EventStreams" "${VAR_ES_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_ES_WORKINGDIR}" "ES-Capability.yaml" "$VAR_ES_NAMESPACE" "{.status.phase}" "Ready"
+    create_operand_instance "EventStreams" "${VAR_ES_INSTANCE_NAME}" "${sc_tmpl_dir}" "${MY_ES_WORKINGDIR}" "ES-Capability.yaml" "$VAR_ES_NAMESPACE" "{.status.phase}" "Ready"
 
     # Creating Event Streams Service Account associated with the ES instance to enable monitoring
     oc -n $VAR_ES_NAMESPACE adm policy add-cluster-role-to-user cluster-monitoring-view -z ${VAR_ES_SERVICE_ACCOUNT_NAME}
@@ -132,7 +132,9 @@ function es_run_all () {
 function es_init() {
   local lf_tracelevel=2
   trace_in $lf_tracelevel es_init
-
+  
+  sc_tmpl_dir="${sc_component_script_dir}../tmpl/"
+  
   trace_out $lf_tracelevel es_init
 }
 
@@ -216,7 +218,7 @@ sc_provision_script_parameters_file="${PROVISION_SCRIPTDIR}script-parameters.pro
 sc_provision_constant_properties_file="${PROVISION_SCRIPTDIR}properties/cp4i-constants.properties"
 sc_provision_variable_properties_file="${PROVISION_SCRIPTDIR}properties/cp4i-variables.properties"
 sc_provision_lib_file="${PROVISION_SCRIPTDIR}lib.sh"
-sc_component_properties_file="${sc_component_script_dir}../resources/es.properties"
+sc_component_properties_file="${sc_component_script_dir}../properties/es.properties"
 sc_provision_preambule_file="${PROVISION_SCRIPTDIR}properties/preambule.properties"
 
 # SB]20250319 Je suis obligé d'utiliser set -a et set +a parceque à cet instant je n'ai pas accès à la fonction read_config_file

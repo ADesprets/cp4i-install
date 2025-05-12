@@ -1,0 +1,115 @@
+apiVersion: eventstreams.ibm.com/v1beta2
+kind: KafkaMirrorMaker2
+metadata:
+  name: mm2
+  namespace: europe
+spec:
+  clusters:
+    - alias: northamerica
+      authentication:
+        passwordSecret:
+          password: password
+          secretName: mm2-northamerica
+        type: scram-sha-512
+        username: mm2-northamerica
+      bootstrapServers: 'na-eventstreams-kafka-bootstrap.north-america.svc:9098'
+      tls:
+        trustedCertificates:
+          - certificate: ca.crt
+            secretName: na-eventstreams-cluster-ca-cert
+    - alias: southamerica
+      authentication:
+        passwordSecret:
+          password: password
+          secretName: mm2-southamerica
+        type: scram-sha-512
+        username: mm2-southamerica
+      bootstrapServers: 'sa-eventstreams-kafka-bootstrap.south-america.svc:9098'
+      tls:
+        trustedCertificates:
+          - certificate: ca.crt
+            secretName: sa-eventstreams-cluster-ca-cert
+    - alias: europe
+      authentication:
+        passwordSecret:
+          password: password
+          secretName: mm2-europe
+        type: scram-sha-512
+        username: mm2-europe
+      bootstrapServers: 'eu-eventstreams-kafka-bootstrap.europe.svc:9098'
+      config:
+        status.storage.topic: __mm2_status
+        status.storage.replication.factor: 3
+        offset.storage.topic: __mm2_offsets
+        value.converter: org.apache.kafka.connect.converters.ByteArrayConverter
+        group.id: mm2
+        config.storage.replication.factor: 3
+        config.storage.topic: __mm2_configs
+        key.converter: org.apache.kafka.connect.converters.ByteArrayConverter
+        offset.storage.replication.factor: 3
+      tls:
+        trustedCertificates:
+          - certificate: ca.crt
+            secretName: eu-eventstreams-cluster-ca-cert
+  connectCluster: europe
+  image: 'image-registry.openshift-image-registry.svc:5000/europe/rename:1.0'
+  metricsConfig:
+    type: jmxPrometheusExporter
+    valueFrom:
+      configMapKeyRef:
+        key: mm2-metrics-config.yaml
+        name: eventstreams-metrics
+  mirrors:
+    - sourceCluster: northamerica
+      sourceConnector:
+        config:
+          offset-syncs.topic.replication.factor: 3
+          offset-syncs.topic.location: source
+          sync.topic.configs.interval.seconds: 600
+          refresh.topics.enabled: true
+          offset.lag.max: 100
+          refresh.topics.interval.seconds: 600000
+          sync.topic.acls.enabled: false
+          replication.factor: 3
+          sync.topic.configs.enabled: true
+          replication.policy.class: org.apache.kafka.connect.mirror.DefaultReplicationPolicy
+      targetCluster: europe
+      topicsPattern: LH.*
+    - sourceCluster: southamerica
+      sourceConnector:
+        config:
+          offset-syncs.topic.replication.factor: 3
+          offset-syncs.topic.location: source
+          sync.topic.configs.interval.seconds: 600
+          refresh.topics.enabled: true
+          offset.lag.max: 100
+          refresh.topics.interval.seconds: 600000
+          sync.topic.acls.enabled: false
+          replication.factor: 3
+          sync.topic.configs.enabled: true
+          replication.policy.class: org.apache.kafka.connect.mirror.DefaultReplicationPolicy
+      targetCluster: europe
+      topicsPattern: LH.*
+  replicas: 1
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+    requests:
+      cpu: 2000m
+      memory: 2Gi
+  template:
+    pod:
+      imagePullSecrets:
+        - name: mm2-mirrormaker2-dockercfg-4tbsx
+      metadata:
+        annotations:
+          cloudpakId: c8b82d189e7545f0892db9ef2731b90d
+          productVersion: 11.6.1
+          productID: 2a79e49111f44ec3acd89608e56138f5
+          cloudpakName: IBM Cloud Pak for Integration
+          productChargedContainers: mm2-mirrormaker2
+          productCloudpakRatio: '2:1'
+          productName: IBM Event Streams for Non Production
+          eventstreams.production.type: CloudPakForIntegrationNonProduction
+          productMetric: VIRTUAL_PROCESSOR_CORE

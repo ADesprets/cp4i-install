@@ -62,5 +62,5 @@ spec:
         provider: manual
     manualConfig:
       configMap: 
-        name: ${MY_MQ_DEMO_NAMESPACE}-${VAR_QMGR}-mywebconfig
+        name: ${VAR_WEBCONFIG_CM}
     enabled: true

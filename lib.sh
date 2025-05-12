@@ -87,7 +87,7 @@ function wait_for_catalogsource_2be_ready() {
 # Display information to access CP4I
 function display_access_info() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel display_access_info_ace
+  trace_in $lf_tracelevel display_access_info
 
   mylog info "==== Displaying Access Info to CP4I." 0
 
@@ -899,6 +899,7 @@ function wait_for_state() {
   fi
 
   lf_last_state=''
+  decho $lf_tracelevel "oc $lf_option get $lf_in_type $lf_in_cr_name -o jsonpath=$lf_in_path"
   while true; do
     lf_current_state=$(oc $lf_option get $lf_in_type $lf_in_cr_name -o jsonpath=$lf_in_path)
     if [[ "$lf_current_state" == "$lf_in_state" ]]; then
@@ -1002,7 +1003,13 @@ function check_create_oc_yaml() {
   if $MY_APPLY_FLAG; then
     mylog info "Creating/Updating ${lf_in_type}/${lf_in_cr_name} using ${lf_in_target_directory}${lf_in_yaml_file} in namespace ${lf_in_namespace}"
     oc apply -f "${lf_in_target_directory}${lf_in_yaml_file}" || exit 1
-    wait_for_resource $lf_in_type $lf_in_cr_name $lf_in_namespace
+    if [[ $lf_in_type == "Subscription" ]]; then
+      # use the fully qualified API Group (oc get subscription -A  returns nothing and oc get sub -A returns a full list of subscriptions !!!)
+      lf_type="subscription"
+    else 
+      lf_type=$lf_in_type
+    fi
+    wait_for_resource $lf_type $lf_in_cr_name $lf_in_namespace
   fi
 
   trace_out $lf_tracelevel check_create_oc_yaml
@@ -1373,7 +1380,11 @@ function wait_for_resource() {
   local lf_in_namespace=$3
   decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|"
 
-  if [[ $# -ne 3 ]] && [[ $# -ne 2 ]]; then
+  if [[ $lf_in_type == "subscription" ]]; then
+    decho $lf_tracelevel ">>> Temporary fix for subscription"
+  else
+
+if [[ $# -ne 3 ]] && [[ $# -ne 2 ]]; then
     mylog error "You have to provide 2 or 3 arguments: type, resource name and eventually namespace"
     trace_out $lf_tracelevel wait_for_resource
     exit  1
@@ -1394,6 +1405,7 @@ function wait_for_resource() {
 
   local lf_resource=""
   seconds=0
+  decho $lf_tracelevel "oc $lf_option1 get $lf_in_type -o json | jq -r --arg my_resource "$lf_in_cr_name" '.items[].metadata | select (.name == $my_resource).name'"
   while [[ -z $lf_resource ]]; do
     echo -ne "Timer: $seconds seconds | waiting for $lf_in_type/$lf_in_cr_name $lf_option2...\033[0K\r"
     lf_resource=$(oc $lf_option1 get $lf_in_type -o json | jq -r --arg my_resource "$lf_in_cr_name" '.items[].metadata | select (.name == $my_resource).name')
@@ -1406,6 +1418,10 @@ function wait_for_resource() {
   echo 
   export VAR_RESOURCE=$lf_resource
 
+  
+  fi
+
+  
   trace_out $lf_tracelevel wait_for_resource
 }
 
@@ -1483,7 +1499,7 @@ function check_add_cs_ibm_pak() {
     oc apply -f $lf_file || exit 1
 
     # wait for the availability of the catalogsource
-    #wait_for_resource "packagemanifest" "${lf_in_operator_name}" "$MY_CATALOGSOURCES_NAMESPACE"
+    # wait_for_resource "packagemanifest" "${lf_in_operator_name}" "$MY_CATALOGSOURCES_NAMESPACE"
     wait_for_catalogsource_2be_ready "${lf_in_catalogsource_label}" "${MY_MAX_RETRIES}" "${MY_DELAY_SECONDS}" "${MY_CATALOGSOURCES_NAMESPACE}"
   fi
 
@@ -1850,7 +1866,7 @@ function create_operator_instance() {
 
   if [[ $# -ne 5 ]]; then
     mylog error "You have to provide 5 arguments: operator, catalog source, source directory, target directory and namespace"
-    trace_out $lf_tracelevel create_operand_instance
+    trace_out $lf_tracelevel create_operator_instance
     exit  1
   fi
 

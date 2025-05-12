@@ -93,6 +93,7 @@ function install_sftp() {
 }
 
 ################################################
+# https://docs.openshift.com/gitops/1.16/installing_gitops/installing-openshift-gitops.html
 # Install GitOps
 function install_gitops() {
   SECONDS=0
@@ -104,13 +105,15 @@ function install_gitops() {
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
-  # https://docs.openshift.com/gitops/1.12/installing_gitops/installing-openshift-gitops.html
   if $MY_GITOPS; then
     check_directory_exist_create "${MY_GITOPS_WORKINGDIR}"
 
-    # Namespace openshift-gitops-operator does not exist and will be created.
-    create_operator_instance "${MY_GITOPS_OPERATOR}" "${MY_RH_OPERATORS_CATALOG}" "${MY_OPERATORSDIR}" "${MY_GITOPS_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
+    create_project "$MY_GITOPS_NAMESPACE" "${MY_GITOPS_NAMESPACE} project" "For OpenShift Gitops" "${MY_RESOURCESDIR}" "${MY_GITOPS_WORKINGDIR}"
 
+    create_oc_resource "OperatorGroup" "$MY_GITOPS_OPERATORGROUP" "$MY_RESOURCESDIR" "$MY_GITOPS_WORKINGDIR" "operator-group-gitops.yaml" "$MY_GITOPS_NAMESPACE"
+
+    # Create a subscription object for Gitops operator
+    create_operator_instance "${MY_GITOPS_OPERATOR}" "${MY_RH_OPERATORS_CATALOG}" "${MY_OPERATORSDIR}" "${MY_GITOPS_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
   fi
 
   trace_out $lf_tracelevel install_gitops
@@ -362,6 +365,7 @@ function install_cluster_monitoring() {
 }
 
 ##################################################
+# https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/backup_and_restore/oadp-application-backup-and-restore#installing-and-configuring-oadp
 # Install OADP (OpenShift API for Data Protection)
 function install_oadp() {
   SECONDS=0
@@ -394,6 +398,7 @@ function install_oadp() {
 ################################################
 # Install redhat Pipelines (tekton)
 # https://docs.openshift.com/pipelines/1.14/install_config/installing-pipelines.html
+# https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/1.18/html/installing_and_configuring/installing-pipelines
 function install_pipelines() {
   SECONDS=0
   local lf_starting_date=$(date)
@@ -411,7 +416,7 @@ function install_pipelines() {
     create_operator_instance "${MY_PIPELINES_OPERATOR}" "${MY_RH_OPERATORS_CATALOG}" "${MY_OPERATORSDIR}" "${MY_PIPELINES_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
   fi
   
-  trace_out $lf_tracelevel install_pipeline
+  trace_out $lf_tracelevel install_pipelines
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
@@ -841,6 +846,8 @@ function install_navigator() {
   if $MY_NAVIGATOR; then
     check_directory_exist_create "${MY_NAVIGATOR_WORKINGDIR}"
 
+    create_project "$VAR_NAVIGATOR_NAMESPACE" "$VAR_NAVIGATOR_NAMESPACE project" "For CP4I Navigator (Platform UI)" "${MY_RESOURCESDIR}" "${MY_NAVIGATOR_WORKINGDIR}"
+
     # add catalog sources using ibm_pak plugin
     check_add_cs_ibm_pak $MY_NAVIGATOR_CASE $MY_NAVIGATOR_OPERATOR $MY_NAVIGATOR_CATALOGSOURCE_LABEL amd64
     if [[ -z $MY_NAVIGATOR_VERSION ]]; then
@@ -888,6 +895,8 @@ function install_assetrepo() {
 
   if $MY_ASSETREPO; then
     check_directory_exist_create "${MY_ASSETREPO_WORKINGDIR}"
+
+    create_project "$VAR_ASSETREPO_NAMESPACE" "$VAR_ASSETREPO_NAMESPACE project" "For CP4I Asset Repository" "${MY_RESOURCESDIR}" "${MY_ASSETREPO_WORKINGDIR}"
 
     # add catalog sources using ibm_pak plugin
     check_add_cs_ibm_pak $MY_ASSETREPO_CASE $MY_ASSETREPO_OPERATOR $MY_ASSETREPO_CATALOGSOURCE_LABEL amd64
@@ -1307,9 +1316,25 @@ function install_egw() {
 
     create_project "${VAR_EGW_NAMESPACE}" "${VAR_EGW_NAMESPACE} project" "For Event Endpoint Gateway" "${MY_RESOURCESDIR}" "${MY_EGW_WORKINGDIR}"
 
-    # This URL to be used by the EventGateway
-    export VAR_EEM_MANAGER_GATEWAY_ROUTE=$(oc -n $VAR_EEM_NAMESPACE get eem ${VAR_EEM_INSTANCE_NAME} -o jsonpath='{.status.endpoints}' | jq -r '.[] | select (.name=="gateway").uri')
+    # Wait for this URL which will used by the EventGateway
+    local lf_timeout=$MY_MAX_TIMEOUT
+    local lf_interval=$MY_DELAY_SECONDS
+    while [[ $lf_timeout -gt 0 ]]; do
+      lf_eem_manager_gateway_route=$(oc -n $VAR_EEM_NAMESPACE get eem ${VAR_EEM_INSTANCE_NAME} -o jsonpath='{.status.endpoints}' | jq -r '.[] | select (.name=="gateway").uri')      
+      if [[ -n "$lf_eem_manager_gateway_route" ]]; then
+        decho $lf_tracelevel "EEM Manager Gateway route\"$lf_eem_manager_gateway_route\" for instance \"$instance\""
+        break
+      fi
+      sleep $lf_interval
+      lf_timeout=$((lf_timeout - lf_interval))
+    done
+    
+    if [[ $lf_timeout -le 0 ]]; then
+      mylog error "Timeout waiting EEM Manager Gateway route:\"$lf_eem_manager_gateway_route\" for instance \"$instance\""
+      exit 1
+    fi
 
+    export VAR_EEM_MANAGER_GATEWAY_ROUTE=$lf_eem_manager_gateway_route
     create_operand_instance "EventGateway" "${VAR_EGW_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_EGW_WORKINGDIR}" "EG-Capability.yaml" "${VAR_EGW_NAMESPACE}" "{.status.phase}" "Running"
   fi
 
@@ -1792,9 +1817,9 @@ function customise_es() {
     # - generate first the *.properties files to be sourced then generate the *.yaml files
     check_directory_exist_create "${MY_ES_WORKINGDIR}scripts"
     check_directory_exist_create "${MY_ES_WORKINGDIR}config"
-    generate_files $MY_ES_SIMPLE_DEMODIR $MY_ES_WORKINGDIR false
+    generate_files $MY_ES_SIMPLE_DEMODIR $MY_ES_WORKINGDIR true
 
-    # ${MY_ES_SIMPLE_DEMODIR}scripts/es.config.sh --call es_run_all
+    ${MY_ES_SIMPLE_DEMODIR}scripts/es.config.sh --call es_run_all
     ${MY_ES_MM2_DEMODIR}scripts/es.config.sh --call es_run_all
   fi
 
@@ -1952,7 +1977,7 @@ function customise_mq() {
       export MY_MQ_VERSION=$(oc ibm-pak list -o json | jq  --arg case "$MY_MQ_OPERATOR" '.[] | select (.name == $case ) | .latestAppVersion')
     fi
 
-    # launch custom script toto
+    # launch custom script
     ${MY_MQ_SIMPLE_DEMODIR}scripts/mq.config.sh --call mq_run_all
   fi
 
@@ -2305,9 +2330,10 @@ function provision_cluster_init() {
   echo ">>>MY_WORKINGDIR: ${MY_WORKINGDIR}"
   create_operand_instance "PersistentVolumeClaim" "registry-storage" "${MY_RESOURCESDIR}" "${MY_WORKINGDIR}" "registry_pvc.yaml" "openshift-image-registry" "{.status.phase}" "Bound"
   oc patch configs.imageregistry.operator.openshift.io/cluster --type=merge -p '{"spec":{"storage":{"pvc":{"claim":"registry-storage"}}}}'
+  oc patch configs.imageregistry.operator.openshift.io/cluster --type=merge -p '{"spec":{"managementState":"Managed"}}'
 
   # Expose service using default route
-  oc patch configs.imageregistry.operator.openshift.io/cluster --patch '{"spec":{"defaultRoute":true}}' --type=merge
+  oc -n openshift-image-registry patch configs.imageregistry.operator.openshift.io/cluster --patch '{"spec":{"defaultRoute":true}}' --type=merge
   wait_for_resource Route default-route openshift-image-registry
 
   # Get the default registry route:
@@ -2411,7 +2437,7 @@ function run_all() {
   
   # Start customization capabilities
   # No need to customise navigator, intassembly, assetrepo
-  #customise_part
+  customise_part
 
   trace_out $lf_tracelevel run_all
 }
