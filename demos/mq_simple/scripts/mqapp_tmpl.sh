@@ -6,4 +6,3 @@
 export MQCCDTURL=${MY_MQ_WORKINGDIR}cp4iadmq/json/ccdt.json
 export MQSSLKEYR=${MY_MQ_WORKINGDIR}cp4iadmq/tls/clnt1/clnt1-keystore.kdb
 amqsphac Q1 CP4IADMQ
-toto

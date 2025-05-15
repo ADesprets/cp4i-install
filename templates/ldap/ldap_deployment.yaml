@@ -30,7 +30,7 @@ spec:
     spec:
       containers:
         - name: $MY_LDAP_DEPLOYMENT
-          image: ${MY_LDAP_IMAGE}          
+          image: ${MY_LDAP_IMAGE}
           imagePullPolicy: IfNotPresent
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
@@ -42,6 +42,8 @@ spec:
           env:
             - name: LDAP_LOG_LEVEL
               value: "256"
+            - name: BITNAMI_DEBUG
+              value: "true"
           resources:
             limits:
               memory: "512Mi"
@@ -62,7 +64,8 @@ spec:
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
       dnsPolicy: ClusterFirst
-      securityContext: {}
+      securityContext: 
+        runAsNonRoot: true
       schedulerName: default-scheduler
       serviceAccountName: $MY_LDAP_SERVICEACCOUNT
       volumes:
@@ -72,11 +75,11 @@ spec:
         - name: ldap-db-config
           persistentVolumeClaim:
             claimName: pvc-ldap-config
-      volumeMounts:
-        - name: ldap-db-main
-          mountPath: /var/lib/ldap
-        - name: ldap-db-config
-          mountPath: /etc/ldap/slapd.d
+#      volumeMounts:
+#        - name: ldap-db-main
+#          mountPath: /var/lib/ldap
+#        - name: ldap-db-config
+#          mountPath: /etc/ldap/slapd.d
   strategy:
     type: RollingUpdate
     rollingUpdate:

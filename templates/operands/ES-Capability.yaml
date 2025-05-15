@@ -5,6 +5,9 @@ metadata:
   namespace: $VAR_ES_NAMESPACE
   labels:
     backup.eventstreams.ibm.com/component: eventstreams
+  annotations:
+    eventstreams.ibm.com/node-pools: enabled
+    eventstreams.ibm.com/kraft: enabled
 spec:
   version: $MY_ES_VERSION
   license: 
@@ -18,7 +21,7 @@ spec:
       replicas: 3
       config:
         auto.create.topics.enable: 'false'
-        inter.broker.protocol.version: '3.9'
+#        inter.broker.protocol.version: '3.9'
         offsets.topic.replication.factor: 1
         transaction.state.log.min.isr: 1
         transaction.state.log.replication.factor: 1
@@ -45,22 +48,10 @@ spec:
           configMapKeyRef:
             key: kafka-metrics-config.yaml
             name: ${VAR_ES_METRICS_CM}
-      storage:
-        type: persistent-claim
-        class: $MY_BLOCK_STORAGE_CLASS
-        size: 20Gi
-    zookeeper:
-      replicas: 1
-      metricsConfig:
-        type: jmxPrometheusExporter
-        valueFrom:
-          configMapKeyRef:
-            key: zookeeper-metrics-config.yaml
-            name: ${VAR_ES_METRICS_CM}
-      storage:
-        type: persistent-claim
-        class: $MY_BLOCK_STORAGE_CLASS
-        size: 20Gi
+#      storage:
+#        type: persistent-claim
+#        class: $MY_BLOCK_STORAGE_CLASS
+#        size: 20Gi
   adminApi: {}
   adminUI:
      authentication:

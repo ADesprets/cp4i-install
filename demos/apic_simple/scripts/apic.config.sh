@@ -603,7 +603,7 @@ function apic_run_all () {
   export MY_MAIL_SERVER_HOST_IP=$($MY_CLUSTER_COMMAND -n ${VAR_MAIL_NAMESPACE} get svc/mailhog -o jsonpath='{.spec.clusterIP}')
   decho $lf_tracelevel "To configure the mail server the clusterIP is ${MY_MAIL_SERVER_HOST_IP}"
   
-  # Will create both directories needed later on toto
+  # Will create both directories needed later
   adapt_file ${MY_APIC_SIMPLE_DEMODIR}properties/ ${MY_APIC_WORKINGDIR}properties/ apic.properties
   adapt_file ${MY_APIC_SIMPLE_DEMODIR}resources/ ${MY_APIC_WORKINGDIR}resources/ web-mgmt.cfg
   
@@ -697,8 +697,9 @@ function main() {
         ;;
       esac
   done
-  lf_calls=$(echo "$lf_calls" | xargs)  # Trim leading/trailing spaces
-
+  #lf_calls=$(echo "$lf_calls" | xargs)  # Trim leading/trailing spaces
+  lf_calls=$(echo "$lf_calls" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/[[:space:]]\+/ /g')
+  
   # Call processing function if --call was used
   case $lf_key in
     --all) apic_run_all "$@";;

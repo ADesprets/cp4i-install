@@ -87,6 +87,19 @@ function ldap_run_all () {
   trace_out $lf_tracelevel ldap_run_all
 }
 
+#############################################################
+# Run this script
+#############################################################
+function ldap_run_all_k8s () {
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel ldap_run_all_k8s
+
+  # load users and groups into LDAP
+  load_users_2_ldap_server "${VAR_LDAP_TMPL_DIRECTORY}" "${MY_LDAP_WORKINGDIR}" "${VAR_LDAP_LDIF_FILE}"
+  
+  trace_out $lf_tracelevel ldap_run_all_k8s
+}
+
 ################################################
 # initialisation
 function ldap_init() {
@@ -100,12 +113,16 @@ function ldap_init() {
   create_project "${VAR_LDAP_NAMESPACE}" "${VAR_LDAP_NAMESPACE} project" "For OpenLDAP" "${MY_RESOURCESDIR}" "${MY_LDAP_WORKINGDIR}"
 
   read_config_file "${MY_YAMLDIR}ldap/ldap_dit.properties"
-  export VAR_LDAP_PORT=$($MY_CLUSTER_COMMAND -n ${VAR_LDAP_NAMESPACE} get service "${VAR_LDAP_SERVICE}" -o jsonpath='{.spec.ports[0].nodePort}')
-  export VAR_LDAP_HOSTNAME=$($MY_CLUSTER_COMMAND -n ${VAR_LDAP_NAMESPACE} get route "${VAR_LDAP_ROUTE}" -o jsonpath='{.spec.host}')
 
-  $MY_CLUSTER_COMMAND apply -f "${MY_YAMLDIR}ldap/scc.yaml"
-  # Then assign it to your service account
-  $MY_CLUSTER_COMMAND adm policy add-scc-to-user openldap-scc -z $MY_LDAP_SERVICEACCOUNT -n ${VAR_LDAP_NAMESPACE}
+  case $MY_CLUSTER_COMMAND in
+  kubectl)  create_openldap_route_k8s;;
+  oc) create_openldap_route 
+      oc apply -f "${MY_YAMLDIR}ldap/scc.yaml"
+
+      # Then assign it to your service account
+      oc adm policy add-scc-to-user openldap-scc -z $MY_LDAP_SERVICEACCOUNT -n ${VAR_LDAP_NAMESPACE}
+      ;;
+  esac
 
   trace_out $lf_tracelevel ldap_init
 }
@@ -147,11 +164,15 @@ function main() {
         ;;
       esac
   done
-  lf_calls=$(echo "$lf_calls" | xargs)  # Trim leading/trailing spaces
+  #lf_calls=$(echo "$lf_calls" | xargs)  # Trim leading/trailing spaces
+  lf_calls=$(echo "$lf_calls" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/[[:space:]]\+/ /g')
 
   # Call processing function if --call was used
   case $lf_key in
-    --all) ldap_run_all "$@";;
+    --all)  case $MY_CLUSTER_COMMAND in
+              kubectl)  ldap_run_all_k8s "$@";;
+              oc) ldap_run_all "$@";;
+            esac;;
     --call) if [[ -n $lf_calls ]]; then
               process_calls "$lf_calls"
             else

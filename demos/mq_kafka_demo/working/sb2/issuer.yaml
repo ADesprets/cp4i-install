@@ -1,7 +1,0 @@
-apiVersion: cert-manager.io/v1
-kind: Issuer
-metadata:
-  name: sb2-issuer
-  namespace: cp4i  # Replace with your OpenShift namespace
-spec:
-  selfSigned: {}

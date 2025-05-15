@@ -1,0 +1,18 @@
+apiVersion: ceph.rook.io/v1
+kind: CephCluster
+metadata:
+  name: rook-ceph
+  namespace: rook-ceph
+spec:
+  cephVersion:
+    image: rook/ceph:v1.8.4  # Ensure you're using the version that matches your Rook installation
+  dataDirHostPath: /var/lib/rook  # Directory for storing Ceph data
+  mon:
+    count: 3  # Number of Ceph monitor pods
+    allowMultiplePerNode: true  # Allow multiple monitors per node
+  storage:
+    useAllNodes: true  # Use all nodes in the cluster for storage
+    useAllDevices: true  # Use all available devices on the nodes
+    # deviceFilter: /dev/sdb,/dev/sdc  # Uncomment and list devices you want to use (as a comma-separated list)
+  mgr:
+    count: 1

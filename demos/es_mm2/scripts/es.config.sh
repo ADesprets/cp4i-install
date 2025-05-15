@@ -302,8 +302,9 @@ function main() {
         ;;
       esac
   done
-  lf_calls=$(echo "$lf_calls" | xargs)  # Trim leading/trailing spaces
-
+  #lf_calls=$(echo "$lf_calls" | xargs)  # Trim leading/trailing spaces
+  lf_calls=$(echo "$lf_calls" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/[[:space:]]\+/ /g')
+  
   # Call processing function if --call was used
   case $lf_key in
     --all) es_run_all "$@";;

@@ -368,7 +368,8 @@ function process_calls() {
     IFS=',' read -ra lf_commands <<< "$lf_in_calls"
     for lf_cmd in "${lf_commands[@]}"; do
       # Trim leading/trailing spaces from the command
-      lf_cmd=$(echo "$lf_cmd" | xargs)
+      #lf_cmd=$(echo "$lf_cmd" | xargs)
+      lf_cmd=$(echo "$lf_cmd" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/[[:space:]]\+/ /g')
 
       # Extract the function name and parameters
       lf_func=$(echo "$lf_cmd" | awk '{print $1}')

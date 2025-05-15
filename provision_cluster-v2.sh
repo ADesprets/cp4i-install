@@ -476,25 +476,30 @@ function install_openldap() {
   if $MY_LDAP; then
     check_directory_exist_create "${MY_LDAP_WORKINGDIR}"
 
-    create_project "${VAR_LDAP_NAMESPACE}" "${VAR_LDAP_NAMESPACE} project" "For OpenLDAP" "${MY_RESOURCESDIR}" "${MY_LDAP_WORKINGDIR}"
+    create_project "${VAR_LDAP_NAMESPACE}" "${VAR_LDAP_NAMESPACE} project" "For OpenLDAP" "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}"
 
     provision_persistence_openldap
 
     create_oc_resource "ServiceAccount" "$MY_LDAP_SERVICEACCOUNT" "${MY_RESOURCESDIR}" "${MY_LDAP_WORKINGDIR}" "serviceaccount.yaml" "$VAR_LDAP_NAMESPACE"
-    $MY_CLUSTER_COMMAND adm policy add-scc-to-user privileged system:serviceaccount:${VAR_LDAP_NAMESPACE}:${MY_LDAP_SERVICEACCOUNT}
-    $MY_CLUSTER_COMMAND adm policy add-scc-to-user anyuid system:serviceaccount:${VAR_LDAP_NAMESPACE}:${MY_LDAP_SERVICEACCOUNT}
+    #SB# $MY_CLUSTER_COMMAND adm policy add-scc-to-user privileged system:serviceaccount:${VAR_LDAP_NAMESPACE}:${MY_LDAP_SERVICEACCOUNT}
+    #SB# $MY_CLUSTER_COMMAND adm policy add-scc-to-user anyuid system:serviceaccount:${VAR_LDAP_NAMESPACE}:${MY_LDAP_SERVICEACCOUNT}
     #$MY_CLUSTER_COMMAND adm policy add-scc-to-group anyuid system:serviceaccounts:${VAR_LDAP_NAMESPACE}
 
-    create_oc_resource "Deployment" "${MY_LDAP_DEPLOYMENT}" "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}" "ldap_deployment.yaml" "$VAR_LDAP_NAMESPACE"
+    #create_oc_resource "Deployment" "${MY_LDAP_DEPLOYMENT}" "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}" "ldap_deployment.yaml" "$VAR_LDAP_NAMESPACE"
+    create_oc_resource "Deployment" "${MY_LDAP_DEPLOYMENT}" "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}" "ldap_deployment_k8s.yaml" "$VAR_LDAP_NAMESPACE"
 
     read_config_file "${MY_YAMLDIR}ldap/ldap_dit.properties"
     adapt_file "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}" "ldap_config.json" 
-    $MY_CLUSTER_COMMAND -n ${VAR_LDAP_NAMESPACE} patch deployment.apps/openldap --patch-file "${MY_LDAP_WORKINGDIR}ldap_config.json"
+    $MY_CLUSTER_COMMAND -n ${VAR_LDAP_NAMESPACE} patch deployment.apps/${MY_LDAP_DEPLOYMENT} --patch-file "${MY_LDAP_WORKINGDIR}ldap_config.json"
 
     # Create the service to expose the openldap server
     create_oc_resource "Service" "${VAR_LDAP_SERVICE}" "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}" "ldap_svc.yaml" "${VAR_LDAP_NAMESPACE}"
     
-    create_openldap_route
+    case $MY_CLUSTER_COMMAND in
+    kubectl)  create_openldap_route_k8s;;
+    oc) create_openldap_route ;;
+    esac
+
   fi
 
   trace_out $lf_tracelevel install_openldap
@@ -507,6 +512,7 @@ function install_openldap() {
 
 ################################################
 # Install Cert Manager
+# 20250505 https://cert-manager.io/docs/installation/kubectl/
 # 20250110 https://www.ibm.com/docs/en/cloud-paks/cp-integration/16.1.1?topic=operators-installing-by-using-cli#before-you-begin__title__1
 # The API management, Event Manager, and Event Processing instances require you to install an appropriate certificate manager.
 # Follow the instructions in : 
@@ -516,29 +522,27 @@ function install_openldap() {
 function install_cert_manager() {
   SECONDS=0
   local lf_starting_date=$(date)
-  mylog info "==== Installing Redhat Cert Manager (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+  mylog info "==== Installing Cert Manager (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_cert_manager
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
-  if $MY_CERT_MANAGER; then
+  if $MY_CERTMANAGER; then
     check_directory_exist_create "${MY_CERTMANAGER_WORKINGDIR}"
     
     create_project "$MY_CERTMANAGER_OPERATOR_NAMESPACE" "${MY_CERTMANAGER_OPERATOR_NAMESPACE} project" "For Cert Manager" "${MY_RESOURCESDIR}" "${MY_CERTMANAGER_WORKINGDIR}"
     
-    create_oc_resource "OperatorGroup" "$MY_CERTMANAGER_OPERATOR" "$MY_RESOURCESDIR" "$MY_CERTMANAGER_WORKINGDIR" "operator-group-cert-manager.yaml" "$MY_CERTMANAGER_OPERATOR_NAMESPACE"
-  
     # Create a subscription object for cert manager Operator
-    create_operator_instance "${MY_CERTMANAGER_OPERATOR}" "${MY_RH_OPERATORS_CATALOG}" "${MY_OPERATORSDIR}" "${MY_CERTMANAGER_WORKINGDIR}" "${MY_CERTMANAGER_OPERATOR_NAMESPACE}"
+    $MY_CLUSTER_COMMAND apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.17.2/cert-manager.yaml
   fi
 
   trace_out $lf_tracelevel install_cert_manager
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
-  mylog info "==== Installation of Redhat Cert Manager (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+  mylog info "==== Installation of Cert Manager (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
@@ -1177,9 +1181,9 @@ function install_apic_graphql() {
   mylog info "==== Installation of CP4I APIC Graphql (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
-
 ################################################
 # Install IBM Event streams
+# https://ibm.github.io/event-automation/es/installing/installing-on-kubernetes/
 function install_es() {
   SECONDS=0
   local lf_starting_date=$(date)
@@ -1195,24 +1199,20 @@ function install_es() {
     check_directory_exist_create "${MY_ES_WORKINGDIR}"
 
     create_project "$VAR_ES_NAMESPACE" "$VAR_ES_NAMESPACE project" "For Eventstreams" "${MY_RESOURCESDIR}" "${MY_ES_WORKINGDIR}"
+    mylog info "Creating entitlement, need to check if it is needed or works"
+    add_ibm_entitlement "$VAR_ES_NAMESPACE"
 
-    # add catalog sources using ibm_pak plugin
-    # SB]20250221 : problem with IBM Eventstreams, the command $MY_CLUSTER_COMMAND ibm-pak list does not return the "latest" version of the pak
-    # this command used in lib.sh to return the latest version of the pak: lf_app_version=$($MY_CLUSTER_COMMAND ibm-pak list --case-name $lf_in_case_name -o json | jq --arg v "$lf_in_case_version" '.versions[$v].appVersion')
-    # when used with "latest" returns null, so we need to set the version of the pak in the variable MY_ES_VERSION
-    check_add_cs_ibm_pak $MY_ES_CASE $MY_ES_OPERATOR $MY_ES_CATALOGSOURCE_LABEL amd64
-    if [[ -z $MY_ES_VERSION ]]; then
-      export MY_ES_VERSION=$VAR_APP_VERSION
-      unset VAR_APP_VERSION
-    fi
-
-    # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
-    local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
-    unset VAR_CATALOG_SOURCE
-
+    # add catalog sources
+    #SB# $MY_CLUSTER_COMMAND apply --filename https://raw.githubusercontent.com/IBM/cloud-pak/master/repo/case/ibm-eventstreams/3.6.1/OLM/catalog-sources.yaml
+    #SB# local lf_catalog_source_name="ibm-eventstreams"
+    
     # Creating EventStreams operator subscription
-    create_operator_instance "${MY_ES_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_ES_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
+    #SB# create_operator_instance "${MY_ES_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_ES_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
 
+     # install the operator
+     helm install "${MY_ES_OPERATOR}" ibm-helm/ibm-eventstreams-operator -n "$VAR_ES_NAMESPACE" --set watchAnyNamespace=true
+
+     wait_for_state "Deployment" "eventstreams-cluster-operator" "{.status.conditions[?(@.type=='Available')].status}" "True" "${VAR_ES_NAMESPACE}"
   fi
 
   trace_out $lf_tracelevel install_es
@@ -1224,10 +1224,11 @@ function install_es() {
 
 ################################################
 # Install EEM
+# https://ibm.github.io/event-automation/eem/installing/installing-on-kubernetes/
 function install_eem() {
   SECONDS=0
   local lf_starting_date=$(date)
-  mylog info "==== Installing CP4I Event Endpoint Management (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+  mylog info "==== Installing Event Endpoint Management (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_eem
@@ -1241,22 +1242,21 @@ function install_eem() {
 
     create_project "${VAR_EEM_NAMESPACE}" "${VAR_EEM_NAMESPACE} project" "For Event Endpoint Management" "${MY_RESOURCESDIR}" "${MY_EEM_WORKINGDIR}"
 
-    ## event endpoint management
-    ## to get the name of the pak to use : $MY_CLUSTER_COMMAND ibm-pak list
-    ## https://ibm.github.io/event-automation/eem/installing/installing/, chapter : Install the operator by using the CLI ($MY_CLUSTER_COMMAND ibm-pak)
-    check_add_cs_ibm_pak $MY_EEM_OPERATOR $MY_EEM_OPERATOR $MY_EEM_CATALOGSOURCE_LABEL amd64
-    if [[ -z $MY_EEM_VERSION ]]; then
-      export MY_EEM_VERSION=$VAR_APP_VERSION
-      unset VAR_APP_VERSION
-    fi
+    mylog info "Creating entitlement, need to check if it is needed or works"
+    add_ibm_entitlement "$VAR_EEM_NAMESPACE"
 
+    # add catalog sources
+    #SB# $MY_CLUSTER_COMMAND apply --filename https://raw.githubusercontent.com/IBM/cloud-pak/master/repo/case/ibm-eventstreams/3.6.1/OLM/catalog-sources.yaml
+    #SB# local lf_catalog_source_name="ibm-eventstreams"
+    
+    # Creating EventStreams operator subscription
+    # install the operator
+    # Note: If you are installing any subsequent operators in the same cluster, ensure you run the helm install command with the --set createGlobalResources=false option (as these resources have already been installed).
+    helm install "${MY_EEM_OPERATOR}-crd" ibm-helm/ibm-eem-operator-crd -n "$VAR_EEM_NAMESPACE"
 
-    # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
-    local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
-    unset VAR_CATALOG_SOURCE
+    helm install "${MY_EEM_OPERATOR}" ibm-helm/ibm-eem-operator -n "$VAR_EEM_NAMESPACE" --set watchAnyNamespace=true --set createGlobalResources=false
 
-    # Creating Event Endpoint Management operator subscription
-    create_operator_instance "${MY_EEM_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_EEM_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
+    wait_for_state "Deployment" "ibm-eem-operator" "{.status.conditions[?(@.type=='Available')].status}" "True" "${VAR_EEM_NAMESPACE}"
 
     # Creating EventEndpointManager instance (Event Processing)
     if $MY_KEYCLOAK_INTEGRATION; then
@@ -1295,7 +1295,7 @@ function install_eem() {
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
-  mylog info "==== Installation of CP4I Event Endpoint Management (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+  mylog info "==== Installation of Event Endpoint Management (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
@@ -1347,10 +1347,12 @@ function install_egw() {
 
 ################################################
 # Install EP
+# https://ibm.github.io/event-automation/ep/installing/installing-on-kubernetes/
+#
 function install_ep() {
   SECONDS=0
   local lf_starting_date=$(date)
-  mylog info "==== Installing CP4I Event Processing (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+  mylog info "==== Installing Event Processing (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_ep
@@ -1365,22 +1367,16 @@ function install_ep() {
 
     create_project "${VAR_EP_NAMESPACE}" "${VAR_EP_NAMESPACE} project" "For Event Processing" "${MY_RESOURCESDIR}" "${MY_EP_WORKINGDIR}"
 
-    # add catalog sources using ibm_pak plugin
-    check_add_cs_ibm_pak $MY_EP_CASE $MY_EP_OPERATOR $MY_EP_CATALOGSOURCE_LABEL amd64
-    if [[ -z $MY_EP_VERSION ]]; then
-      export MY_EP_VERSION=$VAR_APP_VERSION
-      unset VAR_APP_VERSION
-    fi
+    mylog info "Creating entitlement, need to check if it is needed or works"
+    add_ibm_entitlement "$VAR_EP_NAMESPACE"
 
-    decho $lf_tracelevel "MY_EP_VERSION=$MY_EP_VERSION"
+    # install the operator
+    # Note: If you are installing any subsequent operators in the same cluster, ensure you run the helm install command with the --set createGlobalResources=false option (as these resources have already been installed).
+    helm install "${MY_EP_OPERATOR}-crd" ibm-helm/ibm-ep-operator-crd -n "$VAR_EP_NAMESPACE"
 
-    # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
-    local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
-    unset VAR_CATALOG_SOURCE
+    helm install "${MY_EP_OPERATOR}" ibm-helm/ibm-ep-operator -n "$VAR_EP_NAMESPACE" --set watchAnyNamespace=true --set createGlobalResources=false
+    wait_for_state "Deployment" "ibm-ep-operator" "{.status.conditions[?(@.type=='Available')].status}" "True" "${VAR_EP_NAMESPACE}"
 
-    ## Creating Event processing operator subscription
-    create_operator_instance "${MY_EP_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_EP_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
-    
     # Use LOCAL or OIDC
     # https://ibm.github.io/event-automation/ep/security/managing-access/
     if $MY_KEYCLOAK_INTEGRATION; then
@@ -1458,15 +1454,17 @@ function install_ep() {
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
-  mylog info "==== Installation of CP4I Event Processing (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+  mylog info "==== Installation of Event Processing (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
 # Install Flink
+# https://ibm.github.io/event-automation/ep/installing/installing-on-kubernetes/
+#
 function install_flink() {
   SECONDS=0
   local lf_starting_date=$(date)
-  mylog info "==== Installing CP4I Flink (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+  mylog info "==== Installing Flink (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_flink
@@ -1478,26 +1476,15 @@ function install_flink() {
 
     create_project "${VAR_FLINK_NAMESPACE}" "${VAR_FLINK_NAMESPACE} project" "For Flink" "${MY_RESOURCESDIR}" "${MY_FLINK_WORKINGDIR}"
 
-    # add catalog sources using ibm_pak plugin
-    ## SB]20231020 For Flink and Event processing first you have to apply the catalog source to your cluster :
-    ## https://ibm.github.io/event-automation/ep/installing/installing/, Chapter Applying catalog sources to your cluster
-    # event flink
-    check_add_cs_ibm_pak $MY_FLINK_CASE $MY_FLINK_OPERATOR $MY_FLINK_CATALOGSOURCE_LABEL amd64
-    if [[ -z $MY_FLINK_VERSION ]]; then
-      export MY_FLINK_VERSION=$VAR_APP_VERSION
-      unset VAR_APP_VERSION
-    fi
+    mylog info "Creating entitlement, need to check if it is needed or works"
+    add_ibm_entitlement "$VAR_FLINK_NAMESPACE"
 
+    # install the operator
+    # Note: If you are installing any subsequent operators in the same cluster, ensure you run the helm install command with the --set createGlobalResources=false option (as these resources have already been installed).
+    helm install "${MY_FLINK_OPERATOR}-crd" ibm-helm/ibm-eventautomation-flink-operator-crd -n "$VAR_FLINK_NAMESPACE"
 
-    # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
-    local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
-    unset VAR_CATALOG_SOURCE
-
-    ## SB]20231020 For Flink and Event processing install the operator with the following command :
-    ## https://ibm.github.io/event-automation/ep/installing/installing/, Chapter : Install the operator by using the CLI ($MY_CLUSTER_COMMAND ibm-pak)
-    ## event flink
-    ## Creating Eventautomation Flink operator subscription
-    create_operator_instance "${MY_FLINK_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_FLINK_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
+    helm install "${MY_FLINK_OPERATOR}" ibm-helm/ibm-eventautomation-flink-operator -n "$VAR_FLINK_NAMESPACE" --set watchAnyNamespace=true --set createGlobalResources=false
+    wait_for_state "Deployment" "flink-kubernetes-operator" "{.status.conditions[?(@.type=='Available')].status}" "True" "${VAR_FLINK_NAMESPACE}"
 
     ## Creation of Event automation Flink PVC and instance
     # Even if it's a pvc we use the same generic function
@@ -1513,14 +1500,13 @@ function install_flink() {
     ## When the Flink instance is ready, the custom resource displays status.lifecycleState: STABLE and status.jobManagerDeploymentStatus: READY.
     ## STANLE and READY (uppercase!!!)
     create_operand_instance "FlinkDeployment" "${VAR_FLINK_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_FLINK_WORKINGDIR}" "EA-Flink-Capability.yaml" "$VAR_FLINK_NAMESPACE" "{.status.lifecycleState}-{.status.jobManagerDeploymentStatus}" "STABLE-READY"
-
   fi
 
   trace_out $lf_tracelevel install_flink
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
-  mylog info "==== Installation of CP4I flink (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+  mylog info "==== Installation of flink (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
@@ -1583,6 +1569,7 @@ function install_hsts() {
 
 ################################################
 # Install MQ
+# https://www.ibm.com/docs/en/ibm-mq/9.4.x?topic=kubernetes-example-configuring-simple-queue-manager-in
 function install_mq() {
   SECONDS=0
   local lf_starting_date=$(date)
@@ -1597,29 +1584,28 @@ function install_mq() {
   if $MY_MQ; then
     check_directory_exist_create "${MY_MQ_WORKINGDIR}"
 
-    create_project "$VAR_MQ_NAMESPACE" "$VAR_MQ_NAMESPACE project" "For MQ" "${MY_RESOURCESDIR}" "${MY_MQ_WORKINGDIR}"
+    create_project "$VAR_MQ_NAMESPACE" "$VAR_MQ_NAMESPACE project" "For MQ" "${MY_YAMLDIR}mq/" "${MY_MQ_WORKINGDIR}"
+    mylog info "Creating entitlement, need to check if it is needed or works"
+    add_ibm_entitlement "$VAR_MQ_NAMESPACE"
 
-    # add catalog sources using ibm_pak plugin
-    check_add_cs_ibm_pak $MY_MQ_CASE $MY_MQ_OPERATOR $MY_MQ_CATALOGSOURCE_LABEL amd64
-    if [[ -z $MY_MQ_VERSION ]]; then
-      export MY_MQ_VERSION=$VAR_APP_VERSION
-      unset VAR_APP_VERSION
-    fi
+    # create a mq service 
+    check_create_oc_yaml "Service" "${VAR_QMGR}-ibm-mq" "${MY_YAMLDIR}mq/" "${MY_MQ_WORKINGDIR}" "service.yaml" "${VAR_MQ_NAMESPACE}"
 
-    # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
-    local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
-    unset VAR_CATALOG_SOURCE
+    # Create a service account for the MQ
+    check_create_oc_yaml "ServiceAccount" "${VAR_QMGR}-ibm-mq" "${MY_YAMLDIR}mq/" "${MY_MQ_WORKINGDIR}" "serviceaccount.yaml" "$VAR_MQ_NAMESPACE"
 
-    # Creating MQ operator subscription
-    create_operator_instance "${MY_MQ_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_MQ_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
-    
+    # Creating MQ Pod managed by a StatefulSet
+    check_create_oc_yaml "StatefulSet" "${VAR_QMGR}-ibm-mq" "${MY_YAMLDIR}mq/" "${MY_MQ_WORKINGDIR}" "statefulset.yaml" "$VAR_MQ_NAMESPACE"
+
+    # wait for pods to be ready
+    check_pod_status "app.kubernetes.io/instance=${VAR_QMGR}" "$VAR_MQ_NAMESPACE"
   fi
 
   trace_out $lf_tracelevel install_mq
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
-  mylog info "==== Installation of CP4I MQ operator (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+  mylog info "==== Installation of MQ (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
@@ -1684,7 +1670,7 @@ function customise_openldap() {
     check_file_exist ${MY_YAMLDIR}ldap/ldap_config.json
 
     # launch custom script
-    ${MY_LDAP_SIMPLE_DEMODIR}scripts/ldap.config.sh --call ldap_run_all
+    ${MY_LDAP_SIMPLE_DEMODIR}scripts/ldap.config.sh --all
   fi
 
   trace_out $lf_tracelevel customise_openldap
@@ -1807,8 +1793,6 @@ function customise_es() {
   # - operands properties file,
   # - topics, ...
   if $MY_ES_CUSTOM; then
-    mylog info "==== Customise Event Streams (es.config.sh)." 0
-
     check_directory_exist_create "${MY_ES_WORKINGDIR}"
 
     # generate the differents properties files
@@ -1820,7 +1804,7 @@ function customise_es() {
     generate_files $MY_ES_SIMPLE_DEMODIR $MY_ES_WORKINGDIR true
 
     ${MY_ES_SIMPLE_DEMODIR}scripts/es.config.sh --call es_run_all
-    # ${MY_ES_MM2_DEMODIR}scripts/es.config.sh --call es_run_all
+    #${MY_ES_MM2_DEMODIR}scripts/es.config.sh --call es_run_all
   fi
 
   trace_out $lf_tracelevel customise_es
@@ -2061,9 +2045,9 @@ function create_edb_postgres_db() {
   export VAR_POSTGRES_IMAGE_NAME=$($MY_CLUSTER_COMMAND get packagemanifests -n $MY_CATALOGSOURCES_NAMESPACE --selector=$MY_POSTGRES_CATALOGSOURCE_NAME -o json | jq --arg channel "$MY_POSTGRES_CHL" '.items[].status.channels[] | select(.name == $channel)' | jq -r '.currentCSVDesc.relatedImages[]')
   create_operand_instance "${MY_POSTGRES_CRD_CLUSTER}" "${lf_in_cluster_name}" "${MY_POSTGRES_DIR}" "${MY_EDB_POSTGRES_WORKINGDIR}" "edb-postgres-cluster.yaml" "$VAR_POSTGRES_NAMESPACE" "{.status.conditions[?(@.type==\"Ready\")].status}" "True"
   if $MY_CLUSTER_COMMAND -n $VAR_POSTGRES_NAMESPACE wait --for=condition=Ready pod -l k8s.enterprisedb.io/cluster=$lf_in_cluster_name --timeout=300s; then
-    echo "✅ All Pods are Ready!"
+    mylog info  "✅ All Pods are Ready!"
   else
-    echo "❌ Timeout or error waiting for Pods to be Ready."
+    mylog info "❌ Timeout or error waiting for Pods to be Ready."
     exit 1
   fi
   #unset VAR_POSTGRES_CLUSTER VAR_POSTGRES_DATABASE VAR_POSTGRES_USER VAR_POSTGRES_SECRET VAR_POSTGRES_DATABASE_DESCRIPTION VAR_POSTGRES_IMAGE_NAME
@@ -2264,6 +2248,30 @@ function display_access_info() {
   trace_out $lf_tracelevel display_access_info
 }
 
+######################################################################
+# start the default podman machine
+#
+function start_podman_machine () {
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel start_podman_machine
+
+  # check if environment variable MINIKUBE_HOME is set
+  # https://ioflood.com/blog/bash-check-if-environment-variable-is-set/
+  if [ -z "${MINIKUBE_HOME}" ]; then
+    mylog "error" "MINIKUBE_HOME is unset or set to the empty string"
+    exit 1
+  fi
+
+  # check if default podman machine is started
+  lf_result=$(podman machine list --format json | jq  '.[0].Running')
+  if [ "$lf_result" == "false" ]; then
+	  mylog "info" "Starting podman default machine"
+    podman machine start
+  fi
+
+  trace_out $lf_tracelevel start_podman_machine
+}
+
 ################################################
 # function for the installtion of needed resources
 # namespaces, operatorgroup, entitlement, ...
@@ -2279,6 +2287,9 @@ function provision_cluster_init() {
   check_resource_exist storageclass $MY_BLOCK_STORAGE_CLASS
   check_resource_exist storageclass $MY_FILE_STORAGE_CLASS
   check_directory_exist_create "$MY_WORKINGDIR"
+
+  # Start podman default machine
+  start_podman_machine
 
   # Get all manifests
   #if [[ ! -e $MY_RAM_MANIFEST_FILE ]]; then
@@ -2306,6 +2317,9 @@ function provision_cluster_init() {
   check_directory_exist_create "${MY_CP4I_WORKINGDIR}"
 
   create_project "$MY_OC_PROJECT" "$MY_OC_PROJECT project" "For Cloud Pak for Integration" "${MY_RESOURCESDIR}" "${MY_CP4I_WORKINGDIR}"
+  create_project "$MY_OPERATORS_NAMESPACE" "$MY_OPERATORS_NAMESPACE project" "For openshift-operators" "${MY_RESOURCESDIR}" "${MY_CP4I_WORKINGDIR}"
+  create_project "openshift-image-registry" "openshift-image-registry project" "For openshift-operators" "${MY_RESOURCESDIR}" "${MY_CP4I_WORKINGDIR}"
+  create_project "openshift-marketplace" "openshift-marketplace project" "For catalogsources" "${MY_RESOURCESDIR}" "${MY_CP4I_WORKINGDIR}"
 
   # Add ibm entitlement key to namespace
   # SB]20230209 Aspera hsts service cannot be created because a problem with the entitlement, it must be added in the openshift-operators namespace.
@@ -2316,30 +2330,143 @@ function provision_cluster_init() {
   # Create a namespace object for Red Hat Openshift Logging Operator 5 I put it here because it's used by loki and observability)
   create_project "${MY_LOGGING_NAMESPACE}" "${MY_LOGGING_NAMESPACE} project" "For Openshift Logging" "${MY_RESOURCESDIR}" "${MY_CP4I_WORKINGDIR}"
 
+  # add the IBM Helm repository to your local repository list.
+  # This will provide access to the Event Automation components Helm chart packages that will install the operators on your cluster.
+  helm repo add ibm-helm https://raw.githubusercontent.com/IBM/charts/master/repo/ibm-helm
+
   # The first method to get the cluster domain
   #lf_url=$($MY_CLUSTER_COMMAND get infrastructure cluster -o jsonpath='{.status.apiServerURL}')
   #export VAR_CLUSTER_DOMAIN=$(echo "$lf_url" | cut -d'/' -f3 | cut -d':' -f1)
   #export VAR_CLUSTER_DOMAIN=$(echo "$lf_url" | cut -d'/' -f3 | cut -d':' -f1 | cut -d'.' -f2-)
 
   # get the dns name which will be used for certficate generation and other usages
-  export VAR_CLUSTER_DOMAIN=$($MY_CLUSTER_COMMAND get dns cluster -o jsonpath='{.spec.baseDomain}')
-  export VAR_SAN_DNS="*.${VAR_CLUSTER_DOMAIN}"
-  export VAR_COMMON_NAME=$VAR_SAN_DNS
+  case $MY_CLUSTER_COMMAND in
+  kubectl)  case $MY_K8S_FLAVOR in
+            microk8s) export VAR_MINIKUBE_IP=$(multipass list --format json | jq -r --arg master "$MY_MASTER" '.list[] | select(.name ==$master) | .ipv4[0]');;
+            minikube) minikube profile $MY_CLUSTER_NAME
+                      export VAR_MINIKUBE_IP=$(minikube ip);;
+            esac
+             
+             export VAR_CLUSTER_DOMAIN="cluster.local"
+             export VAR_SAN_DNS="*.${VAR_CLUSTER_DOMAIN}"
+             export VAR_COMMON_NAME=$VAR_SAN_DNS;;
+  oc) export VAR_CLUSTER_DOMAIN=$($MY_CLUSTER_COMMAND get dns cluster -o jsonpath='{.spec.baseDomain}')
+      export VAR_SAN_DNS="*.${VAR_CLUSTER_DOMAIN}"
+      export VAR_COMMON_NAME=$VAR_SAN_DNS
+      ;;
+  esac
+
 
   # create PVC for registry
-  echo ">>>MY_WORKINGDIR: ${MY_WORKINGDIR}"
-  create_operand_instance "PersistentVolumeClaim" "registry-storage" "${MY_RESOURCESDIR}" "${MY_WORKINGDIR}" "registry_pvc.yaml" "openshift-image-registry" "{.status.phase}" "Bound"
-  $MY_CLUSTER_COMMAND patch configs.imageregistry.operator.openshift.io/cluster --type=merge -p '{"spec":{"storage":{"pvc":{"claim":"registry-storage"}}}}'
-  $MY_CLUSTER_COMMAND patch configs.imageregistry.operator.openshift.io/cluster --type=merge -p '{"spec":{"managementState":"Managed"}}'
-
-  # Expose service using default route
-  $MY_CLUSTER_COMMAND -n openshift-image-registry patch configs.imageregistry.operator.openshift.io/cluster --patch '{"spec":{"defaultRoute":true}}' --type=merge
-  wait_for_resource Route default-route openshift-image-registry
-
-  # Get the default registry route:
-  export VAR_IMAGE_REGISTRY_HOST=$($MY_CLUSTER_COMMAND get route default-route -n openshift-image-registry --template='{{ .spec.host }}')
+  #echo ">>>MY_WORKINGDIR: ${MY_WORKINGDIR}"
+  #create_operand_instance "PersistentVolumeClaim" "registry-storage" "${MY_RESOURCESDIR}" "${MY_WORKINGDIR}" "registry_pvc.yaml" "openshift-image-registry" "{.status.phase}" "Bound"
+  
+  case $MY_CLUSTER_COMMAND in
+  #kubectl) minikube addons enable registry
+  #         local lf_port=$($MY_CLUSTER_COMMAND get svc -n kube-system -o jsonpath="{.items[?(@.metadata.name=='registry')].spec.ports[?(@.targetPort==5000)].port}")
+  #         $MY_CLUSTER_COMMAND port-forward --namespace kube-system service/registry 5000:$lf_port > "${MY_WORKINGDIR}registry-portforward.log" 2>&1 &
+  #         export VAR_IMAGE_REGISTRY_HOST=localhost:5000
+  #         ;;
+  oc) $MY_CLUSTER_COMMAND patch configs.imageregistry.operator.openshift.io/cluster --type=merge -p '{"spec":{"storage":{"pvc":{"claim":"registry-storage"}}}}'
+      # Expose service using default route
+      $MY_CLUSTER_COMMAND patch configs.imageregistry.operator.openshift.io/cluster --patch '{"spec":{"defaultRoute":true}}' --type=merge
+      wait_for_resource Route default-route openshift-image-registry
+    
+      # Get the default registry route:
+      export VAR_IMAGE_REGISTRY_HOST=$($MY_CLUSTER_COMMAND get route default-route -n openshift-image-registry --template='{{.spec.host }}')
+      ;;
+  esac
   
   trace_out $lf_tracelevel provision_cluster_init
+}
+
+################################################
+# function to install/configure a microk8s cluster
+################################################
+function install_microk8s_cluster {
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel install_microk8s_cluster
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+  
+  mylog info "📦 Creating MicroK8s master node..."
+  multipass launch --name $MY_MASTER --cpus $MY_CPU --memory $MY_RAM --disk $MY_DISK $MY_IMAGE
+  multipass exec $MY_MASTER -- sudo snap install microk8s --classic
+  multipass exec $MY_MASTER -- sudo usermod -a -G microk8s ubuntu
+  multipass exec $MY_MASTER -- sudo apt update && sudo apt install -y nfs-common
+  
+  # Fetch the join command
+  for lf_worker in "${MY_WORKERS[@]}"; do
+    mylog info  "🔧 Creating and joining worker nodes..."
+    multipass launch --name $lf_worker --cpus $MY_CPU --memory $MY_RAM --disk $MY_DISK $MY_IMAGE
+    multipass exec $lf_worker -- sudo snap install microk8s --classic
+    multipass exec $lf_worker -- sudo usermod -a -G microk8s ubuntu
+    multipass exec $lf_worker -- sudo apt update && sudo apt install -y nfs-common
+  
+    mylog info  "🧪 Generating join command for $lf_worker..."
+    lf_joind_cmd=$(multipass exec $MY_MASTER -- microk8s add-node | grep 'microk8s join' | head -n1)
+  
+    mylog info  "🔗 Joining $lf_worker to cluster..."
+    multipass exec $lf_worker -- bash -c "sudo $lf_joind_cmd --worker"
+  done
+  
+  mylog info  "⏳ Waiting for nodes to be ready..."
+  sleep 30
+  multipass exec $MY_MASTER -- microk8s kubectl get nodes
+  
+  multipass exec $MY_MASTER --  microk8s enable cert-manager dashboard community nfs ingress registry
+  
+  mylog info  "🔧 Creating the k8s config file in ~/.kube..."
+  multipass exec $MY_MASTER -- microk8s config > microk8s-config
+  cp microk8s-config ~/.kube/config  
+
+  trace_out $lf_tracelevel install_microk8s_cluster
+}
+ 
+######################################################################
+# Create minikube cluster if it does not exist
+# and wait for availability of the cluster
+function install_minikube_cluster {
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel install_minikube_cluster
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+  
+  # check if environment variable MINIKUBE_HOME is set
+  # https://ioflood.com/blog/bash-check-if-environment-variable-is-set/
+  if [ -z "${MINIKUBE_HOME}" ]; then
+    mylog "error" "MINIKUBE_HOME is unset or set to the empty string"
+    exit 1
+  fi
+
+  # check if minikube cluster profile exist
+  lf_result=$(minikube profile list -o json | jq -r --arg Name "$MY_CLUSTER_NAME" '.valid[] | select (.Name == $Name)')
+  if [ -z "$lf_result" ]; then
+	  mylog "info" "Creating/Starting minikube cluster: $MY_CLUSTER_NAME"
+    minikube start --nodes $MY_CLUSTER_WORKERS \
+                   --memory $MY_WORKER_MEMORY \
+                   --cpus $MY_WORKER_CPUS \
+                   --container-runtime=$MY_CONTAINER_RUNTIME \
+                   --driver=$MY_MINIKUBE_DRIVER -p $MY_CLUSTER_NAME
+  else
+    # check status of the cluster
+    lf_result=$(minikube profile list -o json | jq -r --arg Status "$MY_CLUSTER_FINAL_STATUS" '.valid[] | select (.Status == $Status)')
+    if [ -z "$lf_result" ]; then
+      mylog "info" "Starting existing minikube cluster: $MY_CLUSTER_NAME"
+      minikube start -p $MY_CLUSTER_NAME
+    else
+      mylog "info" "minikube cluster: $MY_CLUSTER_NAME already running"
+    fi
+  fi
+
+  # Create OpenEBS Storageclass
+  check_directory_exist_create "${MY_OPENEBS_WORKINGDIR}"
+  create_project "${MY_OPENEBS_NAMESPACE}" "${MY_OPENEBS_NAMESPACE} project" "For OpenEBS Storage provider" "${MY_YAMLDIR}openebs/" "${MY_OPENEBS_WORKINGDIR}"
+  $MY_CLUSTER_COMMAND apply -f https://openebs.github.io/charts/openebs-operator.yaml
+  check_create_oc_yaml "StorageClass" "openebs-localpv-block" "${MY_YAMLDIR}openebs/" "${MY_OPENEBS_WORKINGDIR}" "openebs-block.yaml" "${MY_OPENEBS_WORKINGDIR}"
+  $MY_CLUSTER_COMMAND patch storageclass openebs-localpv-block -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+
+  trace_out $lf_tracelevel install_minikube_cluster
 }
 
 ################################################
@@ -2437,7 +2564,7 @@ function run_all() {
   
   # Start customization capabilities
   # No need to customise navigator, intassembly, assetrepo
-  customise_part
+  #customise_part
 
   trace_out $lf_tracelevel run_all
 }
@@ -2485,7 +2612,9 @@ function main() {
         ;;
       esac
   done
-  lf_calls=$(echo "$lf_calls" | xargs)  # Trim leading/trailing spaces
+
+  #lf_calls=$(echo "$lf_calls" | xargs)  # Trim leading/trailing spaces
+  lf_calls=$(echo "$lf_calls" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/[[:space:]]\+/ /g')
 
   # Call processing function if --call was used
   if [[ $lf_key == "--call" ]]; then
@@ -2549,6 +2678,13 @@ set +a
 
 # load helper functions
 . "${sc_provision_lib_file}"
+
+# install k8s cluster
+case $MY_K8S_FLAVOR in
+microk8s) install_microk8s_cluster;;
+minikube) #install_minikube_cluster;;
+          
+esac
 
 # trap 'display_access_info' EXIT
 
