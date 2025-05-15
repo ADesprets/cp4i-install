@@ -8,15 +8,15 @@ function prepare_internal_registry() {
   trace_in $lf_tracelevel prepare_internal_registry
 
   # Expose service using default route
-  oc patch configs.imageregistry.operator.openshift.io/cluster --patch '{"spec":{"defaultRoute":true}}' --type=merge
+  $MY_CLUSTER_COMMAND patch configs.imageregistry.operator.openshift.io/cluster --patch '{"spec":{"defaultRoute":true}}' --type=merge
   wait_for_resource Route default-route openshift-image-registry
 
   # Get the default registry route:
-  export IMAGE_REGISTRY_HOST=$(oc get route default-route -n openshift-image-registry --template='{{ .spec.host }}')
+  export IMAGE_REGISTRY_HOST=$($MY_CLUSTER_COMMAND get route default-route -n openshift-image-registry --template='{{ .spec.host }}')
 
   # Get the certificate of the Ingress Operator and add it in the trust store, need to check if this is in /usr/local/share/ca-certificates
-  # oc get secret -n openshift-ingress  router-certs-default -o go-template='{{index .data "tls.crt"}}' | base64 -d | sudo tee /etc/pki/ca-trust/source/anchors/${HOST}.crt  > /dev/null
-  # oc -n openshift-ingress get secret letsencrypt-certs -o go-template='{{index .data "tls.crt7"}}' | base64 -d | sudo tee /etc/pki/ca-trust/source/anchors/${HOST}.crt
+  # $MY_CLUSTER_COMMAND get secret -n openshift-ingress  router-certs-default -o go-template='{{index .data "tls.crt"}}' | base64 -d | sudo tee /etc/pki/ca-trust/source/anchors/${HOST}.crt  > /dev/null
+  # $MY_CLUSTER_COMMAND -n openshift-ingress get secret letsencrypt-certs -o go-template='{{index .data "tls.crt7"}}' | base64 -d | sudo tee /etc/pki/ca-trust/source/anchors/${HOST}.crt
   # For Ubuntu:  update-ca-certificates / For Mac: / For RH: update-ca-trust / For Windows: 
   # sudo update-ca-trust enable
 
@@ -62,11 +62,11 @@ function login_to_registry() {
   trace_in $lf_tracelevel login_to_registry
 
   decho $lf_tracelevel "Internal image registry host: $IMAGE_REGISTRY_HOST"
-  local lf_cluster_server=$(oc whoami --show-server)
+  local lf_cluster_server=$($MY_CLUSTER_COMMAND whoami --show-server)
   decho $lf_tracelevel "Cluster server host: $lf_cluster_server"
   #echo "kubeadmin password: $MY_TECHZONE_PASSWORD"
-  oc login -p $MY_TECHZONE_PASSWORD -u kubeadmin $lf_cluster_server
-  local lf_token=$(oc whoami -t)
+  $MY_CLUSTER_COMMAND login -p $MY_TECHZONE_PASSWORD -u kubeadmin $lf_cluster_server
+  local lf_token=$($MY_CLUSTER_COMMAND whoami -t)
   #docker login -u kubeadmin -p $lf_token $IMAGE_REGISTRY_HOST
   echo "$lf_token" | docker login -u kubeadmin --password-stdin "$IMAGE_REGISTRY_HOST"
   
@@ -120,14 +120,14 @@ function olp_run_all () {
     popd > /dev/null 2>&1
   fi
   # save the current cluster config context
-  sc_current_context=$(oc config current-context)
+  sc_current_context=$($MY_CLUSTER_COMMAND config current-context)
   login_to_registry
   push_image_to_registry
   create_application
-  oc logout
+  $MY_CLUSTER_COMMAND logout
 
   # back to the saved context
-  oc config use-context $sc_current_context
+  $MY_CLUSTER_COMMAND config use-context $sc_current_context
 
   local lf_ending_date=$(date)
     

@@ -1,4 +1,4 @@
-# qmhostname=`oc get route -n cp4i qm1-ibm-mq-qm -o jsonpath="{.spec.host}"`
+# qmhostname=`$MY_CLUSTER_COMMAND get route -n cp4i qm1-ibm-mq-qm -o jsonpath="{.spec.host}"`
 # ping -c 1 $qmhostname
 
 # Set environment variables for the client

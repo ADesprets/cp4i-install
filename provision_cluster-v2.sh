@@ -28,27 +28,27 @@ function install_sftp() {
   
     # Create secret with users
     mylog check "Checking Secret for credential ${VAR_SFTP_SERVER_NAMESPACE}-sftp-creds-secret" 1>&2
-    if ! oc -n ${VAR_SFTP_SERVER_NAMESPACE} get secret "${VAR_SFTP_SERVER_NAMESPACE}-sftp-creds-secret" >/dev/null 2>&1; then
+    if ! $MY_CLUSTER_COMMAND -n ${VAR_SFTP_SERVER_NAMESPACE} get secret "${VAR_SFTP_SERVER_NAMESPACE}-sftp-creds-secret" >/dev/null 2>&1; then
       generate_password 32
       adapt_file ${MY_SFTP_SCRIPTDIR}resources/ ${MY_SFTP_WORKINGDIR}resources/ users.conf
       unset USER_PASSWORD_GEN
-      oc -n $VAR_SFTP_SERVER_NAMESPACE create secret generic "${VAR_SFTP_SERVER_NAMESPACE}-sftp-creds-secret" --from-file=${MY_SFTP_WORKINGDIR}resources/users.conf
+      $MY_CLUSTER_COMMAND -n $VAR_SFTP_SERVER_NAMESPACE create secret generic "${VAR_SFTP_SERVER_NAMESPACE}-sftp-creds-secret" --from-file=${MY_SFTP_WORKINGDIR}resources/users.conf
     fi
   
     # Create configmap with SSH keys
     mylog check "Checking ConfigMap for ssh keys ${VAR_SFTP_SERVER_NAMESPACE}-ssh-conf-cm" 1>&2
-    if ! oc -n ${VAR_SFTP_SERVER_NAMESPACE} get configmap "${VAR_SFTP_SERVER_NAMESPACE}-ssh-conf-cm" >/dev/null 2>&1; then
+    if ! $MY_CLUSTER_COMMAND -n ${VAR_SFTP_SERVER_NAMESPACE} get configmap "${VAR_SFTP_SERVER_NAMESPACE}-ssh-conf-cm" >/dev/null 2>&1; then
       ssh-keygen -t ed25519 -f ${MY_SFTP_WORKINGDIR}resources/ssh_host_ed25519_key < /dev/null
       ssh-keygen -t rsa -b 4096 -f ${MY_SFTP_WORKINGDIR}resources/ssh_host_rsa_key < /dev/null
       adapt_file ${MY_SFTP_SCRIPTDIR}resources/ ${MY_SFTP_WORKINGDIR}resources/ sshd_config
-      local lf_apply_cmd="oc -n $VAR_SFTP_SERVER_NAMESPACE create configmap ${VAR_SFTP_SERVER_NAMESPACE}-ssh-conf-cm \
+      local lf_apply_cmd="$MY_CLUSTER_COMMAND -n $VAR_SFTP_SERVER_NAMESPACE create configmap ${VAR_SFTP_SERVER_NAMESPACE}-ssh-conf-cm \
         --from-file=${MY_SFTP_WORKINGDIR}resources/ssh_host_ed25519_key \
         --from-file=${MY_SFTP_WORKINGDIR}resources/ssh_host_ed25519_key.pub \
         --from-file=${MY_SFTP_WORKINGDIR}resources/ssh_host_rsa_key \
         --from-file=${MY_SFTP_WORKINGDIR}resources/ssh_host_rsa_key.pub \
         --from-file=${MY_SFTP_WORKINGDIR}resources/sshd_config"
 
-      oc -n $VAR_SFTP_SERVER_NAMESPACE create configmap ${VAR_SFTP_SERVER_NAMESPACE}-ssh-conf-cm \
+      $MY_CLUSTER_COMMAND -n $VAR_SFTP_SERVER_NAMESPACE create configmap ${VAR_SFTP_SERVER_NAMESPACE}-ssh-conf-cm \
         --from-file=${MY_SFTP_WORKINGDIR}resources/ssh_host_ed25519_key \
         --from-file=${MY_SFTP_WORKINGDIR}resources/ssh_host_ed25519_key.pub \
         --from-file=${MY_SFTP_WORKINGDIR}resources/ssh_host_rsa_key \
@@ -58,12 +58,12 @@ function install_sftp() {
   
     # Check security context constraint
     mylog check "Security Context Constraint anyuid" 1>&2
-    if ! oc get SecurityContextConstraints anyuid >/dev/null 2>&1; then
-      oc adm policy add-scc-to-user anyuid -z default
+    if ! $MY_CLUSTER_COMMAND get SecurityContextConstraints anyuid >/dev/null 2>&1; then
+      $MY_CLUSTER_COMMAND adm policy add-scc-to-user anyuid -z default
       wait 10
       
-      oc patch scc anyuid --type=merge --patch '{"users": ["system:serviceaccount:sftp:default\n"]}'      
-      oc patch scc anyuid --type=merge --patch '{"allowedCapabilities":["SYS_CHROOT\n"]}'
+      $MY_CLUSTER_COMMAND patch scc anyuid --type=merge --patch '{"users": ["system:serviceaccount:sftp:default\n"]}'      
+      $MY_CLUSTER_COMMAND patch scc anyuid --type=merge --patch '{"allowedCapabilities":["SYS_CHROOT\n"]}'
     fi
   
     ## Creation of sftp PVC
@@ -162,9 +162,9 @@ function install_logging_loki() {
     create_oc_resource "ObjectBucketClaim" "$MY_LOKI_BUCKET_INSTANCE_NAME" "${MY_RESOURCESDIR}" "${MY_LOKI_WORKINGDIR}" "objectbucketclaim.yaml" "$MY_LOGGING_NAMESPACE"
 
     # get the needed parameters to create the object storage secret
-    export VAR_LOKI_ACCESS_KEY_ID=$(oc -n openshift-storage get secret rook-ceph-object-user-ocs-storagecluster-cephobjectstore-noobaa-ceph-objectstore-user -o jsonpath='{.data.AccessKey}'| base64 --decode)
-    export VAR_LOKI_ACCESS_KEY_SECRET=$(oc -n openshift-storage get secret rook-ceph-object-user-ocs-storagecluster-cephobjectstore-noobaa-ceph-objectstore-user -o jsonpath='{.data.SecretKey}'| base64 --decode)
-    export VAR_LOKI_ENDPOINT=$(oc -n openshift-storage get secret rook-ceph-object-user-ocs-storagecluster-cephobjectstore-noobaa-ceph-objectstore-user -o jsonpath='{.data.Endpoint}'| base64 --decode)
+    export VAR_LOKI_ACCESS_KEY_ID=$($MY_CLUSTER_COMMAND -n openshift-storage get secret rook-ceph-object-user-ocs-storagecluster-cephobjectstore-noobaa-ceph-objectstore-user -o jsonpath='{.data.AccessKey}'| base64 --decode)
+    export VAR_LOKI_ACCESS_KEY_SECRET=$($MY_CLUSTER_COMMAND -n openshift-storage get secret rook-ceph-object-user-ocs-storagecluster-cephobjectstore-noobaa-ceph-objectstore-user -o jsonpath='{.data.SecretKey}'| base64 --decode)
+    export VAR_LOKI_ENDPOINT=$($MY_CLUSTER_COMMAND -n openshift-storage get secret rook-ceph-object-user-ocs-storagecluster-cephobjectstore-noobaa-ceph-objectstore-user -o jsonpath='{.data.Endpoint}'| base64 --decode)
     decho $lf_tracelevel "VAR_LOKI_ACCESS_KEY_ID=$VAR_LOKI_ACCESS_KEY_ID|VAR_LOKI_ACCESS_KEY_SECRET=$VAR_LOKI_ACCESS_KEY_SECRET|VAR_LOKI_ENDPOINT=$VAR_LOKI_ENDPOINT"
 
     create_oc_resource "Secret" "$MY_LOKI_SECRET" "${MY_RESOURCESDIR}" "${MY_LOKI_WORKINGDIR}" "loki-secret.yaml" "$MY_LOGGING_NAMESPACE"
@@ -177,10 +177,10 @@ function install_logging_loki() {
     # https://docs.openshift.com/container-platform/4.16/observability/logging/log_storage/cluster-logging-loki.html
 
     # Create a new group for the cluster-admin user role and add user to the group
-    oc adm groups new cluster-admin $MY_USER_EMAIL
+    $MY_CLUSTER_COMMAND adm groups new cluster-admin $MY_USER_EMAIL
 
     # add the cluster-admin user role to the cluster-admin group
-    oc adm policy add-cluster-role-to-group cluster-admin cluster-admin
+    $MY_CLUSTER_COMMAND adm policy add-cluster-role-to-group cluster-admin cluster-admin
     
     # Create a ClusterLogging CR object
     # https://github.com/openshift/cluster-logging-operator/blob/master/docs/administration/upgrade/v6.0_changes.adoc#the-main-change-highlights-are
@@ -200,17 +200,17 @@ function install_logging_loki() {
     #kind: ClusterLogForwarder
     #...
     # Create a service account for the collector
-    oc -n $MY_LOGGING_NAMESPACE create sa $MY_LOGGING_COLLECTOR_SA
+    $MY_CLUSTER_COMMAND -n $MY_LOGGING_NAMESPACE create sa $MY_LOGGING_COLLECTOR_SA
 
     # Allow the collector’s service account to write data to the LokiStack CR
-    oc adm policy add-cluster-role-to-user logging-collector-logs-writer -z $MY_LOGGING_COLLECTOR_SA 
+    $MY_CLUSTER_COMMAND adm policy add-cluster-role-to-user logging-collector-logs-writer -z $MY_LOGGING_COLLECTOR_SA 
 
     # Allow the collector’s service account to collect logs
-    #oc project $MY_LOGGING_NAMESPACE
+    #$MY_CLUSTER_COMMAND project $MY_LOGGING_NAMESPACE
 
-    oc -n $MY_LOGGING_NAMESPACE adm policy add-cluster-role-to-user collect-application-logs -z $MY_LOGGING_COLLECTOR_SA
-    oc -n $MY_LOGGING_NAMESPACE adm policy add-cluster-role-to-user collect-audit-logs -z $MY_LOGGING_COLLECTOR_SA
-    oc -n $MY_LOGGING_NAMESPACE adm policy add-cluster-role-to-user collect-infrastructure-logs -z $MY_LOGGING_COLLECTOR_SA
+    $MY_CLUSTER_COMMAND -n $MY_LOGGING_NAMESPACE adm policy add-cluster-role-to-user collect-application-logs -z $MY_LOGGING_COLLECTOR_SA
+    $MY_CLUSTER_COMMAND -n $MY_LOGGING_NAMESPACE adm policy add-cluster-role-to-user collect-audit-logs -z $MY_LOGGING_COLLECTOR_SA
+    $MY_CLUSTER_COMMAND -n $MY_LOGGING_NAMESPACE adm policy add-cluster-role-to-user collect-infrastructure-logs -z $MY_LOGGING_COLLECTOR_SA
 
     create_operand_instance "ClusterLogForwarder" "$MY_RHOL_INSTANCE_NAME" "${MY_OPERANDSDIR}" "${MY_LOKI_WORKINGDIR}" "Rhol-Loki-Capability.yaml" "$MY_LOGGING_NAMESPACE" "{.status.conditions[?(@.type==\"Ready\")].status}" "True"
     
@@ -266,7 +266,7 @@ function install_cluster_observability() {
       create_oc_resource "ClusterRole" "logging-collector-logs-writer" "${MY_RESOURCESDIR}" "${MY_COO_WORKINGDIR}" "collector_ClusterRole.yaml" "$MY_LOGGING_NAMESPACE"
 
       # Bind the ClusterRole to the service account
-      oc adm policy add-cluster-role-to-user logging-collector-logs-writer -z $MY_LOGGING_COLLECTOR_SA
+      $MY_CLUSTER_COMMAND adm policy add-cluster-role-to-user logging-collector-logs-writer -z $MY_LOGGING_COLLECTOR_SA
     fi
 
     # SB]20241203 https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/logging/logging-6-0#cluster-role-binding-for-your-service-account
@@ -304,17 +304,17 @@ function install_logging_otel() {
     check_directory_exist_create "${MY_COO_WORKINGDIR}"
 
     # Create a service account for the collector
-    oc -n $MY_LOGGING_NAMESPACE create sa $MY_LOGGING_COLLECTOR_SA
+    $MY_CLUSTER_COMMAND -n $MY_LOGGING_NAMESPACE create sa $MY_LOGGING_COLLECTOR_SA
 
     # Allow the collector’s service account to write data to the LokiStack CR
-    oc adm policy add-cluster-role-to-user logging-collector-logs-writer -z $MY_LOGGING_COLLECTOR_SA
+    $MY_CLUSTER_COMMAND adm policy add-cluster-role-to-user logging-collector-logs-writer -z $MY_LOGGING_COLLECTOR_SA
 
     # Allow the collector’s service account to collect logs
-    oc project $MY_LOGGING_NAMESPACE
+    $MY_CLUSTER_COMMAND project $MY_LOGGING_NAMESPACE
 
-    oc adm policy add-cluster-role-to-user collect-application-logs -z $MY_LOGGING_COLLECTOR_SA
-    oc adm policy add-cluster-role-to-user collect-audit-logs -z $MY_LOGGING_COLLECTOR_SA
-    oc adm policy add-cluster-role-to-user collect-infrastructure-logs -z $MY_LOGGING_COLLECTOR_SA
+    $MY_CLUSTER_COMMAND adm policy add-cluster-role-to-user collect-application-logs -z $MY_LOGGING_COLLECTOR_SA
+    $MY_CLUSTER_COMMAND adm policy add-cluster-role-to-user collect-audit-logs -z $MY_LOGGING_COLLECTOR_SA
+    $MY_CLUSTER_COMMAND adm policy add-cluster-role-to-user collect-infrastructure-logs -z $MY_LOGGING_COLLECTOR_SA
 
     # Create a UIPlugin CR to enable the Log section in the Observe tab
     create_oc_resource "UIPlugin" "logging" "${MY_RESOURCESDIR}" "${MY_COO_WORKINGDIR}" "uiplugin.yaml" "$MY_LOGGING_NAMESPACE"
@@ -323,7 +323,7 @@ function install_logging_otel() {
     create_oc_resource "ClusterLogForwarder" "${MY_LOGGING_COLLECTOR_SA}" "${MY_RESOURCESDIR}" "${MY_COO_WORKINGDIR}" "clusterlogforwarder-otel.yaml" "$MY_LOGGING_NAMESPACE"
 
     # Bind the ClusterRole to the service account
-    oc adm policy add-cluster-role-to-user logging-collector-logs-writer -z $MY_LOGGING_COLLECTOR_SA
+    $MY_CLUSTER_COMMAND adm policy add-cluster-role-to-user logging-collector-logs-writer -z $MY_LOGGING_COLLECTOR_SA
 
   fi
 
@@ -448,10 +448,10 @@ function install_mail() {
     create_oc_resource "Route" "${VAR_MAIL_ROUTE}" "${MY_YAMLDIR}mail/" "${MY_MAIL_WORKINGDIR}" "mail_route.yaml" "${VAR_MAIL_NAMESPACE}"
 
     # expose service externaly and get host and port
-    #oc -n ${VAR_MAIL_NAMESPACE} get service ${VAR_MAIL_SERVICE} -o json | \
+    #$MY_CLUSTER_COMMAND -n ${VAR_MAIL_NAMESPACE} get service ${VAR_MAIL_SERVICE} -o json | \
     #   jq '.spec.ports |= map(if .name == "1025-tcp" then . + { "nodePort": 31025 } else . end)' | \
     #   jq '.spec.ports |= map(if .name == "8025-tcp" then . + { "nodePort": 38025 } else . end)' >${MY_MAIL_WORKINGDIR}mail-service.json
-    export VAR_MAIL_HOSTNAME=$(oc -n ${VAR_MAIL_NAMESPACE} get route ${VAR_MAIL_ROUTE} -o jsonpath='{.spec.host}')
+    export VAR_MAIL_HOSTNAME=$($MY_CLUSTER_COMMAND -n ${VAR_MAIL_NAMESPACE} get route ${VAR_MAIL_ROUTE} -o jsonpath='{.spec.host}')
   fi
 
   trace_out $lf_tracelevel install_mail
@@ -481,15 +481,15 @@ function install_openldap() {
     provision_persistence_openldap
 
     create_oc_resource "ServiceAccount" "$MY_LDAP_SERVICEACCOUNT" "${MY_RESOURCESDIR}" "${MY_LDAP_WORKINGDIR}" "serviceaccount.yaml" "$VAR_LDAP_NAMESPACE"
-    oc adm policy add-scc-to-user privileged system:serviceaccount:${VAR_LDAP_NAMESPACE}:${MY_LDAP_SERVICEACCOUNT}
-    oc adm policy add-scc-to-user anyuid system:serviceaccount:${VAR_LDAP_NAMESPACE}:${MY_LDAP_SERVICEACCOUNT}
-    #oc adm policy add-scc-to-group anyuid system:serviceaccounts:${VAR_LDAP_NAMESPACE}
+    $MY_CLUSTER_COMMAND adm policy add-scc-to-user privileged system:serviceaccount:${VAR_LDAP_NAMESPACE}:${MY_LDAP_SERVICEACCOUNT}
+    $MY_CLUSTER_COMMAND adm policy add-scc-to-user anyuid system:serviceaccount:${VAR_LDAP_NAMESPACE}:${MY_LDAP_SERVICEACCOUNT}
+    #$MY_CLUSTER_COMMAND adm policy add-scc-to-group anyuid system:serviceaccounts:${VAR_LDAP_NAMESPACE}
 
     create_oc_resource "Deployment" "${MY_LDAP_DEPLOYMENT}" "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}" "ldap_deployment.yaml" "$VAR_LDAP_NAMESPACE"
 
     read_config_file "${MY_YAMLDIR}ldap/ldap_dit.properties"
     adapt_file "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}" "ldap_config.json" 
-    oc -n ${VAR_LDAP_NAMESPACE} patch deployment.apps/openldap --patch-file "${MY_LDAP_WORKINGDIR}ldap_config.json"
+    $MY_CLUSTER_COMMAND -n ${VAR_LDAP_NAMESPACE} patch deployment.apps/openldap --patch-file "${MY_LDAP_WORKINGDIR}ldap_config.json"
 
     # Create the service to expose the openldap server
     create_oc_resource "Service" "${VAR_LDAP_SERVICE}" "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}" "ldap_svc.yaml" "${VAR_LDAP_NAMESPACE}"
@@ -645,16 +645,16 @@ function install_lic_reporter_svc() {
     # Create a subscription object for license service reporter Operator
     create_operator_instance "${MY_LICENSE_SERVICE_REPORTER_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_LICENSE_SERVICE_REPORTER_WORKINGDIR}" "${MY_LICENSE_SERVICE_REPORTER_NAMESPACE}"
       
-    export MY_LICENSE_SERVICE_REPORTER_VERSION=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $MY_LICENSE_SERVICE_REPORTER_OPERATOR -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSVDesc.version')
+    export MY_LICENSE_SERVICE_REPORTER_VERSION=$($MY_CLUSTER_COMMAND -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $MY_LICENSE_SERVICE_REPORTER_OPERATOR -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSVDesc.version')
     create_operand_instance "IBMLicenseServiceReporter" "$MY_LICENSE_SERVICE_REPORTER_INSTANCE_NAME" "${MY_OPERANDSDIR}" "${MY_LICENSE_SERVICE_REPORTER_WORKINGDIR}" "LIC-Reporter-Capability.yaml" "$MY_LICENSE_SERVICE_REPORTER_NAMESPACE" "{.status.LicenseServiceReporterPods[-1].phase}" "Running"
 
     # Add license service to the reporter
-    # oc get routes -n ibm-licensing | grep ibm-license-service-reporter | awk '{print $2}'
+    # $MY_CLUSTER_COMMAND get routes -n ibm-licensing | grep ibm-license-service-reporter | awk '{print $2}'
     mylog info "Add license service to the reporter" 1>&2
-    decho $lf_tracelevel "oc -n ${MY_LICENSE_SERVICE_REPORTER_NAMESPACE} get Route -o=jsonpath='{.items[?(@.metadata.name==ibm-license-service-reporter)].spec.host}'"
-    lf_licensing_service_reporter_url=$(oc -n ${MY_LICENSE_SERVICE_REPORTER_NAMESPACE} get Route -o=jsonpath='{.items[?(@.metadata.name=="ibm-license-service-reporter")].spec.host}')
+    decho $lf_tracelevel "$MY_CLUSTER_COMMAND -n ${MY_LICENSE_SERVICE_REPORTER_NAMESPACE} get Route -o=jsonpath='{.items[?(@.metadata.name==ibm-license-service-reporter)].spec.host}'"
+    lf_licensing_service_reporter_url=$($MY_CLUSTER_COMMAND -n ${MY_LICENSE_SERVICE_REPORTER_NAMESPACE} get Route -o=jsonpath='{.items[?(@.metadata.name=="ibm-license-service-reporter")].spec.host}')
     decho $lf_tracelevel "License Service Reporter URL: $lf_licensing_service_reporter_url"
-    oc -n $MY_LICENSE_SERVICE_NAMESPACE patch IBMLicensing ${MY_LICENSE_SERVICE_INSTANCE_NAME} --type merge --patch "{\"spec\":{\"sender\":{\"reporterSecretToken\":\"ibm-license-service-reporter-token\",\"reporterURL\":\"https://$lf_licensing_service_reporter_url/\",\"clusterID\":\"MyClusterTest1\",\"clusterName\":\"MyClusterTest1\"}}}"
+    $MY_CLUSTER_COMMAND -n $MY_LICENSE_SERVICE_NAMESPACE patch IBMLicensing ${MY_LICENSE_SERVICE_INSTANCE_NAME} --type merge --patch "{\"spec\":{\"sender\":{\"reporterSecretToken\":\"ibm-license-service-reporter-token\",\"reporterURL\":\"https://$lf_licensing_service_reporter_url/\",\"clusterID\":\"MyClusterTest1\",\"clusterName\":\"MyClusterTest1\"}}}"
 
     mylog info "Check if Installing network policies for license Service is needed" 1>&2
     #mylog info "https://www.ibm.com/docs/en/cloud-paks/foundational-services/4.6?topic=service-installing-network-policies-license"
@@ -769,11 +769,11 @@ function install_openliberty() {
 
     # check if deployment of the operator already performed
     mylog check "Checking ${lf_name}/${lf_octype} in ${VAR_OPENLIBERTY_NAMESPACE}"
-    if ! oc -n ${VAR_OPENLIBERTY_NAMESPACE} get ${lf_octype} ${lf_name} >/dev/null 2>&1; then
+    if ! $MY_CLUSTER_COMMAND -n ${VAR_OPENLIBERTY_NAMESPACE} get ${lf_octype} ${lf_name} >/dev/null 2>&1; then
       if $MY_APPLY_FLAG; then     
-        oc apply --server-side -f ${MY_OPENLIBERTY_WORKINGDIR}resources/openliberty-app-crd.yaml
-        oc apply -f ${MY_OPENLIBERTY_WORKINGDIR}resources/openliberty-app-rbac-watch-all.yaml
-        oc -n ${VAR_OPENLIBERTY_NAMESPACE} apply -f ${MY_OPENLIBERTY_WORKINGDIR}resources/openliberty-app-operator.yaml
+        $MY_CLUSTER_COMMAND apply --server-side -f ${MY_OPENLIBERTY_WORKINGDIR}resources/openliberty-app-crd.yaml
+        $MY_CLUSTER_COMMAND apply -f ${MY_OPENLIBERTY_WORKINGDIR}resources/openliberty-app-rbac-watch-all.yaml
+        $MY_CLUSTER_COMMAND -n ${VAR_OPENLIBERTY_NAMESPACE} apply -f ${MY_OPENLIBERTY_WORKINGDIR}resources/openliberty-app-operator.yaml
       fi
     fi
   fi
@@ -866,7 +866,7 @@ function install_navigator() {
   if $MY_NAVIGATOR_INSTANCE; then
     #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
     if [[ -z $MY_NAVIGATOR_VERSION ]]; then
-      export MY_NAVIGATOR_VERSION=$(oc ibm-pak list -o json | jq  --arg case "$MY_NAVIGATOR_OPERATOR" '.[] | select (.name == $case ) | .latestAppVersion')
+      export MY_NAVIGATOR_VERSION=$($MY_CLUSTER_COMMAND ibm-pak list -o json | jq  --arg case "$MY_NAVIGATOR_OPERATOR" '.[] | select (.name == $case ) | .latestAppVersion')
       decho $lf_tracelevel "MY_NAVIGATOR_VERSION=$MY_NAVIGATOR_VERSION"
     fi
 
@@ -915,7 +915,7 @@ function install_assetrepo() {
     if $MY_ASSETREPO_INSTANCE; then
       #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
       if [[ -z $MY_ASSETREPO_VERSION ]]; then
-        export MY_ASSETREPO_VERSION=$(oc ibm-pak list -o json | jq  --arg case "$MY_ASSETREPO_OPERATOR" '.[] | select (.name == $case ) | .latestAppVersion')
+        export MY_ASSETREPO_VERSION=$($MY_CLUSTER_COMMAND ibm-pak list -o json | jq  --arg case "$MY_ASSETREPO_OPERATOR" '.[] | select (.name == $case ) | .latestAppVersion')
         decho $lf_tracelevel "MY_ASSETREPO_VERSION=$MY_ASSETREPO_VERSION"
       fi
 
@@ -1043,7 +1043,7 @@ function install_apic() {
       create_operand_instance "APIConnectCluster" "${VAR_APIC_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-Capability.yaml" "$VAR_APIC_NAMESPACE" "{.status.phase}" "Ready"
     fi
 
-    local lf_ingress=$(oc get ingresses.config/cluster -o jsonpath='{.spec.domain}')
+    local lf_ingress=$($MY_CLUSTER_COMMAND get ingresses.config/cluster -o jsonpath='{.spec.domain}')
     export VAR_NAMESPACE="${VAR_APIC_NAMESPACE}"
     export VAR_APIC_GW_ROUTE_HOST="${VAR_APIC_GW_ROUTE_NAME}.${lf_ingress}"
 
@@ -1091,7 +1091,7 @@ function install_apic_graphql() {
     # create a PostgreSQL database for the APIC Graphql
     create_edb_postgres_db "${VAR_POSTGRES_CLUSTER}" "${VAR_POSTGRES_DATABASE}" "${VAR_POSTGRES_USER}" "${MY_POSTGRES_PASSWORD}" "${MY_POSTGRES_DSN_SECRET}" "Postgres DB for APIC Graphql"
 
-    #local lf_postgresql_password=$(oc -n $VAR_POSTGRES_NAMESPACE get secret "${VAR_POSTGRES_CLUSTER}-superuser" -o jsonpath='{.data.paswword}' | base64 -d)
+    #local lf_postgresql_password=$($MY_CLUSTER_COMMAND -n $VAR_POSTGRES_NAMESPACE get secret "${VAR_POSTGRES_CLUSTER}-superuser" -o jsonpath='{.data.paswword}' | base64 -d)
     # create a generic secret for the PostgreSQL server
     # there are three postgresql services : 
     # - ${VAR_POSTGRES_CLUSTER}-r"  : for read-only workloads across all nodes
@@ -1101,20 +1101,20 @@ function install_apic_graphql() {
     #lf_postgresql_host="${VAR_POSTGRES_CLUSTER}-rw.${VAR_POSTGRES_NAMESPACE}.svc.cluster.local"
     #lf_dsn="postgresql://${VAR_POSTGRES_USER}:${lf_postgresql_password}@${lf_postgresql_host}/${VAR_POSTGRES_DATABASE}"
 
-    #oc -n $VAR_POSTGRES_NAMESPACE get Secret "${VAR_POSTGRES_CLUSTER}-superuser" -o jsonpath='{.data.uri}'
-    #export VAR_DSN=$(oc -n $VAR_POSTGRES_NAMESPACE get secret "${VAR_POSTGRES_CLUSTER}-superuser" -o jsonpath='{.data.uri}' | base64 -d)
-    export VAR_DSN="postgresql://${VAR_POSTGRES_USER}:$(oc get secret ${VAR_POSTGRES_SECRET} -n ${VAR_POSTGRES_NAMESPACE} -o jsonpath='{.data.password}' | base64 -d)@${VAR_POSTGRES_CLUSTER}-rw.${VAR_POSTGRES_NAMESPACE}.svc:5432/${VAR_POSTGRES_DATABASE}?sslmode=disable"
+    #$MY_CLUSTER_COMMAND -n $VAR_POSTGRES_NAMESPACE get Secret "${VAR_POSTGRES_CLUSTER}-superuser" -o jsonpath='{.data.uri}'
+    #export VAR_DSN=$($MY_CLUSTER_COMMAND -n $VAR_POSTGRES_NAMESPACE get secret "${VAR_POSTGRES_CLUSTER}-superuser" -o jsonpath='{.data.uri}' | base64 -d)
+    export VAR_DSN="postgresql://${VAR_POSTGRES_USER}:$($MY_CLUSTER_COMMAND get secret ${VAR_POSTGRES_SECRET} -n ${VAR_POSTGRES_NAMESPACE} -o jsonpath='{.data.password}' | base64 -d)@${VAR_POSTGRES_CLUSTER}-rw.${VAR_POSTGRES_NAMESPACE}.svc:5432/${VAR_POSTGRES_DATABASE}?sslmode=disable"
     echo "VAR_DSN=$VAR_DSN"
     create_oc_resource "Secret" "${MY_APIC_GRAPHQL_DSN_SECRET}" "${MY_APIC_GRAPHQL_DIR}" "${MY_APIC_GRAPHQL_WORKINGDIR}" "stepzen_secret.yaml" "$VAR_APIC_GRAPHQL_NAMESPACE"
-    #oc create secret generic ${MY_APIC_GRAPHQL_DSN_SECRET} \
-  #--from-literal=dsn="postgresql://${VAR_POSTGRES_USER}:$(oc get secret ${VAR_POSTGRES_SECRET} -n ${VAR_POSTGRES_NAMESPACE} -o jsonpath='{.data.password}' | base64 -d)@${VAR_POSTGRES_CLUSTER}-rw.${VAR_POSTGRES_NAMESPACE}.svc:5432/${VAR_POSTGRES_DATABASE}?sslmode=disable" \
+    #$MY_CLUSTER_COMMAND create secret generic ${MY_APIC_GRAPHQL_DSN_SECRET} \
+  #--from-literal=dsn="postgresql://${VAR_POSTGRES_USER}:$($MY_CLUSTER_COMMAND get secret ${VAR_POSTGRES_SECRET} -n ${VAR_POSTGRES_NAMESPACE} -o jsonpath='{.data.password}' | base64 -d)@${VAR_POSTGRES_CLUSTER}-rw.${VAR_POSTGRES_NAMESPACE}.svc:5432/${VAR_POSTGRES_DATABASE}?sslmode=disable" \
   #--namespace ${VAR_APIC_GRAPHQL_NAMESPACE}
     unset VAR_NAMESPACE VAR_SECRET_NAME VAR_DSN
-    #oc -n ${VAR_APIC_GRAPHQL_NAMESPACE} create secret generic $MY_POSTGRES_DSN_SECRET --from-literal=DSN="${lf_dsn}"
+    #$MY_CLUSTER_COMMAND -n ${VAR_APIC_GRAPHQL_NAMESPACE} create secret generic $MY_POSTGRES_DSN_SECRET --from-literal=DSN="${lf_dsn}"
 
     # Download and extract the CASE bundle.
-    lf_case_version=$(oc ibm-pak list -o json | jq -r --arg case "$MY_APIC_GRAPHQL_CASE" '.[] | select (.name == $case ) | .latestVersion')
-    oc ibm-pak get ${MY_APIC_GRAPHQL_CASE} --version ${lf_case_version} 1>&2
+    lf_case_version=$($MY_CLUSTER_COMMAND ibm-pak list -o json | jq -r --arg case "$MY_APIC_GRAPHQL_CASE" '.[] | select (.name == $case ) | .latestVersion')
+    $MY_CLUSTER_COMMAND ibm-pak get ${MY_APIC_GRAPHQL_CASE} --version ${lf_case_version} 1>&2
 
     lf_tgz_file=${MY_IBMPAK_CASESDIR}${MY_APIC_GRAPHQL_CASE}/${lf_case_version}/${MY_APIC_GRAPHQL_CASE}-${lf_case_version}.tgz
     if [[ -e $lf_tgz_file ]]; then
@@ -1125,10 +1125,10 @@ function install_apic_graphql() {
     if $MY_APPLY_FLAG; then 
       lf_deploy_dir="${MY_APIC_GRAPHQL_WORKINGDIR}${MY_APIC_GRAPHQL_CASE}/inventory/stepzenGraphOperator/files/deploy/"
       decho $lf_tracelevel "Applying the operator manifest files to the cluster : crd.yaml." 1>&2
-      oc -n ${VAR_APIC_GRAPHQL_NAMESPACE} apply -f ${lf_deploy_dir}crd.yaml
+      $MY_CLUSTER_COMMAND -n ${VAR_APIC_GRAPHQL_NAMESPACE} apply -f ${lf_deploy_dir}crd.yaml
   
       decho $lf_tracelevel "Applying the operator manifest files to the cluster : operator.yaml." 1>&2
-      oc -n ${VAR_APIC_GRAPHQL_NAMESPACE} apply -f ${lf_deploy_dir}operator.yaml
+      $MY_CLUSTER_COMMAND -n ${VAR_APIC_GRAPHQL_NAMESPACE} apply -f ${lf_deploy_dir}operator.yaml
       sleep 10
     fi
 
@@ -1145,7 +1145,7 @@ function install_apic_graphql() {
     # ATTENTION REVOIR le namespace : c'est cert-manager et non pas cert-manager-namespace (https://github.com/cert-manager/openshift-routes?tab=readme-ov-file)
     # https://github.com/cert-manager/openshift-routes
     helm -n cert-manager install openshift-routes oci://ghcr.io/cert-manager/charts/openshift-routes
-    #oc -n cert-manager apply -f <(helm template openshift-routes -n cert-manager oci://ghcr.io/cert-manager/charts/openshift-routes --set omitHelmLabels=true)
+    #$MY_CLUSTER_COMMAND -n cert-manager apply -f <(helm template openshift-routes -n cert-manager oci://ghcr.io/cert-manager/charts/openshift-routes --set omitHelmLabels=true)
 
     # Set up a stepzen-graph-server route for the stepzen account. This is the "root" account of the API Connect Graphql service, 
     # which is used to host endpoints that modify the metadata database but does not serve application requests. 
@@ -1155,7 +1155,7 @@ function install_apic_graphql() {
     # Set up stepzen-graph-server and stepzen-graph-server-subscriptions routes for the graphql account.
     # This is the default account for serving application requests.
     adapt_file ${MY_RESOURCESDIR} ${MY_APIC_GRAPHQL_WORKINGDIR} graphql-route.yaml
-    if ! oc apply -f "${MY_APIC_GRAPHQL_WORKINGDIR}graphql-route.yaml" ; then
+    if ! $MY_CLUSTER_COMMAND apply -f "${MY_APIC_GRAPHQL_WORKINGDIR}graphql-route.yaml" ; then
       unset VAR_CLUSTER_DOMAIN
       trace_out $lf_tracelevel install_apic_graphql
       exit 1
@@ -1163,7 +1163,7 @@ function install_apic_graphql() {
 
     # Install Introspection service
     adapt_file ${MY_APIC_GRAPHQL_DIR} ${MY_APIC_GRAPHQL_WORKINGDIR} introspection.yaml
-    if ! oc apply -f "${MY_APIC_GRAPHQL_WORKINGDIR}introspection.yaml" ; then
+    if ! $MY_CLUSTER_COMMAND apply -f "${MY_APIC_GRAPHQL_WORKINGDIR}introspection.yaml" ; then
       trace_out $lf_tracelevel install_apic_graphql
       exit 1
     fi
@@ -1197,8 +1197,8 @@ function install_es() {
     create_project "$VAR_ES_NAMESPACE" "$VAR_ES_NAMESPACE project" "For Eventstreams" "${MY_RESOURCESDIR}" "${MY_ES_WORKINGDIR}"
 
     # add catalog sources using ibm_pak plugin
-    # SB]20250221 : problem with IBM Eventstreams, the command oc ibm-pak list does not return the "latest" version of the pak
-    # this command used in lib.sh to return the latest version of the pak: lf_app_version=$(oc ibm-pak list --case-name $lf_in_case_name -o json | jq --arg v "$lf_in_case_version" '.versions[$v].appVersion')
+    # SB]20250221 : problem with IBM Eventstreams, the command $MY_CLUSTER_COMMAND ibm-pak list does not return the "latest" version of the pak
+    # this command used in lib.sh to return the latest version of the pak: lf_app_version=$($MY_CLUSTER_COMMAND ibm-pak list --case-name $lf_in_case_name -o json | jq --arg v "$lf_in_case_version" '.versions[$v].appVersion')
     # when used with "latest" returns null, so we need to set the version of the pak in the variable MY_ES_VERSION
     check_add_cs_ibm_pak $MY_ES_CASE $MY_ES_OPERATOR $MY_ES_CATALOGSOURCE_LABEL amd64
     if [[ -z $MY_ES_VERSION ]]; then
@@ -1242,8 +1242,8 @@ function install_eem() {
     create_project "${VAR_EEM_NAMESPACE}" "${VAR_EEM_NAMESPACE} project" "For Event Endpoint Management" "${MY_RESOURCESDIR}" "${MY_EEM_WORKINGDIR}"
 
     ## event endpoint management
-    ## to get the name of the pak to use : oc ibm-pak list
-    ## https://ibm.github.io/event-automation/eem/installing/installing/, chapter : Install the operator by using the CLI (oc ibm-pak)
+    ## to get the name of the pak to use : $MY_CLUSTER_COMMAND ibm-pak list
+    ## https://ibm.github.io/event-automation/eem/installing/installing/, chapter : Install the operator by using the CLI ($MY_CLUSTER_COMMAND ibm-pak)
     check_add_cs_ibm_pak $MY_EEM_OPERATOR $MY_EEM_OPERATOR $MY_EEM_CATALOGSOURCE_LABEL amd64
     if [[ -z $MY_EEM_VERSION ]]; then
       export MY_EEM_VERSION=$VAR_APP_VERSION
@@ -1273,7 +1273,7 @@ function install_eem() {
       adapt_file ${MY_EEM_SIMPLE_DEMODIR}resources/ ${MY_EEM_WORKINGDIR}resources/ keycloak-user-roles
       # keycloak user roles
       local lf_varb64=$(cat "${MY_EEM_WORKINGDIR}resources/keycloak-user-roles.yaml" | base64 -w0)
-      oc -n $VAR_EEM_NAMESPACE patch secret "${VAR_EEM_INSTANCE_NAME}-ibm-eem-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$lf_varb64\"}]"
+      $MY_CLUSTER_COMMAND -n $VAR_EEM_NAMESPACE patch secret "${VAR_EEM_INSTANCE_NAME}-ibm-eem-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$lf_varb64\"}]"
     else
       # generate properties files
       adapt_file ${MY_EEM_SIMPLE_DEMODIR}resources/ ${MY_EEM_WORKINGDIR}resources/ local-user-credentials.yaml
@@ -1282,12 +1282,12 @@ function install_eem() {
       # local user credentials
       wait_for_resource "Secret" "${VAR_EEM_INSTANCE_NAME}-ibm-eem-user-credentials" "$VAR_EEM_NAMESPACE"
       local lf_varb64=$(cat "${MY_EEM_WORKINGDIR}resources/local-user-credentials.yaml" | base64 -w0)
-      oc -n $VAR_EEM_NAMESPACE patch secret "${VAR_EEM_INSTANCE_NAME}-ibm-eem-user-credentials" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-credentials.json\" ,\"value\" : \"$lf_varb64\"}]"
+      $MY_CLUSTER_COMMAND -n $VAR_EEM_NAMESPACE patch secret "${VAR_EEM_INSTANCE_NAME}-ibm-eem-user-credentials" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-credentials.json\" ,\"value\" : \"$lf_varb64\"}]"
       
       # local user roles
       wait_for_resource "Secret" "${VAR_EEM_INSTANCE_NAME}-ibm-eem-user-roles" "$VAR_EEM_NAMESPACE"
       local lf_varb64=$(cat "${MY_EEM_WORKINGDIR}resources/local-user-roles.yaml" | base64 -w0)
-      oc -n $VAR_EEM_NAMESPACE patch secret "${VAR_EEM_INSTANCE_NAME}-ibm-eem-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$lf_varb64\"}]"
+      $MY_CLUSTER_COMMAND -n $VAR_EEM_NAMESPACE patch secret "${VAR_EEM_INSTANCE_NAME}-ibm-eem-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$lf_varb64\"}]"
     fi
   fi
   
@@ -1320,7 +1320,7 @@ function install_egw() {
     local lf_timeout=$MY_MAX_TIMEOUT
     local lf_interval=$MY_DELAY_SECONDS
     while [[ $lf_timeout -gt 0 ]]; do
-      lf_eem_manager_gateway_route=$(oc -n $VAR_EEM_NAMESPACE get eem ${VAR_EEM_INSTANCE_NAME} -o jsonpath='{.status.endpoints}' | jq -r '.[] | select (.name=="gateway").uri')      
+      lf_eem_manager_gateway_route=$($MY_CLUSTER_COMMAND -n $VAR_EEM_NAMESPACE get eem ${VAR_EEM_INSTANCE_NAME} -o jsonpath='{.status.endpoints}' | jq -r '.[] | select (.name=="gateway").uri')      
       if [[ -n "$lf_eem_manager_gateway_route" ]]; then
         decho $lf_tracelevel "EEM Manager Gateway route\"$lf_eem_manager_gateway_route\" for instance \"$instance\""
         break
@@ -1398,7 +1398,7 @@ function install_ep() {
 
       adapt_file "$MY_EP_DIR" "$MY_EP_WORKINGDIR" "ep-secret.yaml"
       if $MY_APPLY_FLAG; then
-        oc apply -f ${MY_EP_WORKINGDIR}ep-secret.yaml
+        $MY_CLUSTER_COMMAND apply -f ${MY_EP_WORKINGDIR}ep-secret.yaml
       fi
 
       create_operand_instance "EventProcessing" "${VAR_EP_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_EP_WORKINGDIR}" "EP-Capability-oidc.yaml" "$VAR_EP_NAMESPACE" "{.status.phase}" "Running"
@@ -1412,12 +1412,12 @@ function install_ep() {
       # user roles
       lf_varb64=$(cat "${MY_EP_WORKINGDIR}resources/user-roles.yaml" | base64 -w0)
       if $MY_APPLY_FLAG; then
-        oc -n $VAR_EP_NAMESPACE patch secret ${VAR_EP_INSTANCE_NAME}-ibm-ep-user-roles --type=merge -p "{\"data\":{\"user-mapping.json\":\"$lf_varb64\"}}"
+        $MY_CLUSTER_COMMAND -n $VAR_EP_NAMESPACE patch secret ${VAR_EP_INSTANCE_NAME}-ibm-ep-user-roles --type=merge -p "{\"data\":{\"user-mapping.json\":\"$lf_varb64\"}}"
   
         local lf_path="{.status.phase}"
         local lf_state="Running"
 
-        if oc -n $VAR_EP_NAMESPACE get $lf_type $lf_cr_name >/dev/null 2>&1; then
+        if $MY_CLUSTER_COMMAND -n $VAR_EP_NAMESPACE get $lf_type $lf_cr_name >/dev/null 2>&1; then
           wait_for_state "$lf_type" "$lf_cr_name" "$lf_path" "$lf_state" "$VAR_EP_NAMESPACE"
         else
           mylog error "$lf_cr_name of type $lf_type in $VAR_EP_NAMESPACE namespace does not exist, will not wait for state"
@@ -1442,13 +1442,13 @@ function install_ep() {
       # user credentials
       local lf_varb64=$(cat "${MY_EP_WORKINGDIR}resources/user-credentials.yaml" | base64 -w0)
       if $MY_APPLY_FLAG; then
-        oc -n $VAR_EP_NAMESPACE patch secret ${VAR_EP_INSTANCE_NAME}-ibm-ep-user-credentials --type=merge -p "{\"data\":{\"user-credentials.json\":\"$lf_varb64\"}}"
+        $MY_CLUSTER_COMMAND -n $VAR_EP_NAMESPACE patch secret ${VAR_EP_INSTANCE_NAME}-ibm-ep-user-credentials --type=merge -p "{\"data\":{\"user-credentials.json\":\"$lf_varb64\"}}"
       fi
   
       # user roles
       lf_varb64=$(cat "${MY_EP_WORKINGDIR}resources/user-roles.yaml" | base64 -w0)
       if $MY_APPLY_FLAG; then
-        oc -n $VAR_EP_NAMESPACE patch secret ${VAR_EP_INSTANCE_NAME}-ibm-ep-user-roles --type=merge -p "{\"data\":{\"user-mapping.json\":\"$lf_varb64\"}}"
+        $MY_CLUSTER_COMMAND -n $VAR_EP_NAMESPACE patch secret ${VAR_EP_INSTANCE_NAME}-ibm-ep-user-roles --type=merge -p "{\"data\":{\"user-mapping.json\":\"$lf_varb64\"}}"
       fi
     fi
 
@@ -1494,7 +1494,7 @@ function install_flink() {
     unset VAR_CATALOG_SOURCE
 
     ## SB]20231020 For Flink and Event processing install the operator with the following command :
-    ## https://ibm.github.io/event-automation/ep/installing/installing/, Chapter : Install the operator by using the CLI (oc ibm-pak)
+    ## https://ibm.github.io/event-automation/ep/installing/installing/, Chapter : Install the operator by using the CLI ($MY_CLUSTER_COMMAND ibm-pak)
     ## event flink
     ## Creating Eventautomation Flink operator subscription
     create_operator_instance "${MY_FLINK_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_FLINK_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
@@ -1505,7 +1505,7 @@ function install_flink() {
 
     #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
     if [[ -z $MY_FLINK_VERSION ]]; then
-      export MY_FLINK_VERSION=$(oc ibm-pak list -o json | jq  --arg case "$MY_FLINK_OPERATOR" '.[] | select (.name == $case ) | .latestAppVersion')
+      export MY_FLINK_VERSION=$($MY_CLUSTER_COMMAND ibm-pak list -o json | jq  --arg case "$MY_FLINK_OPERATOR" '.[] | select (.name == $case ) | .latestAppVersion')
     fi
 
     ## SB]20231023 to check the status of created Flink instance : https://ibm.github.io/event-automation/ep/installing/post-installation/
@@ -1650,7 +1650,7 @@ function install_instana() {
     # Create namespace for Instana agent. The instana agent must be istalled in instana-agent namespace.
     create_project "$MY_INSTANA_AGENT_NAMESPACE" "$MY_INSTANA_AGENT_NAMESPACE project" "For Instana" "${MY_RESOURCESDIR}" "${MY_INSTANA_WORKINGDIR}"
 
-    oc -n $MY_INSTANA_AGENT_NAMESPACE adm policy add-scc-to-user privileged -z instana-agent
+    $MY_CLUSTER_COMMAND -n $MY_INSTANA_AGENT_NAMESPACE adm policy add-scc-to-user privileged -z instana-agent
 
     # Create a subscription object for instana Operator
     create_operator_instance "${MY_INSTANA_OPERATOR}" "${MY_CERTIFIED_OPERATORS_CATALOG}" "${MY_OPERATORSDIR}" "${MY_INSTANA_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
@@ -1974,7 +1974,7 @@ function customise_mq() {
   if $MY_MQ_CUSTOM; then
     #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
     if [[ -z $MY_MQ_VERSION ]]; then
-      export MY_MQ_VERSION=$(oc ibm-pak list -o json | jq  --arg case "$MY_MQ_OPERATOR" '.[] | select (.name == $case ) | .latestAppVersion')
+      export MY_MQ_VERSION=$($MY_CLUSTER_COMMAND ibm-pak list -o json | jq  --arg case "$MY_MQ_OPERATOR" '.[] | select (.name == $case ) | .latestAppVersion')
     fi
 
     # launch custom script
@@ -2055,12 +2055,12 @@ function create_edb_postgres_db() {
   export VAR_POSTGRES_DATABASE_DESCRIPTION="${lf_in_db_description}"
 
   # the following command to be used with ibm postgres
-  # export VAR_POSTGRES_IMAGE_NAME=$(oc get packagemanifests -n $MY_CATALOGSOURCES_NAMESPACE --selector=$MY_POSTGRES_CATALOGSOURCE_NAME -o json | jq --arg channel "$MY_POSTGRES_CHL" '.items[].status.channels[] | select(.name == $channel)' | jq -r '.currentCSVDesc.relatedImages[]   | select(startswith("icr.io/cpopen/edb/postgresql:"))' | sort -V | tail -n 1)
+  # export VAR_POSTGRES_IMAGE_NAME=$($MY_CLUSTER_COMMAND get packagemanifests -n $MY_CATALOGSOURCES_NAMESPACE --selector=$MY_POSTGRES_CATALOGSOURCE_NAME -o json | jq --arg channel "$MY_POSTGRES_CHL" '.items[].status.channels[] | select(.name == $channel)' | jq -r '.currentCSVDesc.relatedImages[]   | select(startswith("icr.io/cpopen/edb/postgresql:"))' | sort -V | tail -n 1)
 
   # and this with EDB Postgres
-  export VAR_POSTGRES_IMAGE_NAME=$(oc get packagemanifests -n $MY_CATALOGSOURCES_NAMESPACE --selector=$MY_POSTGRES_CATALOGSOURCE_NAME -o json | jq --arg channel "$MY_POSTGRES_CHL" '.items[].status.channels[] | select(.name == $channel)' | jq -r '.currentCSVDesc.relatedImages[]')
+  export VAR_POSTGRES_IMAGE_NAME=$($MY_CLUSTER_COMMAND get packagemanifests -n $MY_CATALOGSOURCES_NAMESPACE --selector=$MY_POSTGRES_CATALOGSOURCE_NAME -o json | jq --arg channel "$MY_POSTGRES_CHL" '.items[].status.channels[] | select(.name == $channel)' | jq -r '.currentCSVDesc.relatedImages[]')
   create_operand_instance "${MY_POSTGRES_CRD_CLUSTER}" "${lf_in_cluster_name}" "${MY_POSTGRES_DIR}" "${MY_EDB_POSTGRES_WORKINGDIR}" "edb-postgres-cluster.yaml" "$VAR_POSTGRES_NAMESPACE" "{.status.conditions[?(@.type==\"Ready\")].status}" "True"
-  if oc -n $VAR_POSTGRES_NAMESPACE wait --for=condition=Ready pod -l k8s.enterprisedb.io/cluster=$lf_in_cluster_name --timeout=300s; then
+  if $MY_CLUSTER_COMMAND -n $VAR_POSTGRES_NAMESPACE wait --for=condition=Ready pod -l k8s.enterprisedb.io/cluster=$lf_in_cluster_name --timeout=300s; then
     echo "✅ All Pods are Ready!"
   else
     echo "❌ Timeout or error waiting for Pods to be Ready."
@@ -2069,11 +2069,11 @@ function create_edb_postgres_db() {
   #unset VAR_POSTGRES_CLUSTER VAR_POSTGRES_DATABASE VAR_POSTGRES_USER VAR_POSTGRES_SECRET VAR_POSTGRES_DATABASE_DESCRIPTION VAR_POSTGRES_IMAGE_NAME
   
   # Authorize superuser access
-  oc -n $VAR_POSTGRES_NAMESPACE patch "${MY_POSTGRES_CRD_CLUSTER}" $lf_in_cluster_name --type=merge -p '{"spec":{"enableSuperuserAccess":true}}' | awk '{printf "%*s%s\n", NR * $SC_SPACES_COUNTER, "", $0}'
+  $MY_CLUSTER_COMMAND -n $VAR_POSTGRES_NAMESPACE patch "${MY_POSTGRES_CRD_CLUSTER}" $lf_in_cluster_name --type=merge -p '{"spec":{"enableSuperuserAccess":true}}' | awk '{printf "%*s%s\n", NR * $SC_SPACES_COUNTER, "", $0}'
 
   # Here after how to check the status of the PostGreSQL DB and connect to it
-  # oc run pg-check --image=postgres:15 --restart=Never -- sleep 3600
-  # oc exec -it pg-check -- bash
+  # $MY_CLUSTER_COMMAND run pg-check --image=postgres:15 --restart=Never -- sleep 3600
+  # $MY_CLUSTER_COMMAND exec -it pg-check -- bash
   # psql -h <postgresql_svc> -U <postgres_user> -d <database_name> // password is asked
   # \q to quit
 
@@ -2093,23 +2093,23 @@ function display_access_info() {
 
   # Mailhog
   local lf_mailhog_hostname
-  lf_mailhog_hostname=$(oc -n ${VAR_MAIL_NAMESPACE} get route ${VAR_MAIL_ROUTE} -o jsonpath='{.spec.host}')
+  lf_mailhog_hostname=$($MY_CLUSTER_COMMAND -n ${VAR_MAIL_NAMESPACE} get route ${VAR_MAIL_ROUTE} -o jsonpath='{.spec.host}')
   mylog info "MailHog accessible at http://${lf_mailhog_hostname}" 0
   echo "<DT><A HREF=http://${lf_mailhog_hostname}>MailHog</A>" >> ${MY_WORKINGDIR}/bookmarks.html
 
   # Keycloak
-  lf_keycloak_admin_ui=$(oc -n $MY_COMMONSERVICES_NAMESPACE get route keycloak -o jsonpath='{.spec.host}')
+  lf_keycloak_admin_ui=$($MY_CLUSTER_COMMAND -n $MY_COMMONSERVICES_NAMESPACE get route keycloak -o jsonpath='{.spec.host}')
   mylog info "Keycloak admin UI URL: https://${lf_keycloak_admin_ui}" 0
   echo "<DT><A HREF=https://${lf_keycloak_admin_ui}>Keycloak Admin UI</A>" >> ${MY_WORKINGDIR}/bookmarks.html
-  lf_keycloak_admin_pwd=$(oc -n $MY_COMMONSERVICES_NAMESPACE get secret cs-keycloak-initial-admin -o jsonpath={.data.password} | base64 -d)
+  lf_keycloak_admin_pwd=$($MY_CLUSTER_COMMAND -n $MY_COMMONSERVICES_NAMESPACE get secret cs-keycloak-initial-admin -o jsonpath={.data.password} | base64 -d)
   mylog info "Keycloak admin password: $lf_keycloak_admin_pwd" 0
   
   # CP4I Platform Navigator
   local lf_temp_integration_admin_pwd cp4i_url
   if $MY_NAVIGATOR_INSTANCE; then
-    lf_temp_integration_admin_pwd=$(oc -n $MY_COMMONSERVICES_NAMESPACE get secret integration-admin-initial-temporary-credentials -o jsonpath={.data.password} | base64 -d)
+    lf_temp_integration_admin_pwd=$($MY_CLUSTER_COMMAND -n $MY_COMMONSERVICES_NAMESPACE get secret integration-admin-initial-temporary-credentials -o jsonpath={.data.password} | base64 -d)
     mylog info "Integration admin, user: integration-admin, password: ${lf_temp_integration_admin_pwd}" 0
-    cp4i_url=$(oc -n $VAR_NAVIGATOR_NAMESPACE get platformnavigator cp4i-navigator -o jsonpath='{range .status.endpoints[?(@.name=="navigator")]}{.uri}{end}')
+    cp4i_url=$($MY_CLUSTER_COMMAND -n $VAR_NAVIGATOR_NAMESPACE get platformnavigator cp4i-navigator -o jsonpath='{range .status.endpoints[?(@.name=="navigator")]}{.uri}{end}')
     mylog info "CP4I Platform UI URL: $cp4i_url" 0
     echo "<DT><A HREF=${cp4i_url}>CP4I Platform UI</A>" >> ${MY_WORKINGDIR}/bookmarks.html 
   fi
@@ -2117,10 +2117,10 @@ function display_access_info() {
   # App Connect Entreprise
   local lf_ace_ui_db_url lf_ace_ui_dg_url
   if $MY_ACE; then
-    lf_ace_ui_db_url=$(oc -n $VAR_ACE_NAMESPACE get Dashboard -o=jsonpath='{.items[?(@.kind=="Dashboard")].status.adminUiUrl}')
+    lf_ace_ui_db_url=$($MY_CLUSTER_COMMAND -n $VAR_ACE_NAMESPACE get Dashboard -o=jsonpath='{.items[?(@.kind=="Dashboard")].status.adminUiUrl}')
     mylog info "ACE Dahsboard UI endpoint: $lf_ace_ui_db_url" 0
     echo "<DT><A HREF=${lf_ace_ui_db_url}>ACE Dashboard UI</A>" >> ${MY_WORKINGDIR}/bookmarks.html
-    lf_ace_ui_dg_url=$(oc -n $VAR_ACE_NAMESPACE get DesignerAuthoring -o=jsonpath='{.items[?(@.kind=="DesignerAuthoring")].status.endpoints[?(@.name=="ui")].uri}')
+    lf_ace_ui_dg_url=$($MY_CLUSTER_COMMAND -n $VAR_ACE_NAMESPACE get DesignerAuthoring -o=jsonpath='{.items[?(@.kind=="DesignerAuthoring")].status.endpoints[?(@.name=="ui")].uri}')
     mylog info "ACE Designer UI endpoint: $lf_ace_ui_dg_url" 0
     echo "<DT><A HREF=${lf_ace_ui_dg_url}>ACE Designer UI</A>" >> ${MY_WORKINGDIR}/bookmarks.html
   fi
@@ -2128,54 +2128,54 @@ function display_access_info() {
   # API Connect
   local lf_gtw_url lf_apic_gtw_admin_pwd_secret_name lf_cm_admin_pwd lf_cm_url lf_cm_admin_pwd_secret_name lf_cm_admin_pwd lf_mgr_url lf_ptl_url lf_jwks_url
   if $MY_APIC; then
-    lf_gtw_url=$(oc -n $VAR_APIC_NAMESPACE get GatewayCluster -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].status.endpoints[?(@.name=="gateway")].uri}')
+    lf_gtw_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get GatewayCluster -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].status.endpoints[?(@.name=="gateway")].uri}')
     mylog info "APIC Gateway endpoint: ${lf_gtw_url}" 0
-    lf_gtw_webconsole_url=$(oc -n $VAR_APIC_NAMESPACE get Route ${VAR_APIC_GW_ROUTE_NAME} -o=jsonpath='{.spec.host}')
+    lf_gtw_webconsole_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get Route ${VAR_APIC_GW_ROUTE_NAME} -o=jsonpath='{.spec.host}')
     mylog info "APIC Gateway web console endpoint: https://${lf_gtw_webconsole_url}" 0
     echo "<DT><A HREF=https://${lf_gtw_webconsole_url}>APIC Gateway Web Console</A>" >> ${MY_WORKINGDIR}/bookmarks.html
-    lf_apic_gtw_admin_pwd_secret_name=$(oc -n $VAR_APIC_NAMESPACE get GatewayCluster -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].spec.adminUser.secretName}')
-    lf_cm_admin_pwd=$(oc -n $VAR_APIC_NAMESPACE get secret ${lf_apic_gtw_admin_pwd_secret_name} -o jsonpath={.data.password} | base64 -d)
+    lf_apic_gtw_admin_pwd_secret_name=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get GatewayCluster -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].spec.adminUser.secretName}')
+    lf_cm_admin_pwd=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get secret ${lf_apic_gtw_admin_pwd_secret_name} -o jsonpath={.data.password} | base64 -d)
     mylog info "APIC Gateway admin password: ${lf_cm_admin_pwd}" 0
-    lf_cm_url=$(oc -n $VAR_APIC_NAMESPACE get APIConnectCluster -o=jsonpath='{.items[?(@.kind=="APIConnectCluster")].status.endpoints[?(@.name=="admin")].uri}')
+    lf_cm_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get APIConnectCluster -o=jsonpath='{.items[?(@.kind=="APIConnectCluster")].status.endpoints[?(@.name=="admin")].uri}')
     mylog info "APIC Cloud Manager endpoint: ${lf_cm_url}" 0
     echo "<DT><A HREF=${lf_cm_url}>APIC Cloud Manager UI</A>" >> ${MY_WORKINGDIR}/bookmarks.html
-    lf_cm_admin_pwd_secret_name=$(oc -n $VAR_APIC_NAMESPACE get ManagementCluster -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].spec.adminUser.secretName}')
-    lf_cm_admin_pwd=$(oc -n $VAR_APIC_NAMESPACE get secret ${lf_cm_admin_pwd_secret_name} -o jsonpath='{.data.password}' | base64 -d)
+    lf_cm_admin_pwd_secret_name=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get ManagementCluster -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].spec.adminUser.secretName}')
+    lf_cm_admin_pwd=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get secret ${lf_cm_admin_pwd_secret_name} -o jsonpath='{.data.password}' | base64 -d)
     mylog info "APIC Cloud Manager admin password: ${lf_cm_admin_pwd}" 0
-    lf_mgr_url=$(oc -n $VAR_APIC_NAMESPACE get APIConnectCluster -o=jsonpath='{.items[?(@.kind=="APIConnectCluster")].status.endpoints[?(@.name=="ui")].uri}')
+    lf_mgr_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get APIConnectCluster -o=jsonpath='{.items[?(@.kind=="APIConnectCluster")].status.endpoints[?(@.name=="ui")].uri}')
     echo "<DT><A HREF=${lf_mgr_url}>APIC API Manager UI</A>" >> ${MY_WORKINGDIR}/bookmarks.html
     mylog info "APIC API Manager endpoint: ${lf_mgr_url}" 0
-    lf_ptl_url=$(oc -n $VAR_APIC_NAMESPACE get PortalCluster -o=jsonpath='{.items[?(@.kind=="PortalCluster")].status.endpoints[?(@.name=="portalWeb")].uri}')
+    lf_ptl_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get PortalCluster -o=jsonpath='{.items[?(@.kind=="PortalCluster")].status.endpoints[?(@.name=="portalWeb")].uri}')
     mylog info "APIC Web Portal root endpoint: ${lf_ptl_url}" 0
-    lf_jwks_url=$(oc -n $VAR_APIC_NAMESPACE get APIConnectCluster -o=jsonpath='{.items[?(@.kind=="APIConnectCluster")].status.endpoints[?(@.name=="jwksUrl")].uri}')
+    lf_jwks_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get APIConnectCluster -o=jsonpath='{.items[?(@.kind=="APIConnectCluster")].status.endpoints[?(@.name=="jwksUrl")].uri}')
     mylog info "APIC jwksUrl endpoint for EEM: ${lf_jwks_url}" 0
   fi
 
   # Event Streams
   local lf_es_ui_url lf_es_admin_url lf_es_apicurioregistry_url lf_es_restproducer_url lf_es_bootstrap_urls lf_es_admin_pwd
   if $MY_ES; then
-    lf_es_ui_url=$(oc -n $VAR_ES_NAMESPACE get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="ui")].uri}')
+    lf_es_ui_url=$($MY_CLUSTER_COMMAND -n $VAR_ES_NAMESPACE get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="ui")].uri}')
     mylog info "Event Streams Management UI endpoint: ${lf_es_ui_url}" 0
     echo  "<DT><A HREF=${lf_es_ui_url}>Event Streams Management UI</A>" >> ${MY_WORKINGDIR}/bookmarks.html
-    lf_es_admin_url=$(oc -n $VAR_ES_NAMESPACE get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="admin")].uri}')
+    lf_es_admin_url=$($MY_CLUSTER_COMMAND -n $VAR_ES_NAMESPACE get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="admin")].uri}')
     mylog info "Event Streams Management admin endpoint: ${lf_es_admin_url}" 0
-    lf_es_apicurioregistry_url=$(oc -n $VAR_ES_NAMESPACE get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="apicurioregistry")].uri}')
+    lf_es_apicurioregistry_url=$($MY_CLUSTER_COMMAND -n $VAR_ES_NAMESPACE get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="apicurioregistry")].uri}')
     mylog info "Event Streams Management apicurio registry endpoint: ${lf_es_apicurioregistry_url}" 0
-    lf_es_restproducer_url=$(oc -n $VAR_ES_NAMESPACE get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="restproducer")].uri}')
+    lf_es_restproducer_url=$($MY_CLUSTER_COMMAND -n $VAR_ES_NAMESPACE get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="restproducer")].uri}')
     mylog info "Event Streams Management REST Producer endpoint: ${lf_es_restproducer_url}" 0
-    lf_es_bootstrap_urls=$(oc -n $VAR_ES_NAMESPACE get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.kafkaListeners[*].bootstrapServers}')
+    lf_es_bootstrap_urls=$($MY_CLUSTER_COMMAND -n $VAR_ES_NAMESPACE get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.kafkaListeners[*].bootstrapServers}')
     mylog info "Event Streams Bootstraps servers endpoints: ${lf_es_bootstrap_urls}" 0
-    lf_es_admin_pwd=$(oc -n $VAR_ES_NAMESPACE get secret es-admin -o jsonpath={.data.password} | base64 -d)
+    lf_es_admin_pwd=$($MY_CLUSTER_COMMAND -n $VAR_ES_NAMESPACE get secret es-admin -o jsonpath={.data.password} | base64 -d)
     mylog info "Event Streams UI Credentials: es-admin/${lf_es_admin_pwd}" 0
   fi
 
   # Event Endpoint Management
   local lf_eem_ui_url lf_eem_lf_gtw_url
   if $MY_EEM; then
-    lf_eem_ui_url=$(oc -n $VAR_EEM_NAMESPACE get EventEndpointManagement -o=jsonpath='{.items[?(@.kind=="EventEndpointManagement")].status.endpoints[?(@.name=="ui")].uri}')
+    lf_eem_ui_url=$($MY_CLUSTER_COMMAND -n $VAR_EEM_NAMESPACE get EventEndpointManagement -o=jsonpath='{.items[?(@.kind=="EventEndpointManagement")].status.endpoints[?(@.name=="ui")].uri}')
     mylog info "Event Endpoint Management UI endpoint: ${lf_eem_ui_url}" 0
     echo  "<DT><A HREF=${lf_eem_ui_url}>Event Endpoint Management UI</A>" >> ${MY_WORKINGDIR}/bookmarks.html
-    lf_eem_lf_gtw_url=$(oc -n $VAR_EEM_NAMESPACE get EventEndpointManagement -o=jsonpath='{.items[?(@.kind=="EventEndpointManagement")].status.endpoints[?(@.name=="gateway")].uri}')
+    lf_eem_lf_gtw_url=$($MY_CLUSTER_COMMAND -n $VAR_EEM_NAMESPACE get EventEndpointManagement -o=jsonpath='{.items[?(@.kind=="EventEndpointManagement")].status.endpoints[?(@.name=="gateway")].uri}')
     mylog info "Event Endpoint Management Gateway endpoint: ${lf_eem_lf_gtw_url}" 0
     mylog info "The credentials are defined in the file ./customisation/EP/resources/user-credentials.yaml" 0
   fi
@@ -2183,7 +2183,7 @@ function display_access_info() {
   # Event Processing
   local lf_ep_ui_url
   if $MY_EP; then
-    lf_ep_ui_url=$(oc -n $VAR_EP_NAMESPACE get EventProcessing -o=jsonpath='{.items[?(@.kind=="EventProcessing")].status.endpoints[?(@.name=="ui")].uri}')
+    lf_ep_ui_url=$($MY_CLUSTER_COMMAND -n $VAR_EP_NAMESPACE get EventProcessing -o=jsonpath='{.items[?(@.kind=="EventProcessing")].status.endpoints[?(@.name=="ui")].uri}')
     mylog info "Event Processing UI endpoint: ${lf_ep_ui_url}" 0
     echo "<DT><A HREF=${lf_ep_ui_url}>Event Processing UI</A>" >> ${MY_WORKINGDIR}/bookmarks.html
     mylog info "The credentials are defined in the file ./customisation/EP/resources/user-credentials.yaml" 0
@@ -2193,8 +2193,8 @@ function display_access_info() {
   local lf_ldap_hostname lf_ldap_port
   if $MY_LDAP; then
     read_config_file "${MY_YAMLDIR}ldap/ldap_dit.properties"
-    lf_ldap_hostname=$(oc -n ${VAR_LDAP_NAMESPACE} get route ${VAR_LDAP_ROUTE} -o jsonpath='{.spec.host}')
-    lf_ldap_port=$(oc -n ${VAR_LDAP_NAMESPACE} get route ${VAR_LDAP_ROUTE} -o jsonpath='{.spec.port.targetPort}')
+    lf_ldap_hostname=$($MY_CLUSTER_COMMAND -n ${VAR_LDAP_NAMESPACE} get route ${VAR_LDAP_ROUTE} -o jsonpath='{.spec.host}')
+    lf_ldap_port=$($MY_CLUSTER_COMMAND -n ${VAR_LDAP_NAMESPACE} get route ${VAR_LDAP_ROUTE} -o jsonpath='{.spec.port.targetPort}')
     mylog info "LDAP hostname:port: ${lf_ldap_hostname}:${lf_ldap_port}" 0
     echo  "<DT><A HREF=ldap://${lf_ldap_hostname}:${lf_ldap_port}>LDAP</A>" >> ${MY_WORKINGDIR}/bookmarks.html
     mylog info "LDAP admin dn/password: ${MY_LDAP_ADMIN_DN}/${MY_LDAP_ADMIN_PASSWORD}" 0
@@ -2203,7 +2203,7 @@ function display_access_info() {
   # Assets Repository
   local lf_ar_ui_url
   if $MY_ASSETREPO; then
-    lf_ar_ui_url=$(oc -n $VAR_ASSETREPO_NAMESPACE get AssetRepository -o=jsonpath='{.items[?(@.kind=="AssetRepository")].status.endpoints[?(@.name=="ui")].uri}')
+    lf_ar_ui_url=$($MY_CLUSTER_COMMAND -n $VAR_ASSETREPO_NAMESPACE get AssetRepository -o=jsonpath='{.items[?(@.kind=="AssetRepository")].status.endpoints[?(@.name=="ui")].uri}')
     mylog info "Asset Repository UI endpoint: ${lf_ar_ui_url}" 0
     echo  "<DT><A HREF=${lf_ar_ui_url}>Asset Repository UI</A>" >> ${MY_WORKINGDIR}/bookmarks.html
   fi
@@ -2217,18 +2217,18 @@ function display_access_info() {
   local lf_mq_admin_url
   if $MY_MQ; then
     if $MY_MESSAGINGSERVER; then
-      lf_mq_qm_url=$(oc -n $VAR_MQ_NAMESPACE get MessagingServer ${VAR_MSGSRV_INSTANCE_NAME} -o jsonpath='{.status.adminUiUrl}')
+      lf_mq_qm_url=$($MY_CLUSTER_COMMAND -n $VAR_MQ_NAMESPACE get MessagingServer ${VAR_MSGSRV_INSTANCE_NAME} -o jsonpath='{.status.adminUiUrl}')
     fi
 
-    lf_mq_admin_url=$(oc -n $VAR_MQ_NAMESPACE get QueueManager $VAR_MQ_INSTANCE_NAME -o jsonpath='{.status.adminUiUrl}')
+    lf_mq_admin_url=$($MY_CLUSTER_COMMAND -n $VAR_MQ_NAMESPACE get QueueManager $VAR_MQ_INSTANCE_NAME -o jsonpath='{.status.adminUiUrl}')
     mylog info "MQ Management Console : ${lf_mq_admin_url}" 0
     echo  "<DT><A HREF=${lf_mq_admin_url}>MQ Management Console</A>" >> ${MY_WORKINGDIR}/bookmarks.html
 
-    local lf_mq_authentication_method=$(oc -n $VAR_MQ_NAMESPACE get qmgr $VAR_MQ_INSTANCE_NAME -o jsonpath='{.spec.web.console.authentication.provider}')
+    local lf_mq_authentication_method=$($MY_CLUSTER_COMMAND -n $VAR_MQ_NAMESPACE get qmgr $VAR_MQ_INSTANCE_NAME -o jsonpath='{.spec.web.console.authentication.provider}')
     if [[ $lf_mq_authentication_method == "manual" ]]; then
       #TOTO# : we suppose here that the user is mqadmin !!!!
-      lf_mq_admin_password=$(oc -n $VAR_MQ_NAMESPACE get cm $VAR_WEBCONFIG_CM -o jsonpath='{.data.mqwebuser\.xml}' | yq -p=xml -o=json | jq -r '.server.basicRegistry.user[] | select(.["+@name"]=="mqadmin") | .["+@password"]')
-      #echo "oc -n $VAR_MQ_NAMESPACE get cm $VAR_WEBCONFIG_CM -o jsonpath='{.data.mqwebuser\.xml}' | yq -p=xml -o=json" #| jq -r '.server.basicRegistry.user[] | select(.["+@name"]=="mqadmin") | .["+@password"]'
+      lf_mq_admin_password=$($MY_CLUSTER_COMMAND -n $VAR_MQ_NAMESPACE get cm $VAR_WEBCONFIG_CM -o jsonpath='{.data.mqwebuser\.xml}' | yq -p=xml -o=json | jq -r '.server.basicRegistry.user[] | select(.["+@name"]=="mqadmin") | .["+@password"]')
+      #echo "$MY_CLUSTER_COMMAND -n $VAR_MQ_NAMESPACE get cm $VAR_WEBCONFIG_CM -o jsonpath='{.data.mqwebuser\.xml}' | yq -p=xml -o=json" #| jq -r '.server.basicRegistry.user[] | select(.["+@name"]=="mqadmin") | .["+@password"]'
       mylog info "MQ Management Console authentication method: $lf_mq_authentication_method|user=mqadmin|password=$lf_mq_admin_password" 0
       mylog info "MQ admin/password: mqadmin/${lf_mq_admin_password}" 0
     else
@@ -2239,7 +2239,7 @@ function display_access_info() {
   # WebSphere Application Server
   local lf_was_liberty_app_demo_url
   if $MY_WASLIBERTY_CUSTOM; then
-    lf_was_liberty_app_demo_url=$(oc -n $VAR_WASLIBERTY_NAMESPACE get route demo -o jsonpath='{.status.ingress[0].host}')
+    lf_was_liberty_app_demo_url=$($MY_CLUSTER_COMMAND -n $VAR_WASLIBERTY_NAMESPACE get route demo -o jsonpath='{.status.ingress[0].host}')
     mylog info "WAS Liberty $MY_WASLIBERTY_APP_NAME application URL : https://${lf_was_liberty_app_demo_url}/$MY_WASLIBERTY_APP_NAME" 0
     echo "<DT><A HREF=https://${lf_was_liberty_app_demo_url}/$MY_WASLIBERTY_APP_NAME>WAS Liberty $MY_WASLIBERTY_APP_NAME application</A>" >> ${MY_WORKINGDIR}/bookmarks.html
   fi
@@ -2247,15 +2247,15 @@ function display_access_info() {
   # ILS - IBM Licensing Service and ILR - IBM Licensing Reporter
   local lf_licensing_service_url lf_licensing_secret_token lf_licensing_service_reporter_url lf_licensing_reporter_password
   if $MY_LIC_SRV; then
-    lf_licensing_service_url=$(oc -n ${MY_LICENSE_SERVICE_NAMESPACE} get Route -o=jsonpath='{.items[?(@.metadata.name=="ibm-licensing-service-instance")].spec.host}')
+    lf_licensing_service_url=$($MY_CLUSTER_COMMAND -n ${MY_LICENSE_SERVICE_NAMESPACE} get Route -o=jsonpath='{.items[?(@.metadata.name=="ibm-licensing-service-instance")].spec.host}')
     mylog info "Licensing service endpoint: https://${lf_licensing_service_url}" 0
     echo "<DT><A HREF=https://${lf_licensing_service_url}>Licensing Service</A>" >> ${MY_WORKINGDIR}/bookmarks.html
-    lf_licensing_secret_token=$(oc -n ${MY_LICENSE_SERVICE_NAMESPACE} get secret ibm-licensing-token -o jsonpath='{.data.token}' | base64 -d)
+    lf_licensing_secret_token=$($MY_CLUSTER_COMMAND -n ${MY_LICENSE_SERVICE_NAMESPACE} get secret ibm-licensing-token -o jsonpath='{.data.token}' | base64 -d)
     mylog info "Licensing service token: ${lf_licensing_secret_token}" 0
-    lf_licensing_service_reporter_url=$(oc -n ${MY_LICENSE_SERVICE_REPORTER_NAMESPACE} get Route ibm-lsr-console -o=jsonpath='{.status.ingress[0].host}')
+    lf_licensing_service_reporter_url=$($MY_CLUSTER_COMMAND -n ${MY_LICENSE_SERVICE_REPORTER_NAMESPACE} get Route ibm-lsr-console -o=jsonpath='{.status.ingress[0].host}')
     mylog info "Licensing service reporter console endpoint: https://${lf_licensing_service_reporter_url}/license-service-reporter/" 0
     echo "<DT><A HREF=https://${lf_licensing_service_reporter_url}/license-service-reporter/>Licensing Service Reporter</A>" >> ${MY_WORKINGDIR}/bookmarks.html
-    lf_licensing_reporter_password=$(oc -n ${MY_LICENSE_SERVICE_REPORTER_NAMESPACE} get secret ibm-license-service-reporter-credentials -o jsonpath='{.data.password}' | base64 -d)
+    lf_licensing_reporter_password=$($MY_CLUSTER_COMMAND -n ${MY_LICENSE_SERVICE_REPORTER_NAMESPACE} get secret ibm-license-service-reporter-credentials -o jsonpath='{.data.password}' | base64 -d)
     mylog info "Licensing service reporter credential: license-administrator/${lf_licensing_reporter_password}" 0
   fi
 
@@ -2283,7 +2283,7 @@ function provision_cluster_init() {
   # Get all manifests
   #if [[ ! -e $MY_RAM_MANIFEST_FILE ]]; then
   #  mylog info "Generating the file containing all packagemanifests: $MY_RAM_MANIFEST_FILE" 0
-  #  oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest -o json > $MY_RAM_MANIFEST_FILE
+  #  $MY_CLUSTER_COMMAND -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest -o json > $MY_RAM_MANIFEST_FILE
   #fi  
 
   # Create project namespace.
@@ -2293,12 +2293,12 @@ function provision_cluster_init() {
   #          : https://bugzilla.redhat.com/show_bug.cgi?id=1639197
   # extrait du lien ci-dessus:
   # You'll need to add the "self-provisioner" role to your service account as well. Although you've made it project admin, that only means its admin rights are scoped to that one project, which is not enough to allow it to request new projects.
-  # oc adm policy add-cluster-role-to-user self-provisioner system:serviceaccount:<project>:<cx-jenkins
-  # oc create clusterrolebinding myname-cluster-admin-binding --clusterrole=cluster-admin --user=IAM#saad.benachi@fr.ibm.com
+  # $MY_CLUSTER_COMMAND adm policy add-cluster-role-to-user self-provisioner system:serviceaccount:<project>:<cx-jenkins
+  # $MY_CLUSTER_COMMAND create clusterrolebinding myname-cluster-admin-binding --clusterrole=cluster-admin --user=IAM#saad.benachi@fr.ibm.com
   if ! ${TECHZONE};then
-    oc create clusterrolebinding myname-cluster-admin-binding --clusterrole=cluster-admin --user=$MY_USER_ID > /dev/null 2>&1
-    oc create clusterrolebinding myname-cluster-binding --clusterrole=admin --user=$MY_USER_ID > /dev/null 2>&1
-    oc -n $MY_OC_PROJECT adm policy add-cluster-role-to-user self-provisioner $MY_USER_ID
+    $MY_CLUSTER_COMMAND create clusterrolebinding myname-cluster-admin-binding --clusterrole=cluster-admin --user=$MY_USER_ID > /dev/null 2>&1
+    $MY_CLUSTER_COMMAND create clusterrolebinding myname-cluster-binding --clusterrole=admin --user=$MY_USER_ID > /dev/null 2>&1
+    $MY_CLUSTER_COMMAND -n $MY_OC_PROJECT adm policy add-cluster-role-to-user self-provisioner $MY_USER_ID
   fi
   
   # https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.4?topic=operators-installing-by-using-cli
@@ -2317,27 +2317,27 @@ function provision_cluster_init() {
   create_project "${MY_LOGGING_NAMESPACE}" "${MY_LOGGING_NAMESPACE} project" "For Openshift Logging" "${MY_RESOURCESDIR}" "${MY_CP4I_WORKINGDIR}"
 
   # The first method to get the cluster domain
-  #lf_url=$(oc get infrastructure cluster -o jsonpath='{.status.apiServerURL}')
+  #lf_url=$($MY_CLUSTER_COMMAND get infrastructure cluster -o jsonpath='{.status.apiServerURL}')
   #export VAR_CLUSTER_DOMAIN=$(echo "$lf_url" | cut -d'/' -f3 | cut -d':' -f1)
   #export VAR_CLUSTER_DOMAIN=$(echo "$lf_url" | cut -d'/' -f3 | cut -d':' -f1 | cut -d'.' -f2-)
 
   # get the dns name which will be used for certficate generation and other usages
-  export VAR_CLUSTER_DOMAIN=$(oc get dns cluster -o jsonpath='{.spec.baseDomain}')
+  export VAR_CLUSTER_DOMAIN=$($MY_CLUSTER_COMMAND get dns cluster -o jsonpath='{.spec.baseDomain}')
   export VAR_SAN_DNS="*.${VAR_CLUSTER_DOMAIN}"
   export VAR_COMMON_NAME=$VAR_SAN_DNS
 
   # create PVC for registry
   echo ">>>MY_WORKINGDIR: ${MY_WORKINGDIR}"
   create_operand_instance "PersistentVolumeClaim" "registry-storage" "${MY_RESOURCESDIR}" "${MY_WORKINGDIR}" "registry_pvc.yaml" "openshift-image-registry" "{.status.phase}" "Bound"
-  oc patch configs.imageregistry.operator.openshift.io/cluster --type=merge -p '{"spec":{"storage":{"pvc":{"claim":"registry-storage"}}}}'
-  oc patch configs.imageregistry.operator.openshift.io/cluster --type=merge -p '{"spec":{"managementState":"Managed"}}'
+  $MY_CLUSTER_COMMAND patch configs.imageregistry.operator.openshift.io/cluster --type=merge -p '{"spec":{"storage":{"pvc":{"claim":"registry-storage"}}}}'
+  $MY_CLUSTER_COMMAND patch configs.imageregistry.operator.openshift.io/cluster --type=merge -p '{"spec":{"managementState":"Managed"}}'
 
   # Expose service using default route
-  oc -n openshift-image-registry patch configs.imageregistry.operator.openshift.io/cluster --patch '{"spec":{"defaultRoute":true}}' --type=merge
+  $MY_CLUSTER_COMMAND -n openshift-image-registry patch configs.imageregistry.operator.openshift.io/cluster --patch '{"spec":{"defaultRoute":true}}' --type=merge
   wait_for_resource Route default-route openshift-image-registry
 
   # Get the default registry route:
-  export VAR_IMAGE_REGISTRY_HOST=$(oc get route default-route -n openshift-image-registry --template='{{ .spec.host }}')
+  export VAR_IMAGE_REGISTRY_HOST=$($MY_CLUSTER_COMMAND get route default-route -n openshift-image-registry --template='{{ .spec.host }}')
   
   trace_out $lf_tracelevel provision_cluster_init
 }

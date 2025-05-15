@@ -6,23 +6,23 @@ function login_to_registry() {
   trace_in $lf_tracelevel login_to_registry
 
   decho $lf_tracelevel "Internal image registry host: $VAR_IMAGE_REGISTRY_HOST"
-  local lf_cluster_server=$(oc whoami --show-server)
+  local lf_cluster_server=$($MY_CLUSTER_COMMAND whoami --show-server)
   decho $lf_tracelevel "Cluster server host: $lf_cluster_server"
   decho $lf_tracelevel "kubeadmin password: $MY_TECHZONE_PASSWORD"
-  oc project ${VAR_LDAP_NAMESPACE}
-  oc login -p $MY_TECHZONE_HTPASSWD -u ${MY_USER} #$lf_cluster_server
-  local lf_token=$(oc whoami -t)
+  $MY_CLUSTER_COMMAND project ${VAR_LDAP_NAMESPACE}
+  $MY_CLUSTER_COMMAND login -p $MY_TECHZONE_HTPASSWD -u ${MY_USER} #$lf_cluster_server
+  local lf_token=$($MY_CLUSTER_COMMAND whoami -t)
   echo "$lf_token" | $MY_CONTAINER_ENGINE login -u ${MY_USER} --password-stdin "$VAR_IMAGE_REGISTRY_HOST"
 
   # Create a user for registry
-  #oc policy add-role-to-user system:image-builder system:serviceaccount:$VAR_LDAP_NAMESPACE:$MY_LDAP_SERVICEACCOUNT
-  #oc policy add-role-to-user system:image-builder system:serviceaccount:openshift:admin-sa
-  oc policy add-role-to-user system:image-builder system:serviceaccount:openshift:${MY_USER}
+  #$MY_CLUSTER_COMMAND policy add-role-to-user system:image-builder system:serviceaccount:$VAR_LDAP_NAMESPACE:$MY_LDAP_SERVICEACCOUNT
+  #$MY_CLUSTER_COMMAND policy add-role-to-user system:image-builder system:serviceaccount:openshift:admin-sa
+  $MY_CLUSTER_COMMAND policy add-role-to-user system:image-builder system:serviceaccount:openshift:${MY_USER}
 
-  #docker login -u kubeadmin -p "$(oc whoami -t)" "$VAR_IMAGE_REGISTRY_HOST"
-  #local lf_token=$(oc -n $VAR_LDAP_NAMESPACE create token $MY_LDAP_SERVICEACCOUNT)
+  #docker login -u kubeadmin -p "$($MY_CLUSTER_COMMAND whoami -t)" "$VAR_IMAGE_REGISTRY_HOST"
+  #local lf_token=$($MY_CLUSTER_COMMAND -n $VAR_LDAP_NAMESPACE create token $MY_LDAP_SERVICEACCOUNT)
   #echo "$lf_token" | docker login -u $MY_LDAP_SERVICEACCOUNT --password-stdin "$VAR_IMAGE_REGISTRY_HOST"
-  #local lf_token=$(oc -n openshift create token saad)
+  #local lf_token=$($MY_CLUSTER_COMMAND -n openshift create token saad)
   #echo "$lf_token" | docker login -u saad --password-stdin "$VAR_IMAGE_REGISTRY_HOST"
   
   trace_out $lf_tracelevel login_to_registry
@@ -36,8 +36,8 @@ function push_image_to_registry() {
   trace_in $lf_tracelevel push_image_to_registry
 
   # Add roles to the user
-  oc -n openshift policy add-role-to-user system:image-builder ${MY_USER}
-  oc -n openshift policy add-role-to-user system:registry ${MY_USER}
+  $MY_CLUSTER_COMMAND -n openshift policy add-role-to-user system:image-builder ${MY_USER}
+  $MY_CLUSTER_COMMAND -n openshift policy add-role-to-user system:registry ${MY_USER}
 
   #	tag the local image with details of image registry
   decho $lf_tracelevel "CMD: $MY_CONTAINER_ENGINE tag ${MY_LDAP_APP_NAME_VERSION} ${VAR_IMAGE_REGISTRY_HOST}/${VAR_LDAP_NAMESPACE}/${MY_LDAP_APP_NAME_VERSION}"
@@ -73,13 +73,13 @@ function ldap_run_all () {
     popd > /dev/null 2>&1
   fi
   # save the current cluster config context
-  sc_current_context=$(oc config current-context)
+  sc_current_context=$($MY_CLUSTER_COMMAND config current-context)
   login_to_registry
   push_image_to_registry
-  oc logout
+  $MY_CLUSTER_COMMAND logout
 
   # back to the saved context
-  oc config use-context $sc_current_context
+  $MY_CLUSTER_COMMAND config use-context $sc_current_context
 
   # load users and groups into LDAP
   load_users_2_ldap_server "${VAR_LDAP_TMPL_DIRECTORY}" "${MY_LDAP_WORKINGDIR}" "${VAR_LDAP_LDIF_FILE}"
@@ -94,18 +94,18 @@ function ldap_init() {
   trace_in $lf_tracelevel ldap_init
 
   # save the current cluster config context
-  sc_current_context=$(oc config current-context)
+  sc_current_context=$($MY_CLUSTER_COMMAND config current-context)
 
   # Create namespace 
   create_project "${VAR_LDAP_NAMESPACE}" "${VAR_LDAP_NAMESPACE} project" "For OpenLDAP" "${MY_RESOURCESDIR}" "${MY_LDAP_WORKINGDIR}"
 
   read_config_file "${MY_YAMLDIR}ldap/ldap_dit.properties"
-  export VAR_LDAP_PORT=$(oc -n ${VAR_LDAP_NAMESPACE} get service "${VAR_LDAP_SERVICE}" -o jsonpath='{.spec.ports[0].nodePort}')
-  export VAR_LDAP_HOSTNAME=$(oc -n ${VAR_LDAP_NAMESPACE} get route "${VAR_LDAP_ROUTE}" -o jsonpath='{.spec.host}')
+  export VAR_LDAP_PORT=$($MY_CLUSTER_COMMAND -n ${VAR_LDAP_NAMESPACE} get service "${VAR_LDAP_SERVICE}" -o jsonpath='{.spec.ports[0].nodePort}')
+  export VAR_LDAP_HOSTNAME=$($MY_CLUSTER_COMMAND -n ${VAR_LDAP_NAMESPACE} get route "${VAR_LDAP_ROUTE}" -o jsonpath='{.spec.host}')
 
-  oc apply -f "${MY_YAMLDIR}ldap/scc.yaml"
+  $MY_CLUSTER_COMMAND apply -f "${MY_YAMLDIR}ldap/scc.yaml"
   # Then assign it to your service account
-  oc adm policy add-scc-to-user openldap-scc -z $MY_LDAP_SERVICEACCOUNT -n ${VAR_LDAP_NAMESPACE}
+  $MY_CLUSTER_COMMAND adm policy add-scc-to-user openldap-scc -z $MY_LDAP_SERVICEACCOUNT -n ${VAR_LDAP_NAMESPACE}
 
   trace_out $lf_tracelevel ldap_init
 }
@@ -221,7 +221,7 @@ set +a
 
 ldap_init
 
-trap 'oc config use-context $sc_current_context' EXIT
+trap '$MY_CLUSTER_COMMAND config use-context $sc_current_context' EXIT
 ######################################################
 # main entry
 ######################################################

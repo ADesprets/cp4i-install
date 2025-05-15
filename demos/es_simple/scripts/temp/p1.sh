@@ -42,11 +42,11 @@ rm my.p12
 # log into apic CLI
 # -------------------------------------------------------------------
 echo "\n\033[1;33m logging into apic CLI...\033[0m"
-CP4I_NAMESPACE=$(oc get zenservice -A -o jsonpath='{..namespace}')
+CP4I_NAMESPACE=$($MY_CLUSTER_COMMAND get zenservice -A -o jsonpath='{..namespace}')
 
 echo "creating IAM token"
-CS_HOST=https://$(oc -n kube-public get cm ibmcloud-cluster-info -o jsonpath='{.data.cluster_address}')
-IAM_PASSWORD=$(oc get secret -n ibm-common-services platform-auth-idp-credentials -o jsonpath='{..admin_password}' | base64 -d)
+CS_HOST=https://$($MY_CLUSTER_COMMAND -n kube-public get cm ibmcloud-cluster-info -o jsonpath='{.data.cluster_address}')
+IAM_PASSWORD=$($MY_CLUSTER_COMMAND get secret -n ibm-common-services platform-auth-idp-credentials -o jsonpath='{..admin_password}' | base64 -d)
 IAM_TOKEN=$(curl -k -s -X POST -H 'Content-Type: application/x-www-form-urlencoded' -H 'Accept: application/json' -d "grant_type=password&username=admin&password=${IAM_PASSWORD}&scope=openid" "${CS_HOST}"/v1/auth/identitytoken | jq -r .access_token)
 
 echo "Cluster host: $CS_HOST"
@@ -55,14 +55,14 @@ echo "IAM token: $IAM_TOKEN"
 
 
 echo "creating Zen token"
-ZEN_HOST=https://$(oc get route -n $CP4I_NAMESPACE cpd -o=jsonpath='{.spec.host}')
+ZEN_HOST=https://$($MY_CLUSTER_COMMAND get route -n $CP4I_NAMESPACE cpd -o=jsonpath='{.spec.host}')
 ZEN_TOKEN=$(curl -k -s "${ZEN_HOST}"/v1/preauth/validateAuth -H "username: admin" -H "iam-token: ${IAM_TOKEN}" | jq -r .accessToken)
 
 echo "ZEN host: $ZEN_HOST"
 echo "ZEN token: $ZEN_TOKEN"
 
 echo "downloading apic config json file"
-PLATFORM_API_URL=$(oc get $MANAGER_CR $INSTANCE -n $NAMESPACE -o=jsonpath='{.status.endpoints[?(@.name=="platformApi")].uri}')
+PLATFORM_API_URL=$($MY_CLUSTER_COMMAND get $MANAGER_CR $INSTANCE -n $NAMESPACE -o=jsonpath='{.status.endpoints[?(@.name=="platformApi")].uri}')
 
 echo "MY_PLATFORM API URL: $PLATFORM_API_URL"
 
@@ -74,7 +74,7 @@ echo "creating apic API key"
 APIC_APIKEY=$(curl -k -s -X POST "${PLATFORM_API_URL}"/cloud/api-keys -H "Authorization: Bearer ${ZEN_TOKEN}" -H "Accept: application/json" -H "Content-Type: application/json" -d '{"client_type":"toolkit","description":"Tookit API key"}' | jq -r .api_key)
 
 echo "logging into API manager"
-APIM_ENDPOINT=$(oc -n $NAMESPACE get mgmt $INSTANCE -o jsonpath="https://{.status.zenRoute}")
+APIM_ENDPOINT=$($MY_CLUSTER_COMMAND -n $NAMESPACE get mgmt $INSTANCE -o jsonpath="https://{.status.zenRoute}")
 yes n | apic login --context provider --server $APIM_ENDPOINT --sso --apiKey $APIC_APIKEY
 rm creds.json
 
@@ -101,8 +101,8 @@ rm gateway.pem
 # get Event Gateway connection address
 # -------------------------------------------------------------------
 echo "\n\033[1;33m querying openshift for gateway connection address...\033[0m"
-GATEWAY_ROUTE=$(oc get route -n $NAMESPACE -lapp.kubernetes.io/instance=$INSTANCE-egw -lapp.kubernetes.io/name=event-gateway -o name | grep gw-client)
-GATEWAY_ADDRESS=$(oc get $GATEWAY_ROUTE -n $NAMESPACE -o jsonpath="{.spec.host}")
+GATEWAY_ROUTE=$($MY_CLUSTER_COMMAND get route -n $NAMESPACE -lapp.kubernetes.io/instance=$INSTANCE-egw -lapp.kubernetes.io/name=event-gateway -o name | grep gw-client)
+GATEWAY_ADDRESS=$($MY_CLUSTER_COMMAND get $GATEWAY_ROUTE -n $NAMESPACE -o jsonpath="{.spec.host}")
 echo "gateway address: $GATEWAY_ADDRESS"
 
 

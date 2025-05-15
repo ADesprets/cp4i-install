@@ -286,7 +286,7 @@ function create_apic_resources() {
     -H 'Connection: keep-alive' \
     -H "Authorization: Bearer $lf_cm_token" | jq -r .url)
     # get the gateway route in order to provide the endpoint of the fake URL authentication api which should be published
-    gtw_url=$(oc -n ${apic_project} get GatewayCluster -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].status.endpoints[?(@.name=="gateway")].uri}')
+    gtw_url=$($MY_CLUSTER_COMMAND -n ${apic_project} get GatewayCluster -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].status.endpoints[?(@.name=="gateway")].uri}')
     export APIC_EP_GTW=${gtw_url}
     adapt_file ${MY_APIC_SIMPLE_DEMODIR}resources/ ${MY_APIC_WORKINGDIR}resources/ AuthenticationURL_Registry_res.json
 
@@ -432,30 +432,30 @@ function init_apic_variables() {
 
   # Retrieve the various routes for APIC components
   # API Manager URL
-  EP_API=$(oc -n ${apic_project} get route "${APIC_INSTANCE_NAME}-mgmt-platform-api" -o jsonpath="{.spec.host}")
+  EP_API=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-mgmt-platform-api" -o jsonpath="{.spec.host}")
   # gwv6-gateway-manager
-  EP_GWD=$(oc -n ${apic_project} get route "${APIC_INSTANCE_NAME}-gw-gateway-manager" -o jsonpath="{.spec.host}")
+  EP_GWD=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-gw-gateway-manager" -o jsonpath="{.spec.host}")
   # gwv6-gateway
-  EP_GW=$(oc -n ${apic_project} get route "${APIC_INSTANCE_NAME}-gw-gateway" -o jsonpath="{.spec.host}")
+  EP_GW=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-gw-gateway" -o jsonpath="{.spec.host}")
   # analytics-ai-endpoint
-  EP_AI=$(oc -n ${apic_project} get route "${APIC_INSTANCE_NAME}-a7s-ai-endpoint" -o jsonpath="{.spec.host}")
+  EP_AI=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-a7s-ai-endpoint" -o jsonpath="{.spec.host}")
   # portal-portal-director
-  EP_PADMIN=$(oc -n ${apic_project} get route "${APIC_INSTANCE_NAME}-ptl-portal-director" -o jsonpath="{.spec.host}")
+  EP_PADMIN=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-ptl-portal-director" -o jsonpath="{.spec.host}")
   # portal-portal-web
-  EP_PORTAL=$(oc -n ${apic_project} get route "${APIC_INSTANCE_NAME}-ptl-portal-web" -o jsonpath="{.spec.host}")
+  EP_PORTAL=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-ptl-portal-web" -o jsonpath="{.spec.host}")
   # Zen
-  if EP_ZEN=$(oc -n ${apic_project} get route cpd -o jsonpath="{.spec.host}" 2> /dev/null ); then
+  if EP_ZEN=$($MY_CLUSTER_COMMAND -n ${apic_project} get route cpd -o jsonpath="{.spec.host}" 2> /dev/null ); then
     mylog info "EP_PORTAL: $EP_ZEN"
   fi
   # APIC Gateway admin password
-  if APIC_GTW_PASSWORD_B64=$(oc -n ${apic_project} get secret ${APIC_INSTANCE_NAME}-gw-admin -o=jsonpath='{.data.password}' 2> /dev/null ); then
+  if APIC_GTW_PASSWORD_B64=$($MY_CLUSTER_COMMAND -n ${apic_project} get secret ${APIC_INSTANCE_NAME}-gw-admin -o=jsonpath='{.data.password}' 2> /dev/null ); then
     APIC_GTW_PASSWORD=$(echo $APIC_GTW_PASSWORD_B64 | base64 --decode)
   fi
   
-  EP_APIC_MGR=$(oc -n ${apic_project} get route "${APIC_INSTANCE_NAME}-mgmt-api-manager" -o jsonpath="{.spec.host}")
+  EP_APIC_MGR=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-mgmt-api-manager" -o jsonpath="{.spec.host}")
   
   # APIC Cloud Manager admin password
-  if APIC_CM_ADMIN_PASSWORD_B64=$(oc -n ${apic_project} get secret ${APIC_INSTANCE_NAME}-mgmt-admin-pass -o=jsonpath='{.data.password}' 2> /dev/null ); then
+  if APIC_CM_ADMIN_PASSWORD_B64=$($MY_CLUSTER_COMMAND -n ${apic_project} get secret ${APIC_INSTANCE_NAME}-mgmt-admin-pass -o=jsonpath='{.data.password}' 2> /dev/null ); then
     APIC_CM_ADMIN_PASSWORD=$(echo $APIC_CM_ADMIN_PASSWORD_B64 | base64 --decode)
   fi
   
@@ -466,10 +466,10 @@ function init_apic_variables() {
   CM_APIC_TOKEN=$(curl -kfs https://"${EP_API}"/v1/preauth/validateAuth -H "username: ${CP_ADMIN_UID}" -H "iam-token: ${IAM_TOKEN}" | jq -r .accessToken)
   # mylog warn "CM_APIC_TOKEN: $CM_APIC_TOKEN" 1>&2
   
-  # APIC_NAMESPACE=$(oc get apiconnectcluster -A -o jsonpath='{..namespace}')
-  APIC_INSTANCE=$(oc -n "${apic_project}" get apiconnectcluster -o=jsonpath='{.items[0].metadata.name}')
+  # APIC_NAMESPACE=$($MY_CLUSTER_COMMAND get apiconnectcluster -A -o jsonpath='{..namespace}')
+  APIC_INSTANCE=$($MY_CLUSTER_COMMAND -n "${apic_project}" get apiconnectcluster -o=jsonpath='{.items[0].metadata.name}')
   
-  PLATFORM_API_URL=$(oc -n "${apic_project}" get apiconnectcluster "${APIC_INSTANCE_NAME}" -o=jsonpath='{.status.endpoints[?(@.name=="platformApi")].uri}')
+  PLATFORM_API_URL=$($MY_CLUSTER_COMMAND -n "${apic_project}" get apiconnectcluster "${APIC_INSTANCE_NAME}" -o=jsonpath='{.status.endpoints[?(@.name=="platformApi")].uri}')
 
   trace_out $lf_tracelevel init_apic_variables
  
@@ -481,8 +481,8 @@ function init_apic_variables() {
 function download_tools () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel download_tools
-  # APIC_NAMESPACE=$(oc get apiconnectcluster -A -o jsonpath='{..namespace}')
-  local apic_instance=$(oc -n "${apic_project}" get apiconnectcluster -o=jsonpath='{.items[0].metadata.name}')
+  # APIC_NAMESPACE=$($MY_CLUSTER_COMMAND get apiconnectcluster -A -o jsonpath='{..namespace}')
+  local apic_instance=$($MY_CLUSTER_COMMAND -n "${apic_project}" get apiconnectcluster -o=jsonpath='{.items[0].metadata.name}')
   local lf_file2download
   local toolkit_creds_url
   
@@ -503,10 +503,10 @@ function download_tools () {
   pushd "${MY_APIC_WORKINGDIR}config"
   if test ! -e "${MY_APIC_WORKINGDIR}resources/${lf_file2download}";then
   	mylog info "Downloading toolkit for $MY_PLATFORM platform" 1>&2
-    apic_mgmt_client_downloads_server_pod="$(oc -n ${apic_project} get po -l app.kubernetes.io/name=client-downloads-server,app.kubernetes.io/part-of=${apic_instance} -o=jsonpath='{.items[0].metadata.name}')"
+    apic_mgmt_client_downloads_server_pod="$($MY_CLUSTER_COMMAND -n ${apic_project} get po -l app.kubernetes.io/name=client-downloads-server,app.kubernetes.io/part-of=${apic_instance} -o=jsonpath='{.items[0].metadata.name}')"
     # SB]20240207 using absolute path generate the following error on windows : error: one of src or dest must be a local file specification
     #             use pushd and popd for relative path
-    oc cp -n "${apic_project}" "${apic_mgmt_client_downloads_server_pod}:dist/${lf_file2download}" ${lf_file2download}
+    $MY_CLUSTER_COMMAND cp -n "${apic_project}" "${apic_mgmt_client_downloads_server_pod}:dist/${lf_file2download}" ${lf_file2download}
     $lf_unzip_command ${lf_file2download} -C $lf_target_dir # && mv apic-slim apic
     rm $lf_file2download
   else 
@@ -526,7 +526,7 @@ function create_cm_token(){
   local lf_tracelevel=3
   trace_in $lf_tracelevel create_cm_token
 
-  APIC_CRED=$(oc -n "${apic_project}" get secret ${APIC_INSTANCE_NAME}-mgmt-cli-cred -o jsonpath='{.data.credential\.json}' | base64 --decode)
+  APIC_CRED=$($MY_CLUSTER_COMMAND -n "${apic_project}" get secret ${APIC_INSTANCE_NAME}-mgmt-cli-cred -o jsonpath='{.data.credential\.json}' | base64 --decode)
   APIC_APIKEY=$(curl -ks --fail -X POST "${PLATFORM_API_URL}"cloud/api-keys -H "Authorization: Bearer ${ZEN_TOKEN}" -H "Accept: application/json" -H "Content-Type: application/json" -d '{"client_type":"toolkit","description":"Tookit API key"}' | jq -r .api_key)
   decho $lf_tracelevel "APIC_APIKEY: ${APIC_APIKEY}"
   
@@ -600,7 +600,7 @@ function apic_run_all () {
   
   # Get ClusterIP for the mail server if MailHog
   # TODO check error, if not there, ...
-  export MY_MAIL_SERVER_HOST_IP=$(oc -n ${VAR_MAIL_NAMESPACE} get svc/mailhog -o jsonpath='{.spec.clusterIP}')
+  export MY_MAIL_SERVER_HOST_IP=$($MY_CLUSTER_COMMAND -n ${VAR_MAIL_NAMESPACE} get svc/mailhog -o jsonpath='{.spec.clusterIP}')
   decho $lf_tracelevel "To configure the mail server the clusterIP is ${MY_MAIL_SERVER_HOST_IP}"
   
   # Will create both directories needed later on toto

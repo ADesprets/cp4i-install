@@ -30,7 +30,7 @@ function create_es() {
     create_operand_instance "EventStreams" "${lf_in_cr_name}" "${lf_in_source_directory}" "${lf_in_target_directory}" "${lf_in_yaml_file}" "${lf_in_namespace}" "{.status.phase}" "Ready"
 
     # Creating Event Streams Service Account associated with the ES instance to enable monitoring
-    oc -n $VAR_ES_NAMESPACE adm policy add-cluster-role-to-user cluster-monitoring-view -z ${VAR_ES_SERVICE_ACCOUNT_NAME}
+    $MY_CLUSTER_COMMAND -n $VAR_ES_NAMESPACE adm policy add-cluster-role-to-user cluster-monitoring-view -z ${VAR_ES_SERVICE_ACCOUNT_NAME}
    
     # unset exported needed variables
     #unset VAR_ES_NAMESPACE
@@ -224,20 +224,20 @@ function es_display_access_info() {
   for lf_index in {1..3}; do
     local lf_es_namespace_string="VAR_ES_NAMESPACE$lf_index"
     local lf_es_namespace=${!lf_es_namespace_string}
-    local lf_es_ui_url=$(oc -n $lf_es_namespace get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="ui")].uri}')
+    local lf_es_ui_url=$($MY_CLUSTER_COMMAND -n $lf_es_namespace get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="ui")].uri}')
     mylog info "Event Streams Management UI endpoint: ${lf_es_ui_url}" 0
     echo  "<DT><A HREF=${lf_es_ui_url}>Event Streams Management UI</A>" >> ${lf_bookmarks_file}
-    lf_es_admin_url=$(oc -n $lf_es_namespace get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="admin")].uri}')
+    lf_es_admin_url=$($MY_CLUSTER_COMMAND -n $lf_es_namespace get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="admin")].uri}')
     mylog info "Event Streams Management admin endpoint: ${lf_es_admin_url}" 0
-    lf_es_apicurioregistry_url=$(oc -n $lf_es_namespace get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="apicurioregistry")].uri}')
+    lf_es_apicurioregistry_url=$($MY_CLUSTER_COMMAND -n $lf_es_namespace get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="apicurioregistry")].uri}')
     mylog info "Event Streams Management apicurio registry endpoint: ${lf_es_apicurioregistry_url}" 0
-    lf_es_restproducer_url=$(oc -n $lf_es_namespace get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="restproducer")].uri}')
+    lf_es_restproducer_url=$($MY_CLUSTER_COMMAND -n $lf_es_namespace get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="restproducer")].uri}')
     mylog info "Event Streams Management REST Producer endpoint: ${lf_es_restproducer_url}" 0
-    lf_es_bootstrap_urls=$(oc -n $lf_es_namespace get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.kafkaListeners[*].bootstrapServers}')
+    lf_es_bootstrap_urls=$($MY_CLUSTER_COMMAND -n $lf_es_namespace get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.kafkaListeners[*].bootstrapServers}')
     mylog info "Event Streams Bootstraps servers endpoints: ${lf_es_bootstrap_urls}" 0
-    lf_es_admin_pwd=$(oc -n $lf_es_namespace get secret es-admin -o jsonpath={.data.password} | base64 -d)
+    lf_es_admin_pwd=$($MY_CLUSTER_COMMAND -n $lf_es_namespace get secret es-admin -o jsonpath={.data.password} | base64 -d)
     mylog info "Event Streams UI Credentials: es-admin/${lf_es_admin_pwd}" 0
-    local lf_es_admin_url=$(oc -n $lf_es_namespace get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="admin")].uri}')
+    local lf_es_admin_url=$($MY_CLUSTER_COMMAND -n $lf_es_namespace get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="admin")].uri}')
     mylog info "Event Streams Management admin endpoint: ${lf_es_admin_url}" 0
     echo  "<DT><A HREF=${lf_es_admin_url}>Event Streams Management Admin</A>" >> ${lf_bookmarks_file}
     echo

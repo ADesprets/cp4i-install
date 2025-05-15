@@ -63,7 +63,7 @@ function create_leaf_certificate () {
   trace_in $lf_tracelevel create_leaf_certificate
 
   # get the dns name of the cluster
-  local lf_cluster_domain=$(oc get dns cluster -o jsonpath='{.spec.baseDomain}')
+  local lf_cluster_domain=$($MY_CLUSTER_COMMAND get dns cluster -o jsonpath='{.spec.baseDomain}')
   
   export VAR_CERT_NAME=${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR}-server
   export VAR_CERT_NAMESPACE=${VAR_MQ_NAMESPACE}
@@ -268,7 +268,7 @@ function create_ccdt () {
  
   # Generate ccdt file
   mylog "info" "Creating   : ccdt file to use with MQCCDTURL env variabe. Located here : $MQCCDTURL"
-  export ROOTURL=$(oc get route -n $VAR_MQ_NAMESPACE "${VAR_QMGR}-ibm-mq-qm" -o jsonpath='{.spec.host}')
+  export ROOTURL=$($MY_CLUSTER_COMMAND get route -n $VAR_MQ_NAMESPACE "${VAR_QMGR}-ibm-mq-qm" -o jsonpath='{.spec.host}')
   decho $lf_tracelevel "VAR_CHL_UC=$VAR_CHL_UC|VAR_QMGR_UC=$VAR_QMGR_UC|ROOTURL=$ROOTURL"
 
   adapt_file "${MY_MQ_SIMPLE_DEMODIR}scripts/tmpl/json/" "${sc_qmgr_custom_gendir}json/" ccdt.json

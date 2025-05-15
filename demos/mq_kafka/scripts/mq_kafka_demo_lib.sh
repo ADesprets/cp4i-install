@@ -124,8 +124,8 @@ function create_jks_keystore_secret() {
   local lf_data_normalised=$(sed 's/\./\\./g' <<< ${lf_in_data_name})
 
   mylog info "Save certificate ${lf_in_secret_name} to ${lf_in_destination_path}${lf_in_secret_name}.${lf_in_data_name}.pem"
-  decho $lf_tracelevel "oc -n $lf_in_ns get secret ${lf_in_secret_name} -o jsonpath=\"{.data.$lf_data_normalised}\""
-  local lf_cert=$(oc -n $lf_in_ns get secret ${lf_in_secret_name} -o jsonpath="{.data.$lf_data_normalised}")
+  decho $lf_tracelevel "$MY_CLUSTER_COMMAND -n $lf_in_ns get secret ${lf_in_secret_name} -o jsonpath=\"{.data.$lf_data_normalised}\""
+  local lf_cert=$($MY_CLUSTER_COMMAND -n $lf_in_ns get secret ${lf_in_secret_name} -o jsonpath="{.data.$lf_data_normalised}")
 
   echo $lf_cert | base64 --decode >"${lf_in_destination_path}${lf_in_secret_name}.${lf_in_data_name}.pem"
 
@@ -158,8 +158,8 @@ function create_jks_keystore_secret() {
   local lf_data_normalised=$(sed 's/\./\\./g' <<< ${lf_in_data_name})
 
   mylog info "Save certificate ${lf_in_secret_name} to ${lf_in_destination_path}${lf_in_secret_name}.${lf_in_data_name}.pem"
-  decho $lf_tracelevel "oc -n $lf_in_ns get secret ${lf_in_secret_name} -o jsonpath=\"{.data.$lf_data_normalised}\""
-  local lf_cert=$(oc -n $lf_in_ns get secret ${lf_in_secret_name} -o jsonpath="{.data.$lf_data_normalised}")
+  decho $lf_tracelevel "$MY_CLUSTER_COMMAND -n $lf_in_ns get secret ${lf_in_secret_name} -o jsonpath=\"{.data.$lf_data_normalised}\""
+  local lf_cert=$($MY_CLUSTER_COMMAND -n $lf_in_ns get secret ${lf_in_secret_name} -o jsonpath="{.data.$lf_data_normalised}")
 
   echo $lf_cert | base64 --decode >"${lf_in_destination_path}${lf_in_secret_name}.${lf_in_data_name}.pem"
 

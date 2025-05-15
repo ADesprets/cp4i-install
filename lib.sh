@@ -18,7 +18,7 @@ function check_pod_status() {
   fi
 
   # Get pods with the specified label selector
-  lf_pods=$(oc get pods -n "$lf_in_namespace" --selector="$lf_in_label_selector" -o json)
+  lf_pods=$($MY_CLUSTER_COMMAND get pods -n "$lf_in_namespace" --selector="$lf_in_label_selector" -o json)
   
   # Extract the status conditions we care about
   lf_statuses=$(echo "$lf_pods" | jq -r '.items[].status.conditions[] | select(.type == "Ready").status')
@@ -96,23 +96,23 @@ function display_access_info() {
 
   # Mailhog
   local lf_mailhog_hostname
-  lf_mailhog_hostname=$(oc -n ${VAR_MAIL_NAMESPACE} get route ${VAR_MAIL_ROUTE} -o jsonpath='{.spec.host}')
+  lf_mailhog_hostname=$($MY_CLUSTER_COMMAND -n ${VAR_MAIL_NAMESPACE} get route ${VAR_MAIL_ROUTE} -o jsonpath='{.spec.host}')
   mylog info "MailHog accessible at http://${lf_mailhog_hostname}" 0
   echo "<DT><A HREF=http://${lf_mailhog_hostname}>MailHog</A>" >> ${MY_WORKINGDIR}/bookmarks.html
 
   # Keycloak
-  lf_keycloak_admin_ui=$(oc -n $MY_COMMONSERVICES_NAMESPACE get route keycloak -o jsonpath='{.spec.host}')
+  lf_keycloak_admin_ui=$($MY_CLUSTER_COMMAND -n $MY_COMMONSERVICES_NAMESPACE get route keycloak -o jsonpath='{.spec.host}')
   mylog info "Keycloak admin UI URL: https://${lf_keycloak_admin_ui}" 0
   echo "<DT><A HREF=https://${lf_keycloak_admin_ui}>Keycloak Admin UI</A>" >> ${MY_WORKINGDIR}/bookmarks.html
-  lf_keycloak_admin_pwd=$(oc -n $MY_COMMONSERVICES_NAMESPACE get secret cs-keycloak-initial-admin -o jsonpath={.data.password} | base64 -d)
+  lf_keycloak_admin_pwd=$($MY_CLUSTER_COMMAND -n $MY_COMMONSERVICES_NAMESPACE get secret cs-keycloak-initial-admin -o jsonpath={.data.password} | base64 -d)
   mylog info "Keycloak admin password: $lf_keycloak_admin_pwd" 0
   
   # CP4I Platform Navigator
   local lf_temp_integration_admin_pwd cp4i_url
   if $MY_NAVIGATOR_INSTANCE; then
-    lf_temp_integration_admin_pwd=$(oc -n $MY_COMMONSERVICES_NAMESPACE get secret integration-admin-initial-temporary-credentials -o jsonpath={.data.password} | base64 -d)
+    lf_temp_integration_admin_pwd=$($MY_CLUSTER_COMMAND -n $MY_COMMONSERVICES_NAMESPACE get secret integration-admin-initial-temporary-credentials -o jsonpath={.data.password} | base64 -d)
     mylog info "Integration admin, user: integration-admin, password: ${lf_temp_integration_admin_pwd}" 0
-    cp4i_url=$(oc -n $VAR_NAVIGATOR_NAMESPACE get platformnavigator cp4i-navigator -o jsonpath='{range .status.endpoints[?(@.name=="navigator")]}{.uri}{end}')
+    cp4i_url=$($MY_CLUSTER_COMMAND -n $VAR_NAVIGATOR_NAMESPACE get platformnavigator cp4i-navigator -o jsonpath='{range .status.endpoints[?(@.name=="navigator")]}{.uri}{end}')
     mylog info "CP4I Platform UI URL: $cp4i_url" 0
     echo "<DT><A HREF=${cp4i_url}>CP4I Platform UI</A>" >> ${MY_WORKINGDIR}/bookmarks.html 
   fi
@@ -120,10 +120,10 @@ function display_access_info() {
   # App Connect Entreprise
   local lf_ace_ui_db_url lf_ace_ui_dg_url
   if $MY_ACE; then
-    lf_ace_ui_db_url=$(oc -n $VAR_ACE_NAMESPACE get Dashboard -o=jsonpath='{.items[?(@.kind=="Dashboard")].status.adminUiUrl}')
+    lf_ace_ui_db_url=$($MY_CLUSTER_COMMAND -n $VAR_ACE_NAMESPACE get Dashboard -o=jsonpath='{.items[?(@.kind=="Dashboard")].status.adminUiUrl}')
     mylog info "ACE Dahsboard UI endpoint: $lf_ace_ui_db_url" 0
     echo "<DT><A HREF=${lf_ace_ui_db_url}>ACE Dashboard UI</A>" >> ${MY_WORKINGDIR}/bookmarks.html
-    lf_ace_ui_dg_url=$(oc -n $VAR_ACE_NAMESPACE get DesignerAuthoring -o=jsonpath='{.items[?(@.kind=="DesignerAuthoring")].status.endpoints[?(@.name=="ui")].uri}')
+    lf_ace_ui_dg_url=$($MY_CLUSTER_COMMAND -n $VAR_ACE_NAMESPACE get DesignerAuthoring -o=jsonpath='{.items[?(@.kind=="DesignerAuthoring")].status.endpoints[?(@.name=="ui")].uri}')
     mylog info "ACE Designer UI endpoint: $lf_ace_ui_dg_url" 0
     echo "<DT><A HREF=${lf_ace_ui_dg_url}>ACE Designer UI</A>" >> ${MY_WORKINGDIR}/bookmarks.html
   fi
@@ -131,54 +131,54 @@ function display_access_info() {
   # API Connect
   local lf_gtw_url lf_apic_gtw_admin_pwd_secret_name lf_cm_admin_pwd lf_cm_url lf_cm_admin_pwd_secret_name lf_cm_admin_pwd lf_mgr_url lf_ptl_url lf_jwks_url
   if $MY_APIC; then
-    lf_gtw_url=$(oc -n $VAR_APIC_NAMESPACE get GatewayCluster -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].status.endpoints[?(@.name=="gateway")].uri}')
+    lf_gtw_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get GatewayCluster -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].status.endpoints[?(@.name=="gateway")].uri}')
     mylog info "APIC Gateway endpoint: ${lf_gtw_url}" 0
-    lf_gtw_webconsole_url=$(oc -n $VAR_APIC_NAMESPACE get Route ${VAR_APIC_GW_ROUTE_NAME} -o=jsonpath='{.spec.host}')
+    lf_gtw_webconsole_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get Route ${VAR_APIC_GW_ROUTE_NAME} -o=jsonpath='{.spec.host}')
     mylog info "APIC Gateway web console endpoint: https://${lf_gtw_webconsole_url}" 0
     echo "<DT><A HREF=https://${lf_gtw_webconsole_url}>APIC Gateway Web Console</A>" >> ${MY_WORKINGDIR}/bookmarks.html
-    lf_apic_gtw_admin_pwd_secret_name=$(oc -n $VAR_APIC_NAMESPACE get GatewayCluster -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].spec.adminUser.secretName}')
-    lf_cm_admin_pwd=$(oc -n $VAR_APIC_NAMESPACE get secret ${lf_apic_gtw_admin_pwd_secret_name} -o jsonpath={.data.password} | base64 -d)
+    lf_apic_gtw_admin_pwd_secret_name=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get GatewayCluster -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].spec.adminUser.secretName}')
+    lf_cm_admin_pwd=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get secret ${lf_apic_gtw_admin_pwd_secret_name} -o jsonpath={.data.password} | base64 -d)
     mylog info "APIC Gateway admin password: ${lf_cm_admin_pwd}" 0
-    lf_cm_url=$(oc -n $VAR_APIC_NAMESPACE get APIConnectCluster -o=jsonpath='{.items[?(@.kind=="APIConnectCluster")].status.endpoints[?(@.name=="admin")].uri}')
+    lf_cm_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get APIConnectCluster -o=jsonpath='{.items[?(@.kind=="APIConnectCluster")].status.endpoints[?(@.name=="admin")].uri}')
     mylog info "APIC Cloud Manager endpoint: ${lf_cm_url}" 0
     echo "<DT><A HREF=${lf_cm_url}>APIC Cloud Manager UI</A>" >> ${MY_WORKINGDIR}/bookmarks.html
-    lf_cm_admin_pwd_secret_name=$(oc -n $VAR_APIC_NAMESPACE get ManagementCluster -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].spec.adminUser.secretName}')
-    lf_cm_admin_pwd=$(oc -n $VAR_APIC_NAMESPACE get secret ${lf_cm_admin_pwd_secret_name} -o jsonpath='{.data.password}' | base64 -d)
+    lf_cm_admin_pwd_secret_name=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get ManagementCluster -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].spec.adminUser.secretName}')
+    lf_cm_admin_pwd=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get secret ${lf_cm_admin_pwd_secret_name} -o jsonpath='{.data.password}' | base64 -d)
     mylog info "APIC Cloud Manager admin password: ${lf_cm_admin_pwd}" 0
-    lf_mgr_url=$(oc -n $VAR_APIC_NAMESPACE get APIConnectCluster -o=jsonpath='{.items[?(@.kind=="APIConnectCluster")].status.endpoints[?(@.name=="ui")].uri}')
+    lf_mgr_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get APIConnectCluster -o=jsonpath='{.items[?(@.kind=="APIConnectCluster")].status.endpoints[?(@.name=="ui")].uri}')
     echo "<DT><A HREF=${lf_mgr_url}>APIC API Manager UI</A>" >> ${MY_WORKINGDIR}/bookmarks.html
     mylog info "APIC API Manager endpoint: ${lf_mgr_url}" 0
-    lf_ptl_url=$(oc -n $VAR_APIC_NAMESPACE get PortalCluster -o=jsonpath='{.items[?(@.kind=="PortalCluster")].status.endpoints[?(@.name=="portalWeb")].uri}')
+    lf_ptl_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get PortalCluster -o=jsonpath='{.items[?(@.kind=="PortalCluster")].status.endpoints[?(@.name=="portalWeb")].uri}')
     mylog info "APIC Web Portal root endpoint: ${lf_ptl_url}" 0
-    lf_jwks_url=$(oc -n $VAR_APIC_NAMESPACE get APIConnectCluster -o=jsonpath='{.items[?(@.kind=="APIConnectCluster")].status.endpoints[?(@.name=="jwksUrl")].uri}')
+    lf_jwks_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get APIConnectCluster -o=jsonpath='{.items[?(@.kind=="APIConnectCluster")].status.endpoints[?(@.name=="jwksUrl")].uri}')
     mylog info "APIC jwksUrl endpoint for EEM: ${lf_jwks_url}" 0
   fi
 
   # Event Streams
   local lf_es_ui_url lf_es_admin_url lf_es_apicurioregistry_url lf_es_restproducer_url lf_es_bootstrap_urls lf_es_admin_pwd
   if $MY_ES; then
-    lf_es_ui_url=$(oc -n $VAR_ES_NAMESPACE get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="ui")].uri}')
+    lf_es_ui_url=$($MY_CLUSTER_COMMAND -n $VAR_ES_NAMESPACE get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="ui")].uri}')
     mylog info "Event Streams Management UI endpoint: ${lf_es_ui_url}" 0
     echo  "<DT><A HREF=${lf_es_ui_url}>Event Streams Management UI</A>" >> ${MY_WORKINGDIR}/bookmarks.html
-    lf_es_admin_url=$(oc -n $VAR_ES_NAMESPACE get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="admin")].uri}')
+    lf_es_admin_url=$($MY_CLUSTER_COMMAND -n $VAR_ES_NAMESPACE get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="admin")].uri}')
     mylog info "Event Streams Management admin endpoint: ${lf_es_admin_url}" 0
-    lf_es_apicurioregistry_url=$(oc -n $VAR_ES_NAMESPACE get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="apicurioregistry")].uri}')
+    lf_es_apicurioregistry_url=$($MY_CLUSTER_COMMAND -n $VAR_ES_NAMESPACE get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="apicurioregistry")].uri}')
     mylog info "Event Streams Management apicurio registry endpoint: ${lf_es_apicurioregistry_url}" 0
-    lf_es_restproducer_url=$(oc -n $VAR_ES_NAMESPACE get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="restproducer")].uri}')
+    lf_es_restproducer_url=$($MY_CLUSTER_COMMAND -n $VAR_ES_NAMESPACE get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="restproducer")].uri}')
     mylog info "Event Streams Management REST Producer endpoint: ${lf_es_restproducer_url}" 0
-    lf_es_bootstrap_urls=$(oc -n $VAR_ES_NAMESPACE get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.kafkaListeners[*].bootstrapServers}')
+    lf_es_bootstrap_urls=$($MY_CLUSTER_COMMAND -n $VAR_ES_NAMESPACE get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.kafkaListeners[*].bootstrapServers}')
     mylog info "Event Streams Bootstraps servers endpoints: ${lf_es_bootstrap_urls}" 0
-    lf_es_admin_pwd=$(oc -n $VAR_ES_NAMESPACE get secret es-admin -o jsonpath={.data.password} | base64 -d)
+    lf_es_admin_pwd=$($MY_CLUSTER_COMMAND -n $VAR_ES_NAMESPACE get secret es-admin -o jsonpath={.data.password} | base64 -d)
     mylog info "Event Streams UI Credentials: es-admin/${lf_es_admin_pwd}" 0
   fi
 
   # Event Endpoint Management
   local lf_eem_ui_url lf_eem_lf_gtw_url
   if $MY_EEM; then
-    lf_eem_ui_url=$(oc -n $VAR_EEM_NAMESPACE get EventEndpointManagement -o=jsonpath='{.items[?(@.kind=="EventEndpointManagement")].status.endpoints[?(@.name=="ui")].uri}')
+    lf_eem_ui_url=$($MY_CLUSTER_COMMAND -n $VAR_EEM_NAMESPACE get EventEndpointManagement -o=jsonpath='{.items[?(@.kind=="EventEndpointManagement")].status.endpoints[?(@.name=="ui")].uri}')
     mylog info "Event Endpoint Management UI endpoint: ${lf_eem_ui_url}" 0
     echo  "<DT><A HREF=${lf_eem_ui_url}>Event Endpoint Management UI</A>" >> ${MY_WORKINGDIR}/bookmarks.html
-    lf_eem_lf_gtw_url=$(oc -n $VAR_EEM_NAMESPACE get EventEndpointManagement -o=jsonpath='{.items[?(@.kind=="EventEndpointManagement")].status.endpoints[?(@.name=="gateway")].uri}')
+    lf_eem_lf_gtw_url=$($MY_CLUSTER_COMMAND -n $VAR_EEM_NAMESPACE get EventEndpointManagement -o=jsonpath='{.items[?(@.kind=="EventEndpointManagement")].status.endpoints[?(@.name=="gateway")].uri}')
     mylog info "Event Endpoint Management Gateway endpoint: ${lf_eem_lf_gtw_url}" 0
     mylog info "The credentials are defined in the file ./customisation/EP/resources/user-credentials.yaml" 0
   fi
@@ -186,7 +186,7 @@ function display_access_info() {
   # Event Processing
   local lf_ep_ui_url
   if $MY_EP; then
-    lf_ep_ui_url=$(oc -n $VAR_EP_NAMESPACE get EventProcessing -o=jsonpath='{.items[?(@.kind=="EventProcessing")].status.endpoints[?(@.name=="ui")].uri}')
+    lf_ep_ui_url=$($MY_CLUSTER_COMMAND -n $VAR_EP_NAMESPACE get EventProcessing -o=jsonpath='{.items[?(@.kind=="EventProcessing")].status.endpoints[?(@.name=="ui")].uri}')
     mylog info "Event Processing UI endpoint: ${lf_ep_ui_url}" 0
     echo "<DT><A HREF=${lf_ep_ui_url}>Event Processing UI</A>" >> ${MY_WORKINGDIR}/bookmarks.html
     mylog info "The credentials are defined in the file ./customisation/EP/resources/user-credentials.yaml" 0
@@ -196,8 +196,8 @@ function display_access_info() {
   local lf_ldap_hostname lf_ldap_port
   if $MY_LDAP; then
     read_config_file "${MY_YAMLDIR}ldap/ldap_dit.properties"
-    lf_ldap_hostname=$(oc -n ${VAR_LDAP_NAMESPACE} get route ${VAR_LDAP_ROUTE} -o jsonpath='{.spec.host}')
-    lf_ldap_port=$(oc -n ${VAR_LDAP_NAMESPACE} get route ${VAR_LDAP_ROUTE} -o jsonpath='{.spec.port.targetPort}')
+    lf_ldap_hostname=$($MY_CLUSTER_COMMAND -n ${VAR_LDAP_NAMESPACE} get route ${VAR_LDAP_ROUTE} -o jsonpath='{.spec.host}')
+    lf_ldap_port=$($MY_CLUSTER_COMMAND -n ${VAR_LDAP_NAMESPACE} get route ${VAR_LDAP_ROUTE} -o jsonpath='{.spec.port.targetPort}')
     mylog info "LDAP hostname:port: ${lf_ldap_hostname}:${lf_ldap_port}" 0
     echo  "<DT><A HREF=ldap://${lf_ldap_hostname}:${lf_ldap_port}>LDAP</A>" >> ${MY_WORKINGDIR}/bookmarks.html
     mylog info "LDAP admin dn/password: ${MY_LDAP_ADMIN_DN}/${MY_LDAP_ADMIN_PASSWORD}" 0
@@ -206,7 +206,7 @@ function display_access_info() {
   # Assets Repository
   local lf_ar_ui_url
   if $MY_ASSETREPO; then
-    lf_ar_ui_url=$(oc -n $VAR_ASSETREPO_NAMESPACE get AssetRepository -o=jsonpath='{.items[?(@.kind=="AssetRepository")].status.endpoints[?(@.name=="ui")].uri}')
+    lf_ar_ui_url=$($MY_CLUSTER_COMMAND -n $VAR_ASSETREPO_NAMESPACE get AssetRepository -o=jsonpath='{.items[?(@.kind=="AssetRepository")].status.endpoints[?(@.name=="ui")].uri}')
     mylog info "Asset Repository UI endpoint: ${lf_ar_ui_url}" 0
     echo  "<DT><A HREF=${lf_ar_ui_url}>Asset Repository UI</A>" >> ${MY_WORKINGDIR}/bookmarks.html
   fi
@@ -220,18 +220,18 @@ function display_access_info() {
   local lf_mq_admin_url
   if $MY_MQ; then
     if $MY_MESSAGINGSERVER; then
-      lf_mq_qm_url=$(oc -n $VAR_MQ_NAMESPACE get MessagingServer ${VAR_MSGSRV_INSTANCE_NAME} -o jsonpath='{.status.adminUiUrl}')
+      lf_mq_qm_url=$($MY_CLUSTER_COMMAND -n $VAR_MQ_NAMESPACE get MessagingServer ${VAR_MSGSRV_INSTANCE_NAME} -o jsonpath='{.status.adminUiUrl}')
     fi
 
-    lf_mq_admin_url=$(oc -n $VAR_MQ_NAMESPACE get QueueManager $VAR_MQ_INSTANCE_NAME -o jsonpath='{.status.adminUiUrl}')
+    lf_mq_admin_url=$($MY_CLUSTER_COMMAND -n $VAR_MQ_NAMESPACE get QueueManager $VAR_MQ_INSTANCE_NAME -o jsonpath='{.status.adminUiUrl}')
     mylog info "MQ Management Console : ${lf_mq_admin_url}" 0
     echo  "<DT><A HREF=${lf_mq_admin_url}>MQ Management Console</A>" >> ${MY_WORKINGDIR}/bookmarks.html
 
-    local lf_mq_authentication_method=$(oc -n $VAR_MQ_NAMESPACE get qmgr $VAR_MQ_INSTANCE_NAME -o jsonpath='{.spec.web.console.authentication.provider}')
+    local lf_mq_authentication_method=$($MY_CLUSTER_COMMAND -n $VAR_MQ_NAMESPACE get qmgr $VAR_MQ_INSTANCE_NAME -o jsonpath='{.spec.web.console.authentication.provider}')
     if [[ $lf_mq_authentication_method == "manual" ]]; then
       #TOTO# : we suppose here that the user is mqadmin !!!!
-      lf_mq_admin_password=$(oc -n $VAR_MQ_NAMESPACE get cm $VAR_WEBCONFIG_CM -o jsonpath='{.data.mqwebuser\.xml}' | yq -p=xml -o=json | jq -r '.server.basicRegistry.user[] | select(.["+@name"]=="mqadmin") | .["+@password"]')
-      #echo "oc -n $VAR_MQ_NAMESPACE get cm $VAR_WEBCONFIG_CM -o jsonpath='{.data.mqwebuser\.xml}' | yq -p=xml -o=json" #| jq -r '.server.basicRegistry.user[] | select(.["+@name"]=="mqadmin") | .["+@password"]'
+      lf_mq_admin_password=$($MY_CLUSTER_COMMAND -n $VAR_MQ_NAMESPACE get cm $VAR_WEBCONFIG_CM -o jsonpath='{.data.mqwebuser\.xml}' | yq -p=xml -o=json | jq -r '.server.basicRegistry.user[] | select(.["+@name"]=="mqadmin") | .["+@password"]')
+      #echo "$MY_CLUSTER_COMMAND -n $VAR_MQ_NAMESPACE get cm $VAR_WEBCONFIG_CM -o jsonpath='{.data.mqwebuser\.xml}' | yq -p=xml -o=json" #| jq -r '.server.basicRegistry.user[] | select(.["+@name"]=="mqadmin") | .["+@password"]'
       mylog info "MQ Management Console authentication method: $lf_mq_authentication_method|user=mqadmin|password=$lf_mq_admin_password" 0
       mylog info "MQ admin/password: mqadmin/${lf_mq_admin_password}" 0
     else
@@ -242,7 +242,7 @@ function display_access_info() {
   # WebSphere Application Server
   local lf_was_liberty_app_demo_url
   if $MY_WASLIBERTY_CUSTOM; then
-    lf_was_liberty_app_demo_url=$(oc -n $VAR_WASLIBERTY_NAMESPACE get route demo -o jsonpath='{.status.ingress[0].host}')
+    lf_was_liberty_app_demo_url=$($MY_CLUSTER_COMMAND -n $VAR_WASLIBERTY_NAMESPACE get route demo -o jsonpath='{.status.ingress[0].host}')
     mylog info "WAS Liberty $MY_WASLIBERTY_APP_NAME application URL : https://${lf_was_liberty_app_demo_url}/$MY_WASLIBERTY_APP_NAME" 0
     echo "<DT><A HREF=https://${lf_was_liberty_app_demo_url}/$MY_WASLIBERTY_APP_NAME>WAS Liberty $MY_WASLIBERTY_APP_NAME application</A>" >> ${MY_WORKINGDIR}/bookmarks.html
   fi
@@ -250,15 +250,15 @@ function display_access_info() {
   # ILS - IBM Licensing Service and ILR - IBM Licensing Reporter
   local lf_licensing_service_url lf_licensing_secret_token lf_licensing_service_reporter_url lf_licensing_reporter_password
   if $MY_LIC_SRV; then
-    lf_licensing_service_url=$(oc -n ${MY_LICENSE_SERVICE_NAMESPACE} get Route -o=jsonpath='{.items[?(@.metadata.name=="ibm-licensing-service-instance")].spec.host}')
+    lf_licensing_service_url=$($MY_CLUSTER_COMMAND -n ${MY_LICENSE_SERVICE_NAMESPACE} get Route -o=jsonpath='{.items[?(@.metadata.name=="ibm-licensing-service-instance")].spec.host}')
     mylog info "Licensing service endpoint: https://${lf_licensing_service_url}" 0
     echo "<DT><A HREF=https://${lf_licensing_service_url}>Licensing Service</A>" >> ${MY_WORKINGDIR}/bookmarks.html
-    lf_licensing_secret_token=$(oc -n ${MY_LICENSE_SERVICE_NAMESPACE} get secret ibm-licensing-token -o jsonpath='{.data.token}' | base64 -d)
+    lf_licensing_secret_token=$($MY_CLUSTER_COMMAND -n ${MY_LICENSE_SERVICE_NAMESPACE} get secret ibm-licensing-token -o jsonpath='{.data.token}' | base64 -d)
     mylog info "Licensing service token: ${lf_licensing_secret_token}" 0
-    lf_licensing_service_reporter_url=$(oc -n ${MY_LICENSE_SERVICE_REPORTER_NAMESPACE} get Route ibm-lsr-console -o=jsonpath='{.status.ingress[0].host}')
+    lf_licensing_service_reporter_url=$($MY_CLUSTER_COMMAND -n ${MY_LICENSE_SERVICE_REPORTER_NAMESPACE} get Route ibm-lsr-console -o=jsonpath='{.status.ingress[0].host}')
     mylog info "Licensing service reporter console endpoint: https://${lf_licensing_service_reporter_url}/license-service-reporter/" 0
     echo "<DT><A HREF=https://${lf_licensing_service_reporter_url}/license-service-reporter/>Licensing Service Reporter</A>" >> ${MY_WORKINGDIR}/bookmarks.html
-    lf_licensing_reporter_password=$(oc -n ${MY_LICENSE_SERVICE_REPORTER_NAMESPACE} get secret ibm-license-service-reporter-credentials -o jsonpath='{.data.password}' | base64 -d)
+    lf_licensing_reporter_password=$($MY_CLUSTER_COMMAND -n ${MY_LICENSE_SERVICE_REPORTER_NAMESPACE} get secret ibm-license-service-reporter-credentials -o jsonpath='{.data.password}' | base64 -d)
     mylog info "Licensing service reporter credential: license-administrator/${lf_licensing_reporter_password}" 0
   fi
 
@@ -359,11 +359,11 @@ function search_networkpolicies() {
 
   # Search for deny-all networkpolicies
   mylog info "Searching for deny-all networkpolicies..." 1>&2
-  lf_deny_all=$(oc get networkpolicy --all-namespaces -o json | jq '.items[] | select(.spec.ingress == null and .spec.egress == null) | {namespace: .metadata.namespace, name: .metadata.name}')
+  lf_deny_all=$($MY_CLUSTER_COMMAND get networkpolicy --all-namespaces -o json | jq '.items[] | select(.spec.ingress == null and .spec.egress == null) | {namespace: .metadata.namespace, name: .metadata.name}')
 
   # Search for allow-same-namespace networkpolicies
   mylog info "Searching for allow-same-namespace networkpolicies..." 1>&2
-  lf_allow_same_namespace=$(oc get networkpolicy --all-namespaces -o json | jq '.items[] | select(.spec.ingress != null and .spec.ingress[].from[]?.namespaceSelector.matchLabels."project" == .metadata.namespace) | {namespace: .metadata.namespace, name: .metadata.name}')
+  lf_allow_same_namespace=$($MY_CLUSTER_COMMAND get networkpolicy --all-namespaces -o json | jq '.items[] | select(.spec.ingress != null and .spec.ingress[].from[]?.namespaceSelector.matchLabels."project" == .metadata.namespace) | {namespace: .metadata.namespace, name: .metadata.name}')
 
   if [[ -n $lf_deny_all ]] || [[ -n $lf_allow_same_namespace ]]; then
     lf_res=1
@@ -580,8 +580,8 @@ function save_certificate() {
   local lf_data_normalised=$(sed 's/\./\\./g' <<< ${lf_in_data_name})
 
   mylog info "Save certificate ${lf_in_secret_name} to ${lf_in_target_directory}${lf_in_secret_name}.${lf_in_data_name}.pem"
-  decho $lf_tracelevel "oc -n $lf_in_ns get secret ${lf_in_secret_name} -o jsonpath=\"{.data.$lf_data_normalised}\""
-  local lf_cert=$(oc -n $lf_in_ns get secret ${lf_in_secret_name} -o jsonpath="{.data.$lf_data_normalised}")
+  decho $lf_tracelevel "$MY_CLUSTER_COMMAND -n $lf_in_ns get secret ${lf_in_secret_name} -o jsonpath=\"{.data.$lf_data_normalised}\""
+  local lf_cert=$($MY_CLUSTER_COMMAND -n $lf_in_ns get secret ${lf_in_secret_name} -o jsonpath="{.data.$lf_data_normalised}")
 
   echo $lf_cert | base64 --decode >"${lf_in_target_directory}${lf_in_secret_name}.${lf_in_data_name}.pem"
 
@@ -615,7 +615,7 @@ function is_case_downloaded() {
   if [[ ! -d "${lf_directory}" ]]; then
     lf_res=0
   else
-    lf_result=$(oc ibm-pak list --downloaded -o json)
+    lf_result=$($MY_CLUSTER_COMMAND ibm-pak list --downloaded -o json)
 
     # One of the simplest ways to check if a string is empty or null is to use the -z and -n operators.
     # The -z operator returns true if the string is null or empty, and false otherwise.
@@ -796,7 +796,7 @@ function check_exec_prereqs() {
   check_command_exist yq
   check_command_exist keytool
   check_command_exist oc
-  check_command_exist "oc ibm-pak"
+  check_command_exist "$MY_CLUSTER_COMMAND ibm-pak"
   check_command_exist openssl
   check_command_exist mvn
 
@@ -838,7 +838,7 @@ function check_resource_exist() {
   # check resource exist
   local lf_res
   
-  lf_res=$(oc get $lf_in_type $lf_in_name --ignore-not-found=true -o jsonpath='{.metadata.name}')
+  lf_res=$($MY_CLUSTER_COMMAND get $lf_in_type $lf_in_name --ignore-not-found=true -o jsonpath='{.metadata.name}')
   if test -z $lf_res; then
     mylog error "Resource $lf_in_name of type $lf_in_type does not exist, exiting."
     exit 1
@@ -870,7 +870,7 @@ function waitn() {
 function wait_for_state() {
   local lf_tracelevel=3
   trace_in $lf_tracelevel wait_for_state
-#wait_for_state "$lf_in_type $lf_in_cr_name $lf_in_path is $lf_in_state" "$lf_in_state" "oc -n $lf_in_namespace get $lf_in_type $lf_in_cr_name -o jsonpath='$lf_in_path'"
+#wait_for_state "$lf_in_type $lf_in_cr_name $lf_in_path is $lf_in_state" "$lf_in_state" "$MY_CLUSTER_COMMAND -n $lf_in_namespace get $lf_in_type $lf_in_cr_name -o jsonpath='$lf_in_path'"
 
   local lf_in_type=$1
   local lf_in_cr_name=$2
@@ -890,7 +890,7 @@ function wait_for_state() {
   local lf_current_time lf_elapsed_time lf_last_state lf_current_state lf_bullet lf_command
   local lf_bullets=('|' '/' '-' '\\')
 
-  #lf_command="oc -n $lf_in_namespace get $lf_in_type $lf_in_cr_name -o jsonpath=$lf_in_path"
+  #lf_command="$MY_CLUSTER_COMMAND -n $lf_in_namespace get $lf_in_type $lf_in_cr_name -o jsonpath=$lf_in_path"
 
   if [[ -z $lf_in_namespace ]]; then
     lf_option=""
@@ -899,9 +899,9 @@ function wait_for_state() {
   fi
 
   lf_last_state=''
-  decho $lf_tracelevel "oc $lf_option get $lf_in_type $lf_in_cr_name -o jsonpath=$lf_in_path"
+  decho $lf_tracelevel "$MY_CLUSTER_COMMAND $lf_option get $lf_in_type $lf_in_cr_name -o jsonpath=$lf_in_path"
   while true; do
-    lf_current_state=$(oc $lf_option get $lf_in_type $lf_in_cr_name -o jsonpath=$lf_in_path)
+    lf_current_state=$($MY_CLUSTER_COMMAND $lf_option get $lf_in_type $lf_in_cr_name -o jsonpath=$lf_in_path)
     if [[ "$lf_current_state" == "$lf_in_state" ]]; then
       break
     fi
@@ -946,7 +946,7 @@ function add_ibm_entitlement() {
   fi
 
   mylog check "Checking ibm-entitlement-key in $lf_in_ns"
-  if ! oc -n $lf_in_ns get secret ibm-entitlement-key >/dev/null 2>&1; then
+  if ! $MY_CLUSTER_COMMAND -n $lf_in_ns get secret ibm-entitlement-key >/dev/null 2>&1; then
     var_fail MY_ENTITLEMENT_KEY "Missing entitlement key"
     mylog info "Checking ibm-entitlement-key validity"
     $MY_CONTAINER_ENGINE -h >/dev/null 2>&1
@@ -957,7 +957,7 @@ function add_ibm_entitlement() {
     fi
 
     mylog info "Adding ibm-entitlement-key to $lf_in_ns"
-    if ! oc -n $lf_in_ns create secret docker-registry ibm-entitlement-key --docker-username=cp --docker-password=$MY_ENTITLEMENT_KEY --docker-server=cp.icr.io; then
+    if ! $MY_CLUSTER_COMMAND -n $lf_in_ns create secret docker-registry ibm-entitlement-key --docker-username=cp --docker-password=$MY_ENTITLEMENT_KEY --docker-server=cp.icr.io; then
       trace_out $lf_tracelevel add_ibm_entitlement
       exit 1
     fi
@@ -1002,9 +1002,9 @@ function check_create_oc_yaml() {
 
   if $MY_APPLY_FLAG; then
     mylog info "Creating/Updating ${lf_in_type}/${lf_in_cr_name} using ${lf_in_target_directory}${lf_in_yaml_file} in namespace ${lf_in_namespace}"
-    oc apply -f "${lf_in_target_directory}${lf_in_yaml_file}" || exit 1
+    $MY_CLUSTER_COMMAND apply -f "${lf_in_target_directory}${lf_in_yaml_file}" || exit 1
     if [[ $lf_in_type == "Subscription" ]]; then
-      # use the fully qualified API Group (oc get subscription -A  returns nothing and oc get sub -A returns a full list of subscriptions !!!)
+      # use the fully qualified API Group ($MY_CLUSTER_COMMAND get subscription -A  returns nothing and $MY_CLUSTER_COMMAND get sub -A returns a full list of subscriptions !!!)
       lf_type="subscription"
     else 
       lf_type=$lf_in_type
@@ -1061,18 +1061,18 @@ function deploy_openldap() {
 
   mylog info "Creating LDAP server"
   create_oc_resource "ServiceAccount" "$MY_LDAP_SERVICEACCOUNT" "${MY_RESOURCESDIR}" "${MY_LDAP_WORKINGDIR}" "serviceaccount.yaml" "$VAR_LDAP_NAMESPACE"
-  oc adm policy add-scc-to-user privileged system:serviceaccount:${VAR_LDAP_NAMESPACE}:${MY_LDAP_SERVICEACCOUNT}
-  oc adm policy add-scc-to-user anyuid system:serviceaccount:${VAR_LDAP_NAMESPACE}:${MY_LDAP_SERVICEACCOUNT}
-  #oc adm policy add-scc-to-group anyuid system:serviceaccounts:${VAR_LDAP_NAMESPACE}
+  $MY_CLUSTER_COMMAND adm policy add-scc-to-user privileged system:serviceaccount:${VAR_LDAP_NAMESPACE}:${MY_LDAP_SERVICEACCOUNT}
+  $MY_CLUSTER_COMMAND adm policy add-scc-to-user anyuid system:serviceaccount:${VAR_LDAP_NAMESPACE}:${MY_LDAP_SERVICEACCOUNT}
+  #$MY_CLUSTER_COMMAND adm policy add-scc-to-group anyuid system:serviceaccounts:${VAR_LDAP_NAMESPACE}
 
   # deploy openldap and take in account the PVCs just created
   # check that deployment of openldap was not done
   create_oc_resource "Deployment" "${lf_in_name}" "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}" "ldap_deployment.yaml" "$VAR_LDAP_NAMESPACE"
-  oc -n ${VAR_LDAP_NAMESPACE} get deployment.apps/openldap -o json | jq '. | del(."status")' >${MY_LDAP_WORKINGDIR}openldap.json
+  $MY_CLUSTER_COMMAND -n ${VAR_LDAP_NAMESPACE} get deployment.apps/openldap -o json | jq '. | del(."status")' >${MY_LDAP_WORKINGDIR}openldap.json
 
   read_config_file "${MY_YAMLDIR}ldap/ldap_dit.properties"
   adapt_file "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}" "ldap_config.json" 
-  oc -n ${VAR_LDAP_NAMESPACE} patch deployment.apps/openldap --patch-file "${MY_LDAP_WORKINGDIR}ldap_config.json"
+  $MY_CLUSTER_COMMAND -n ${VAR_LDAP_NAMESPACE} patch deployment.apps/openldap --patch-file "${MY_LDAP_WORKINGDIR}ldap_config.json"
 
   trace_out $lf_tracelevel deploy_openldap
 }
@@ -1084,7 +1084,7 @@ function deploy_mail() {
   trace_in $lf_tracelevel deploy_mail
 
   create_oc_resource "Deployment" "${MY_MAIL_DEPLOYMENT}" "${MY_YAMLDIR}mail/" "${MY_MAIL_WORKINGDIR}" "mail_deployment.yaml" "$VAR_MAIL_NAMESPACE"
-  #oc -n ${VAR_MAIL_NAMESPACE} get deployment.apps/${MY_MAIL_DEPLOYMENT} -o json | jq '. | del(."status")' >${MY_MAIL_WORKINGDIR}mailhog.json
+  #$MY_CLUSTER_COMMAND -n ${VAR_MAIL_NAMESPACE} get deployment.apps/${MY_MAIL_DEPLOYMENT} -o json | jq '. | del(."status")' >${MY_MAIL_WORKINGDIR}mailhog.json
 
   trace_out $lf_tracelevel deploy_mail
 }
@@ -1201,21 +1201,21 @@ function create_openldap_route() {
   trace_in $lf_tracelevel create_openldap_route
 
   # expose service externaly and get host and port
-  oc -n ${VAR_LDAP_NAMESPACE} get service ${VAR_LDAP_SERVICE} -o json | \
+  $MY_CLUSTER_COMMAND -n ${VAR_LDAP_NAMESPACE} get service ${VAR_LDAP_SERVICE} -o json | \
      jq '.spec.ports |= map(if .name == "389-tcp" then . + { "nodePort": 30389 } else . end)' | \
      jq '.spec.ports |= map(if .name == "636-tcp" then . + { "nodePort": 30686 } else . end)' >${MY_LDAP_WORKINGDIR}openldap-service.json
 
   # Saad there was a bug the openldap-service.json did not exist when those two calls were made in the deploy_openldap function, I moved them here
   # I do not think all this code is needed, what did you want to do?
-  oc -n ${VAR_LDAP_NAMESPACE} patch service/${VAR_LDAP_SERVICE} --patch-file ${MY_LDAP_WORKINGDIR}openldap-service.json
+  $MY_CLUSTER_COMMAND -n ${VAR_LDAP_NAMESPACE} patch service/${VAR_LDAP_SERVICE} --patch-file ${MY_LDAP_WORKINGDIR}openldap-service.json
 
-  export VAR_LDAP_PORT=$(oc -n ${VAR_LDAP_NAMESPACE} get service ${VAR_LDAP_SERVICE} -o jsonpath='{.spec.ports[0].nodePort}')
-  lf_port1=$(oc -n ${VAR_LDAP_NAMESPACE} get service ${VAR_LDAP_SERVICE} -o jsonpath='{.spec.ports[1].nodePort}')
+  export VAR_LDAP_PORT=$($MY_CLUSTER_COMMAND -n ${VAR_LDAP_NAMESPACE} get service ${VAR_LDAP_SERVICE} -o jsonpath='{.spec.ports[0].nodePort}')
+  lf_port1=$($MY_CLUSTER_COMMAND -n ${VAR_LDAP_NAMESPACE} get service ${VAR_LDAP_SERVICE} -o jsonpath='{.spec.ports[1].nodePort}')
 
   mylog info "Expose service ${VAR_LDAP_SERVICE} using port ${VAR_LDAP_PORT} to the route ${VAR_LDAP_ROUTE}."
-  oc -n ${VAR_LDAP_NAMESPACE} expose service ${VAR_LDAP_SERVICE} --name=${VAR_LDAP_ROUTE} --port=${VAR_LDAP_PORT}
+  $MY_CLUSTER_COMMAND -n ${VAR_LDAP_NAMESPACE} expose service ${VAR_LDAP_SERVICE} --name=${VAR_LDAP_ROUTE} --port=${VAR_LDAP_PORT}
 
-  export VAR_LDAP_HOSTNAME=$(oc -n ${VAR_LDAP_NAMESPACE} get route ${VAR_LDAP_ROUTE} -o jsonpath='{.spec.host}')
+  export VAR_LDAP_HOSTNAME=$($MY_CLUSTER_COMMAND -n ${VAR_LDAP_NAMESPACE} get route ${VAR_LDAP_ROUTE} -o jsonpath='{.spec.host}')
 
   trace_out $lf_tracelevel create_openldap_route
 }
@@ -1308,11 +1308,11 @@ function create_mail_route() {
   create_oc_resource "Route" "${VAR_MAIL_ROUTE}" "$lf_in_source_directory" "${MY_MAIL_WORKINGDIR}" "$lf_in_file" "${VAR_MAIL_NAMESPACE}"
 
   # expose service externaly and get host and port
-  #oc -n ${VAR_MAIL_NAMESPACE} get service ${VAR_MAIL_SERVICE} -o json | \
+  #$MY_CLUSTER_COMMAND -n ${VAR_MAIL_NAMESPACE} get service ${VAR_MAIL_SERVICE} -o json | \
   #   jq '.spec.ports |= map(if .name == "1025-tcp" then . + { "nodePort": 31025 } else . end)' | \
   #   jq '.spec.ports |= map(if .name == "8025-tcp" then . + { "nodePort": 38025 } else . end)' >${MY_MAIL_WORKINGDIR}mail-service.json
 
-  export VAR_MAIL_HOSTNAME=$(oc -n ${VAR_MAIL_NAMESPACE} get route ${VAR_MAIL_ROUTE} -o jsonpath='{.spec.host}')
+  export VAR_MAIL_HOSTNAME=$($MY_CLUSTER_COMMAND -n ${VAR_MAIL_NAMESPACE} get route ${VAR_MAIL_ROUTE} -o jsonpath='{.spec.host}')
 
   trace_out $lf_tracelevel create_mail_route
 }
@@ -1350,10 +1350,10 @@ function create_project() {
 
   var_fail lf_in_name "Please define project name in config"
   mylog info "Creating/Updating project $lf_in_name"
-  if ! oc get project $lf_in_name >/dev/null 2>&1; then 
+  if ! $MY_CLUSTER_COMMAND get project $lf_in_name >/dev/null 2>&1; then 
     adapt_file ${lf_in_source_directory} ${lf_in_target_directory} ${lf_yaml_file}
     if $MY_APPLY_FLAG; then
-      oc apply -f "${lf_in_target_directory}${lf_yaml_file}"
+      $MY_CLUSTER_COMMAND apply -f "${lf_in_target_directory}${lf_yaml_file}"
       if [[ $? -ne 0 ]]; then 
         unset VAR_NAMESPACE VAR_NAMESPACE_DISPLAYNAME VAR_NAMESPACE_DESCRIPTION
         trace_out $lf_tracelevel create_project
@@ -1405,12 +1405,12 @@ if [[ $# -ne 3 ]] && [[ $# -ne 2 ]]; then
 
   local lf_resource=""
   seconds=0
-  decho $lf_tracelevel "oc $lf_option1 get $lf_in_type -o json | jq -r --arg my_resource "$lf_in_cr_name" '.items[].metadata | select (.name == $my_resource).name'"
+  decho $lf_tracelevel "$MY_CLUSTER_COMMAND $lf_option1 get $lf_in_type -o json | jq -r --arg my_resource "$lf_in_cr_name" '.items[].metadata | select (.name == $my_resource).name'"
   while [[ -z $lf_resource ]]; do
     echo -ne "Timer: $seconds seconds | waiting for $lf_in_type/$lf_in_cr_name $lf_option2...\033[0K\r"
-    lf_resource=$(oc $lf_option1 get $lf_in_type -o json | jq -r --arg my_resource "$lf_in_cr_name" '.items[].metadata | select (.name == $my_resource).name')
-    #lf_resource=$(oc $lf_option1 get $lf_in_type -o json | jq -r --arg my_resource "$lf_in_cr_name" '.items[] | select(.metadata.name == $my_resource) | .metadata.name')
-    #lf_resource=$(oc $lf_option1 get $lf_in_type -o jsonpath="{.items[?(@.metadata.name==\"$lf_in_cr_name\")].metadata.name}")
+    lf_resource=$($MY_CLUSTER_COMMAND $lf_option1 get $lf_in_type -o json | jq -r --arg my_resource "$lf_in_cr_name" '.items[].metadata | select (.name == $my_resource).name')
+    #lf_resource=$($MY_CLUSTER_COMMAND $lf_option1 get $lf_in_type -o json | jq -r --arg my_resource "$lf_in_cr_name" '.items[] | select(.metadata.name == $my_resource) | .metadata.name')
+    #lf_resource=$($MY_CLUSTER_COMMAND $lf_option1 get $lf_in_type -o jsonpath="{.items[?(@.metadata.name==\"$lf_in_cr_name\")].metadata.name}")
 
     sleep 1
     seconds=$((seconds + 1))
@@ -1426,7 +1426,7 @@ if [[ $# -ne 3 ]] && [[ $# -ne 2 ]]; then
 }
 
 ################################################
-##SB]20230201 use ibm-pak oc plugin
+##SB]20230201 use ibm-pak $MY_CLUSTER_COMMAND plugin
 # https://ibm.github.io/cloud-pak/
 # @param 1: the case name
 # @param 2: the operator name (in most cases it's the same as the case name
@@ -1455,10 +1455,10 @@ function check_add_cs_ibm_pak() {
 
   #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
   if [[ -z $lf_in_case_version ]]; then
-    read lf_case_version lf_app_version < <(oc ibm-pak list -o json | jq -r --arg case "$lf_in_case_name" '.[] | select(.name == $case) | "\(.latestVersion) \(.latestAppVersion)"')
+    read lf_case_version lf_app_version < <($MY_CLUSTER_COMMAND ibm-pak list -o json | jq -r --arg case "$lf_in_case_name" '.[] | select(.name == $case) | "\(.latestVersion) \(.latestAppVersion)"')
   else
     lf_case_version=$lf_in_case_version
-    lf_app_version=$(oc ibm-pak list --case-name $lf_in_case_name -o json | jq --arg v "$lf_in_case_version" '.versions[$v].appVersion')
+    lf_app_version=$($MY_CLUSTER_COMMAND ibm-pak list --case-name $lf_in_case_name -o json | jq --arg v "$lf_in_case_version" '.versions[$v].appVersion')
   fi
   decho $lf_tracelevel "lf_case_version=$lf_case_version|lf_app_version=$lf_app_version"
   export VAR_APP_VERSION=$lf_app_version
@@ -1470,8 +1470,8 @@ function check_add_cs_ibm_pak() {
   if [[ $lf_downloaded -eq 1 ]]; then
     mylog info "case ${lf_in_case_name} ${lf_case_version} already downloaded"
   else
-    oc ibm-pak get ${lf_in_case_name} --version ${lf_case_version}
-    oc ibm-pak generate mirror-manifests ${lf_in_case_name} icr.io --version ${lf_case_version}
+    $MY_CLUSTER_COMMAND ibm-pak get ${lf_in_case_name} --version ${lf_case_version}
+    $MY_CLUSTER_COMMAND ibm-pak generate mirror-manifests ${lf_in_case_name} icr.io --version ${lf_case_version}
   fi
 
   lf_file_tmp1=${MY_IBMPAK_MIRRORDIR}${lf_in_case_name}/${lf_case_version}/catalog-sources.yaml
@@ -1496,7 +1496,7 @@ function check_add_cs_ibm_pak() {
   mylog info "Creating/Updating catalog source ${lf_catalogsource}"
   export VAR_CATALOG_SOURCE=$lf_catalogsource
   if $MY_APPLY_FLAG; then 
-    oc apply -f $lf_file || exit 1
+    $MY_CLUSTER_COMMAND apply -f $lf_file || exit 1
 
     # wait for the availability of the catalogsource
     # wait_for_resource "packagemanifest" "${lf_in_operator_name}" "$MY_CATALOGSOURCES_NAMESPACE"
@@ -1671,7 +1671,7 @@ function create_certificate_chain() {
   export VAR_ISSUER=${lf_tls_cert_issuer_name}
   export VAR_SECRET=${lf_tls_cert_name}
   export VAR_LABEL=${lf_in_tls_label1}
-  export VAR_INGRESS=$(oc get ingresses.resources/cluster -o jsonpath='{.spec.domain}')
+  export VAR_INGRESS=$($MY_CLUSTER_COMMAND get ingresses.resources/cluster -o jsonpath='{.spec.domain}')
   create_oc_resource "Certificate" "$lf_tls_cert_name" "${MY_TLS_SCRIPTDIR}resources/" "${lf_in_workingdir}" "TLSCertificate.yaml" "$lf_in_namespace"
   unset VAR_COMMON_NAME VAR_ISSUER VAR_SECRET VAR_LABEL VAR_INGRESS
 
@@ -1701,13 +1701,13 @@ function accept_license_fs() {
   fi
   
   mylog info "Accepting license for ${lf_in_type}/${lf_in_cr_name} in namespace $lf_in_namespace"
-  decho $lf_tracelevel "oc -n ${lf_in_namespace} get ${lf_in_type} ${lf_in_cr_name} -o jsonpath='{.spec.license.accept}'"
-  local lf_accept=$(oc -n ${lf_in_namespace} get ${lf_in_type} ${lf_in_cr_name} -o jsonpath='{.spec.license.accept}')
+  decho $lf_tracelevel "$MY_CLUSTER_COMMAND -n ${lf_in_namespace} get ${lf_in_type} ${lf_in_cr_name} -o jsonpath='{.spec.license.accept}'"
+  local lf_accept=$($MY_CLUSTER_COMMAND -n ${lf_in_namespace} get ${lf_in_type} ${lf_in_cr_name} -o jsonpath='{.spec.license.accept}')
   decho $lf_tracelevel "accept=$lf_accept"
   if [[ $lf_accept == "true" ]]; then
     mylog info "license already accepted." 1>&2
   else
-    oc -n ${lf_in_namespace} patch ${lf_in_type} ${lf_in_cr_name} --type merge -p '{"spec": {"license": {"accept": true}}}'
+    $MY_CLUSTER_COMMAND -n ${lf_in_namespace} patch ${lf_in_type} ${lf_in_cr_name} --type merge -p '{"spec": {"license": {"accept": true}}}'
   fi
 
   trace_out $lf_tracelevel accept_license_fs
@@ -1834,7 +1834,7 @@ function create_operand_instance() {
 
   create_oc_resource "${lf_in_type}" "${lf_in_cr_name}" "${lf_in_source_directory}" "${lf_in_target_directory}" "${lf_in_yaml_file}" "$lf_in_namespace"
   
-  if oc -n $lf_in_namespace get $lf_in_type $lf_in_cr_name >/dev/null 2>&1; then
+  if $MY_CLUSTER_COMMAND -n $lf_in_namespace get $lf_in_type $lf_in_cr_name >/dev/null 2>&1; then
     wait_for_state  "$lf_in_type" "$lf_in_cr_name" "$lf_in_path" "$lf_in_state" "$lf_in_namespace"
   else
     mylog error "$lf_in_cr_name of type $lf_in_type in $lf_in_namespace namespace does not exist, will not wait for state"
@@ -1886,7 +1886,7 @@ function create_operator_instance() {
   local lf_timeout=$MY_MAX_TIMEOUT
   local lf_interval=$MY_DELAY_SECONDS
   while [[ $lf_timeout -gt 0 ]]; do
-    lf_operator_chl=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest -o json | \
+    lf_operator_chl=$($MY_CLUSTER_COMMAND -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest -o json | \
                       jq -r --arg op "$VAR_OPERATOR_NAME" --arg cs "$VAR_CATALOG_SOURCE_NAME" \
                       '.items[] | select(.metadata.name==$op and .status.catalogSource==$cs) | .status.defaultChannel')
     
@@ -1907,7 +1907,7 @@ function create_operator_instance() {
   local lf_timeout=$MY_MAX_TIMEOUT
   local lf_interval=$MY_DELAY_SECONDS
   while [[ $lf_timeout -gt 0 ]]; do
-    lf_csv_name=$(oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest -o json | \
+    lf_csv_name=$($MY_CLUSTER_COMMAND -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest -o json | \
                 jq -r --arg op "$VAR_OPERATOR_NAME" --arg cs "$VAR_CATALOG_SOURCE_NAME" \
                 '.items[] | select(.metadata.name==$op and .status.catalogSource==$cs) | .status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV')
     
@@ -1951,14 +1951,14 @@ function create_operator_instance() {
   lf_path="{.status.phase}"
   lf_state="Succeeded"
 
-  if oc -n $VAR_NAMESPACE get $lf_type $lf_resource >/dev/null 2>&1; then
+  if $MY_CLUSTER_COMMAND -n $VAR_NAMESPACE get $lf_type $lf_resource >/dev/null 2>&1; then
     wait_for_state "$lf_type" "$lf_resource" "$lf_path" "$lf_state" "$VAR_NAMESPACE"
   else
     mylog error "$lf_resource of type $lf_type in $VAR_NAMESPACE namespace does not exist, will not wait for state"
   fi
 
   # update the file containing the manifest
-  #oc -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest -o json > $MY_RAM_MANIFEST_FILE
+  #$MY_CLUSTER_COMMAND -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest -o json > $MY_RAM_MANIFEST_FILE
   
   unset VAR_OPERATOR_NAME VAR_NAMESPACE VAR_OPERATOR_CHL VAR_STRATEGY VAR_CATALOG_SOURCE_NAME
 

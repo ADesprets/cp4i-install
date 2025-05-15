@@ -249,7 +249,7 @@ function create_ccdt () {
 
   # Generate ccdt file
   mylog "info" "Creating   : ccdt file to use with MQCCDTURL env variabe. Located here : $MQCCDTURL"
-  export ROOTURL=$(oc get route -n $VAR_MQ_NAMESPACE "${VAR_QMGR}-ibm-mq-qm" -o jsonpath='{.spec.host}')
+  export ROOTURL=$($MY_CLUSTER_COMMAND get route -n $VAR_MQ_NAMESPACE "${VAR_QMGR}-ibm-mq-qm" -o jsonpath='{.spec.host}')
   decho $lf_tracelevel "VAR_CHL_UC=$VAR_CHL_UC|VAR_QMGR_UC=$VAR_QMGR_UC|ROOTURL=$ROOTURL"
 
   adapt_file "${sc_mq_kafka_demo_json_dir}" "${sc_mq_kafka_demo_workingdir}" ccdt.json

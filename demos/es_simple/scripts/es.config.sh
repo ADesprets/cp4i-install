@@ -11,7 +11,7 @@ function create_es() {
     create_operand_instance "EventStreams" "${VAR_ES_INSTANCE_NAME}" "${sc_tmpl_dir}" "${MY_ES_WORKINGDIR}" "ES-Capability.yaml" "$VAR_ES_NAMESPACE" "{.status.phase}" "Ready"
 
     # Creating Event Streams Service Account associated with the ES instance to enable monitoring
-    oc -n $VAR_ES_NAMESPACE adm policy add-cluster-role-to-user cluster-monitoring-view -z ${VAR_ES_SERVICE_ACCOUNT_NAME}
+    $MY_CLUSTER_COMMAND -n $VAR_ES_NAMESPACE adm policy add-cluster-role-to-user cluster-monitoring-view -z ${VAR_ES_SERVICE_ACCOUNT_NAME}
    
     # unset exported needed variables
     #unset VAR_ES_NAMESPACE

@@ -64,14 +64,14 @@ function Login2IBMCloud () {
 function Login2OpenshiftCluster () {
   SECONDS=0
 
-  if oc whoami > /dev/null 2>&1;then
+  if $MY_CLUSTER_COMMAND whoami > /dev/null 2>&1;then
     mylog info "user already logged to openshift cluster." 
   else
     mylog check "Login to cluster"
     # SB]20231208 The following command sets your command line context for the cluster and download the TLS certificates and permission files for the administrator.
     # more details here : https://cloud.ibm.com/docs/openshift?topic=openshift-access_cluster#access_public_se
     ibmcloud ks cluster config --cluster ${my_cluster_name} --admin
-    while ! oc login -u apikey -p $my_ic_apikey --server=$my_cluster_url > /dev/null;do
+    while ! $MY_CLUSTER_COMMAND login -u apikey -p $my_ic_apikey --server=$my_cluster_url > /dev/null;do
       mylog error "$(date) Fail to login to Cluster, retry in a while (login using web to unblock)" 1>&2
       sleep 30
     done

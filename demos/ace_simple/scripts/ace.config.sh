@@ -55,10 +55,10 @@ function create_secret_for_barauth () {
   mylog "info" "Creating   : secret to be used by barauth type"
 
   # Check if the secret already exists
-  if oc get secret ${VAR_ACE_BARAUTH_SECRET_NAME} -n=${VAR_ACE_NAMESPACE} >/dev/null 2>&1; then
+  if $MY_CLUSTER_COMMAND get secret ${VAR_ACE_BARAUTH_SECRET_NAME} -n=${VAR_ACE_NAMESPACE} >/dev/null 2>&1; then
     mylog "info" "Secret ${VAR_ACE_BARAUTH_SECRET_NAME} already exists"
   else
-    oc -n=${VAR_ACE_NAMESPACE} create secret generic ${VAR_ACE_BARAUTH_SECRET_NAME} --from-file=configuration=${lf_in_json_file} 
+    $MY_CLUSTER_COMMAND -n=${VAR_ACE_NAMESPACE} create secret generic ${VAR_ACE_BARAUTH_SECRET_NAME} --from-file=configuration=${lf_in_json_file} 
   fi
 
   trace_out $lf_tracelevel create_secret_for_barauth
@@ -93,10 +93,10 @@ function create_ace_config_barauth () {
   cat ${lf_in_file} | envsubst > ${lf_gen_file}
 
   # Check if the resource already exists
-  if oc get -n ${VAR_ACE_NAMESPACE} -f ${lf_gen_file} >/dev/null 2>&1; then
+  if $MY_CLUSTER_COMMAND get -n ${VAR_ACE_NAMESPACE} -f ${lf_gen_file} >/dev/null 2>&1; then
     mylog "info" "Resource already exists"
   else
-    oc -n ${VAR_ACE_NAMESPACE} apply -f ${lf_gen_file}
+    $MY_CLUSTER_COMMAND -n ${VAR_ACE_NAMESPACE} apply -f ${lf_gen_file}
   fi
 
   trace_out $lf_tracelevel create_ace_config_barauth
@@ -138,10 +138,10 @@ function create_ace_config_serverconf () {
 
   # Apply the generated yaml file
   # Check if the resource already exists
-  if oc get -n ${VAR_ACE_NAMESPACE} -f ${lf_gen_file} >/dev/null 2>&1; then
+  if $MY_CLUSTER_COMMAND get -n ${VAR_ACE_NAMESPACE} -f ${lf_gen_file} >/dev/null 2>&1; then
     mylog "info" "Resource already exists"
   else
-    oc -n ${VAR_ACE_NAMESPACE} apply -f ${lf_gen_file}
+    $MY_CLUSTER_COMMAND -n ${VAR_ACE_NAMESPACE} apply -f ${lf_gen_file}
   fi
 
   trace_out $lf_tracelevel create_ace_config_serverconf
@@ -226,10 +226,10 @@ function ace_run_all () {
     adapt_file "${sc_ace_tmpl_yaml_dir}" "${sc_generatedyamldir}" "integrationruntime.yaml"
   
     # Check if the resource already exists
-    if oc get -n ${VAR_ACE_NAMESPACE} -f -f "${sc_generatedyamldir}integrationruntime.yaml" >/dev/null 2>&1; then
+    if $MY_CLUSTER_COMMAND get -n ${VAR_ACE_NAMESPACE} -f -f "${sc_generatedyamldir}integrationruntime.yaml" >/dev/null 2>&1; then
       mylog "info" "Resource already exists"
     else
-      oc -n ${VAR_ACE_NAMESPACE} apply -f "${sc_generatedyamldir}integrationruntime.yaml"
+      $MY_CLUSTER_COMMAND -n ${VAR_ACE_NAMESPACE} apply -f "${sc_generatedyamldir}integrationruntime.yaml"
     fi
     
   done
@@ -247,7 +247,7 @@ function ace_init() {
   check_directory_exist_create "${VAR_ACE_WORKINGDIR}"
 
   # get the dns name of the cluster
-  export VAR_CLUSTER_DOMAIN=$(oc get dns cluster -o jsonpath='{.spec.baseDomain}')
+  export VAR_CLUSTER_DOMAIN=$($MY_CLUSTER_COMMAND get dns cluster -o jsonpath='{.spec.baseDomain}')
 
   create_project "${VAR_ACE_NAMESPACE}" "${VAR_ACE_NAMESPACE} project" "For App Connect" "${MY_RESOURCESDIR}" "${MY_ACE_WORKINGDIR}"
   

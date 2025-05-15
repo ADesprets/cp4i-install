@@ -40,8 +40,8 @@ rm my.p12
 # get Event Gateway connection address
 # -------------------------------------------------------------------
 echo "\n\033[1;33m querying openshift for gateway connection address...\033[0m"
-GATEWAY_ROUTE=$(oc get route -n $NAMESPACE -lapp.kubernetes.io/instance=$INSTANCE-egw -lapp.kubernetes.io/name=event-gateway -o name | grep gw-client)
-GATEWAY_ADDRESS=$(oc get $GATEWAY_ROUTE -n $NAMESPACE -o jsonpath="{.spec.host}")
+GATEWAY_ROUTE=$($MY_CLUSTER_COMMAND get route -n $NAMESPACE -lapp.kubernetes.io/instance=$INSTANCE-egw -lapp.kubernetes.io/name=event-gateway -o name | grep gw-client)
+GATEWAY_ADDRESS=$($MY_CLUSTER_COMMAND get $GATEWAY_ROUTE -n $NAMESPACE -o jsonpath="{.spec.host}")
 echo "gateway address: $GATEWAY_ADDRESS"
 
 

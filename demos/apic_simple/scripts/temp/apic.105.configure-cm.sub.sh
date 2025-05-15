@@ -262,66 +262,66 @@ function LoadAPI () {
 function Get_APIC_Infos() {
   # Retrieve the various routes for APIC components
   # API Manager URL
-  EP_API=$(oc -n ${apic_project} get route "${APIC_INSTANCE_NAME}-mgmt-platform-api" -o jsonpath="{.spec.host}")
+  EP_API=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-mgmt-platform-api" -o jsonpath="{.spec.host}")
   mylog info "API Manager URL. EP_API: ${EP_API}"
   
   # gwv6-gateway-manager
-  EP_GWD=$(oc -n ${apic_project} get route "${APIC_INSTANCE_NAME}-gw-gateway-manager" -o jsonpath="{.spec.host}")
+  EP_GWD=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-gw-gateway-manager" -o jsonpath="{.spec.host}")
   mylog info "EP_GWD: ${EP_GWD}"
   
   # gwv6-gateway
-  EP_GW=$(oc -n ${apic_project} get route "${APIC_INSTANCE_NAME}-gw-gateway" -o jsonpath="{.spec.host}")
+  EP_GW=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-gw-gateway" -o jsonpath="{.spec.host}")
   mylog info "Gateway v6. EP_GW: ${EP_GW}"
   
   # analytics-ai-endpoint
-  EP_AI=$(oc -n ${apic_project} get route "${APIC_INSTANCE_NAME}-a7s-ai-endpoint" -o jsonpath="{.spec.host}")
+  EP_AI=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-a7s-ai-endpoint" -o jsonpath="{.spec.host}")
   mylog info "Analytics AI Endpoint. EP_AI: ${EP_AI}"
   
   # portal-portal-director
-  EP_PADMIN=$(oc -n ${apic_project} get route "${APIC_INSTANCE_NAME}-ptl-portal-director" -o jsonpath="{.spec.host}")
+  EP_PADMIN=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-ptl-portal-director" -o jsonpath="{.spec.host}")
   mylog info "Portal Director. EP_PADMIN: ${EP_PADMIN}"
   
   # portal-portal-web
-  EP_PORTAL=$(oc -n ${apic_project} get route "${APIC_INSTANCE_NAME}-ptl-portal-web" -o jsonpath="{.spec.host}")
+  EP_PORTAL=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-ptl-portal-web" -o jsonpath="{.spec.host}")
   mylog info "Portal Web. EP_PORTAL: $EP_PORTAL"
   
   # Zen
-  if EP_ZEN=$(oc -n ${apic_project} get route cpd -o jsonpath="{.spec.host}" 2> /dev/null ); then
+  if EP_ZEN=$($MY_CLUSTER_COMMAND -n ${apic_project} get route cpd -o jsonpath="{.spec.host}" 2> /dev/null ); then
     mylog info "Zen. EP_ZEN: $EP_ZEN"
   fi
   
   # Cloud pak administration console
-  EP_CPADM=$(oc -n kube-public get cm ibmcloud-cluster-info -o jsonpath='{.data.cluster_address}')
+  EP_CPADM=$($MY_CLUSTER_COMMAND -n kube-public get cm ibmcloud-cluster-info -o jsonpath='{.data.cluster_address}')
   mylog info "Cloudpak admin console. EP_CPADM: ${EP_CPADM}"
   
   # APIC Gateway admin password
-  if APIC_GTW_PASSWORD_B64=$(oc -n ${apic_project} get secret ${APIC_INSTANCE_NAME}-gw-admin -o=jsonpath='{.data.password}' 2> /dev/null ); then
+  if APIC_GTW_PASSWORD_B64=$($MY_CLUSTER_COMMAND -n ${apic_project} get secret ${APIC_INSTANCE_NAME}-gw-admin -o=jsonpath='{.data.password}' 2> /dev/null ); then
     APIC_GTW_PASSWORD=$(echo $APIC_GTW_PASSWORD_B64 | base64 --decode)
     mylog info "APIC Gateway admin password. APIC_GTW_PASSWORD: $APIC_GTW_PASSWORD"
   fi
 
   # APIC Cloud Manager admin email
-  if APIC_CM_ADMIN_EMAIL_B64=$(oc -n ${apic_project} get secret ${APIC_INSTANCE_NAME}-mgmt-admin-pass -o=jsonpath='{.data.email}' 2> /dev/null ); then
+  if APIC_CM_ADMIN_EMAIL_B64=$($MY_CLUSTER_COMMAND -n ${apic_project} get secret ${APIC_INSTANCE_NAME}-mgmt-admin-pass -o=jsonpath='{.data.email}' 2> /dev/null ); then
     APIC_CM_ADMIN_EMAIL=$(echo $APIC_CM_ADMIN_EMAIL_B64 | base64 --decode)
     mylog info "APIC Cloud admin email. APIC_CM_ADMIN_EMAIL: ${APIC_CM_ADMIN_EMAIL}"
   fi
   
   # APIC Cloud Manager admin password
-  if APIC_CM_ADMIN_PASSWORD_B64=$(oc -n ${apic_project} get secret ${APIC_INSTANCE_NAME}-mgmt-admin-pass -o=jsonpath='{.data.password}' 2> /dev/null ); then
+  if APIC_CM_ADMIN_PASSWORD_B64=$($MY_CLUSTER_COMMAND -n ${apic_project} get secret ${APIC_INSTANCE_NAME}-mgmt-admin-pass -o=jsonpath='{.data.password}' 2> /dev/null ); then
     APIC_CM_ADMIN_PASSWORD=$(echo $APIC_CM_ADMIN_PASSWORD_B64 | base64 --decode)
     mylog info "APIC Cloud Manager admin password. APIC_CM_ADMIN_PASSWORD: $APIC_CM_ADMIN_PASSWORD"
   fi
   
   # Common service namespace
-  CS_NAMESPACE=$(oc -n $MY_OPENSHIFT_OPERATORS get CommonServices $MY_COMMONSERVICES_INSTANCE_NAME -o jsonpath='{.spec.servicesNamespace}') 
+  CS_NAMESPACE=$($MY_CLUSTER_COMMAND -n $MY_OPENSHIFT_OPERATORS get CommonServices $MY_COMMONSERVICES_INSTANCE_NAME -o jsonpath='{.spec.servicesNamespace}') 
   mylog info "Common service namespace. CS_NAMESPACE: $CS_NAMESPACE"
   
   # Cloud pak admin uid
-  CP_ADMIN_UID=$(oc -n "${CS_NAMESPACE}" get secret platform-auth-idp-credentials -o=jsonpath='{.data.admin_username}' | base64 --decode)
+  CP_ADMIN_UID=$($MY_CLUSTER_COMMAND -n "${CS_NAMESPACE}" get secret platform-auth-idp-credentials -o=jsonpath='{.data.admin_username}' | base64 --decode)
   mylog info "Cloud pak admin uid. CP_ADMIN_UID: $CP_ADMIN_UID" 1>&2
   
   # Cloud pak admin password
-  CP_ADMIN_PASSWORD=$(oc -n "${CS_NAMESPACE}" get secret platform-auth-idp-credentials -o=jsonpath='{.data.admin_password}' | base64 --decode)
+  CP_ADMIN_PASSWORD=$($MY_CLUSTER_COMMAND -n "${CS_NAMESPACE}" get secret platform-auth-idp-credentials -o=jsonpath='{.data.admin_password}' | base64 --decode)
   mylog info "Cloud pak admin password. CP_ADMIN_PASSWORD: ${CP_ADMIN_PASSWORD}"
   
   IAM_TOKEN=$(curl -kfs -X POST -H 'Content-Type: application/x-www-form-urlencoded' -H 'Accept: application/json' -d "grant_type=password&username=${CP_ADMIN_UID}&password=${CP_ADMIN_PASSWORD}&scope=openid" "https://${EP_CPADM}"/v1/auth/identitytoken | jq -r .access_token)
@@ -331,26 +331,26 @@ function Get_APIC_Infos() {
   CM_APIC_TOKEN=$(curl -kfs https://"${EP_API}"/v1/preauth/validateAuth -H "username: ${CP_ADMIN_UID}" -H "iam-token: ${IAM_TOKEN}" | jq -r .accessToken)
   mylog info "Cloud Manager apic token. CM_APIC_TOKEN: $CM_APIC_TOKEN" 1>&2
   
-  # APIC_NAMESPACE=$(oc get apiconnectcluster -A -o jsonpath='{..namespace}')
-  APIC_INSTANCE=$(oc -n "${apic_project}" get apiconnectcluster -o=jsonpath='{.items[0].metadata.name}')
+  # APIC_NAMESPACE=$($MY_CLUSTER_COMMAND get apiconnectcluster -A -o jsonpath='{..namespace}')
+  APIC_INSTANCE=$($MY_CLUSTER_COMMAND -n "${apic_project}" get apiconnectcluster -o=jsonpath='{.items[0].metadata.name}')
   mylog info "APIC Project and APIC Instance. APIC_NAMESPACE/APIC_INSTANCE: ${apic_project}/${APIC_INSTANCE_NAME}"
   
-  PLATFORM_API_URL=$(oc -n "${apic_project}" get apiconnectcluster "${APIC_INSTANCE_NAME}" -o=jsonpath='{.status.endpoints[?(@.name=="platformApi")].uri}')
+  PLATFORM_API_URL=$($MY_CLUSTER_COMMAND -n "${apic_project}" get apiconnectcluster "${APIC_INSTANCE_NAME}" -o=jsonpath='{.status.endpoints[?(@.name=="platformApi")].uri}')
   mylog info "APIC Platform URL. PLATFORM_API_URL: ${PLATFORM_API_URL}"
   
   if test ! -e "toolkit-linux.tgz";then
   	mylog info "Downloading toolkit" 1>&2
-    oc -n "${apic_project}" cp "$(oc -n "${apic_project}" get po -l app.kubernetes.io/name=client-downloads-server,app.kubernetes.io/part-of="${APIC_INSTANCE}" -o=jsonpath='{.items[0].metadata.name}')":dist/toolkit-linux.tgz toolkit-linux.tgz
+    $MY_CLUSTER_COMMAND -n "${apic_project}" cp "$($MY_CLUSTER_COMMAND -n "${apic_project}" get po -l app.kubernetes.io/name=client-downloads-server,app.kubernetes.io/part-of="${APIC_INSTANCE}" -o=jsonpath='{.items[0].metadata.name}')":dist/toolkit-linux.tgz toolkit-linux.tgz
     tar -xf toolkit-linux.tgz  && sudo mv apic-slim /usr/local/bin/apic
   fi
   
-  APIC_CRED=$(oc -n "${apic_project}" get secret ${APIC_INSTANCE_NAME}-mgmt-cli-cred  -o jsonpath='{.data.credential\.json}' | base64 --decode)
+  APIC_CRED=$($MY_CLUSTER_COMMAND -n "${apic_project}" get secret ${APIC_INSTANCE_NAME}-mgmt-cli-cred  -o jsonpath='{.data.credential\.json}' | base64 --decode)
   mylog info "APIC Credentials. APIC_CRED: ${APIC_CRED}"
   
   APIC_APIKEY=$(curl -ks --fail -X POST "${PLATFORM_API_URL}"cloud/api-keys -H "Authorization: Bearer ${ZEN_TOKEN}" -H "Accept: application/json" -H "Content-Type: application/json" -d '{"client_type":"toolkit","description":"Tookit API key"}' | jq -r .api_key)
   decho $lf_tracelevel "APIC Key. APIC_APIKEY: ${APIC_APIKEY}"
   
-  APIM_ENDPOINT=$(oc -n "${apic_project}" get mgmt "${APIC_INSTANCE_NAME}-mgmt" -o jsonpath='{.status.zenRoute}')
+  APIM_ENDPOINT=$($MY_CLUSTER_COMMAND -n "${apic_project}" get mgmt "${APIC_INSTANCE_NAME}-mgmt" -o jsonpath='{.status.zenRoute}')
   mylog info "APIC Management Endpoint. APIM_ENDPOINT: ${APIM_ENDPOINT}"
   
   # ./apic login --context admin --server https://"${APIM_ENDPOINT}" --sso --apiKey "${APIC_APIKEY}"
@@ -449,51 +449,51 @@ read_config_file "${scriptdir}apic.properties"
 # Get_APIC_Infos
 # Retrieve the various routes for APIC components
 # API Manager URL
-EP_API=$(oc -n ${apic_project} get route "${APIC_INSTANCE_NAME}-mgmt-platform-api" -o jsonpath="{.spec.host}")
+EP_API=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-mgmt-platform-api" -o jsonpath="{.spec.host}")
 mylog info "EP_API: ${EP_API}"
 # gwv6-gateway-manager
-EP_GWD=$(oc -n ${apic_project} get route "${APIC_INSTANCE_NAME}-gw-gateway-manager" -o jsonpath="{.spec.host}")
+EP_GWD=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-gw-gateway-manager" -o jsonpath="{.spec.host}")
 # gwv6-gateway
-EP_GW=$(oc -n ${apic_project} get route "${APIC_INSTANCE_NAME}-gw-gateway" -o jsonpath="{.spec.host}")
+EP_GW=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-gw-gateway" -o jsonpath="{.spec.host}")
 mylog info "EP_GW: ${EP_GW}"
 # analytics-ai-endpoint
-EP_AI=$(oc -n ${apic_project} get route "${APIC_INSTANCE_NAME}-a7s-ai-endpoint" -o jsonpath="{.spec.host}")
+EP_AI=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-a7s-ai-endpoint" -o jsonpath="{.spec.host}")
 # portal-portal-director
-EP_PADMIN=$(oc -n ${apic_project} get route "${APIC_INSTANCE_NAME}-ptl-portal-director" -o jsonpath="{.spec.host}")
+EP_PADMIN=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-ptl-portal-director" -o jsonpath="{.spec.host}")
 # portal-portal-web
-EP_PORTAL=$(oc -n ${apic_project} get route "${APIC_INSTANCE_NAME}-ptl-portal-web" -o jsonpath="{.spec.host}")
+EP_PORTAL=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-ptl-portal-web" -o jsonpath="{.spec.host}")
 mylog info "EP_PORTAL: $EP_PORTAL"
 # Zen
-if EP_ZEN=$(oc -n ${apic_project} get route cpd -o jsonpath="{.spec.host}" 2> /dev/null ); then
+if EP_ZEN=$($MY_CLUSTER_COMMAND -n ${apic_project} get route cpd -o jsonpath="{.spec.host}" 2> /dev/null ); then
   mylog info "EP_PORTAL: $EP_ZEN"
 fi
 # Cloud pak administration console
-EP_CPADM=$(oc -n kube-public get cm ibmcloud-cluster-info -o jsonpath='{.data.cluster_address}')
+EP_CPADM=$($MY_CLUSTER_COMMAND -n kube-public get cm ibmcloud-cluster-info -o jsonpath='{.data.cluster_address}')
 mylog info "EP_CPADM: ${EP_CPADM}"
 # APIC Gateway admin password
-if APIC_GTW_PASSWORD_B64=$(oc -n ${apic_project} get secret ${APIC_INSTANCE_NAME}-gw-admin -o=jsonpath='{.data.password}' 2> /dev/null ); then
+if APIC_GTW_PASSWORD_B64=$($MY_CLUSTER_COMMAND -n ${apic_project} get secret ${APIC_INSTANCE_NAME}-gw-admin -o=jsonpath='{.data.password}' 2> /dev/null ); then
   APIC_GTW_PASSWORD=$(echo $APIC_GTW_PASSWORD_B64 | base64 --decode)
   mylog info "APIC_GTW_PASSWORD: $APIC_GTW_PASSWORD"
 fi
 
-EP_APIC_CM=$(oc -n ${apic_project} get route "${APIC_INSTANCE_NAME}-mgmt-admin" -o jsonpath="{.spec.host}")
+EP_APIC_CM=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-mgmt-admin" -o jsonpath="{.spec.host}")
 mylog info "Cloud Manager endpoint: $EP_APIC_CM"
-EP_APIC_MGR=$(oc -n ${apic_project} get route "${APIC_INSTANCE_NAME}-mgmt-api-manager" -o jsonpath="{.spec.host}")
+EP_APIC_MGR=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-mgmt-api-manager" -o jsonpath="{.spec.host}")
 mylog info "API Manager endpoint: $EP_APIC_MGR"
 
 # APIC Cloud Manager admin password
-if APIC_CM_ADMIN_PASSWORD_B64=$(oc -n ${apic_project} get secret ${APIC_INSTANCE_NAME}-mgmt-admin-pass -o=jsonpath='{.data.password}' 2> /dev/null ); then
+if APIC_CM_ADMIN_PASSWORD_B64=$($MY_CLUSTER_COMMAND -n ${apic_project} get secret ${APIC_INSTANCE_NAME}-mgmt-admin-pass -o=jsonpath='{.data.password}' 2> /dev/null ); then
   APIC_CM_ADMIN_PASSWORD=$(echo $APIC_CM_ADMIN_PASSWORD_B64 | base64 --decode)
   mylog info "APIC_CM_ADMIN_PASSWORD: $APIC_CM_ADMIN_PASSWORD"
 fi
 # Common service namespace
-CS_NAMESPACE=$(oc get commonservice -A -o jsonpath='{..namespace}' | awk '{print $1}')
+CS_NAMESPACE=$($MY_CLUSTER_COMMAND get commonservice -A -o jsonpath='{..namespace}' | awk '{print $1}')
 # Cloud pak admin password
-CP_ADMIN_PASSWORD=$(oc -n "${CS_NAMESPACE}" get secret platform-auth-idp-credentials -o=jsonpath='{.data.admin_password}' | base64 --decode)
+CP_ADMIN_PASSWORD=$($MY_CLUSTER_COMMAND -n "${CS_NAMESPACE}" get secret platform-auth-idp-credentials -o=jsonpath='{.data.admin_password}' | base64 --decode)
 mylog info "CP_ADMIN_PASSWORD: ${CP_ADMIN_PASSWORD}"
 
 # Cloud pak admin uid (should be admin)
-CP_ADMIN_UID=$(oc -n "${CS_NAMESPACE}" get secret platform-auth-idp-credentials -o=jsonpath='{.data.admin_username}' | base64 --decode)
+CP_ADMIN_UID=$($MY_CLUSTER_COMMAND -n "${CS_NAMESPACE}" get secret platform-auth-idp-credentials -o=jsonpath='{.data.admin_username}' | base64 --decode)
 IAM_TOKEN=$(curl -kfs -X POST -H 'Content-Type: application/x-www-form-urlencoded' -H 'Accept: application/json' -d "grant_type=password&username=${CP_ADMIN_UID}&password=${CP_ADMIN_PASSWORD}&scope=openid" "https://${EP_CPADM}"/v1/auth/identitytoken | jq -r .access_token)
 # mylog warn "IAM_TOKEN: $IAM_TOKEN" 1>&2
 ZEN_TOKEN=$(curl -kfs https://"${EP_ZEN}"/v1/preauth/validateAuth -H "username: ${CP_ADMIN_UID}" -H "iam-token: ${IAM_TOKEN}" | jq -r .accessToken)
@@ -501,19 +501,19 @@ ZEN_TOKEN=$(curl -kfs https://"${EP_ZEN}"/v1/preauth/validateAuth -H "username: 
 CM_APIC_TOKEN=$(curl -kfs https://"${EP_API}"/v1/preauth/validateAuth -H "username: ${CP_ADMIN_UID}" -H "iam-token: ${IAM_TOKEN}" | jq -r .accessToken)
 # mylog warn "CM_APIC_TOKEN: $CM_APIC_TOKEN" 1>&2
 
-# APIC_NAMESPACE=$(oc get apiconnectcluster -A -o jsonpath='{..namespace}')
-APIC_INSTANCE=$(oc -n "${apic_project}" get apiconnectcluster -o=jsonpath='{.items[0].metadata.name}')
+# APIC_NAMESPACE=$($MY_CLUSTER_COMMAND get apiconnectcluster -A -o jsonpath='{..namespace}')
+APIC_INSTANCE=$($MY_CLUSTER_COMMAND -n "${apic_project}" get apiconnectcluster -o=jsonpath='{.items[0].metadata.name}')
 mylog info "APIC_NAMESPACE/APIC_INSTANCE: ${apic_project}/${APIC_INSTANCE_NAME}"
 
-PLATFORM_API_URL=$(oc -n "${apic_project}" get apiconnectcluster "${APIC_INSTANCE_NAME}" -o=jsonpath='{.status.endpoints[?(@.name=="platformApi")].uri}')
+PLATFORM_API_URL=$($MY_CLUSTER_COMMAND -n "${apic_project}" get apiconnectcluster "${APIC_INSTANCE_NAME}" -o=jsonpath='{.status.endpoints[?(@.name=="platformApi")].uri}')
 
 if test ! -e "toolkit-linux.tgz";then
 	mylog info "Downloading toolkit" 1>&2
-  oc -n "${apic_project}" cp "$(oc -n "${apic_project}" get po -l app.kubernetes.io/name=client-downloads-server,app.kubernetes.io/part-of="${APIC_INSTANCE}" -o=jsonpath='{.items[0].metadata.name}')":dist/toolkit-linux.tgz toolkit-linux.tgz
+  $MY_CLUSTER_COMMAND -n "${apic_project}" cp "$($MY_CLUSTER_COMMAND -n "${apic_project}" get po -l app.kubernetes.io/name=client-downloads-server,app.kubernetes.io/part-of="${APIC_INSTANCE}" -o=jsonpath='{.items[0].metadata.name}')":dist/toolkit-linux.tgz toolkit-linux.tgz
   tar -xf toolkit-linux.tgz  && mv apic-slim apic
 fi
 
-APIC_CRED=$(oc -n "${apic_project}" get secret ${APIC_INSTANCE_NAME}-mgmt-cli-cred  -o jsonpath='{.data.credential\.json}' | base64 --decode)
+APIC_CRED=$($MY_CLUSTER_COMMAND -n "${apic_project}" get secret ${APIC_INSTANCE_NAME}-mgmt-cli-cred  -o jsonpath='{.data.credential\.json}' | base64 --decode)
 mylog info "APIC_CRED: ${APIC_CRED}"
 
 APIC_APIKEY=$(curl -ks --fail -X POST "${PLATFORM_API_URL}"cloud/api-keys -H "Authorization: Bearer ${ZEN_TOKEN}" -H "Accept: application/json" -H "Content-Type: application/json" -d '{"client_type":"toolkit","description":"Tookit API key"}' | jq -r .api_key)
