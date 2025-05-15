@@ -1,19 +1,19 @@
-<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/26.2.2 Chrome/134.0.6998.178 Electron/35.1.2 Safari/537.36" version="26.2.2">
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/27.0.2 Chrome/134.0.6998.205 Electron/35.3.0 Safari/537.36" version="27.0.2" pages="2">
   <diagram name="Page-1" id="YvG3G-DKzLpsywxGTCxs">
-    <mxGraphModel dx="1426" dy="828" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+    <mxGraphModel dx="972" dy="684" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
         <mxCell id="Ef5qG8waVvEdwabGkqX2-1" value="namespace" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
           <mxGeometry x="200" y="450" width="370" height="270" as="geometry" />
         </mxCell>
-        <mxCell id="Ef5qG8waVvEdwabGkqX2-2" value="QM :&amp;nbsp;&lt;div&gt;Single Instance&lt;/div&gt;&lt;div&gt;Authenticated&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
+        <mxCell id="Ef5qG8waVvEdwabGkqX2-2" value="QM : &amp;lt;NS&amp;gt;_QMS&lt;div&gt;Single Instance&lt;/div&gt;&lt;div&gt;Authenticated&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
           <mxGeometry x="210" y="490" width="160" height="124.01549999999999" as="geometry" />
         </mxCell>
         <mxCell id="Ef5qG8waVvEdwabGkqX2-3" value="MQ Operator" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=middle;" parent="1" vertex="1">
           <mxGeometry x="210" y="680" width="350" height="30" as="geometry" />
         </mxCell>
-        <mxCell id="Ef5qG8waVvEdwabGkqX2-4" value="QM :&amp;nbsp;&lt;div&gt;MQ Native HA&lt;/div&gt;&lt;div&gt;Authenticated&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
+        <mxCell id="Ef5qG8waVvEdwabGkqX2-4" value="QM : &amp;lt;NS&amp;gt;_QMN&amp;nbsp;&lt;div&gt;MQ Native HA&lt;/div&gt;&lt;div&gt;Authenticated&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
           <mxGeometry x="400" y="490" width="160" height="124.01549999999999" as="geometry" />
         </mxCell>
         <mxCell id="Ef5qG8waVvEdwabGkqX2-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="Ef5qG8waVvEdwabGkqX2-5" target="Ef5qG8waVvEdwabGkqX2-7" edge="1">
@@ -43,29 +43,144 @@
         <mxCell id="Ef5qG8waVvEdwabGkqX2-13" value="Java client" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="410" y="300" width="120" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="Ef5qG8waVvEdwabGkqX2-16" value="is signed by" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="Ef5qG8waVvEdwabGkqX2-14" target="Ef5qG8waVvEdwabGkqX2-15" edge="1">
-          <mxGeometry relative="1" as="geometry" />
+        <mxCell id="Ef5qG8waVvEdwabGkqX2-14" value="Certificate&lt;div&gt;&amp;lt;ns&amp;gt;-mq-&amp;lt;qmgr&amp;gt;-root&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
+          <mxGeometry x="1010" y="240" width="129.921" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="Ef5qG8waVvEdwabGkqX2-14" value="Certificate&lt;div&gt;Server Certificate&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
-          <mxGeometry x="850" y="471" width="120" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="Ef5qG8waVvEdwabGkqX2-15" value="Certificate&lt;div&gt;CA Certificate&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
-          <mxGeometry x="850" y="591" width="120" height="60" as="geometry" />
+        <mxCell id="Ef5qG8waVvEdwabGkqX2-15" value="Certificate&lt;div&gt;&amp;lt;ns&amp;gt;-mq-&amp;lt;qmgr&amp;gt;-int&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
+          <mxGeometry x="1010" y="330" width="129.921" height="60" as="geometry" />
         </mxCell>
         <mxCell id="Ef5qG8waVvEdwabGkqX2-17" value="&lt;b&gt;&lt;font style=&quot;font-size: 48px;&quot;&gt;mq simple scenario&lt;/font&gt;&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
           <mxGeometry x="300" y="120" width="620" height="90" as="geometry" />
         </mxCell>
-        <mxCell id="ZcEfLKHSkxBztD1j7E4C-1" value="Config Map&lt;div&gt;&lt;div&gt;qmgr_cm_&lt;b&gt;ini&lt;/b&gt;.yaml&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+        <mxCell id="ZcEfLKHSkxBztD1j7E4C-1" value="Config Map&lt;div&gt;&lt;div&gt;qmgr_cm_&lt;b&gt;ini&lt;/b&gt;.yaml&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
           <mxGeometry x="620" y="471" width="157.48" height="47.244" as="geometry" />
         </mxCell>
-        <mxCell id="ZcEfLKHSkxBztD1j7E4C-2" value="Config Map&lt;div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;qmgr_cm_mqsc.yaml&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+        <mxCell id="ZcEfLKHSkxBztD1j7E4C-2" value="Config Map&lt;div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;qmgr_cm_mqsc.yaml&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
           <mxGeometry x="620" y="538" width="157.48" height="47.244" as="geometry" />
         </mxCell>
-        <mxCell id="ZcEfLKHSkxBztD1j7E4C-3" value="Config Map&lt;div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;qmgr_cm_mqsc_auth.yaml&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+        <mxCell id="ZcEfLKHSkxBztD1j7E4C-3" value="Config Map&lt;div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;qmgr_cm_mqsc_auth.yaml&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
           <mxGeometry x="620" y="605" width="157.48" height="47.244" as="geometry" />
         </mxCell>
-        <mxCell id="ZcEfLKHSkxBztD1j7E4C-4" value="Config Map&lt;div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;qmgr_cm_web.yaml&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+        <mxCell id="ZcEfLKHSkxBztD1j7E4C-4" value="Config Map&lt;div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;qmgr_cm_web.yaml&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
           <mxGeometry x="620" y="671.38" width="157.48" height="47.244" as="geometry" />
+        </mxCell>
+        <mxCell id="CEzfZL6U4hW8-qowPfR6-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="CEzfZL6U4hW8-qowPfR6-2" target="Ef5qG8waVvEdwabGkqX2-14">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="CEzfZL6U4hW8-qowPfR6-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="CEzfZL6U4hW8-qowPfR6-2">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="810.0000000000002" y="270" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="CEzfZL6U4hW8-qowPfR6-2" value="&lt;div&gt;Issuer&lt;/div&gt;&lt;div&gt;&amp;lt;ns&amp;gt;-mq-&amp;lt;qmgr&amp;gt;-root&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="850" y="240" width="129.921" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="CEzfZL6U4hW8-qowPfR6-9" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="CEzfZL6U4hW8-qowPfR6-3" target="CEzfZL6U4hW8-qowPfR6-6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="CEzfZL6U4hW8-qowPfR6-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="CEzfZL6U4hW8-qowPfR6-3" target="Ef5qG8waVvEdwabGkqX2-15">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="CEzfZL6U4hW8-qowPfR6-12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="CEzfZL6U4hW8-qowPfR6-3" target="CEzfZL6U4hW8-qowPfR6-11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="CEzfZL6U4hW8-qowPfR6-3" value="&lt;div&gt;Issuer&lt;/div&gt;&lt;div&gt;&amp;lt;ns&amp;gt;-mq-&amp;lt;qmgr&amp;gt;-int&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="850" y="330" width="129.921" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="CEzfZL6U4hW8-qowPfR6-6" value="&lt;div&gt;Secret&lt;/div&gt;&lt;div&gt;&amp;lt;ns&amp;gt;-mq-&amp;lt;qmgr&amp;gt;-root&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="680" y="240" width="129.921" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="CEzfZL6U4hW8-qowPfR6-11" value="&lt;div&gt;Secret&lt;/div&gt;&lt;div&gt;&amp;lt;ns&amp;gt;-mq-&amp;lt;qmgr&amp;gt;-root&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="680" y="330" width="129.921" height="60" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="j87sD7DXutMpnN5hyiEh" name="Page-2">
+    <mxGraphModel dx="1181" dy="686" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="uRoWsg4P0xh4N7x3yXwX-3" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="iEbrVtBJkSvb1MeQErQc-1" target="iEbrVtBJkSvb1MeQErQc-5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="iEbrVtBJkSvb1MeQErQc-1" value="amqsmhac/amqsphac" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="340" y="250.47" width="120.07849999999999" height="29.53" as="geometry" />
+        </mxCell>
+        <mxCell id="iEbrVtBJkSvb1MeQErQc-2" value="C:\IBM\mq\tools\c\Samples" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="120" y="250" width="150" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="iEbrVtBJkSvb1MeQErQc-3" value="AKS" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="340" y="500.47" width="520" height="29.53" as="geometry" />
+        </mxCell>
+        <mxCell id="iEbrVtBJkSvb1MeQErQc-4" value="MQ Deployment" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="340" y="460" width="520" height="29.53" as="geometry" />
+        </mxCell>
+        <mxCell id="uRoWsg4P0xh4N7x3yXwX-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;dashed=1;dashPattern=8 8;" edge="1" parent="1" source="iEbrVtBJkSvb1MeQErQc-5" target="iEbrVtBJkSvb1MeQErQc-9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="iEbrVtBJkSvb1MeQErQc-5" value="QMGR - Native HA&lt;div&gt;Pod 1 running&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="340" y="350" width="120.07849999999999" height="29.53" as="geometry" />
+        </mxCell>
+        <mxCell id="iEbrVtBJkSvb1MeQErQc-6" value="Mise à jour toutes les semaines de façon brute AKS" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontColor=light-dark(#fe0000, #ededed);" vertex="1" parent="1">
+          <mxGeometry x="40" y="500" width="290" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="iEbrVtBJkSvb1MeQErQc-7" value="Pod life cycle?&amp;nbsp;&lt;div&gt;Drain included ?&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="150" y="349.77" width="150" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="iEbrVtBJkSvb1MeQErQc-9" value="Worker 1" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="340" y="410" width="120.07849999999999" height="29.53" as="geometry" />
+        </mxCell>
+        <mxCell id="iEbrVtBJkSvb1MeQErQc-10" value="Worker 2" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="469.96075" y="410" width="120.07849999999999" height="29.53" as="geometry" />
+        </mxCell>
+        <mxCell id="iEbrVtBJkSvb1MeQErQc-11" value="Worker 3" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="609.96075" y="410" width="120.07849999999999" height="29.53" as="geometry" />
+        </mxCell>
+        <mxCell id="uRoWsg4P0xh4N7x3yXwX-12" value="1" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="iEbrVtBJkSvb1MeQErQc-12" target="iEbrVtBJkSvb1MeQErQc-5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="uRoWsg4P0xh4N7x3yXwX-16" value="2 au bout de 20 s" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="iEbrVtBJkSvb1MeQErQc-12" target="uRoWsg4P0xh4N7x3yXwX-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="iEbrVtBJkSvb1MeQErQc-12" value="MQ Client (Buffer)" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="500" y="250.47" width="230" height="29.53" as="geometry" />
+        </mxCell>
+        <mxCell id="uRoWsg4P0xh4N7x3yXwX-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;dashed=1;dashPattern=8 8;strokeColor=default;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=default;labelBackgroundColor=default;endArrow=classic;" edge="1" parent="1" source="uRoWsg4P0xh4N7x3yXwX-1" target="iEbrVtBJkSvb1MeQErQc-11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="uRoWsg4P0xh4N7x3yXwX-1" value="QMGR - Native HA&lt;div&gt;Pod 3 ready&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="610" y="350" width="120" height="29.53" as="geometry" />
+        </mxCell>
+        <mxCell id="uRoWsg4P0xh4N7x3yXwX-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;dashed=1;dashPattern=8 8;strokeColor=default;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=default;labelBackgroundColor=default;endArrow=classic;" edge="1" parent="1" source="uRoWsg4P0xh4N7x3yXwX-2" target="iEbrVtBJkSvb1MeQErQc-10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="uRoWsg4P0xh4N7x3yXwX-2" value="QMGR - Native HA&lt;div&gt;Pod 2 ready&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="470" y="350" width="120" height="29.53" as="geometry" />
+        </mxCell>
+        <mxCell id="uRoWsg4P0xh4N7x3yXwX-4" value="Perte Worker 1&lt;div&gt;Pod 2 devient running au bout de ...&lt;/div&gt;&lt;div&gt;Client reconnect sur le Pod 2 au bout de ...&amp;nbsp;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;(Pas de contrainte sur le client au niveau IP controlé par AKS/GLB)&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;Pod 1 reschedulé sur worker 4&lt;/div&gt;" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="80" y="560" width="780" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="uRoWsg4P0xh4N7x3yXwX-5" value="Worker 4" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="740" y="410" width="120.07849999999999" height="29.53" as="geometry" />
+        </mxCell>
+        <mxCell id="uRoWsg4P0xh4N7x3yXwX-11" value="Etat initial" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="540" y="130" width="150" height="20.01" as="geometry" />
+        </mxCell>
+        <mxCell id="uRoWsg4P0xh4N7x3yXwX-14" value="10000 req/s" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="uRoWsg4P0xh4N7x3yXwX-13" target="iEbrVtBJkSvb1MeQErQc-12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="uRoWsg4P0xh4N7x3yXwX-13" value="App" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="500" y="180" width="230" height="29.53" as="geometry" />
+        </mxCell>
+        <mxCell id="uRoWsg4P0xh4N7x3yXwX-17" value="Combien de message peut il bufferiser? taille/nombre/temps?" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="910" y="250.01" width="200" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="uRoWsg4P0xh4N7x3yXwX-18" value="Attention:&lt;div&gt;Définir indisponibilité versus perte de messages?&lt;/div&gt;" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="240" y="720" width="440" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="uRoWsg4P0xh4N7x3yXwX-19" value="Harness" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="740" y="250.47" width="120" height="29.53" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

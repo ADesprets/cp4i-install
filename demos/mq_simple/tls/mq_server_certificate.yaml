@@ -1,26 +1,33 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: ${VAR_CERT}
-  namespace: ${VAR_MQ_NAMESPACE}
+  name: ${VAR_CERT_NAME}
+  namespace: ${VAR_CERT_NAMESPACE}
 spec:
-  commonName: "${VAR_COMMON_NAME}"
+  commonName: "${VAR_CERT_COMMON_NAME}"
   dnsNames:
-    - "${VAR_SAN_DNS}"
+    - "${VAR_CERT_SAN_EXT_DNS}"
+    - "${VAR_CERT_SAN_LOCAL_DNS}"
   duration: 8760h
   issuerRef:
-    name: ${VAR_QMGR}-issuer
+    name: ${VAR_CERT_ISSUER_REF}
     kind: Issuer
   privateKey:
     algorithm: RSA
     size: 2048
   renewBefore: 720h
-  secretName: ${VAR_CERT}-secret
+  secretName: ${VAR_CERT}
   subject:
     organizations:
-      - "${MY_LDAP_ORGANISATION}"
+      - "${VAR_CERT_ORGANISATION}"
     organizationalUnits:
-      - "${MY_LDAP_ORGANISATION}_MQ"
+      - "${VAR_CERT_ORGANISATION}_PKI"
+    countries:
+      - "${VAR_CERT_COUNTRY}"
+    localities:
+      - "${VAR_CERT_LOCALITY}"
+    provinces:
+      - "${VAR_CERT_STATE}"
   usages:
     - server auth
     - client auth

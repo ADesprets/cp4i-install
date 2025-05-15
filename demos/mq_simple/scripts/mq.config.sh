@@ -3,15 +3,85 @@
 # Script using cert manager
 #####################################################################################################################
 
+#############################################################
+function create_root_issuer () {
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel create_root_issuer
+
+  export VAR_ISSUER="${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR}-self-signed"
+  export VAR_NAMESPACE=${VAR_MQ_NAMESPACE}
+
+  create_oc_resource "Issuer" "${VAR_ISSUER}" "${MY_MQ_SIMPLE_DEMODIR}tls/" "${MY_MQ_WORKINGDIR}" "root_issuer.yaml" "${VAR_MQ_NAMESPACE}"
+
+  unset VAR_ISSUER VAR_NAMESPACE
+
+  trace_out $lf_tracelevel create_root_issuer
+}
 
 #############################################################
-function create_issuer () {
+function create_root_certificate () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_issuer
-  
-  create_oc_resource "Issuer" "${VAR_QMGR}-issuer" "${MY_MQ_SIMPLE_DEMODIR}tls/" "$MY_MQ_WORKINGDIR" "issuer.yaml" "${VAR_MQ_NAMESPACE}"
+  trace_in $lf_tracelevel create_root_certificate
 
-   trace_out $lf_tracelevel create_issuer
+  export VAR_CERT_NAME=${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR}-root
+  export VAR_CERT_NAMESPACE=${VAR_MQ_NAMESPACE}
+  export VAR_CERT_ISSUER_REF="${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR}-self-signed"
+  export VAR_CERT_SECRET_NAME=${VAR_CERT_NAME}-secret
+  export VAR_CERT_COMMON_NAME=${VAR_CERT_NAME}
+  export VAR_CERT_ORGANISATION=${MY_CERT_ORGANISATION}
+  export VAR_CERT_COUNTRY=${MY_CERT_COUNTRY}
+  export VAR_CERT_LOCALITY=${MY_CERT_LOCALITY}
+  export VAR_CERT_STATE=${MY_CERT_STATE}
+  # export VAR_CERT_SERIAL=$(uuidgen)
+
+  create_oc_resource "Certificate" "${VAR_CERT_NAME}" "${MY_MQ_SIMPLE_DEMODIR}tls/" "${MY_MQ_WORKINGDIR}" "ca_certificate.yaml" "${VAR_MQ_NAMESPACE}"
+
+  unset VAR_CERT_NAME VAR_CERT_NAMESPACE VAR_CERT_ISSUER_REF VAR_CERT_COMMON_NAME VAR_CERT_ORGANISATION VAR_CERT_COUNTRY VAR_CERT_LOCALITY VAR_CERT_STATE
+
+  trace_out $lf_tracelevel create_root_certificate
+}
+
+#############################################################
+function create_intermediate_issuer () {
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel create_intermediate_issuer
+
+  export VAR_ISSUER="${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR}-int-issuer"
+  export VAR_CERT_NAMESPACE=${VAR_MQ_NAMESPACE}
+  export VAR_SECRET_REF=${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR}-root-secret
+  
+  create_oc_resource "Issuer" "${VAR_ISSUER}" "${MY_MQ_SIMPLE_DEMODIR}tls/" "$MY_MQ_WORKINGDIR" "intermediate_issuer.yaml" "${VAR_MQ_NAMESPACE}"
+
+  unset VAR_CERT_NAME VAR_CERT_NAMESPACE VAR_SECRET_REF
+
+  trace_out $lf_tracelevel create_intermediate_issuer
+}
+
+#############################################################
+function create_leaf_certificate () {
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel create_leaf_certificate
+
+  # get the dns name of the cluster
+  local lf_cluster_domain=$(oc get dns cluster -o jsonpath='{.spec.baseDomain}')
+  
+  export VAR_CERT_NAME=${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR}-server
+  export VAR_CERT_NAMESPACE=${VAR_MQ_NAMESPACE}
+  export VAR_CERT_COMMON_NAME=${VAR_CERT_NAME}
+  export VAR_CERT_SAN_EXT_DNS="*.${lf_cluster_domain}"
+  export VAR_CERT_SAN_LOCAL_DNS="${VAR_QMGR}-ibm-mq.${VAR_MQ_NAMESPACE}.svc.cluster.local"
+  export VAR_CERT_ISSUER_REF=${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR}-int-issuer
+  export VAR_CERT_ORGANISATION=${MY_CERT_ORGANISATION}
+  export VAR_CERT_COUNTRY=${MY_CERT_COUNTRY}
+  export VAR_CERT_LOCALITY=${MY_CERT_LOCALITY}
+  export VAR_CERT_STATE=${MY_CERT_STATE}
+  # export VAR_CERT_SERIAL=$(uuidgen)
+
+  create_oc_resource "Certificate" "${VAR_CERT_NAME}" "${MY_MQ_SIMPLE_DEMODIR}tls/" "${MY_MQ_WORKINGDIR}" "mq_server_certificate.yaml" "${VAR_MQ_NAMESPACE}"
+
+  unset VAR_CERT_NAME VAR_CERT_NAMESPACE VAR_CERT_COMMON_NAME VAR_CERT_SAN_EXT_DNS VAR_CERT_SAN_LOCAL_DNS VAR_CERT_ISSUER_REF VAR_CERT_ORGANISATION VAR_CERT_COUNTRY VAR_CERT_LOCALITY VAR_CERT_STATE
+  
+  trace_out $lf_tracelevel create_leaf_certificate
 }
 
 #############################################################
@@ -33,9 +103,10 @@ function create_qmgr_configmaps () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel create_qmgr_configmaps
 
-  create_oc_resource "ConfigMap" "$VAR_MQSC_OBJECTS_CM" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}" "qmgr_cm_mqsc.yaml" "$VAR_MQ_NAMESPACE"
-  create_oc_resource "ConfigMap" "$VAR_AUTH_CM" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}" "qmgr_cm_mqsc_auth.yaml" "$VAR_MQ_NAMESPACE"
-  create_oc_resource "ConfigMap" "$VAR_WEBCONFIG_CM" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}" "qmgr_cm_web.yaml" "$VAR_MQ_NAMESPACE"
+  create_oc_resource "ConfigMap" "${VAR_INI_CM}" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}" "qmgr_cm_ini.yaml" "$VAR_MQ_NAMESPACE"
+  create_oc_resource "ConfigMap" "${VAR_MQSC_OBJECTS_CM}" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}" "qmgr_cm_mqsc.yaml" "$VAR_MQ_NAMESPACE"
+  create_oc_resource "ConfigMap" "${VAR_AUTH_CM}" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}" "qmgr_cm_mqsc_auth.yaml" "$VAR_MQ_NAMESPACE"
+  create_oc_resource "ConfigMap" "${VAR_WEBCONFIG_CM}" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}" "qmgr_cm_web.yaml" "$VAR_MQ_NAMESPACE"
 
   trace_out $lf_tracelevel create_qmgr_configmaps
 }
@@ -212,16 +283,17 @@ function mq_run_all () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel mq_run_all
   
-  create_issuer
+  # Create tls artifacts
+  create_root_issuer
+  create_root_certificate
+  create_intermediate_issuer
+  create_leaf_certificate
 
-  create_qmgr_certificate
+  # create_pki_cr
 
   create_qmgr_configmaps
 
   create_qmgr_route
-
-  # Create tls artifacts
-  create_pki_cr
 
   create_qmgr
 
@@ -239,10 +311,7 @@ function mq_init() {
 
   # Create namespace 
   create_project "$VAR_MQ_NAMESPACE" "$VAR_MQ_NAMESPACE project" "For MQ" "${MY_RESOURCESDIR}" "${MY_MQ_WORKINGDIR}"
-
-  # Quick and dirty TODO
-  export VAR_MQSC_OBJECTS_CM="${VAR_QMGR}-mqsc-cm"
-  export MY_MQ_DEMO_NAMESPACE="${VAR_MQ_NAMESPACE}"
+  add_ibm_entitlement "$VAR_MQ_NAMESPACE"
 
   sc_mq_simple_workingdir="${sc_component_script_dir}working/${VAR_QMGR}/"
   check_directory_exist_create  "${sc_mq_simple_workingdir}"
@@ -346,7 +415,7 @@ sc_provision_preambule_file="${PROVISION_SCRIPTDIR}properties/preambule.properti
 sc_provision_lib_file="${PROVISION_SCRIPTDIR}lib.sh"
 sc_component_properties_file="${sc_component_script_dir}../properties/mq.properties"
 
-# SB]20250319 Je suis obligé d'utiliser set -a et set +a parceque à cet instant je n'ai pas accès à la fonction read_config_file
+# SB]20250319 Je suis obligé d'utiliser set -a et set +a par ce que à cet instant je n'ai pas accès à la fonction read_config_file
 # load script parrameters fil
 set -a
 . "${sc_provision_script_parameters_file}"
@@ -366,8 +435,6 @@ set +a
 
 # load helper functions
 . "${sc_provision_lib_file}"
-
-install_mq 
 
 mq_init
 

@@ -3,8 +3,9 @@ kind: QueueManager
 metadata:
   annotations:
     com.ibm.mq/write-defaults-spec: 'false'
-  name: ${MY_MQ_DEMO_NAMESPACE}-$VAR_QMGR
-  namespace: $MY_MQ_DEMO_NAMESPACE
+  name: ${VAR_QMGR}
+  namespace: ${VAR_MQ_NAMESPACE}
+
 spec:
   license:
     accept: true
@@ -12,9 +13,9 @@ spec:
     use: NonProduction
   pki:
     keys:
-      - name: default
+      - name: ${VAR_QMGR}
         secret:
-          secretName: ${MY_MQ_DEMO_NAMESPACE}-qm-tls
+          secretName: ${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR}-server
           items:
             - tls.key
             - tls.crt
@@ -25,33 +26,38 @@ spec:
       - configMap:
           items:
           - config.ini
-          name: ${MY_MQ_DEMO_NAMESPACE}-${MQ_CLUSTERNAME}-ini
+          name: ${VAR_INI_CM}
     mqsc:
       - configMap:
-          name: ${MY_MQ_DEMO_NAMESPACE}-${MQ_CLUSTERNAME}-mqsc-common
+          name: ${VAR_MQSC_OBJECTS_CM}
           items:
-          - common_config.mqsc
+          - ${VAR_QMGR}.mqsc
       - configMap:
-          name: ${MY_MQ_DEMO_NAMESPACE}-${MQ_CLUSTERNAME}-mqsc-${VAR_QMGR}
+          name: ${VAR_AUTH_CM}
           items:
-            - qm.mqsc
+            - ${VAR_QMGR}.auth
     resources:
       limits:
         cpu: 500m
       requests:
         cpu: 500m
     storage:
+      defaultClass: $MY_BLOCK_STORAGE_CLASS
       queueManager:
         type: persistent-claim
-      defaultClass: $MY_BLOCK_STORAGE_CLASS
+        size: 2Gi
+      persistedData:
+        enabled: true
+      recoveryLogs:
+        enabled: true
     availability:
-      type: NativeHA
+      type: SingleInstance
   template:
     pod:
       containers:
         - env:
-            - name: MQSNOAUT
-              value: 'yes'
+            - name: DEBUG
+              value: 'false'
           name: qmgr
   version: $MY_MQ_VERSION
   web:

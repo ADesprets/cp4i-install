@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: http-access-dep
-  namespace: $MY_MQ_DEMO_NAMESPACE
+  namespace: $VAR_MQ_NAMESPACE
 spec:
   selector:
     matchLabels:

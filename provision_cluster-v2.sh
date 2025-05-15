@@ -1820,7 +1820,7 @@ function customise_es() {
     generate_files $MY_ES_SIMPLE_DEMODIR $MY_ES_WORKINGDIR true
 
     ${MY_ES_SIMPLE_DEMODIR}scripts/es.config.sh --call es_run_all
-    ${MY_ES_MM2_DEMODIR}scripts/es.config.sh --call es_run_all
+    # ${MY_ES_MM2_DEMODIR}scripts/es.config.sh --call es_run_all
   fi
 
   trace_out $lf_tracelevel customise_es
