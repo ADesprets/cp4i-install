@@ -1,8 +1,8 @@
-/private
+private/*
 terraform/.terraform
 terraform/.terraform.*
 terraform/terraform.tfstate*
-/resources/*
 demos/open_liberty/system/target/*
 demos/was_liberty/target/*
+demos/mq_simple/client/target/*
 tmp/*
