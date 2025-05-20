@@ -2,48 +2,52 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.ibm.mq.samples.jms</groupId>
-  <artifactId>mq-dev-patterns</artifactId>
-  <name>mq-dev-patterns</name>
+  <artifactId>mq-simple</artifactId>
+  <name>mq-simple</name>
   <version>0.1.0</version>
   <url>https://github.com/ibm-messaging/mq-dev-patterns/</url>
   <build>
+    <directory>${mybuild.install.directory}</directory>
     <pluginManagement>
       <plugins>
         <plugin>
           <artifactId>maven-clean-plugin</artifactId>
-          <version>3.1.0</version>
+          <version>3.4.1</version>
         </plugin>
         <plugin>
           <artifactId>maven-resources-plugin</artifactId>
-          <version>3.0.2</version>
+          <version>3.3.1</version>
         </plugin>
         <plugin>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.8.0</version>
+          <version>3.14.0</version>
         </plugin>
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>2.22.1</version>
+          <version>3.5.3</version>
         </plugin>
         <plugin>
           <artifactId>maven-jar-plugin</artifactId>
-          <version>3.0.2</version>
+          <version>3.4.2</version>
+          <configuration>
+            <outputDirectory>${myjar.install.directory}</outputDirectory>
+          </configuration>
         </plugin>
         <plugin>
           <artifactId>maven-install-plugin</artifactId>
-          <version>2.5.2</version>
+          <version>3.1.4</version>
         </plugin>
         <plugin>
           <artifactId>maven-deploy-plugin</artifactId>
-          <version>2.8.2</version>
+          <version>3.1.4</version>
         </plugin>
         <plugin>
           <artifactId>maven-site-plugin</artifactId>
-          <version>3.7.1</version>
+          <version>3.21.0</version>
         </plugin>
         <plugin>
           <artifactId>maven-project-info-reports-plugin</artifactId>
-          <version>3.0.0</version>
+          <version>3.9.0</version>
         </plugin>
       </plugins>
     </pluginManagement>
@@ -84,15 +88,15 @@
       <id>JMS</id>
       <dependencies>
         <dependency>
-          <groupId>javax.jms</groupId>
-          <artifactId>javax.jms-api</artifactId>
-          <version>2.0.1</version>
+          <groupId>jakarta.jms</groupId>
+          <artifactId>jakarta.jms-api</artifactId>
+          <version>3.1.0</version>
           <scope>compile</scope>
         </dependency>
         <dependency>
           <groupId>com.ibm.mq</groupId>
           <artifactId>com.ibm.mq.allclient</artifactId>
-          <version>9.4.0.0</version>
+          <version>9.4.2.1</version>
           <scope>compile</scope>
         </dependency>
       </dependencies>
@@ -108,7 +112,7 @@
         <dependency>
           <groupId>com.ibm.mq</groupId>
           <artifactId>com.ibm.mq.jakarta.client</artifactId>
-          <version>9.3.4.1</version>
+          <version>9.4.2.1</version>
         </dependency>
       </dependencies>
     </profile>
@@ -160,9 +164,11 @@
     </dependency>
   </dependencies>
   <properties>
+    <mybuild.install.directory>D:\CurrentProjects\CP4I\Installation\cp4i-install\tmp\mq_simple\target</mybuild.install.directory>
     <maven.compiler.target>17</maven.compiler.target>
     <maven.test.skip>true</maven.test.skip>
     <maven.compiler.source>17</maven.compiler.source>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <myjar.install.directory>D:\CurrentProjects\CP4I\Installation\cp4i-install\tmp\mq_simple\jar</myjar.install.directory>
   </properties>
 </project>

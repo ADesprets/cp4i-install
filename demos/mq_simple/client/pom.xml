@@ -34,6 +34,8 @@
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
     <maven.test.skip>true</maven.test.skip>
+    <mybuild.install.directory>D:\CurrentProjects\CP4I\Installation\cp4i-install\tmp\mq_simple\target</mybuild.install.directory>
+    <myjar.install.directory>D:\CurrentProjects\CP4I\Installation\cp4i-install\tmp\mq_simple\jar</myjar.install.directory>
   </properties>
 
   <profiles>
@@ -44,14 +46,14 @@
       </activation>
       <dependencies>
         <dependency>
-          <groupId>javax.jms</groupId>
-          <artifactId>javax.jms-api</artifactId>
-          <version>2.0.1</version>
+            <groupId>jakarta.jms</groupId>
+            <artifactId>jakarta.jms-api</artifactId>
+            <version>3.1.0</version>
         </dependency>
         <dependency>
           <groupId>com.ibm.mq</groupId>
           <artifactId>com.ibm.mq.allclient</artifactId>
-          <version>9.4.1.0</version>
+          <version>9.4.2.1</version>
         </dependency>
       </dependencies>
     </profile>
@@ -66,7 +68,7 @@
         <dependency>
           <groupId>com.ibm.mq</groupId>
           <artifactId>com.ibm.mq.jakarta.client</artifactId>
-          <version>9.3.4.1</version>
+          <version>9.4.2.1</version>
         </dependency>
       </dependencies>
     </profile>
@@ -93,48 +95,51 @@
   </dependencies>
 
   <build>
+    <directory>${mybuild.install.directory}</directory>
     <pluginManagement><!-- lock down plugins versions to avoid using Maven defaults (may be moved to parent pom)-->
       <plugins>
         <!-- clean lifecycle, see https://maven.apache.org/ref/current/maven-core/lifecycles.html#clean_Lifecycle-->
         <plugin>
           <artifactId>maven-clean-plugin</artifactId>
-          <version>3.1.0</version>
+          <version>3.4.1</version>
         </plugin>
         <!-- default lifecycle, jar packaging: see https://maven.apache.org/ref/current/maven-core/default-bindings.html#Plugin_bindings_for_jar_packaging-->
         <plugin>
           <artifactId>maven-resources-plugin</artifactId>
-          <version>3.0.2</version>
+          <version>3.3.1</version>
         </plugin>
         <plugin>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.8.0</version>
+          <version>3.14.0</version>
         </plugin>
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>2.22.1</version>
+          <version>3.5.3</version>
         </plugin>
         <plugin>
           <artifactId>maven-jar-plugin</artifactId>
-          <version>3.0.2</version>
+          <version>3.4.2</version>
+          <configuration>
+            <outputDirectory>${myjar.install.directory}</outputDirectory>
+          </configuration>
         </plugin>
         <plugin>
           <artifactId>maven-install-plugin</artifactId>
-          <version>2.5.2</version>
+          <version>3.1.4</version>
         </plugin>
         <plugin>
           <artifactId>maven-deploy-plugin</artifactId>
-          <version>2.8.2</version>
+          <version>3.1.4</version>
         </plugin>
         <!-- site lifecycle, see https://maven.apache.org/ref/current/maven-core/lifecycles.html#site_Lifecycle-->
         <plugin>
           <artifactId>maven-site-plugin</artifactId>
-          <version>3.7.1</version>
+          <version>3.21.0</version>
         </plugin>
         <plugin>
           <artifactId>maven-project-info-reports-plugin</artifactId>
-          <version>3.0.0</version>
+          <version>3.9.0</version>
         </plugin>
-
       </plugins>
     </pluginManagement>
 

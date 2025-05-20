@@ -51,7 +51,6 @@ function compile_code() {
   trace_in $lf_tracelevel compile_code
 
   mvn clean install
-  # $MY_CONTAINER_ENGINE build -t basicjaxrs:1.0 .
 
   trace_out $lf_tracelevel compile_code
 }

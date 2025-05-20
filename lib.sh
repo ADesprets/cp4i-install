@@ -224,7 +224,7 @@ function display_access_info() {
     fi
 
     lf_mq_admin_url=$($MY_CLUSTER_COMMAND -n $VAR_MQ_NAMESPACE get QueueManager $VAR_MQ_INSTANCE_NAME -o jsonpath='{.status.adminUiUrl}')
-    mylog info "MQ Management Console : ${lf_mq_admin_url}" 0
+    mylog info "MQ Management Console: ${lf_mq_admin_url}" 0
     echo  "<DT><A HREF=${lf_mq_admin_url}>MQ Management Console</A>" >> ${MY_WORKINGDIR}/bookmarks.html
 
     local lf_mq_authentication_method=$($MY_CLUSTER_COMMAND -n $VAR_MQ_NAMESPACE get qmgr $VAR_MQ_INSTANCE_NAME -o jsonpath='{.spec.web.console.authentication.provider}')
@@ -446,6 +446,7 @@ function mylog() {
     error)   c=1            #red
              p='ERROR: ';;
     warn)    c=3;;          #yellow
+    result)  c=14;;           #light blue
     debug)   c=8            #grey
              p='CMD: ';; 
     wait)    c=4            #purple

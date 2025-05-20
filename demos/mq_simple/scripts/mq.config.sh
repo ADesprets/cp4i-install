@@ -50,7 +50,7 @@ function create_intermediate_issuer () {
   export VAR_CERT_NAMESPACE=${VAR_MQ_NAMESPACE}
   export VAR_SECRET_REF=${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR}-root-secret
   
-  create_oc_resource "Issuer" "${VAR_ISSUER}" "${MY_MQ_SIMPLE_DEMODIR}tls/" "$MY_MQ_WORKINGDIR" "intermediate_issuer.yaml" "${VAR_MQ_NAMESPACE}"
+  create_oc_resource "Issuer" "${VAR_ISSUER}" "${MY_MQ_SIMPLE_DEMODIR}tls/" "${MY_MQ_WORKINGDIR}" "intermediate_issuer.yaml" "${VAR_MQ_NAMESPACE}"
 
   unset VAR_CERT_NAME VAR_CERT_NAMESPACE VAR_SECRET_REF
 
@@ -85,20 +85,6 @@ function create_leaf_certificate () {
 }
 
 #############################################################
-function create_qmgr_certificate () {
-  local lf_tracelevel=3
-  trace_in $lf_tracelevel create_qmgr_certificate
-
-  export VAR_ISSUER="${VAR_QMGR}-issuer"
-  export VAR_SECRET="${VAR_QMGR}-secret"
-  export VAR_LABEL="${VAR_QMGR}-label" 
-  create_oc_resource "Certificate" "${VAR_QMGR}-cert" "${MY_MQ_SIMPLE_DEMODIR}tls/" "${MY_MQ_WORKINGDIR}" "ca_certificate.yaml" "$VAR_MQ_NAMESPACE"
-  unset VAR_ISSUER VAR_SECRET VAR_LABEL
-
-  trace_out $lf_tracelevel create_qmgr_certificate
-}
-
-#############################################################
 function create_qmgr_configmaps () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel create_qmgr_configmaps
@@ -119,22 +105,6 @@ function create_qmgr_route () {
   create_oc_resource "Route" "${VAR_QMGR}-route" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}" "qmgr_route.yaml" "$VAR_MQ_NAMESPACE"
 
   trace_out $lf_tracelevel create_qmgr_route
-}
-
-#############################################################
-function save_qmgr_tls () {
-  local lf_tracelevel=3
-  trace_in $lf_tracelevel save_qmgr_tls
-
-  save_certificate ${VAR_QMGR}-secret tls.crt ${sc_qmgr_srv_crtdir} $VAR_MQ_NAMESPACE
-  save_certificate ${VAR_QMGR}-secret key.crt ${sc_qmgr_srv_crtdir} $VAR_MQ_NAMESPACE
-  save_certificate ${VAR_QMGR}-secret ca.crt ${sc_qmgr_srv_crtdir} $VAR_MQ_NAMESPACE
-
-  local lf_ca_crt="${sc_qmgr_srv_crtdir}${VAR_QMGR}-secret.ca.crt.pem"	
-  local lf_srv_crt="${sc_qmgr_srv_crtdir}${VAR_QMGR}-secret.tls.crt.pem"
-  local lf_srv_key="${sc_qmgr_srv_crtdir}${VAR_QMGR}-secret.key.crt.pem"
-
-  trace_out $lf_tracelevel save_qmgr_tls
 }
 
 #############################################################
@@ -192,24 +162,23 @@ function create_pki_cr () {
   mylog "info" "Adding     : qmgr certificate to the client key database"
   add_qmgr_crt_2_clnt_kdb $VAR_MQ_NAMESPACE
   
-  ##-- Add CA crt to client kdb
-  mylog "info" "Adding     : ca certificate to client kdb for $VAR_CLNT1"
-  add_ca_crt_2_clnt_kdb $VAR_MQ_NAMESPACE
-
   trace_out $lf_tracelevel create_pki_cr
 }
 
 ################################################
-# Add qmgr certs to client keydb
+# Add certs to client keydb
 #################################################
 function add_qmgr_crt_2_clnt_kdb () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel add_qmgr_crt_2_clnt_kdb
 
   mylog "info" "Adding     : qmgr certificate to the client key database"
-
-  save_certificate ${VAR_QMGR}-secret tls.crt ${sc_qmgr_srv_crtdir} $VAR_MQ_NAMESPACE
-  local lf_srv_crt="${sc_qmgr_srv_crtdir}${VAR_QMGR}-secret.tls.crt.pem"
+  save_certificate ${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR}-server tls.key ${MY_MQ_WORKINGDIR} $VAR_MQ_NAMESPACE
+  save_certificate ${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR}-server tls.crt ${MY_MQ_WORKINGDIR} $VAR_MQ_NAMESPACE
+  save_certificate ${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR}-server ca.crt ${MY_MQ_WORKINGDIR} $VAR_MQ_NAMESPACE
+  
+  local lf_srv_crt="${MY_MQ_WORKINGDIR}${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR}-server.tls.crt.pem"
+  local lf_ca_crt="${MY_MQ_WORKINGDIR}${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR}-server.ca.crt.pem"
   
   case $VAR_KEYDB_TYPE in
     cms)  local lf_clnt_keydb="${sc_qmgr_clnt_crtdir}${VAR_CLNT1}-keystore.kdb";;
@@ -219,44 +188,14 @@ function add_qmgr_crt_2_clnt_kdb () {
   #decho $lf_tracelevel "lf_clnt_keydb=$lf_clnt_keydb|lf_srv_crt=$lf_srv_crt"
 
   # Add the queue manager public key to the client key database
-	runmqakm -cert -add -db $lf_clnt_keydb -label $VAR_QMGR -file $lf_srv_crt -format ascii -stashed > /dev/null 2>&1
+	runmqakm -cert -add -db $lf_clnt_keydb -label $VAR_QMGR-crt -file $lf_srv_crt -format ascii -stashed > /dev/null 2>&1
+	runmqakm -cert -add -db $lf_clnt_keydb -label $VAR_QMGR-ca -file $lf_ca_crt -format ascii -stashed > /dev/null 2>&1
 
   # Check. List the database certificates:
   mylog "info" "listing    : certificates in keydb : $lf_clnt_keydb"
   runmqakm -cert -list -db $lf_clnt_keydb -stashed #> /dev/null 2>&1
 
   trace_out $lf_tracelevel add_qmgr_crt_2_clnt_kdb
-}
-
-################################################
-# Add ca cert to client keydb
-#################################################
-function add_ca_crt_2_clnt_kdb () {
-  local lf_tracelevel=3
-  trace_in $lf_tracelevel add_ca_crt_2_clnt_kdb
-
-  save_certificate ${VAR_QMGR}-secret ca.crt ${sc_qmgr_srv_crtdir} $VAR_MQ_NAMESPACE
-  
-  local lf_ca_crt="${sc_qmgr_srv_crtdir}${VAR_QMGR}-secret.ca.crt.pem"
-
-  case $VAR_KEYDB_TYPE in
-    cms)  local lf_clnt_keydb="${sc_qmgr_clnt_crtdir}${VAR_CLNT1}-keystore.kdb";;
-    pkcs12) local lf_clnt_keydb="${sc_qmgr_clnt_crtdir}${VAR_CLNT1}-keystore.p12";;
-  esac  
-                                        
-  # In order for the cert validation chain to work, we also import the CA cert. 
-  # The client program will therefore be able to validate the cert send from the qmgr that is signed by this CA.
-  # check first if the ca certificate is already in keystore
-  runmqakm -cert -details -label "ca" -db $lf_clnt_keydb -stashed > /dev/null 2>&1 
-  if [ $? -ne 0 ]; then
-    runmqakm -cert -add -db $lf_clnt_keydb -label "CN=ca" -file $lf_ca_crt -format ascii -stashed > /dev/null 2>&1  
-  fi
-                    
-  # Check. List the database certificates:
-  mylog "info" "listing    : certificates in keydb : $lf_clnt_keydb"
-  runmqakm -cert -list -db $lf_clnt_keydb -stashed #> /dev/null 2>&1  
-
-  trace_out $lf_tracelevel add_ca_crt_2_clnt_kdb
 }
 
 ################################################
@@ -268,10 +207,11 @@ function create_ccdt () {
  
   # Generate ccdt file
   mylog "info" "Creating   : ccdt file to use with MQCCDTURL env variabe. Located here : $MQCCDTURL"
+  decho $lf_tracelevel "$MY_CLUSTER_COMMAND get route -n $VAR_MQ_NAMESPACE \"${VAR_QMGR}-ibm-mq-qm\" -o jsonpath='{.spec.host}'"
   export ROOTURL=$($MY_CLUSTER_COMMAND get route -n $VAR_MQ_NAMESPACE "${VAR_QMGR}-ibm-mq-qm" -o jsonpath='{.spec.host}')
   decho $lf_tracelevel "VAR_CHL_UC=$VAR_CHL_UC|VAR_QMGR_UC=$VAR_QMGR_UC|ROOTURL=$ROOTURL"
 
-  adapt_file "${MY_MQ_SIMPLE_DEMODIR}scripts/tmpl/json/" "${sc_qmgr_custom_gendir}json/" ccdt.json
+  adapt_file "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}" ccdt.json
 
   trace_out $lf_tracelevel create_ccdt
 }
@@ -289,7 +229,7 @@ function mq_run_all () {
   create_intermediate_issuer
   create_leaf_certificate
 
-  # create_pki_cr
+  create_pki_cr
 
   create_qmgr_configmaps
 
@@ -313,21 +253,14 @@ function mq_init() {
   create_project "$VAR_MQ_NAMESPACE" "$VAR_MQ_NAMESPACE project" "For MQ" "${MY_RESOURCESDIR}" "${MY_MQ_WORKINGDIR}"
   add_ibm_entitlement "$VAR_MQ_NAMESPACE"
 
-  sc_mq_simple_workingdir="${sc_component_script_dir}working/${VAR_QMGR}/"
-  check_directory_exist_create  "${sc_mq_simple_workingdir}"
-
-  check_directory_exist_create  "${MY_MQ_WORKINGDIR}generated/${VAR_QMGR}"
-  sc_qmgr_custom_gendir="${MY_MQ_WORKINGDIR}generated/${VAR_QMGR}/"
+  check_directory_exist_create  "${MY_MQ_WORKINGDIR}"
   
-  check_directory_exist_create  "${sc_qmgr_custom_gendir}tls/${VAR_CLNT1}"
-  sc_qmgr_clnt_crtdir="${sc_qmgr_custom_gendir}tls/${VAR_CLNT1}/"
-  
-  check_directory_exist_create  "${sc_qmgr_custom_gendir}tls/qmgr"
-  sc_qmgr_srv_crtdir="${sc_qmgr_custom_gendir}tls/qmgr/"
+  check_directory_exist_create  "${MY_MQ_WORKINGDIR}${VAR_CLNT1}"
+  sc_qmgr_clnt_crtdir="${MY_MQ_WORKINGDIR}${VAR_CLNT1}/"
   
   # CCDT tmpl file
-  sc_ccdt_tmpl_file="${MY_MQ_SIMPLE_DEMODIR}scripts/tmpl/json/ccdt.json";
-  MQCCDTURL="${sc_qmgr_custom_gendir}json/ccdt.json"
+  sc_ccdt_tmpl_file="${MY_MQ_SIMPLE_DEMODIR}tmpl/ccdt.json";
+  MQCCDTURL="${MY_MQ_WORKINGDIR}ccdt.json"
 
   trace_out $lf_tracelevel mq_init
 }
@@ -405,7 +338,6 @@ function main() {
 
 # the following script returns the absolute path of this script independently from using it directly or calling it from another script
 sc_component_script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/"
-export MY_MQ_WORKINGDIR="${sc_component_script_dir}working/"
 
 PROVISION_SCRIPTDIR="$( cd "$( dirname "${sc_component_script_dir}../../../../" )" && pwd )/"
 sc_provision_script_parameters_file="${PROVISION_SCRIPTDIR}script-parameters.properties"
@@ -435,6 +367,9 @@ set +a
 
 # load helper functions
 . "${sc_provision_lib_file}"
+
+echo "VAR_QMGR=${VAR_QMGR}"
+export MY_MQ_WORKINGDIR="${PROVISION_SCRIPTDIR}working/demos/mq_simple/${VAR_QMGR}/"
 
 mq_init
 

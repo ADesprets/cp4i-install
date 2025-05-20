@@ -61,10 +61,10 @@ function eem_run_all () {
   # 7) TlS Profile in APIC EMM Client/EEM Trust
   # Create a TLS Client Profile (eemclientprofile)
   # 	Create a TLS keystore (eem_key)
-  # 		/home/desprets/installcp4i/working/cp4i-eem-ibm-eem-manager.tls.crt.pem
-  # 		/home/desprets/installcp4i/working/cp4i-eem-ibm-eem-manager.tls.key.pem
+  # 		installcp4i/working/cp4i-eem-ibm-eem-manager.tls.crt.pem
+  # 		installcp4i/working/cp4i-eem-ibm-eem-manager.tls.key.pem
   # 	Create a TLS truststore (eem_trust)
-  # 		/home/desprets/installcp4i/working/cp4i-eem-ibm-eem-manager.ca.crt.pem
+  # 		installcp4i/working/cp4i-eem-ibm-eem-manager.ca.crt.pem
   #   Create a TLS Client profile (eem_TLS_client_profile)
   # 8) Register eem-eventgateway eemgtw
   # Service endpoint configuration $MY_CLUSTER_COMMAND -n cp4i get route | grep apic | grep eem
