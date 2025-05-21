@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: http-access-dep
+  namespace: $VAR_MQ_NAMESPACE
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  replicas: 1 
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginxinc/nginx-unprivileged
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+            - name: ccdt-file
+              mountPath: /usr/share/nginx/html/
+      volumes:
+      - name: ccdt-file
+        configMap:
+          name: cluster-ccdt
