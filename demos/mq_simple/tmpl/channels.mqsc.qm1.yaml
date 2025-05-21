@@ -1,9 +1,0 @@
-kind: ConfigMap
-apiVersion: v1
-metadata:
-  name: ${VAR_MQ_NAMESPACE}-${MQ_CLUSTERNAME}-mqsc-${VAR_QMGR1}
-  namespace: ${VAR_MQ_NAMESPACE}
-data:
-  qm.mqsc: |-
-    alter CHANNEL(${MQ_CLUSTERNAME}) chltype(CLUSRCVR) conname('uniform-cluster-${VAR_QMGR1}-ibm-mq.${VAR_MQ_NAMESPACE}.svc(1414)')
-    alter CHANNEL(${MQ_CLUSTERNAME}) chltype(CLUSSDR) conname('uniform-cluster-${VAR_QMGR2}-ibm-mq.${VAR_MQ_NAMESPACE}.svc(1414)')

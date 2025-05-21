@@ -12,18 +12,18 @@ spec:
     mq.queue.manager: $VAR_QMGR_UC
     mq.channel.name: $VAR_CHL_UC
     mq.connection.name.list: ${VAR_QMGR}-ibm-mq(1414)
-    mq.ssl.truststore.location: /tmp/kafka/cluster.truststore.p12
-    mq.ssl.truststore.password: Fxfj6ANTCNFzdrN-fpdeqZ6W-M_ZxD2W
-    mq.ssl.cipher.suite: TLS_AES_256_GCM_SHA384
-    mq.ssl.truststore.type: PKCS12
     mq.queue: FROM.KAFKA
     mq.user.name: ""
     mq.password: ""
-    mq.message.body.jms: "false"
-    mq.time.to.live: "10800000"
     topics: LH.ORDERS
-    mq.persistent: "true"
     mq.connection.mode: client
     mq.message.builder: com.ibm.eventstreams.connect.mqsink.builders.DefaultMessageBuilder
     key.converter: org.apache.kafka.connect.storage.StringConverter
     value.converter: org.apache.kafka.connect.storage.StringConverter
+    mq.ssl.truststore.location: /tmp/kafka/cluster.truststore.p12
+    mq.ssl.truststore.password: Fxfj6ANTCNFzdrN-fpdeqZ6W-M_ZxD2W
+    mq.ssl.cipher.suite: TLS_AES_256_GCM_SHA384
+    mq.ssl.truststore.type: PKCS12
+    mq.message.body.jms: "false"
+    mq.time.to.live: "10800000"
+    mq.persistent: "true"

@@ -12,10 +12,13 @@ spec:
     mq.channel.name: $VAR_CHL_UC
     value.converter: org.apache.kafka.connect.storage.StringConverter
     mq.connection.name.list: ${VAR_QMGR}-ibm-mq(1414)
+    mq.connection.mode: client
     mq.queue.manager: ${VAR_QMGR}
     mq.queue: TO.KAFKA
     mq.record.builder: com.ibm.eventstreams.connect.mqsource.builders.DefaultRecordBuilder
     topic: LH.ORDERS              
     key.converter: org.apache.kafka.connect.storage.StringConverter
-    mq.message.body.jms: false 
+    mq.message.body.jms: true 
     mq.user.authentication.mqcsp: false
+    mq.user.name: ""
+    mq.password: ""
