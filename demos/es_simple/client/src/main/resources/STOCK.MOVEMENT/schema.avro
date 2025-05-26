@@ -1,0 +1,33 @@
+{
+    "namespace": "com.loosehangerjeans",
+    "type": "record",
+    "name": "StockMovement",
+    "fields": [
+        {
+            "name": "movementid",
+            "type": "string",
+            "logicalType": "uuid",
+            "doc": "movement record id"
+        },
+        {
+            "name": "warehouse",
+            "type": "string",
+            "doc": "code for the warehouse that is receiving the stock - will be one of North, South, West, East, or Central"
+        },
+        {
+            "name": "product",
+            "type": "string",
+            "doc": "Description of the product that was received"
+        },
+        {
+            "name": "quantity",
+            "type": "long",
+            "doc": "Number of the items that was received"
+        },
+        {
+            "name": "updatetime",
+            "type": "string",
+            "doc": "time that the stock movement was recorded"
+        }
+    ]
+}

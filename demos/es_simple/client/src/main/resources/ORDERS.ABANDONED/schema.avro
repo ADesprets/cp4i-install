@@ -1,0 +1,59 @@
+{
+  "namespace": "com.loosehangerjeans",
+  "type": "record",
+  "name": "AbandonedOrder",
+  "fields": [
+    {
+      "name": "cartid",
+      "doc": "Unique ID for the abandoned order",
+      "type": {
+        "type": "string",
+        "logicalType": "uuid"
+      }
+    },
+    {
+      "name": "customer",
+      "doc": "Customer who abandoned products in the order",
+      "type": {
+        "type": "record",
+        "name": "Customer",
+        "fields": [
+          {
+            "name": "id",
+            "type": {
+              "type": "string",
+              "logicalType": "uuid"
+            },
+            "doc": "Unique id for the customer"
+          },
+          {
+            "name": "name",
+            "type": "string",
+            "doc": "Name of the customer"
+          },
+          {
+            "name": "emails",
+            "type": {
+              "type": "array",
+              "items": "string"
+            },
+            "doc": "Emails of the customer"
+          }
+        ]
+      }
+    },
+    {
+      "name": "products",
+      "doc": "Descriptions of the abandoned order products",
+      "type": {
+        "type": "array",
+        "items": "string"
+      }
+    },
+    {
+      "name": "abandonedtime",
+      "doc": "Time at which the shopping cart was determined to be abandoned after a period of inactivity (UTC time in ISO 8601 format).",
+      "type": "string"
+    }
+  ]
+}

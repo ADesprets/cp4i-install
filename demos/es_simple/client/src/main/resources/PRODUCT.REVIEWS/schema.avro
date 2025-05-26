@@ -1,0 +1,82 @@
+{
+  "namespace": "com.loosehangerjeans",
+  "type": "record",
+  "name": "ProductReview",
+  "fields": [
+    {
+      "name": "id",
+      "doc": "Unique ID for the product review",
+      "type": {
+        "type": "string",
+        "logicalType": "uuid"
+      }
+    },
+    {
+      "name": "product",
+      "doc": "Short description of the product",
+      "type": "string"
+    },
+    {
+      "name": "size",
+      "type": [
+        "null",
+        "string"
+      ],
+      "doc": "Size of the product"
+    },
+    {
+      "name": "review",
+      "doc": "Review for the product",
+      "type": {
+        "type": "record",
+        "name": "Review",
+        "fields": [
+          {
+            "name": "rating",
+            "type": "int",
+            "doc": "Global rating (integer between 1 and 5 included)"
+          },
+          {
+            "name": "comment",
+            "type": [
+              "null",
+              "string"
+            ],
+            "doc": "Review comment"
+          },
+          {
+            "name": "characteristics",
+            "doc": "Characteristics evaluated in the current review",
+            "type": {
+              "type": "array",
+              "items": {
+                "type": "record",
+                "name": "Characteristic",
+                "fields": [
+                  {
+                    "name": "id",
+                    "type": "string",
+                    "doc": "ID for the characteristic"
+                  },
+                  {
+                    "name": "ranking",
+                    "type": [
+                      "null",
+                      "int"
+                    ],
+                    "doc": "Ranking for the characteristic (integer between 1 and 3 included: 1 for small, short ; 2 for spot on ; 3 for large, long). Can be null if no ranking is provided."
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "reviewtime",
+      "doc": "Time that the product review was posted (UTC time in ISO 8601 format)",
+      "type": "string"
+    }
+  ]
+}

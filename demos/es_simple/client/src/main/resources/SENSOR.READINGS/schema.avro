@@ -1,0 +1,27 @@
+{
+    "namespace": "com.loosehangerjeans",
+    "type": "record",
+    "name": "SensorReading",
+    "fields": [
+        {
+            "name": "sensorid",
+            "type": "string",
+            "doc": "unique identifier for the sensor that captured the reading. Sensor ids help to identify the location of the sensor by being made up of a building name, floor number, and sensor number, all separated by hyphens (-)"
+        },
+        {
+            "name": "sensortime",
+            "type": "string",
+            "doc": "datetime the reading was captured, in 'EEE MMM dd HH:mm:ss zzz yyyy' format"
+        },
+        {
+            "name": "temperature",
+            "type": "double",
+            "doc": "temperature reading in degrees celsius"
+        },
+        {
+            "name": "humidity",
+            "type": "long",
+            "doc": "humidity reading in percentage"
+        }
+    ]
+}

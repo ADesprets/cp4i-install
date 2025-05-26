@@ -1,0 +1,49 @@
+{
+    "namespace": "com.loosehangerjeans",
+    "type": "record",
+    "name": "Order",
+    "fields": [
+        {
+            "name": "id",
+            "type": "string",
+            "logicalType": "uuid",
+            "doc": "order id"
+        },
+        {
+            "name": "customer",
+            "type": "string",
+            "doc": "Name of the customer who made the order"
+        },
+        {
+            "name": "customerid",
+            "type": "string",
+            "logicalType": "uuid",
+            "doc": "unique id for the customer who made the order"
+        },
+        {
+            "name": "description",
+            "type": "string",
+            "doc": "Description of the product that was ordered"
+        },
+        {
+            "name": "price",
+            "type": "double",
+            "doc": "Unit price of an individual item at the time of the order"
+        },
+        {
+            "name": "quantity",
+            "type": "long",
+            "doc": "Number of the items that was purchased in the order"
+        },
+        {
+            "name": "region",
+            "type": "string",
+            "doc": "which region the order was made in - will be one of NA, SA, EMEA, APAC, ANZ"
+        },
+        {
+            "name": "ordertime",
+            "type": "string",
+            "doc": "time that the order was made"
+        }
+    ]
+}

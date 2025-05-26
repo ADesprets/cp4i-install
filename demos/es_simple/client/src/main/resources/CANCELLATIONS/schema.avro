@@ -1,0 +1,29 @@
+{
+    "namespace": "com.loosehangerjeans",
+    "type": "record",
+    "name": "Cancellation",
+    "fields": [
+        {
+            "name": "id",
+            "type": "string",
+            "logicalType": "uuid",
+            "doc": "id for the cancellation request"
+        },
+        {
+            "name": "orderid",
+            "type": "string",
+            "logicalType": "uuid",
+            "doc": "id of the order that was cancelled"
+        },
+        {
+            "name": "canceltime",
+            "type": "string",
+            "doc": "time that the order was cancelled"
+        },
+        {
+            "name": "reason",
+            "type": "string",
+            "doc": "reason given for the cancellation"
+        }
+    ]
+}

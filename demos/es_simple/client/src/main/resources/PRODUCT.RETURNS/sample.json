@@ -1,0 +1,77 @@
+{
+  "id": "fcb22dc4-6beb-4932-8ab1-77d69742dcd6",
+  "customer": {
+    "id": "cbdd85f5-8b9b-4026-95d5-16636b955cc0",
+    "name": "Tristan Turcotte",
+    "emails": [
+      "tristan.turcotte@example.com",
+      "pedro.fay@example.com"
+    ]
+  },
+  "addresses": [
+    {
+      "name": "Billing address",
+      "number": 986,
+      "street": "Bahringer Rapid",
+      "city": "Johnsberg",
+      "zipcode": "73494-5971",
+      "country": {
+        "code": "US",
+        "name": "United States"
+      },
+      "phones": [
+        "859.213.0327"
+      ]
+    },
+    {
+      "name": "Shipping address",
+      "number": 291,
+      "street": "Jakubowski Radial",
+      "city": "Waltershire",
+      "zipcode": "90693",
+      "country": {
+        "code": "US",
+        "name": "United States"
+      },
+      "phones": [
+        "1-505-865-5219",
+        "1-206-307-1568"
+      ]
+    }
+  ],
+  "returns": [
+    {
+      "product": {
+        "id": "Black Jorts Jeans",
+        "size": "XL"
+      },
+      "quantity": 2,
+      "reason": "SHIPPINGDELAY"
+    },
+    {
+      "product": {
+        "id": "Jeggings Skinny Jeans",
+        "size": "M"
+      },
+      "quantity": 2,
+      "reason": "SHIPPINGDELAY"
+    },
+    {
+      "product": {
+        "id": "Black Bootcut Jeans",
+        "size": "XL"
+      },
+      "quantity": 1,
+      "reason": "DELIVERYERROR"
+    },
+    {
+      "product": {
+        "id": "Jeggings Ripped Jeans",
+        "size": "L"
+      },
+      "quantity": 1,
+      "reason": "CHANGEDMIND"
+    }
+  ],
+  "returntime": "2024-06-17T22:27:41.364Z"
+}

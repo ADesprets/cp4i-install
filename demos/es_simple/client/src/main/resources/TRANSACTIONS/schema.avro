@@ -1,0 +1,27 @@
+{
+    "namespace": "com.loosehangerjeans",
+    "type": "record",
+    "name": "Transaction",
+    "fields": [
+        {
+            "name": "id",
+            "type": "string",
+            "doc": "unique identifier for the transaction"
+        },
+        {
+            "name": "state",
+            "type": "string",
+            "doc": "state of the transaction"
+        },
+        {
+            "name": "amount",
+            "type": "double",
+            "doc": "amount processed in this transaction"
+        },
+        {
+            "name": "timestamp",
+            "type": "string",
+            "doc": "datetime the reading was captured (UTC time in ISO 8601 format)"
+        },
+    ]
+}

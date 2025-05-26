@@ -1,0 +1,61 @@
+{
+  "namespace": "com.loosehangerjeans",
+  "type": "record",
+  "name": "OutOfStock",
+  "fields": [
+    {
+      "name": "id",
+      "doc": "Unique id for the out-of-stock event",
+      "type": {
+        "type": "string",
+        "logicalType": "uuid"
+      }
+    },
+    {
+      "name": "product",
+      "doc": "Product that is out-of-stock",
+      "type": {
+        "type": "record",
+        "name": "product",
+        "fields": [
+          {
+            "name": "size",
+            "type": "string",
+            "doc": "Size of the product"
+          },
+          {
+            "name": "material",
+            "type": "string",
+            "doc": "Material of the product"
+          },
+          {
+            "name": "style",
+            "type": "string",
+            "doc": "Style of the product"
+          },
+          {
+            "name": "name",
+            "type": "string",
+            "doc": "Name of the product"
+          }
+        ]
+      }
+    },
+    {
+      "name": "restockingdate",
+      "doc": "Estimated restocking date for the product",
+      "type": {
+        "type": "int",
+        "logicalType": "date"
+      }
+    },
+    {
+      "name": "outofstocktime",
+      "doc": "Time that the product was out-of-stock",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      }
+    }
+  ]
+}

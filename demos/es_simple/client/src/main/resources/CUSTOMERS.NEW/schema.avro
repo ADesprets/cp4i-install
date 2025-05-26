@@ -1,0 +1,23 @@
+{
+    "namespace": "com.loosehangerjeans",
+    "type": "record",
+    "name": "NewCustomer",
+    "fields": [
+        {
+            "name": "customerid",
+            "type": "string",
+            "logicalType": "uuid",
+            "doc": "unique id for the customer"
+        },
+        {
+            "name": "customername",
+            "type": "string",
+            "doc": "full name for the customer, including any titles"
+        },
+        {
+            "name": "registered",
+            "type": "string",
+            "doc": "time that the customer created their account"
+        }
+    ]
+}

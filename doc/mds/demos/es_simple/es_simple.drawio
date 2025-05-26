@@ -1,9 +1,87 @@
-<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/26.2.15 Chrome/134.0.6998.205 Electron/35.2.1 Safari/537.36" version="26.2.15" pages="2">
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/27.0.5 Chrome/134.0.6998.205 Electron/35.3.0 Safari/537.36" version="27.0.5" pages="2">
   <diagram name="Page-1" id="YvG3G-DKzLpsywxGTCxs">
-    <mxGraphModel dx="1283" dy="626" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+    <mxGraphModel dx="1181" dy="686" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
+        <mxCell id="ZE22coVTS7m1IOgS9hnd-1" value="Event Streams" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;fontColor=#0000CC;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="80" y="120" width="270" height="260" as="geometry" />
+        </mxCell>
+        <mxCell id="ZE22coVTS7m1IOgS9hnd-2" value="Kafka Topic&lt;div&gt;LH.ORDERS&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="230" y="160" width="110" height="37.4015" as="geometry" />
+        </mxCell>
+        <mxCell id="ZE22coVTS7m1IOgS9hnd-3" value="Kafka Topic&lt;div&gt;LH.CUSTOMERS&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="230" y="210" width="110" height="37.4015" as="geometry" />
+        </mxCell>
+        <mxCell id="ZE22coVTS7m1IOgS9hnd-4" value="Kafka User&lt;div&gt;es-admin&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="230" y="260" width="110" height="37.4015" as="geometry" />
+        </mxCell>
+        <mxCell id="ZE22coVTS7m1IOgS9hnd-7" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="ZE22coVTS7m1IOgS9hnd-5" target="ZE22coVTS7m1IOgS9hnd-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ZE22coVTS7m1IOgS9hnd-8" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="ZE22coVTS7m1IOgS9hnd-5" target="ZE22coVTS7m1IOgS9hnd-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ZE22coVTS7m1IOgS9hnd-5" value="Kafka Connector&lt;div&gt;datagen&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="90" y="160" width="110" height="37.4015" as="geometry" />
+        </mxCell>
+        <mxCell id="ZE22coVTS7m1IOgS9hnd-9" value="&lt;font style=&quot;color: rgb(0, 0, 204);&quot;&gt;Event EndPoint Management&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="420" y="120" width="270" height="260" as="geometry" />
+        </mxCell>
+        <mxCell id="ZE22coVTS7m1IOgS9hnd-10" value="Event Streams CRD - Cluster" style="rounded=0;whiteSpace=wrap;html=1;fillColor=light-dark(#000000,#000000);fontColor=#FFFFFF;" vertex="1" parent="1">
+          <mxGeometry x="90" y="340" width="250" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="ZE22coVTS7m1IOgS9hnd-11" value="Event EndPoint Management (CRD - UI)" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="430" y="150" width="250" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="ZE22coVTS7m1IOgS9hnd-18" value="TLS" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="ZE22coVTS7m1IOgS9hnd-12" target="ZE22coVTS7m1IOgS9hnd-10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ZE22coVTS7m1IOgS9hnd-12" value="Event Gateway (CRD)" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="430" y="335.315" width="250" height="39.37" as="geometry" />
+        </mxCell>
+        <mxCell id="ZE22coVTS7m1IOgS9hnd-13" value="Event Processing" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;fontColor=#0000CC;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="750" y="120" width="270" height="260" as="geometry" />
+        </mxCell>
+        <mxCell id="ZE22coVTS7m1IOgS9hnd-14" value="Event Processing (CRD)" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="760" y="160" width="250" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="ZE22coVTS7m1IOgS9hnd-17" value="TLS" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="ZE22coVTS7m1IOgS9hnd-15" target="ZE22coVTS7m1IOgS9hnd-12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ZE22coVTS7m1IOgS9hnd-15" value="Flink Deployment (CRD)" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="760" y="335.315" width="250" height="39.37" as="geometry" />
+        </mxCell>
+        <mxCell id="ZE22coVTS7m1IOgS9hnd-16" value="OpenShift" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=default;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;fontColor=#FFFFFF;fillColor=light-dark(#000000,#000000);" vertex="1" parent="1">
+          <mxGeometry x="80" y="398" width="940" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="ZE22coVTS7m1IOgS9hnd-19" value="Catalog" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="440" y="180" width="230" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="ZE22coVTS7m1IOgS9hnd-25" value="TLS" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1.003;entryY=0.596;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="ZE22coVTS7m1IOgS9hnd-20" target="ZE22coVTS7m1IOgS9hnd-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ZE22coVTS7m1IOgS9hnd-20" value="Topics&lt;div&gt;ORDERS&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="448" y="210" width="100" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="ZE22coVTS7m1IOgS9hnd-21" value="Options" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="458" y="280" width="80" height="22.6" as="geometry" />
+        </mxCell>
+        <mxCell id="ZE22coVTS7m1IOgS9hnd-22" value="Flow&lt;div&gt;Filter EMEA&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="770" y="203.7" width="80" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="ZE22coVTS7m1IOgS9hnd-23" value="Topics&lt;div&gt;CUSTOMERS&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="561" y="210" width="100" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="ZE22coVTS7m1IOgS9hnd-24" value="Options" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="571" y="280" width="80" height="22.6" as="geometry" />
+        </mxCell>
+        <mxCell id="ZE22coVTS7m1IOgS9hnd-26" value="Flow&lt;div&gt;New customer with large spending&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="770" y="260" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="ZE22coVTS7m1IOgS9hnd-27" value="Flow&lt;br&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Orders&lt;/span&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&amp;nbsp;&amp;nbsp;&lt;/span&gt;Quantity per hour&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="860" y="203.7" width="140" height="50" as="geometry" />
+        </mxCell>
       </root>
     </mxGraphModel>
   </diagram>

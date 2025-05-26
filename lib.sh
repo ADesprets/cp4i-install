@@ -1,4 +1,970 @@
 ################################################
+# Install MQ
+# https://www.ibm.com/docs/en/ibm-mq/9.4.x?topic=kubernetes-example-configuring-simple-queue-manager-in
+function install_mq_k8s() {
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel install_mq_k8s
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  # ibm-mq
+  if $MY_MQ; then
+    check_directory_exist_create "${MY_MQ_WORKINGDIR}"
+
+    create_project "$VAR_MQ_NAMESPACE" "$VAR_MQ_NAMESPACE project" "For MQ" "${MY_YAMLDIR}mq/" "${MY_MQ_WORKINGDIR}"
+    mylog info "Creating entitlement, need to check if it is needed or works"
+    add_ibm_entitlement "$VAR_MQ_NAMESPACE"
+
+    # create a mq service 
+    check_create_oc_yaml "Service" "${VAR_QMGR}-ibm-mq" "${MY_YAMLDIR}mq/" "${MY_MQ_WORKINGDIR}" "service.yaml" "${VAR_MQ_NAMESPACE}"
+
+    # Create a service account for the MQ
+    check_create_oc_yaml "ServiceAccount" "${VAR_QMGR}-ibm-mq" "${MY_YAMLDIR}mq/" "${MY_MQ_WORKINGDIR}" "serviceaccount.yaml" "$VAR_MQ_NAMESPACE"
+
+    # Creating MQ Pod managed by a StatefulSet
+    check_create_oc_yaml "StatefulSet" "${VAR_QMGR}-ibm-mq" "${MY_YAMLDIR}mq/" "${MY_MQ_WORKINGDIR}" "statefulset.yaml" "$VAR_MQ_NAMESPACE"
+
+    # wait for pods to be ready
+    check_pod_status "app.kubernetes.io/instance=${VAR_QMGR}" "$VAR_MQ_NAMESPACE"
+  fi
+
+  trace_out $lf_tracelevel install_mq_k8s
+}
+
+################################################
+# Install MQ
+function install_mq_oc() {
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel install_mq_oc
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  # ibm-mq
+  if $MY_MQ; then
+    check_directory_exist_create "${MY_MQ_WORKINGDIR}"
+
+    create_project "$VAR_MQ_NAMESPACE" "$VAR_MQ_NAMESPACE project" "For MQ" "${MY_RESOURCESDIR}" "${MY_MQ_WORKINGDIR}"
+
+    # add catalog sources using ibm_pak plugin
+    check_add_cs_ibm_pak $MY_MQ_CASE $MY_MQ_OPERATOR $MY_MQ_CATALOGSOURCE_LABEL amd64
+    if [[ -z $MY_MQ_VERSION ]]; then
+      export MY_MQ_VERSION=$VAR_APP_VERSION
+      unset VAR_APP_VERSION
+    fi
+
+    # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
+    local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
+    unset VAR_CATALOG_SOURCE
+
+    # Creating MQ operator subscription
+    create_operator_instance "${MY_MQ_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_MQ_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
+  fi
+
+  trace_out $lf_tracelevel install_mq_oc
+}
+
+################################################
+# Install Flink
+# https://ibm.github.io/event-automation/ep/installing/installing-on-kubernetes/
+#
+function install_flink_k8s() {
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel install_flink_k8s
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  if $MY_FLINK; then
+    check_directory_exist_create "${MY_FLINK_WORKINGDIR}"
+
+    create_project "${VAR_FLINK_NAMESPACE}" "${VAR_FLINK_NAMESPACE} project" "For Flink" "${MY_RESOURCESDIR}" "${MY_FLINK_WORKINGDIR}"
+
+    mylog info "Creating entitlement, need to check if it is needed or works"
+    add_ibm_entitlement "$VAR_FLINK_NAMESPACE"
+
+    # install the operator
+    # Note: If you are installing any subsequent operators in the same cluster, ensure you run the helm install command with the --set createGlobalResources=false option (as these resources have already been installed).
+    helm install "${MY_FLINK_OPERATOR}-crd" ibm-helm/ibm-eventautomation-flink-operator-crd -n "$VAR_FLINK_NAMESPACE"
+
+    helm install "${MY_FLINK_OPERATOR}" ibm-helm/ibm-eventautomation-flink-operator -n "$VAR_FLINK_NAMESPACE" --set watchAnyNamespace=true --set createGlobalResources=false
+    wait_for_state "Deployment" "flink-kubernetes-operator" "{.status.conditions[?(@.type=='Available')].status}" "True" "${VAR_FLINK_NAMESPACE}"
+
+    ## Creation of Event automation Flink PVC and instance
+    # Even if it's a pvc we use the same generic function
+    create_operand_instance "PersistentVolumeClaim" "ibm-flink-pvc" "${MY_OPERANDSDIR}" "${MY_FLINK_WORKINGDIR}" "EA-Flink-PVC.yaml" "$VAR_FLINK_NAMESPACE" "{.status.phase}" "Bound"
+
+    #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
+    if [[ -z $MY_FLINK_VERSION ]]; then
+      export MY_FLINK_VERSION=$($MY_CLUSTER_COMMAND ibm-pak list -o json | jq  --arg case "$MY_FLINK_OPERATOR" '.[] | select (.name == $case ) | .latestAppVersion')
+    fi
+
+    ## SB]20231023 to check the status of created Flink instance : https://ibm.github.io/event-automation/ep/installing/post-installation/
+    ## The status field displays the current state of the FlinkDeployment custom resource.
+    ## When the Flink instance is ready, the custom resource displays status.lifecycleState: STABLE and status.jobManagerDeploymentStatus: READY.
+    ## STANLE and READY (uppercase!!!)
+    create_operand_instance "FlinkDeployment" "${VAR_FLINK_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_FLINK_WORKINGDIR}" "EA-Flink-Capability.yaml" "$VAR_FLINK_NAMESPACE" "{.status.lifecycleState}-{.status.jobManagerDeploymentStatus}" "STABLE-READY"
+  fi
+
+  trace_out $lf_tracelevel install_flink_k8s
+}
+
+################################################
+# Install Flink
+# https://ibm.github.io/event-automation/ep/installing/installing-on-kubernetes/
+#
+function install_flink_oc() {
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel install_flink_oc
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  if $MY_FLINK; then
+    check_directory_exist_create "${MY_FLINK_WORKINGDIR}"
+
+    create_project "${VAR_FLINK_NAMESPACE}" "${VAR_FLINK_NAMESPACE} project" "For Flink" "${MY_RESOURCESDIR}" "${MY_FLINK_WORKINGDIR}"
+
+    # add catalog sources using ibm_pak plugin
+    ## SB]20231020 For Flink and Event processing first you have to apply the catalog source to your cluster :
+    ## https://ibm.github.io/event-automation/ep/installing/installing/, Chapter Applying catalog sources to your cluster
+    # event flink
+    check_add_cs_ibm_pak $MY_FLINK_CASE $MY_FLINK_OPERATOR $MY_FLINK_CATALOGSOURCE_LABEL amd64
+    if [[ -z $MY_FLINK_VERSION ]]; then
+      export MY_FLINK_VERSION=$VAR_APP_VERSION
+      unset VAR_APP_VERSION
+    fi
+
+
+    # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
+    local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
+    unset VAR_CATALOG_SOURCE
+
+    ## SB]20231020 For Flink and Event processing install the operator with the following command :
+    ## https://ibm.github.io/event-automation/ep/installing/installing/, Chapter : Install the operator by using the CLI (oc ibm-pak)
+    ## event flink
+    ## Creating Eventautomation Flink operator subscription
+    create_operator_instance "${MY_FLINK_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_FLINK_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
+
+    ## Creation of Event automation Flink PVC and instance
+    # Even if it's a pvc we use the same generic function
+    create_operand_instance "PersistentVolumeClaim" "ibm-flink-pvc" "${MY_OPERANDSDIR}" "${MY_FLINK_WORKINGDIR}" "EA-Flink-PVC.yaml" "$VAR_FLINK_NAMESPACE" "{.status.phase}" "Bound"
+
+    #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
+    if [[ -z $MY_FLINK_VERSION ]]; then
+      export MY_FLINK_VERSION=$($MY_CLUSTER_COMMAND ibm-pak list -o json | jq  --arg case "$MY_FLINK_OPERATOR" '.[] | select (.name == $case ) | .latestAppVersion')
+    fi
+
+    ## SB]20231023 to check the status of created Flink instance : https://ibm.github.io/event-automation/ep/installing/post-installation/
+    ## The status field displays the current state of the FlinkDeployment custom resource.
+    ## When the Flink instance is ready, the custom resource displays status.lifecycleState: STABLE and status.jobManagerDeploymentStatus: READY.
+    ## STANLE and READY (uppercase!!!)
+    create_operand_instance "FlinkDeployment" "${VAR_FLINK_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_FLINK_WORKINGDIR}" "EA-Flink-Capability.yaml" "$VAR_FLINK_NAMESPACE" "{.status.lifecycleState}-{.status.jobManagerDeploymentStatus}" "STABLE-READY"
+  fi
+
+  trace_out $lf_tracelevel install_flink_oc
+}
+
+################################################
+# Install EP
+# https://ibm.github.io/event-automation/ep/installing/installing-on-kubernetes/
+#
+function install_ep_keycloak_k8s() {
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel install_ep_keycloak_k8s
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  if $MY_EP; then
+    local lf_varb64
+
+    #check_directory_exist_create "${MY_EP_WORKINGDIR}"
+    check_directory_exist_create "${MY_EP_WORKINGDIR}"
+
+    create_project "${VAR_EP_NAMESPACE}" "${VAR_EP_NAMESPACE} project" "For Event Processing" "${MY_RESOURCESDIR}" "${MY_EP_WORKINGDIR}"
+
+    mylog info "Creating entitlement, need to check if it is needed or works"
+    add_ibm_entitlement "$VAR_EP_NAMESPACE"
+
+    # install the operator
+    # Note: If you are installing any subsequent operators in the same cluster, ensure you run the helm install command with the --set createGlobalResources=false option (as these resources have already been installed).
+    helm install "${MY_EP_OPERATOR}-crd" ibm-helm/ibm-ep-operator-crd -n "$VAR_EP_NAMESPACE"
+
+    helm install "${MY_EP_OPERATOR}" ibm-helm/ibm-ep-operator -n "$VAR_EP_NAMESPACE" --set watchAnyNamespace=true --set createGlobalResources=false
+    wait_for_state "Deployment" "ibm-ep-operator" "{.status.conditions[?(@.type=='Available')].status}" "True" "${VAR_EP_NAMESPACE}"
+
+    # Use LOCAL or OIDC
+    # https://ibm.github.io/event-automation/ep/security/managing-access/
+    export MY_EP_AUTH_TYPE=OIDC
+    local lf_yaml_file="EP-Capability-oidc.yaml"
+      
+    #SB# ATTENTION
+    # revoir le nommage des variables parceque MY_EP_KEYCLOAK_CLIENTID doit etre remplace par ${VAR_EP_INSTANCE_NAME}-integration-keycloak-client
+    #export MY_EP_KEYCLOAK_CLIENTID=$(echo -n "$MY_EP_KEYCLOAK_CLIENTID")
+
+    create_keycloak_client $MY_KEYCLOAK_CP4I_REALM ${VAR_EP_INSTANCE_NAME}-integration-keycloak-client $MY_KEYCLOAK_USERNAME
+    get_keycloak_secret $MY_KEYCLOAK_CP4I_REALM ${VAR_EP_INSTANCE_NAME}-integration-keycloak-client $MY_KEYCLOAK_USERNAME
+
+    decho $lf_tracelevel "VAR_KEYCLOAK_SECRET=$VAR_KEYCLOAK_SECRET"
+
+    adapt_file "$MY_EP_DIR" "$MY_EP_WORKINGDIR" "ep-secret.yaml"
+    if $MY_APPLY_FLAG; then
+      $MY_CLUSTER_COMMAND apply -f ${MY_EP_WORKINGDIR}ep-secret.yaml
+    fi
+
+    create_operand_instance "EventProcessing" "${VAR_EP_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_EP_WORKINGDIR}" "EP-Capability-oidc.yaml" "$VAR_EP_NAMESPACE" "{.status.phase}" "Running"
+
+    # wait for eventprocessing secrets to be ready (they are created by the instance)
+    wait_for_resource "Secret" "${VAR_EP_INSTANCE_NAME}-ibm-ep-user-roles" "$VAR_EP_NAMESPACE"
+
+    # generate properties files
+    adapt_file ${MY_EP_SCRIPTDIR}resources/ ${MY_EP_WORKINGDIR}resources/ user-roles.yaml
+  
+    # user roles
+    lf_varb64=$(cat "${MY_EP_WORKINGDIR}resources/user-roles.yaml" | base64 -w0)
+    if $MY_APPLY_FLAG; then
+      $MY_CLUSTER_COMMAND -n $VAR_EP_NAMESPACE patch secret ${VAR_EP_INSTANCE_NAME}-ibm-ep-user-roles --type=merge -p "{\"data\":{\"user-mapping.json\":\"$lf_varb64\"}}"
+  
+      local lf_path="{.status.phase}"
+      local lf_state="Running"
+
+      if $MY_CLUSTER_COMMAND -n $VAR_EP_NAMESPACE get $lf_type $lf_cr_name >/dev/null 2>&1; then
+        wait_for_state "$lf_type" "$lf_cr_name" "$lf_path" "$lf_state" "$VAR_EP_NAMESPACE"
+      else
+        mylog error "$lf_cr_name of type $lf_type in $VAR_EP_NAMESPACE namespace does not exist, will not wait for state"
+      fi
+  
+      # patch the keycloak client to add redirectUris
+      patch_keycloak_client EventProcessing $lf_cr_name $MY_KEYCLOAK_CP4I_REALM ${VAR_EP_INSTANCE_NAME}-integration-keycloak-client $MY_KEYCLOAK_USERNAME $VAR_EP_NAMESPACE
+    fi
+  fi
+
+  trace_out $lf_tracelevel install_ep_keycloak_k8s
+}
+
+################################################
+# Install EP
+# https://ibm.github.io/event-automation/ep/installing/installing-on-kubernetes/
+#
+function install_ep_local_k8s() {
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel install_ep_local_k8s
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  if $MY_EP; then
+    local lf_varb64
+
+    #check_directory_exist_create "${MY_EP_WORKINGDIR}"
+    check_directory_exist_create "${MY_EP_WORKINGDIR}"
+
+    create_project "${VAR_EP_NAMESPACE}" "${VAR_EP_NAMESPACE} project" "For Event Processing" "${MY_RESOURCESDIR}" "${MY_EP_WORKINGDIR}"
+
+    mylog info "Creating entitlement, need to check if it is needed or works"
+    add_ibm_entitlement "$VAR_EP_NAMESPACE"
+
+    # install the operator
+    # Note: If you are installing any subsequent operators in the same cluster, ensure you run the helm install command with the --set createGlobalResources=false option (as these resources have already been installed).
+    helm install "${MY_EP_OPERATOR}-crd" ibm-helm/ibm-ep-operator-crd -n "$VAR_EP_NAMESPACE"
+
+    helm install "${MY_EP_OPERATOR}" ibm-helm/ibm-ep-operator -n "$VAR_EP_NAMESPACE" --set watchAnyNamespace=true --set createGlobalResources=false
+    wait_for_state "Deployment" "ibm-ep-operator" "{.status.conditions[?(@.type=='Available')].status}" "True" "${VAR_EP_NAMESPACE}"
+
+    # Use LOCAL or OIDC
+    # https://ibm.github.io/event-automation/ep/security/managing-access/
+    export MY_EP_AUTH_TYPE=LOCAL
+    create_operand_instance "EventProcessing" "${VAR_EP_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_EP_WORKINGDIR}" "EP-Capability.yaml" "$VAR_EP_NAMESPACE" "{.status.phase}" "Running"
+  
+    # wait for eventprocessing secrets to be ready (they are created by the instance)
+    wait_for_resource "Secret" "${VAR_EP_INSTANCE_NAME}-ibm-ep-user-roles" "$VAR_EP_NAMESPACE"
+    wait_for_resource "Secret" "${VAR_EP_INSTANCE_NAME}-ibm-ep-user-credentials" "$VAR_EP_NAMESPACE"
+
+    # generate properties files
+    adapt_file ${MY_EP_SIMPLE_DEMODIR}resources/ ${MY_EP_WORKINGDIR}resources/ user-credentials.yaml
+    adapt_file ${MY_EP_SIMPLE_DEMODIR}resources/ ${MY_EP_WORKINGDIR}resources/ user-roles.yaml
+  
+    # user credentials
+    local lf_varb64=$(cat "${MY_EP_WORKINGDIR}resources/user-credentials.yaml" | base64 -w0)
+    if $MY_APPLY_FLAG; then
+      $MY_CLUSTER_COMMAND -n $VAR_EP_NAMESPACE patch secret ${VAR_EP_INSTANCE_NAME}-ibm-ep-user-credentials --type=merge -p "{\"data\":{\"user-credentials.json\":\"$lf_varb64\"}}"
+    fi
+  
+    # user roles
+    lf_varb64=$(cat "${MY_EP_WORKINGDIR}resources/user-roles.yaml" | base64 -w0)
+    if $MY_APPLY_FLAG; then
+      $MY_CLUSTER_COMMAND -n $VAR_EP_NAMESPACE patch secret ${VAR_EP_INSTANCE_NAME}-ibm-ep-user-roles --type=merge -p "{\"data\":{\"user-mapping.json\":\"$lf_varb64\"}}"
+    fi
+  fi
+
+  trace_out $lf_tracelevel install_ep_local_k8s
+}
+
+################################################
+# Install EP
+# https://ibm.github.io/event-automation/ep/installing/installing-on-kubernetes/
+#
+function install_ep_keycloak_oc() {
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel install_ep_keycloak_oc
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  if $MY_EP; then
+    local lf_varb64
+
+    #check_directory_exist_create "${MY_EP_WORKINGDIR}"
+    check_directory_exist_create "${MY_EP_WORKINGDIR}"
+
+    create_project "${VAR_EP_NAMESPACE}" "${VAR_EP_NAMESPACE} project" "For Event Processing" "${MY_RESOURCESDIR}" "${MY_EP_WORKINGDIR}"
+
+    # add catalog sources using ibm_pak plugin
+    check_add_cs_ibm_pak $MY_EP_CASE $MY_EP_OPERATOR $MY_EP_CATALOGSOURCE_LABEL amd64
+    if [[ -z $MY_EP_VERSION ]]; then
+      export MY_EP_VERSION=$VAR_APP_VERSION
+      unset VAR_APP_VERSION
+    fi
+
+    decho $lf_tracelevel "MY_EP_VERSION=$MY_EP_VERSION"
+
+    # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
+    local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
+    unset VAR_CATALOG_SOURCE
+
+    ## Creating Event processing operator subscription
+    create_operator_instance "${MY_EP_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_EP_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
+    
+    # Use LOCAL or OIDC
+    # https://ibm.github.io/event-automation/ep/security/managing-access/
+    export MY_EP_AUTH_TYPE=OIDC
+    local lf_yaml_file="EP-Capability-oidc.yaml"
+      
+    #SB# ATTENTION
+    # revoir le nommage des variables parceque MY_EP_KEYCLOAK_CLIENTID doit etre remplace par ${VAR_EP_INSTANCE_NAME}-integration-keycloak-client
+    #export MY_EP_KEYCLOAK_CLIENTID=$(echo -n "$MY_EP_KEYCLOAK_CLIENTID")
+
+    create_keycloak_client $MY_KEYCLOAK_CP4I_REALM ${VAR_EP_INSTANCE_NAME}-integration-keycloak-client $MY_KEYCLOAK_USERNAME
+    get_keycloak_secret $MY_KEYCLOAK_CP4I_REALM ${VAR_EP_INSTANCE_NAME}-integration-keycloak-client $MY_KEYCLOAK_USERNAME
+
+    decho $lf_tracelevel "VAR_KEYCLOAK_SECRET=$VAR_KEYCLOAK_SECRET"
+
+    adapt_file "$MY_EP_DIR" "$MY_EP_WORKINGDIR" "ep-secret.yaml"
+    if $MY_APPLY_FLAG; then
+      $MY_CLUSTER_COMMAND apply -f ${MY_EP_WORKINGDIR}ep-secret.yaml
+    fi
+
+    create_operand_instance "EventProcessing" "${VAR_EP_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_EP_WORKINGDIR}" "EP-Capability-oidc.yaml" "$VAR_EP_NAMESPACE" "{.status.phase}" "Running"
+
+    # wait for eventprocessing secrets to be ready (they are created by the instance)
+    wait_for_resource "Secret" "${VAR_EP_INSTANCE_NAME}-ibm-ep-user-roles" "$VAR_EP_NAMESPACE"
+
+    # generate properties files
+    adapt_file ${MY_EP_SCRIPTDIR}resources/ ${MY_EP_WORKINGDIR}resources/ user-roles.yaml
+  
+    # user roles
+    lf_varb64=$(cat "${MY_EP_WORKINGDIR}resources/user-roles.yaml" | base64 -w0)
+    if $MY_APPLY_FLAG; then
+      $MY_CLUSTER_COMMAND -n $VAR_EP_NAMESPACE patch secret ${VAR_EP_INSTANCE_NAME}-ibm-ep-user-roles --type=merge -p "{\"data\":{\"user-mapping.json\":\"$lf_varb64\"}}"
+  
+      local lf_path="{.status.phase}"
+      local lf_state="Running"
+
+      if $MY_CLUSTER_COMMAND -n $VAR_EP_NAMESPACE get $lf_type $lf_cr_name >/dev/null 2>&1; then
+        wait_for_state "$lf_type" "$lf_cr_name" "$lf_path" "$lf_state" "$VAR_EP_NAMESPACE"
+      else
+        mylog error "$lf_cr_name of type $lf_type in $VAR_EP_NAMESPACE namespace does not exist, will not wait for state"
+      fi
+  
+      # patch the keycloak client to add redirectUris
+      patch_keycloak_client EventProcessing $lf_cr_name $MY_KEYCLOAK_CP4I_REALM ${VAR_EP_INSTANCE_NAME}-integration-keycloak-client $MY_KEYCLOAK_USERNAME $VAR_EP_NAMESPACE
+    fi
+  fi
+
+  trace_out $lf_tracelevel install_ep_keycloak_oc
+}
+
+################################################
+# Install EP
+# https://ibm.github.io/event-automation/ep/installing/installing-on-kubernetes/
+#
+function install_ep_local_oc() {
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel install_ep_local_oc
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  if $MY_EP; then
+    local lf_varb64
+
+    #check_directory_exist_create "${MY_EP_WORKINGDIR}"
+    check_directory_exist_create "${MY_EP_WORKINGDIR}"
+
+    create_project "${VAR_EP_NAMESPACE}" "${VAR_EP_NAMESPACE} project" "For Event Processing" "${MY_RESOURCESDIR}" "${MY_EP_WORKINGDIR}"
+
+    # add catalog sources using ibm_pak plugin
+    check_add_cs_ibm_pak $MY_EP_CASE $MY_EP_OPERATOR $MY_EP_CATALOGSOURCE_LABEL amd64
+    if [[ -z $MY_EP_VERSION ]]; then
+      export MY_EP_VERSION=$VAR_APP_VERSION
+      unset VAR_APP_VERSION
+    fi
+
+    decho $lf_tracelevel "MY_EP_VERSION=$MY_EP_VERSION"
+
+    # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
+    local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
+    unset VAR_CATALOG_SOURCE
+
+    ## Creating Event processing operator subscription
+    create_operator_instance "${MY_EP_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_EP_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
+    
+    # Use LOCAL or OIDC
+    # https://ibm.github.io/event-automation/ep/security/managing-access/
+
+    export MY_EP_AUTH_TYPE=LOCAL
+    create_operand_instance "EventProcessing" "${VAR_EP_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_EP_WORKINGDIR}" "EP-Capability.yaml" "$VAR_EP_NAMESPACE" "{.status.phase}" "Running"
+
+    # wait for eventprocessing secrets to be ready (they are created by the instance)
+    wait_for_resource "Secret" "${VAR_EP_INSTANCE_NAME}-ibm-ep-user-roles" "$VAR_EP_NAMESPACE"
+    wait_for_resource "Secret" "${VAR_EP_INSTANCE_NAME}-ibm-ep-user-credentials" "$VAR_EP_NAMESPACE"
+    # generate properties files
+    adapt_file ${MY_EP_SIMPLE_DEMODIR}resources/ ${MY_EP_WORKINGDIR}resources/ user-credentials.yaml
+    adapt_file ${MY_EP_SIMPLE_DEMODIR}resources/ ${MY_EP_WORKINGDIR}resources/ user-roles.yaml
+
+    # user credentials
+    local lf_varb64=$(cat "${MY_EP_WORKINGDIR}resources/user-credentials.yaml" | base64 -w0)
+    if $MY_APPLY_FLAG; then
+      $MY_CLUSTER_COMMAND -n $VAR_EP_NAMESPACE patch secret ${VAR_EP_INSTANCE_NAME}-ibm-ep-user-credentials --type=merge -p "{\"data\":{\"user-credentials.json\":\"$lf_varb64\"}}"
+    fi
+
+    # user roles
+    lf_varb64=$(cat "${MY_EP_WORKINGDIR}resources/user-roles.yaml" | base64 -w0)
+    if $MY_APPLY_FLAG; then
+      $MY_CLUSTER_COMMAND -n $VAR_EP_NAMESPACE patch secret ${VAR_EP_INSTANCE_NAME}-ibm-ep-user-roles --type=merge -p "{\"data\":{\"user-mapping.json\":\"$lf_varb64\"}}"
+    fi
+  fi
+
+  trace_out $lf_tracelevel install_ep_local_oc
+}
+
+################################################
+# Install EP
+#
+function install_ep_k8s() {
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel install_ep_k8s
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  if $MY_KEYCLOAK_INTEGRATION; then
+    install_ep_keycloak_k8s
+  else
+    install_ep_local_k8s
+  fi
+  
+  trace_out $lf_tracelevel install_ep_k8s
+}
+
+################################################
+# Install EGW
+function install_ep_oc() {
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel install_ep_oc
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  if $MY_KEYCLOAK_INTEGRATION; then
+    install_ep_keycloak_oc
+  else
+    install_ep_local_oc
+  fi
+  
+  trace_out $lf_tracelevel install_ep_oc
+}
+
+################################################
+# Install EGW
+function install_egw_local_oc() {
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel install_egw_local_oc
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  # Creating EventGateway instance (Event Gateway)
+  if $MY_EGW; then
+    check_directory_exist_create "${MY_EGW_WORKINGDIR}"
+
+    create_project "${VAR_EGW_NAMESPACE}" "${VAR_EGW_NAMESPACE} project" "For Event Endpoint Gateway" "${MY_RESOURCESDIR}" "${MY_EGW_WORKINGDIR}"
+
+    # Wait for this URL which will used by the EventGateway
+    local lf_timeout=$MY_MAX_TIMEOUT
+    local lf_interval=$MY_DELAY_SECONDS
+    while [[ $lf_timeout -gt 0 ]]; do
+      lf_eem_manager_gateway_route=$($MY_CLUSTER_COMMAND -n $VAR_EEM_NAMESPACE get eem ${VAR_EEM_INSTANCE_NAME} -o jsonpath='{.status.endpoints}' | jq -r '.[] | select (.name=="gateway").uri')      
+      if [[ -n "$lf_eem_manager_gateway_route" ]]; then
+        decho $lf_tracelevel "EEM Manager Gateway route\"$lf_eem_manager_gateway_route\" for instance \"$instance\""
+        break
+      fi
+      sleep $lf_interval
+      lf_timeout=$((lf_timeout - lf_interval))
+    done
+    
+    if [[ $lf_timeout -le 0 ]]; then
+      mylog error "Timeout waiting EEM Manager Gateway route:\"$lf_eem_manager_gateway_route\" for instance \"$instance\""
+      exit 1
+    fi
+
+    export VAR_EEM_MANAGER_GATEWAY_ROUTE=$lf_eem_manager_gateway_route
+    create_operand_instance "EventGateway" "${VAR_EGW_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_EGW_WORKINGDIR}" "EG-Capability.yaml" "${VAR_EGW_NAMESPACE}" "{.status.phase}" "Running"
+  fi
+
+  trace_out $lf_tracelevel install_egw_local_oc
+}
+
+################################################
+# Install EGW
+function install_local_egw_k8s() {
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel install_egw_k8s
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  # Creating EventGateway instance (Event Gateway)
+  if $MY_EGW; then
+    check_directory_exist_create "${MY_EGW_WORKINGDIR}"
+
+    create_project "${VAR_EGW_NAMESPACE}" "${VAR_EGW_NAMESPACE} project" "For Event Endpoint Gateway" "${MY_RESOURCESDIR}" "${MY_EGW_WORKINGDIR}"
+
+    # Wait for this URL which will used by the EventGateway
+    local lf_timeout=$MY_MAX_TIMEOUT
+    local lf_interval=$MY_DELAY_SECONDS
+    while [[ $lf_timeout -gt 0 ]]; do
+      lf_eem_manager_gateway_route=$($MY_CLUSTER_COMMAND -n $VAR_EEM_NAMESPACE get eem ${VAR_EEM_INSTANCE_NAME} -o jsonpath='{.status.endpoints}' | jq -r '.[] | select (.name=="gateway").uri')      
+      if [[ -n "$lf_eem_manager_gateway_route" ]]; then
+        decho $lf_tracelevel "EEM Manager Gateway route\"$lf_eem_manager_gateway_route\" for instance \"$instance\""
+        break
+      fi
+      sleep $lf_interval
+      lf_timeout=$((lf_timeout - lf_interval))
+    done
+    
+    if [[ $lf_timeout -le 0 ]]; then
+      mylog error "Timeout waiting EEM Manager Gateway route:\"$lf_eem_manager_gateway_route\" for instance \"$instance\""
+      exit 1
+    fi
+
+    export VAR_EEM_MANAGER_GATEWAY_ROUTE=$lf_eem_manager_gateway_route
+    create_operand_instance "EventGateway" "${VAR_EGW_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_EGW_WORKINGDIR}" "EG-Capability.yaml" "${VAR_EGW_NAMESPACE}" "{.status.phase}" "Running"
+  fi
+
+  trace_out $lf_tracelevel install_egw_k8s
+}
+
+################################################
+# Install EGW
+#
+function install_egw_k8s() {
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel install_egw_k8s
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  if $MY_KEYCLOAK_INTEGRATION; then
+    install_egw_keycloak_k8s
+  else
+    install_egw_local_k8s
+  fi
+  
+  trace_out $lf_tracelevel install_egw_k8s
+}
+
+################################################
+# Install EGW
+function install_egw_oc() {
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel install_egw_oc
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  if $MY_KEYCLOAK_INTEGRATION; then
+    install_egw_keycloak_oc
+  else
+    install_egw_local_oc
+  fi
+  
+  trace_out $lf_tracelevel install_egw_oc
+}
+
+################################################
+# Install EEM
+function install_eem_local_oc() {
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel install_eem_local_oc
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  if $MY_EEM; then
+    local lf_varb64
+
+    check_directory_exist_create "${MY_EEM_WORKINGDIR}"
+
+    create_project "$VAR_EEM_NAMESPACE" "$VAR_EEM_NAMESPACE project" "For Eventstreams" "${MY_RESOURCESDIR}" "${MY_EEM_WORKINGDIR}"
+    mylog info "Creating entitlement, need to check if it is needed or works"
+    add_ibm_entitlement "$VAR_EEM_NAMESPACE"
+
+    ## event endpoint management
+    ## to get the name of the pak to use : oc ibm-pak list
+    ## https://ibm.github.io/event-automation/eem/installing/installing/, chapter : Install the operator by using the CLI (oc ibm-pak)
+    check_add_cs_ibm_pak $MY_EEM_OPERATOR $MY_EEM_OPERATOR $MY_EEM_CATALOGSOURCE_LABEL amd64
+    if [[ -z $MY_EEM_VERSION ]]; then
+      export MY_EEM_VERSION=$VAR_APP_VERSION
+      unset VAR_APP_VERSION
+    fi
+
+    # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
+    local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
+    unset VAR_CATALOG_SOURCE
+
+    # Creating Event Endpoint Management operator subscription
+    create_operator_instance "${MY_EEM_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_EEM_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
+
+    # Creating EventEndpointManager instance (Event Processing)
+    if $MY_KEYCLOAK_INTEGRATION; then
+      export MY_EEM_AUTH_TYPE=INTEGRATION_KEYCLOAK
+    else
+      export MY_EEM_AUTH_TYPE=LOCAL
+    fi
+
+    create_operand_instance "EventEndpointManagement" "${VAR_EEM_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_EEM_WORKINGDIR}" "EEM-Capability.yaml" "$VAR_EEM_NAMESPACE" "{.status.conditions[0].type}" "Ready"
+
+    ## Creating EEM users and roles
+    if $MY_KEYCLOAK_INTEGRATION; then
+      # generate properties files
+      adapt_file ${MY_EEM_SIMPLE_DEMODIR}resources/ ${MY_EEM_WORKINGDIR}resources/ keycloak-user-roles
+      # keycloak user roles
+      local lf_varb64=$(cat "${MY_EEM_WORKINGDIR}resources/keycloak-user-roles.yaml" | base64 -w0)
+      $MY_CLUSTER_COMMAND -n $VAR_EEM_NAMESPACE patch secret "${VAR_EEM_INSTANCE_NAME}-ibm-eem-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$lf_varb64\"}]"
+    else
+      # generate properties files
+      adapt_file ${MY_EEM_SIMPLE_DEMODIR}resources/ ${MY_EEM_WORKINGDIR}resources/ local-user-credentials.yaml
+      adapt_file ${MY_EEM_SIMPLE_DEMODIR}resources/ ${MY_EEM_WORKINGDIR}resources/ local-user-roles.yaml
+      # base64 generates an error ": illegal base64 data at input byte 76". Solution found here : https://bugzilla.redhat.com/show_bug.cgi?id=1809431. use base64 -w0
+      # local user credentials
+      wait_for_resource "Secret" "${VAR_EEM_INSTANCE_NAME}-ibm-eem-user-credentials" "$VAR_EEM_NAMESPACE"
+      local lf_varb64=$(cat "${MY_EEM_WORKINGDIR}resources/local-user-credentials.yaml" | base64 -w0)
+      $MY_CLUSTER_COMMAND -n $VAR_EEM_NAMESPACE patch secret "${VAR_EEM_INSTANCE_NAME}-ibm-eem-user-credentials" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-credentials.json\" ,\"value\" : \"$lf_varb64\"}]"
+      
+      # local user roles
+      wait_for_resource "Secret" "${VAR_EEM_INSTANCE_NAME}-ibm-eem-user-roles" "$VAR_EEM_NAMESPACE"
+      local lf_varb64=$(cat "${MY_EEM_WORKINGDIR}resources/local-user-roles.yaml" | base64 -w0)
+      $MY_CLUSTER_COMMAND -n $VAR_EEM_NAMESPACE patch secret "${VAR_EEM_INSTANCE_NAME}-ibm-eem-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$lf_varb64\"}]"
+    fi
+  fi
+  
+  trace_out $lf_tracelevel install_eem_local_oc
+}
+
+################################################
+# Install EEM
+function install_eem_keycloak_oc() {
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel install_eem_keycloak_oc
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  if $MY_EEM; then
+    local lf_varb64
+
+    check_directory_exist_create "${MY_EEM_WORKINGDIR}"
+
+    create_project "$VAR_EEM_NAMESPACE" "$VAR_EEM_NAMESPACE project" "For Eventstreams" "${MY_RESOURCESDIR}" "${MY_EEM_WORKINGDIR}"
+    mylog info "Creating entitlement, need to check if it is needed or works"
+    add_ibm_entitlement "$VAR_EEM_NAMESPACE"
+
+    ## event endpoint management
+    ## to get the name of the pak to use : oc ibm-pak list
+    ## https://ibm.github.io/event-automation/eem/installing/installing/, chapter : Install the operator by using the CLI (oc ibm-pak)
+    check_add_cs_ibm_pak $MY_EEM_OPERATOR $MY_EEM_OPERATOR $MY_EEM_CATALOGSOURCE_LABEL amd64
+    if [[ -z $MY_EEM_VERSION ]]; then
+      export MY_EEM_VERSION=$VAR_APP_VERSION
+      unset VAR_APP_VERSION
+    fi
+
+
+    # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
+    local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
+    unset VAR_CATALOG_SOURCE
+
+    # Creating Event Endpoint Management operator subscription
+    create_operator_instance "${MY_EEM_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_EEM_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
+
+    # Creating EventEndpointManager instance (Event Processing)
+    export MY_EEM_AUTH_TYPE=INTEGRATION_KEYCLOAK
+
+    create_operand_instance "EventEndpointManagement" "${VAR_EEM_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_EEM_WORKINGDIR}" "EEM-Capability.yaml" "$VAR_EEM_NAMESPACE" "{.status.conditions[0].type}" "Ready"
+
+    ## Creating EEM users and roles
+    # generate properties files
+    adapt_file ${MY_EEM_SIMPLE_DEMODIR}resources/ ${MY_EEM_WORKINGDIR}resources/ keycloak-user-roles
+    # keycloak user roles
+    local lf_varb64=$(cat "${MY_EEM_WORKINGDIR}resources/keycloak-user-roles.yaml" | base64 -w0)
+    $MY_CLUSTER_COMMAND -n $VAR_EEM_NAMESPACE patch secret "${VAR_EEM_INSTANCE_NAME}-ibm-eem-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$lf_varb64\"}]"
+  fi
+  
+  trace_out $lf_tracelevel install_eem_keycloak_oc
+}
+
+################################################
+# Install EEM
+# https://ibm.github.io/event-automation/eem/installing/installing-on-kubernetes/
+function install_eem_local_k8s() {
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel install_eem_local_k8s
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  if $MY_EEM; then
+    local lf_varb64
+
+    check_directory_exist_create "${MY_EEM_WORKINGDIR}"
+
+    create_project "${VAR_EEM_NAMESPACE}" "${VAR_EEM_NAMESPACE} project" "For Event Endpoint Management" "${MY_RESOURCESDIR}" "${MY_EEM_WORKINGDIR}"
+
+    mylog info "Creating entitlement, need to check if it is needed or works"
+    add_ibm_entitlement "$VAR_EEM_NAMESPACE"
+
+    # Creating EventStreams operator subscription
+    # install the operator
+    # Note: If you are installing any subsequent operators in the same cluster, ensure you run the helm install command with the --set createGlobalResources=false option (as these resources have already been installed).
+    helm install "${MY_EEM_OPERATOR}-crd" ibm-helm/ibm-eem-operator-crd -n "$VAR_EEM_NAMESPACE"
+
+    helm install "${MY_EEM_OPERATOR}" ibm-helm/ibm-eem-operator -n "$VAR_EEM_NAMESPACE" --set watchAnyNamespace=true --set createGlobalResources=false
+
+    wait_for_state "Deployment" "ibm-eem-operator" "{.status.conditions[?(@.type=='Available')].status}" "True" "${VAR_EEM_NAMESPACE}"
+
+    # Creating EventEndpointManager instance (Event Processing)
+    export MY_EEM_AUTH_TYPE=LOCAL
+
+    # create a eem instance 
+    check_create_oc_yaml "EventEndpointManagement" "${VAR_EEM_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_EEM_WORKINGDIR}" "EEM-Capability-k8s.yaml" "${VAR_EEM_NAMESPACE}"
+    wait_for_state "EventEndpointManagement" "${VAR_EEM_INSTANCE_NAME}" "{.status.conditions[0].type}" "Ready" "${VAR_EEM_NAMESPACE}"
+
+    ## Creating EEM users and roles
+    # generate properties files
+    adapt_file ${MY_EEM_SIMPLE_DEMODIR}resources/ ${MY_EEM_WORKINGDIR}resources/ local-user-credentials.yaml
+    adapt_file ${MY_EEM_SIMPLE_DEMODIR}resources/ ${MY_EEM_WORKINGDIR}resources/ local-user-roles.yaml
+    # base64 generates an error ": illegal base64 data at input byte 76". Solution found here : https://bugzilla.redhat.com/show_bug.cgi?id=1809431. use base64 -w0
+    # local user credentials
+    wait_for_resource "Secret" "${VAR_EEM_INSTANCE_NAME}-ibm-eem-user-credentials" "$VAR_EEM_NAMESPACE"
+    local lf_varb64=$(cat "${MY_EEM_WORKINGDIR}resources/local-user-credentials.yaml" | base64 -w0)
+    $MY_CLUSTER_COMMAND -n $VAR_EEM_NAMESPACE patch secret "${VAR_EEM_INSTANCE_NAME}-ibm-eem-user-credentials" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-credentials.json\" ,\"value\" : \"$lf_varb64\"}]"
+      
+    # local user roles
+    wait_for_resource "Secret" "${VAR_EEM_INSTANCE_NAME}-ibm-eem-user-roles" "$VAR_EEM_NAMESPACE"
+    local lf_varb64=$(cat "${MY_EEM_WORKINGDIR}resources/local-user-roles.yaml" | base64 -w0)
+    $MY_CLUSTER_COMMAND -n $VAR_EEM_NAMESPACE patch secret "${VAR_EEM_INSTANCE_NAME}-ibm-eem-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$lf_varb64\"}]"
+  fi
+  
+  trace_out $lf_tracelevel install_eem_local_k8s
+}
+
+################################################
+# Install EEM
+# https://ibm.github.io/event-automation/eem/installing/installing-on-kubernetes/
+function install_eem_keycloak_k8s() {
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel install_eem_keycloak_k8s
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  if $MY_EEM; then
+    local lf_varb64
+
+    check_directory_exist_create "${MY_EEM_WORKINGDIR}"
+
+    create_project "${VAR_EEM_NAMESPACE}" "${VAR_EEM_NAMESPACE} project" "For Event Endpoint Management" "${MY_RESOURCESDIR}" "${MY_EEM_WORKINGDIR}"
+
+    mylog info "Creating entitlement, need to check if it is needed or works"
+    add_ibm_entitlement "$VAR_EEM_NAMESPACE"
+
+    # Creating EventStreams operator subscription
+    # install the operator
+    # Note: If you are installing any subsequent operators in the same cluster, ensure you run the helm install command with the --set createGlobalResources=false option (as these resources have already been installed).
+    helm install "${MY_EEM_OPERATOR}-crd" ibm-helm/ibm-eem-operator-crd -n "$VAR_EEM_NAMESPACE"
+
+    helm install "${MY_EEM_OPERATOR}" ibm-helm/ibm-eem-operator -n "$VAR_EEM_NAMESPACE" --set watchAnyNamespace=true --set createGlobalResources=false
+
+    wait_for_state "Deployment" "ibm-eem-operator" "{.status.conditions[?(@.type=='Available')].status}" "True" "${VAR_EEM_NAMESPACE}"
+
+    # Creating EventEndpointManager instance (Event Processing)
+    export MY_EEM_AUTH_TYPE=INTEGRATION_KEYCLOAK
+
+    # create a eem instance 
+    check_create_oc_yaml "EventEndpointManagement" "${VAR_EEM_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_EEM_WORKINGDIR}" "EEM-Capability-k8s.yaml" "${VAR_EEM_NAMESPACE}"
+    wait_for_state "EventEndpointManagement" "${VAR_EEM_INSTANCE_NAME}" "{.status.conditions[0].type}" "Ready" "${VAR_EEM_NAMESPACE}"
+
+    ## Creating EEM users and roles
+    # generate properties files
+    adapt_file ${MY_EEM_SIMPLE_DEMODIR}resources/ ${MY_EEM_WORKINGDIR}resources/ keycloak-user-roles
+    # keycloak user roles
+    local lf_varb64=$(cat "${MY_EEM_WORKINGDIR}resources/keycloak-user-roles.yaml" | base64 -w0)
+    $MY_CLUSTER_COMMAND -n $VAR_EEM_NAMESPACE patch secret "${VAR_EEM_INSTANCE_NAME}-ibm-eem-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$lf_varb64\"}]"
+  fi
+  
+  trace_out $lf_tracelevel install_eem_keycloak_k8s
+}
+
+################################################
+# Install EEM
+# https://ibm.github.io/event-automation/eem/installing/installing-on-kubernetes/
+function install_eem_k8s() {
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel install_eem_k8s
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  if $MY_KEYCLOAK_INTEGRATION; then
+    install_eem_keycloak_k8s
+  else
+    install_eem_local_k8s
+  fi
+  
+  trace_out $lf_tracelevel install_eem_k8s
+}
+
+################################################
+# Install EEM
+function install_eem_oc() {
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel install_eem_oc
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  if $MY_KEYCLOAK_INTEGRATION; then
+    install_eem_keycloak_oc
+  else
+    install_eem_local_oc
+  fi
+  
+  trace_out $lf_tracelevel install_eem_oc
+}
+
+################################################
+# function to install/configure a microk8s cluster
+################################################
+function install_microk8s_cluster {
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel install_microk8s_cluster
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+  
+  mylog info "📦 Creating MicroK8s master node..."
+  multipass launch --name $MY_MASTER --cpus $MY_CPU --memory $MY_RAM --disk $MY_DISK $MY_IMAGE
+  multipass exec $MY_MASTER -- sudo snap install microk8s --classic
+  multipass exec $MY_MASTER -- sudo usermod -a -G microk8s ubuntu
+  multipass exec $MY_MASTER -- sudo apt update && sudo apt install -y nfs-common
+  
+  # Fetch the join command
+  for lf_worker in "${MY_WORKERS[@]}"; do
+    mylog info  "🔧 Creating and joining worker nodes..."
+    multipass launch --name $lf_worker --cpus $MY_CPU --memory $MY_RAM --disk $MY_DISK $MY_IMAGE
+    multipass exec $lf_worker -- sudo snap install microk8s --classic
+    multipass exec $lf_worker -- sudo usermod -a -G microk8s ubuntu
+    multipass exec $lf_worker -- sudo apt update && sudo apt install -y nfs-common
+  
+    mylog info  "🧪 Generating join command for $lf_worker..."
+    lf_joind_cmd=$(multipass exec $MY_MASTER -- microk8s add-node | grep 'microk8s join' | head -n1)
+  
+    mylog info  "🔗 Joining $lf_worker to cluster..."
+    multipass exec $lf_worker -- bash -c "sudo $lf_joind_cmd --worker"
+  done
+  
+  mylog info  "⏳ Waiting for nodes to be ready..."
+  sleep 30
+  multipass exec $MY_MASTER -- microk8s kubectl get nodes
+  
+  multipass exec $MY_MASTER --  microk8s enable cert-manager dashboard community nfs ingress registry
+  
+  mylog info  "🔧 Creating the k8s config file in ~/.kube..."
+  multipass exec $MY_MASTER -- microk8s config > microk8s-config
+  cp microk8s-config ~/.kube/config  
+
+  trace_out $lf_tracelevel install_microk8s_cluster
+}
+ 
+######################################################################
+# Create minikube cluster if it does not exist
+# and wait for availability of the cluster
+function install_minikube_cluster {
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel install_minikube_cluster
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+  
+  # check if environment variable MINIKUBE_HOME is set
+  # https://ioflood.com/blog/bash-check-if-environment-variable-is-set/
+  if [ -z "${MINIKUBE_HOME}" ]; then
+    mylog "error" "MINIKUBE_HOME is unset or set to the empty string"
+    exit 1
+  fi
+
+  # check if minikube cluster profile exist
+  lf_result=$(minikube profile list -o json | jq -r --arg Name "$MY_CLUSTER_NAME" '.valid[] | select (.Name == $Name)')
+  if [ -z "$lf_result" ]; then
+	  mylog "info" "Creating/Starting minikube cluster: $MY_CLUSTER_NAME"
+    minikube start --nodes $MY_CLUSTER_WORKERS \
+                   --memory $MY_WORKER_MEMORY \
+                   --cpus $MY_WORKER_CPUS \
+                   --container-runtime=$MY_CONTAINER_RUNTIME \
+                   --driver=$MY_MINIKUBE_DRIVER -p $MY_CLUSTER_NAME
+                   --base-image=$MY_BASE_IMAGE -p $MY_CLUSTER_NAME
+#                   --iso-url=$MY_ISO_URL \
+#                   --base-image=$MY_BASE_IMAGE --iso-url=$MY_ISO_URL -p $MY_CLUSTER_NAME
+  else
+    # check status of the cluster
+    lf_result=$(minikube profile list -o json | jq -r --arg Status "$MY_CLUSTER_FINAL_STATUS" '.valid[] | select (.Status == $Status)')
+    if [ -z "$lf_result" ]; then
+      mylog "info" "Starting existing minikube cluster: $MY_CLUSTER_NAME"
+      minikube start -p $MY_CLUSTER_NAME
+    else
+      mylog "info" "minikube cluster: $MY_CLUSTER_NAME already running"
+    fi
+  fi
+
+  # Create OpenEBS Storageclass
+  if $MY_INSTALL_OPENEBS; then
+    mylog "info" "Installing OpenEBS StorageClass"
+    check_directory_exist_create "${MY_OPENEBS_WORKINGDIR}"
+    create_project "${MY_OPENEBS_NAMESPACE}" "${MY_OPENEBS_NAMESPACE} project" "For OpenEBS Storage provider" "${MY_YAMLDIR}openebs/" "${MY_OPENEBS_WORKINGDIR}"
+    $MY_CLUSTER_COMMAND apply -f https://openebs.github.io/charts/openebs-operator.yaml
+    check_create_oc_yaml "StorageClass" "openebs-localpv-block" "${MY_YAMLDIR}openebs/" "${MY_OPENEBS_WORKINGDIR}" "openebs-block.yaml" "${MY_OPENEBS_WORKINGDIR}"
+    $MY_CLUSTER_COMMAND patch storageclass openebs-localpv-block -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+  fi
+
+  trace_out $lf_tracelevel install_minikube_cluster
+}
+
+################################################
+# Get the dns name which will be used for certficate generation and other usages
+function get_dns () {
+  local lf_tracelevel=3
+	trace_in $lf_tracelevel get_dns
+
+  case $MY_CLUSTER_COMMAND in
+  kubectl)  case $MY_K8S_FLAVOR in
+            microk8s) export VAR_MINIKUBE_IP=$(multipass list --format json | jq -r --arg master "$MY_MASTER" '.list[] | select(.name ==$master) | .ipv4[0]');;
+            minikube) minikube profile $MY_CLUSTER_NAME
+                      export VAR_MINIKUBE_IP=$(minikube ip);;
+            esac
+             
+             export VAR_CLUSTER_DOMAIN="cluster.local"
+             export VAR_SAN_DNS="*.${VAR_CLUSTER_DOMAIN}"
+             export VAR_COMMON_NAME=$VAR_SAN_DNS;;
+  oc) export VAR_CLUSTER_DOMAIN=$($MY_CLUSTER_COMMAND get dns cluster -o jsonpath='{.spec.baseDomain}')
+      export VAR_SAN_DNS="*.${VAR_CLUSTER_DOMAIN}"
+      export VAR_COMMON_NAME=$VAR_SAN_DNS
+      ;;
+  esac
+
+	trace_out $lf_tracelevel get_dns
+}
+
+################################################
 # Check pod status
 function check_pod_status() {
   local lf_tracelevel=3
@@ -18,7 +984,7 @@ function check_pod_status() {
   fi
 
   # Get pods with the specified label selector
-  lf_pods=$($MY_CLUSTER_COMMAND get pods -n "$lf_in_namespace" --selector="$lf_in_label_selector" -o json)
+  lf_pods=$($MY_CLUSTER_COMMAND -n "$lf_in_namespace" get pods --selector="$lf_in_label_selector" -o json)
   
   # Extract the status conditions we care about
   lf_statuses=$(echo "$lf_pods" | jq -r '.items[].status.conditions[] | select(.type == "Ready").status')
@@ -86,7 +1052,7 @@ function wait_for_catalogsource_2be_ready() {
 ################################################
 # Display information to access CP4I
 function display_access_info() {
-  local lf_tracelevel=2
+  local lf_tracelevel=5
   trace_in $lf_tracelevel display_access_info
 
   mylog info "==== Displaying Access Info to CP4I." 0
@@ -224,7 +1190,7 @@ function display_access_info() {
     fi
 
     lf_mq_admin_url=$($MY_CLUSTER_COMMAND -n $VAR_MQ_NAMESPACE get QueueManager $VAR_MQ_INSTANCE_NAME -o jsonpath='{.status.adminUiUrl}')
-    mylog info "MQ Management Console: ${lf_mq_admin_url}" 0
+    mylog info "MQ Management Console : ${lf_mq_admin_url}" 0
     echo  "<DT><A HREF=${lf_mq_admin_url}>MQ Management Console</A>" >> ${MY_WORKINGDIR}/bookmarks.html
 
     local lf_mq_authentication_method=$($MY_CLUSTER_COMMAND -n $VAR_MQ_NAMESPACE get qmgr $VAR_MQ_INSTANCE_NAME -o jsonpath='{.spec.web.console.authentication.provider}')
@@ -446,7 +1412,7 @@ function mylog() {
     error)   c=1            #red
              p='ERROR: ';;
     warn)    c=3;;          #yellow
-    result)  c=14;;           #light blue
+    result)  c=14;;         #light blue
     debug)   c=8            #grey
              p='CMD: ';; 
     wait)    c=4            #purple
@@ -796,7 +1762,7 @@ function check_exec_prereqs() {
   check_command_exist jq
   check_command_exist yq
   check_command_exist keytool
-  check_command_exist oc
+  check_command_exist $MY_CLUSTER_COMMAND
   check_command_exist "$MY_CLUSTER_COMMAND ibm-pak"
   check_command_exist openssl
   check_command_exist mvn
@@ -1006,7 +1972,7 @@ function check_create_oc_yaml() {
     $MY_CLUSTER_COMMAND apply -f "${lf_in_target_directory}${lf_in_yaml_file}" || exit 1
     if [[ $lf_in_type == "Subscription" ]]; then
       # use the fully qualified API Group ($MY_CLUSTER_COMMAND get subscription -A  returns nothing and $MY_CLUSTER_COMMAND get sub -A returns a full list of subscriptions !!!)
-      lf_type="subscription"
+      lf_type="sub"
     else 
       lf_type=$lf_in_type
     fi
@@ -1192,6 +2158,74 @@ function add_ldif_file () {
   trace_out $lf_tracelevel add_ldif_file
 }
 
+#========================================================
+# add ldif file entries if each doesn't exist
+# @param 1:
+# @param 2:
+# @param 3:
+# @param 4:
+function add_ldif_file_k8s () {
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel add_ldif_file_k8s
+
+  local lf_in_ldap_server="$1"
+  local lf_in_admin_dn="$2"
+  local lf_in_admin_password="$3"
+  local lf_in_ldif_file="$4"
+
+  #local lf_ldif_file_relative_path=$(echo "${lf_in_ldif_file#"$MY_WORKINGDIR"}")
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|"  
+
+  if [[ $# -ne 4 ]]; then
+    mylog error "You have to provide 4 arguments: ldap server, admin DN, admin password and ldif file"
+    trace_out $lf_tracelevel add_ldif_file
+    exit  1
+  fi
+
+  local lf_tmp_ldif="${MY_WORKINGDIR}temp_entry.ldif"
+  local lf_line lf_entry_dn lf_entry_content
+
+  # SB # Juste pour tetser sur Windows
+  dos2unix $lf_in_ldif_file
+  # Read the LDIF file and process each entry
+  while IFS= read -r lf_line; do
+    # Collect lines of a single LDIF entry
+    if [[ -z "$lf_line" ]]; then
+      # Empty line indicates end of an entry
+      if [[ -n "$lf_entry_dn" && -n "$lf_entry_content" ]]; then
+          # Insert 'changetype: add' after the first line (i.e., after dn)
+          lf_entry_content=$(printf "%s\nchangetype: add\n%s" \
+            "$(printf "%s" "$lf_entry_content" | head -n 1)" \
+            "$(printf "%s" "$lf_entry_content" | tail -n +2)")
+
+        add_ldap_entry_if_not_exists "$lf_in_ldap_server" "$lf_in_admin_dn" "$lf_in_admin_password" "$lf_entry_dn" "$lf_entry_content" "$lf_tmp_ldif"
+        lf_entry_dn=""
+        lf_entry_content=""
+      fi
+    else
+      # Accumulate the DN and content of the entry
+      if [[ "$lf_line" =~ ^dn:\ (.*) ]]; then
+        lf_entry_dn="${BASH_REMATCH[1]}"
+      fi
+      lf_entry_content+="$lf_line"$'\n'
+    fi
+  done < $lf_in_ldif_file
+  
+  # Process the last entry if the file doesn't end with a new line
+  if [[ -n "$lf_entry_dn" && -n "$lf_entry_content" ]]; then
+    lf_entry_content=$(printf "%s\nchangetype: add\n%s" \
+      "$(printf "%s" "$lf_entry_content" | head -n 1)" \
+      "$(printf "%s" "$lf_entry_content" | tail -n +2)")
+
+    add_ldap_entry_if_not_exists "$lf_in_ldap_server" "$lf_in_admin_dn" "$lf_in_admin_password" "$lf_entry_dn" "$lf_entry_content" "$lf_tmp_ldif"
+  fi
+  
+  # Clean up temporary file
+  #rm -f $lf_tmp_ldif
+
+  trace_out $lf_tracelevel add_ldif_file_k8s
+}
+
 ################################################
 # create the ldap service and route
 # @param 1: dir: the source directory example: "${subscriptionsdir}"
@@ -1219,6 +2253,44 @@ function create_openldap_route() {
   export VAR_LDAP_HOSTNAME=$($MY_CLUSTER_COMMAND -n ${VAR_LDAP_NAMESPACE} get route ${VAR_LDAP_ROUTE} -o jsonpath='{.spec.host}')
 
   trace_out $lf_tracelevel create_openldap_route
+}
+
+################################################
+# create the ldap service and route
+# @param 1: dir: the source directory example: "${subscriptionsdir}"
+# @param 2: file
+#
+function create_openldap_route_k8s() {
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel create_openldap_route_k8s
+
+  # expose service externaly and get host and port
+  decho $lf_tracelevel "$MY_CLUSTER_COMMAND -n ${VAR_LDAP_NAMESPACE} get service ${VAR_LDAP_SERVICE} -o json | jq '.spec.ports[] | select(.port == 389) | .nodePort'"
+  export VAR_LDAP_PORT=$($MY_CLUSTER_COMMAND -n ${VAR_LDAP_NAMESPACE} get service ${VAR_LDAP_SERVICE} -o json | jq '.spec.ports[] | select(.port == 389) | .nodePort')
+
+  export VAR_LDAP_HOSTNAME=$VAR_MINIKUBE_IP
+  mylog info "ldap server is accessible here hostname:${VAR_LDAP_HOSTNAME} using port ${VAR_LDAP_PORT}"
+
+  trace_out $lf_tracelevel create_openldap_route_k8s
+}
+
+################################################
+# create the mq service and route
+# @param 1: dir: the source directory example: "${subscriptionsdir}"
+# @param 2: file
+#
+function create_qmgr_route_k8s() {
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel create_qmgr_route_k8s
+
+  # expose service externaly and get host and port
+  decho $lf_tracelevel "$MY_CLUSTER_COMMAND -n ${VAR_MQ_NAMESPACE} get service "${VAR_QMGR}-ibm-mq" -o json | jq '.spec.ports[] | select(.port == 9443) | .nodePort'"
+  export VAR_MQ_WEBCONSOLE_PORT=$($MY_CLUSTER_COMMAND -n ${VAR_MQ_NAMESPACE} get service "${VAR_QMGR}-ibm-mq" -o json | jq '.spec.ports[] | select(.port == 9443) | .nodePort')
+
+  export VAR_MQ_HOSTNAME=$VAR_MINIKUBE_IP
+  mylog info "MQ Webconsole is accessible here hostname:https://${VAR_MQ_HOSTNAME}:${VAR_MQ_WEBCONSOLE_PORT}/ibmmq/console"
+
+  trace_out $lf_tracelevel create_qmgr_route_k8s
 }
 
 ################################################
@@ -1344,10 +2416,29 @@ function create_project() {
     exit  1
   fi
 
-  local lf_yaml_file="project.yaml"
   export VAR_NAMESPACE=$lf_in_name
-  export VAR_NAMESPACE_DISPLAYNAME=$lf_in_display_name
-  export VAR_NAMESPACE_DESCRIPTION=$lf_in_description
+
+  case $MY_CLUSTER_COMMAND in
+    kubectl) local lf_yaml_file="namespace.yaml"
+              if kubectl get namespace $lf_in_name > /dev/null 2>&1; then mylog ok; else
+                mylog info "Creating namespace $lf_in_name"
+                adapt_file ${lf_in_source_directory} ${lf_in_target_directory} ${lf_yaml_file}
+                if $MY_APPLY_FLAG; then
+                  $MY_CLUSTER_COMMAND apply -f "${lf_in_target_directory}${lf_yaml_file}"
+                  if [[ $? -ne 0 ]]; then 
+                    unset VAR_NAMESPACE
+                    trace_out $lf_tracelevel create_project
+                    exit 1
+                  fi
+                fi
+              fi
+
+             unset VAR_NAMESPACE
+             ;;
+
+    oc) local lf_yaml_file="project.yaml"
+        export VAR_NAMESPACE_DISPLAYNAME=$lf_in_display_name
+        export VAR_NAMESPACE_DESCRIPTION=$lf_in_description
 
   var_fail lf_in_name "Please define project name in config"
   mylog info "Creating/Updating project $lf_in_name"
@@ -1363,7 +2454,10 @@ function create_project() {
     fi    
   fi
 
-  unset VAR_NAMESPACE VAR_NAMESPACE_DISPLAYNAME VAR_NAMESPACE_DESCRIPTION
+        unset VAR_NAMESPACE VAR_NAMESPACE_DISPLAYNAME VAR_NAMESPACE_DESCRIPTION
+        ;;
+  esac
+
   trace_out $lf_tracelevel create_project
 }
 
@@ -1381,11 +2475,7 @@ function wait_for_resource() {
   local lf_in_namespace=$3
   decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|"
 
-  if [[ $lf_in_type == "subscription" ]]; then
-    decho $lf_tracelevel ">>> Temporary fix for subscription"
-  else
-
-if [[ $# -ne 3 ]] && [[ $# -ne 2 ]]; then
+  if [[ $# -ne 3 ]] && [[ $# -ne 2 ]]; then
     mylog error "You have to provide 2 or 3 arguments: type, resource name and eventually namespace"
     trace_out $lf_tracelevel wait_for_resource
     exit  1
@@ -1418,10 +2508,6 @@ if [[ $# -ne 3 ]] && [[ $# -ne 2 ]]; then
   done
   echo 
   export VAR_RESOURCE=$lf_resource
-
-  
-  fi
-
   
   trace_out $lf_tracelevel wait_for_resource
 }

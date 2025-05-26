@@ -1,0 +1,169 @@
+{
+  "namespace": "com.loosehangerjeans",
+  "type": "record",
+  "name": "ReturnRequest",
+  "fields": [
+    {
+      "name": "id",
+      "doc": "Unique ID for the return request",
+      "type": {
+        "type": "string",
+        "logicalType": "uuid"
+      }
+    },
+    {
+      "name": "customer",
+      "doc": "Customer who issued the return request",
+      "type": {
+        "type": "record",
+        "name": "Customer",
+        "fields": [
+          {
+            "name": "id",
+            "type": {
+              "type": "string",
+              "logicalType": "uuid"
+            },
+            "doc": "Unique id for the customer"
+          },
+          {
+            "name": "name",
+            "type": "string",
+            "doc": "Name of the customer"
+          },
+          {
+            "name": "emails",
+            "type": {
+              "type": "array",
+              "items": "string"
+            },
+            "doc": "Emails of the customer"
+          }
+        ]
+      }
+    },
+    {
+      "name": "addresses",
+      "doc": "Addresses used for the product order",
+      "type": {
+        "type": "array",
+        "items": {
+          "type": "record",
+          "name": "NamedAddress",
+          "fields": [
+            {
+              "name": "name",
+              "type": "string",
+              "doc": "Name for the address"
+            },
+            {
+              "name": "number",
+              "type": [
+                "null",
+                "int"
+              ],
+              "doc": "House number for the address"
+            },
+            {
+              "name": "street",
+              "type": [
+                "null",
+                "string"
+              ],
+              "doc": "Street for the address"
+            },
+            {
+              "name": "city",
+              "type": "string",
+              "doc": "City for the address"
+            },
+            {
+              "name": "zipcode",
+              "type": "string",
+              "doc": "Zipcode for the address"
+            },
+            {
+              "name": "country",
+              "doc": "Country for the address",
+              "type": {
+                "type": "record",
+                "name": "Country",
+                "fields": [
+                  {
+                    "name": "code",
+                    "type": "string",
+                    "doc": "Two-letter country code"
+                  },
+                  {
+                    "name": "name",
+                    "type": "string",
+                    "doc": "Name of the country"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "phones",
+              "type": [
+                "null",
+                {
+                  "type": "array",
+                  "items": "string"
+                }
+              ],
+              "doc": "Phone numbers for the address"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "returns",
+      "doc": "Requested product returns",
+      "type": {
+        "type": "array",
+        "items": {
+          "type": "record",
+          "name": "Return",
+          "fields": [
+            {
+              "name": "product",
+              "doc": "Product that is returned",
+              "type": {
+                "type": "record",
+                "name": "Product",
+                "fields": [
+                  {
+                    "name": "id",
+                    "type": "string",
+                    "doc": "Short description of the returned product"
+                  },
+                  {
+                    "name": "size",
+                    "type": "string",
+                    "doc": "Size of the returned product"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "quantity",
+              "type": "int",
+              "doc": "Quantity of the product that is returned"
+            },
+            {
+              "name": "reason",
+              "type": "string",
+              "doc": "Reason that the customer gave for returning the product"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "returntime",
+      "doc": "Time that the return request was issued (UTC time in ISO 8601 format)",
+      "type": "string"
+    }
+  ]
+}

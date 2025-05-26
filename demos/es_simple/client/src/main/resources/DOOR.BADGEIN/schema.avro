@@ -1,0 +1,28 @@
+{
+    "namespace": "com.loosehangerjeans",
+    "type": "record",
+    "name": "BadgeIn",
+    "fields": [
+        {
+            "name": "recordid",
+            "type": "string",
+            "logicalType": "uuid",
+            "doc": "badge event id"
+        },
+        {
+            "name": "door",
+            "type": "string",
+            "doc": "Code for the door that recorded the event. Door codes are made up of a building name, floor number, and door number, all separated by hyphens (-)"
+        },
+        {
+            "name": "employee",
+            "type": "string",
+            "doc": "userid associated with the name badge"
+        },
+        {
+            "name": "badgetime",
+            "type": "string",
+            "doc": "time that the door entry was recorded"
+        }
+    ]
+}

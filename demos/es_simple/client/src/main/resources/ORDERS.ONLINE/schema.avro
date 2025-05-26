@@ -1,0 +1,203 @@
+{
+  "namespace": "com.loosehangerjeans",
+  "type": "record",
+  "name": "OnlineOrder",
+  "fields": [
+    {
+      "name": "id",
+      "doc": "Unique ID for the online order",
+      "type": {
+        "type": "string",
+        "logicalType": "uuid"
+      }
+    },
+    {
+      "name": "customer",
+      "doc": "Customer who made the online order",
+      "type": {
+        "type": "record",
+        "name": "Customer",
+        "fields": [
+          {
+            "name": "id",
+            "type": {
+              "type": "string",
+              "logicalType": "uuid"
+            },
+            "doc": "Unique id for the customer"
+          },
+          {
+            "name": "name",
+            "type": "string",
+            "doc": "Name of the customer"
+          },
+          {
+            "name": "emails",
+            "type": {
+              "type": "array",
+              "items": "string"
+            },
+            "doc": "Emails of the customer"
+          }
+        ]
+      }
+    },
+    {
+      "name": "products",
+      "doc": "Descriptions of the ordered products",
+      "type": {
+        "type": "array",
+        "items": "string"
+      }
+    },
+    {
+      "name": "address",
+      "doc": "Address information used for the online order",
+      "type": {
+        "type": "record",
+        "name": "OnlineAddress",
+        "fields": [
+          {
+            "name": "shippingaddress",
+            "doc": "Shipping address used for the online order",
+            "type": {
+              "type": "record",
+              "name": "ShippingAddress",
+              "fields": [
+                {
+                  "name": "number",
+                  "type": [
+                    "null",
+                    "int"
+                  ],
+                  "doc": "House number for the shipping address"
+                },
+                {
+                  "name": "street",
+                  "type": [
+                    "null",
+                    "string"
+                  ],
+                  "doc": "Street for the shipping address"
+                },
+                {
+                  "name": "city",
+                  "type": "string",
+                  "doc": "City for the shipping address"
+                },
+                {
+                  "name": "zipcode",
+                  "type": "string",
+                  "doc": "Zipcode for the shipping address"
+                },
+                {
+                  "name": "country",
+                  "doc": "Country for the shipping address",
+                  "type": {
+                    "type": "record",
+                    "name": "ShippingCountry",
+                    "fields": [
+                      {
+                        "name": "code",
+                        "type": "string",
+                        "doc": "Two-letter country code"
+                      },
+                      {
+                        "name": "name",
+                        "type": "string",
+                        "doc": "Name of the country"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "name": "phones",
+                  "type": [
+                    "null",
+                    {
+                      "type": "array",
+                      "items": "string"
+                    }
+                  ],
+                  "doc": "Phone numbers for the shipping address"
+                }
+              ]
+            }
+          },
+          {
+            "name": "billingaddress",
+            "doc": "Billing address used for the online order",
+            "type": {
+              "type": "record",
+              "name": "BillingAddress",
+              "fields": [
+                {
+                  "name": "number",
+                  "type": [
+                    "null",
+                    "int"
+                  ],
+                  "doc": "House number for the billing address"
+                },
+                {
+                  "name": "street",
+                  "type": [
+                    "null",
+                    "string"
+                  ],
+                  "doc": "Street for the billing address"
+                },
+                {
+                  "name": "city",
+                  "type": "string",
+                  "doc": "City for the billing address"
+                },
+                {
+                  "name": "zipcode",
+                  "type": "string",
+                  "doc": "Zipcode for the billing address"
+                },
+                {
+                  "name": "country",
+                  "doc": "Country for the billing address",
+                  "type": {
+                    "type": "record",
+                    "name": "BillingCountry",
+                    "fields": [
+                      {
+                        "name": "code",
+                        "type": "string",
+                        "doc": "Two-letter country code"
+                      },
+                      {
+                        "name": "name",
+                        "type": "string",
+                        "doc": "Name of the country"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "name": "phones",
+                  "type": [
+                    "null",
+                    {
+                      "type": "array",
+                      "items": "string"
+                    }
+                  ],
+                  "doc": "Phone numbers for the billing address"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "ordertime",
+      "doc": "Time that the online order was made (UTC time in ISO 8601 format)",
+      "type": "string"
+    }
+  ]
+}

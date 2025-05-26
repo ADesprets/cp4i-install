@@ -1,0 +1,44 @@
+{
+  "id": "6ccb03aa-1636-48d1-b18c-ea04457f3542",
+  "customer": {
+    "id": "5989586f-42c9-4afa-ba1e-031422f71539",
+    "name": "Shaunta Purdy",
+    "emails": [
+      "shaunta.purdy@example.com"
+    ]
+  },
+  "products": [
+    "XXL Classic Low-rise Jeans",
+    "XXL Khaki Flare Jeans",
+    "S Stonewashed Cargo Jeans"
+  ],
+  "address": {
+    "shippingaddress": {
+      "number": 273,
+      "street": "Michal Roads",
+      "city": "Steuberstad",
+      "zipcode": "07110-2520",
+      "country": {
+        "code": "US",
+        "name": "United States"
+      },
+      "phones": [
+        "1-760-870-6622"
+      ]
+    },
+    "billingaddress": {
+      "number": 273,
+      "street": "Michal Roads",
+      "city": "Steuberstad",
+      "zipcode": "07110-2520",
+      "country": {
+        "code": "US",
+        "name": "United States"
+      },
+      "phones": [
+        "1-760-870-6622"
+      ]
+    }
+  },
+  "ordertime": "2024-03-29T17:54:03.022Z"
+}
