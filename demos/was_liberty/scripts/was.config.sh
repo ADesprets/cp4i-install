@@ -94,7 +94,7 @@ function push_image_to_registry() {
   trace_in $lf_tracelevel push_image_to_registry
   
   #	tag the local image with details of image registry
-  decho $lf_tracelevel "CMD: $MY_CONTAINER_ENGINE tag ${MY_WASLIBERTY_APP_NAME_VERSION} ${IMAGE_REGISTRY_HOST}/${VAR_WASLIBERTY_NAMESPACE}/${MY_WASLIBERTY_APP_NAME_VERSION}"
+  decho $lf_tracelevel "$MY_CONTAINER_ENGINE tag ${MY_WASLIBERTY_APP_NAME_VERSION} ${IMAGE_REGISTRY_HOST}/${VAR_WASLIBERTY_NAMESPACE}/${MY_WASLIBERTY_APP_NAME_VERSION}"
   $MY_CONTAINER_ENGINE tag ${MY_WASLIBERTY_APP_NAME_VERSION} ${IMAGE_REGISTRY_HOST}/${VAR_WASLIBERTY_NAMESPACE}/${MY_WASLIBERTY_APP_NAME_VERSION}
   $MY_CONTAINER_ENGINE push ${IMAGE_REGISTRY_HOST}/${VAR_WASLIBERTY_NAMESPACE}/${MY_WASLIBERTY_APP_NAME_VERSION}
     
@@ -252,10 +252,10 @@ sc_provision_preambule_file="${PROVISION_SCRIPTDIR}properties/preambule.properti
 set -a
 . "${sc_provision_script_parameters_file}"
 
-# load config files
+# load resources files
 . "${sc_provision_constant_properties_file}"
 
-# load config files
+# load resources files
 . "${sc_provision_variable_properties_file}"
 
 # Load mq variables

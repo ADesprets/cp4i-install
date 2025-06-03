@@ -2595,7 +2595,7 @@ function check_add_cs_ibm_pak() {
 
 #########################################################################################################
 ##SB]20231109 Generate properties and yaml/json files
-## input parameter the operand custom dir (and generated dir both with config and scripts subdirectories)
+## input parameter the operand custom dir (and generated dir both with resources and scripts subdirectories)
 # TODO Decide if it only works with files in the directory, or with subdirectories. Today just one level no subdirectories.
 # @param 1:
 # @param 2:
@@ -2622,7 +2622,7 @@ function generate_files() {
 
   # generate the differents properties files
   # SB]20231109 some generated files (yaml/json) are based on other generated files (properties), so :
-  # - in template custom dirs, separate the files to two categories : scripts (*.properties) and config (*.yaml or .json)
+  # - in template custom dirs, separate the files to two categories : scripts (*.properties) and resources (*.yaml or .json)
   # - generate first the *.properties files to be sourced then generate the *.yaml/*.json files
 
   local lf_config_customdir="${lf_in_source_directory}resources/"

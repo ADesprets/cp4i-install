@@ -5,10 +5,10 @@ sc_provision_constant_properties_file="${PROVISION_SCRIPTDIR}properties/cp4i-con
 sc_provision_variable_properties_file="${PROVISION_SCRIPTDIR}properties/cp4i-variables.properties"
 sc_provision_preambule_file="${PROVISION_SCRIPTDIR}properties/preambule.properties"
 
-# load config files
+# load resources files
 . "${sc_provision_variable_properties_file}"
 
-# load config files
+# load resources files
 . "${sc_provision_constant_properties_file}"
 
 # Load shared variables

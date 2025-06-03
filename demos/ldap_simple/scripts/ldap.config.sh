@@ -40,7 +40,7 @@ function push_image_to_registry() {
   $MY_CLUSTER_COMMAND -n openshift policy add-role-to-user system:registry ${MY_USER}
 
   #	tag the local image with details of image registry
-  decho $lf_tracelevel "CMD: $MY_CONTAINER_ENGINE tag ${MY_LDAP_APP_NAME_VERSION} ${VAR_IMAGE_REGISTRY_HOST}/${VAR_LDAP_NAMESPACE}/${MY_LDAP_APP_NAME_VERSION}"
+  decho $lf_tracelevel "$MY_CONTAINER_ENGINE tag ${MY_LDAP_APP_NAME_VERSION} ${VAR_IMAGE_REGISTRY_HOST}/${VAR_LDAP_NAMESPACE}/${MY_LDAP_APP_NAME_VERSION}"
   $MY_CONTAINER_ENGINE tag ${MY_LDAP_APP_NAME_VERSION} ${VAR_IMAGE_REGISTRY_HOST}/${VAR_LDAP_NAMESPACE}/${MY_LDAP_APP_NAME_VERSION}
   $MY_CONTAINER_ENGINE push ${VAR_IMAGE_REGISTRY_HOST}/${VAR_LDAP_NAMESPACE}/${MY_LDAP_APP_NAME_VERSION}
     
@@ -221,10 +221,10 @@ sc_component_properties_file="${sc_component_script_dir}../resources/ldap.proper
 set -a
 . "${sc_provision_script_parameters_file}"
 
-# load config files
+# load resources files
 . "${sc_provision_constant_properties_file}"
 
-# load config files
+# load resources files
 . "${sc_provision_variable_properties_file}"
 
 # Load mq variables

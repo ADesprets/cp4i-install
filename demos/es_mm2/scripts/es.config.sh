@@ -360,10 +360,10 @@ sc_component_properties_file="${sc_component_script_dir}../properties/es_mm2.pro
 set -a
 . "${sc_provision_script_parameters_file}"
 
-# load config files
+# load resources files
 . "${sc_provision_constant_properties_file}"
 
-# load config files
+# load resources files
 . "${sc_provision_variable_properties_file}"
 
 # Load component variables

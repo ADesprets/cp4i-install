@@ -425,7 +425,7 @@ function install_pipelines() {
 
 ################################################
 # Add mailhog app to openshift
-# Port is hard coded to 8025 and is defined by mailhog (default port)
+# Port is hard coded to 8025 for web UI and 1025 for the SMTP server and is defined by mailhog (default port)
 function install_mail() {
   SECONDS=0
   local lf_starting_date=$(date)
@@ -1591,7 +1591,7 @@ function customise_ace() {
   decho $lf_tracelevel "Parameters: |no parameters|"
 
   # Takes all the templates associated with the capabilities and generate the files from the context variables
-  # The files are generated into ./customisation/working/<capability>/config
+  # The files are generated into ./customisation/working/<capability>/resources
   if $MY_ACE_CUSTOM; then
     ${MY_ACE_SIMPLE_DEMODIR}scripts/ace.config.sh --call ace_run_all
   fi
@@ -1615,7 +1615,7 @@ function customise_apic() {
   decho $lf_tracelevel "Parameters: |no parameters|"
 
   # Takes all the templates associated with the capabilities and generate the files from the context variables
-  # The files are generated into ./customisation/working/<capability>/config
+  # The files are generated into ./customisation/working/<capability>/resources
   if $MY_APIC_CUSTOM; then
     mylog info "==== Customise APIC (apic.config.sh)." 0
     ${MY_APIC_SIMPLE_DEMODIR}scripts/apic.config.sh --call apic_run_all
@@ -1640,8 +1640,8 @@ function customise_es() {
   decho $lf_tracelevel "Parameters: |no parameters|"
 
   # start customization
-  # Takes all the templates associated with the capabilities and generate the files from the context variables
-  # The files are generated into ./customisation/working/<capability>/config
+  # Takes all the templates associated with the capabilities and resources the files from the context variables
+  # The files are generated into ./customisation/working/<capability>/resources
 
   # SB]20231026 Creating :
   # - operands properties file,
@@ -1654,7 +1654,7 @@ function customise_es() {
     # - in template custom dirs, separate the files to two categories : scripts (*.properties) and config (*.yaml)
     # - generate first the *.properties files to be sourced then generate the *.yaml files
     check_directory_exist_create "${MY_ES_WORKINGDIR}scripts"
-    check_directory_exist_create "${MY_ES_WORKINGDIR}config"
+    check_directory_exist_create "${MY_ES_WORKINGDIR}resources"
     generate_files $MY_ES_SIMPLE_DEMODIR $MY_ES_WORKINGDIR true
 
     ${MY_ES_SIMPLE_DEMODIR}scripts/es.config.sh --call es_run_all
@@ -1738,7 +1738,7 @@ function customise_ep() {
   decho $lf_tracelevel "Parameters: |no parameters|"
 
   # Takes all the templates associated with the capabilities and generate the files from the context variables
-  # The files are generated into ./customisation/working/<capability>/config
+  # The files are generated into ./customisation/working/<capability>/resources
   ## Creating Event Processing users and roles
   if $MY_EP_CUSTOM; then
     mylog info "==== Place Holder."
@@ -1808,7 +1808,7 @@ function customise_mq() {
   decho $lf_tracelevel "Parameters: |no parameters|"
 
   # Takes all the templates associated with the capabilities and generate the files from the context variables
-  # The files are generated into ./customisation/working/<capability>/config
+  # The files are generated into ./customisation/working/<capability>/resources
   if $MY_MQ_CUSTOM; then
     #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
     if [[ -z $MY_MQ_VERSION ]]; then
@@ -2217,10 +2217,10 @@ sc_provision_lib_file="${PROVISION_SCRIPTDIR}lib.sh"
 set -a
 . "${sc_provision_script_parameters_file}"
 
-# load config files
+# load properties files
 . "${sc_provision_constant_properties_file}"
 
-# load config files
+# load properties files
 . "${sc_provision_variable_properties_file}"
 
 # Load shared variables

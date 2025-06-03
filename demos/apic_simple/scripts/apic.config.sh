@@ -500,7 +500,7 @@ function download_tools () {
       lf_unzip_command="unzip";;
   esac
 
-  pushd "${MY_APIC_WORKINGDIR}config"
+  pushd "${MY_APIC_WORKINGDIR}resources"
   if test ! -e "${MY_APIC_WORKINGDIR}resources/${lf_file2download}";then
   	mylog info "Downloading toolkit for $MY_PLATFORM platform" 1>&2
     apic_mgmt_client_downloads_server_pod="$($MY_CLUSTER_COMMAND -n ${apic_project} get po -l app.kubernetes.io/name=client-downloads-server,app.kubernetes.io/part-of=${apic_instance} -o=jsonpath='{.items[0].metadata.name}')"
@@ -600,7 +600,7 @@ function apic_run_all () {
   
   # Get ClusterIP for the mail server if MailHog
   # TODO check error, if not there, ...
-  export MY_MAIL_SERVER_HOST_IP=$($MY_CLUSTER_COMMAND -n ${VAR_MAIL_NAMESPACE} get svc/mailhog -o jsonpath='{.spec.clusterIP}')
+  export MY_MAIL_SERVER_HOST_IP=$($MY_CLUSTER_COMMAND -n ${VAR_MAIL_NAMESPACE} get svc/mail-service -o jsonpath='{.spec.clusterIP}')
   decho $lf_tracelevel "To configure the mail server the clusterIP is ${MY_MAIL_SERVER_HOST_IP}"
   
   # Will create both directories needed later
@@ -750,10 +750,10 @@ sc_provision_preambule_file="${PROVISION_SCRIPTDIR}properties/preambule.properti
 set -a
 . "${sc_provision_script_parameters_file}"
 
-# load config files
+# load properties files
 . "${sc_provision_constant_properties_file}"
 
-# load config files
+# load properties files
 . "${sc_provision_variable_properties_file}"
 
 # Load mq variables

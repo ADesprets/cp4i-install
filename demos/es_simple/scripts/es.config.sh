@@ -227,10 +227,10 @@ sc_provision_preambule_file="${PROVISION_SCRIPTDIR}properties/preambule.properti
 set -a
 . "${sc_provision_script_parameters_file}"
 
-# load config files
+# load resources files
 . "${sc_provision_constant_properties_file}"
 
-# load config files
+# load resources files
 . "${sc_provision_variable_properties_file}"
 
 # Load mq variables
