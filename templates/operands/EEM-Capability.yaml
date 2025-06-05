@@ -3,6 +3,8 @@ kind: EventEndpointManagement
 metadata:
   name: ${VAR_EEM_INSTANCE_NAME}
   namespace: $VAR_EEM_NAMESPACE
+  labels:
+    backup.events.ibm.com/component: eventendpointmanagement
 spec:
   license:
     accept: true
@@ -28,19 +30,3 @@ spec:
                   cpu: '0.25'
                   memory: 256Mi
               name: manager
-#              readinessProbe:
-#                httpGet:
-#                  path: /api/health
-#                  port: 3000
-#                initialDelaySeconds: 60  # Increase from default (e.g., 10)
-#                periodSeconds: 10              
-#    endpoints:
-#      - name: ui
-#        host: ${VAR_EEM_INSTANCE_NAME}-ui.${MY_CLUSTER_HOST}
-#      - name: gateway
-#        host: ${VAR_EEM_INSTANCE_NAME}-gateway.${MY_CLUSTER_HOST}
-#      - name: admin
-#        host: ${VAR_EEM_INSTANCE_NAME}-admin.${MY_CLUSTER_HOST}
-#        type: external
-#      - name: server
-#        host: eem.${VAR_EEM_INSTANCE_NAME}-server.${MY_CLUSTER_HOST}
