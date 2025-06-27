@@ -4,24 +4,24 @@ metadata:
   name: ${VAR_CERT}                        # ${VAR_QMGR}-cert
   namespace: ${VAR_NAMESPACE}              # $VAR_MQ_NAMESPACE
 spec:
-  commonName: "${VAR_COMMON_NAME}"
+  commonName: "${VAR_CERT_COMMON_NAME}"
   dnsNames:
     - "${VAR_SAN_DNS}"
   duration: 17520h
   renewBefore: 720h
   issuerRef:
     kind: Issuer
-    name: ${VAR_ISSUER}
+    name: ${VAR_CERT_ISSUER}
   secretName: ${VAR_SECRET}                 # ${VAR_QMGR}-secret
   secretTemplate:
     labels:
-      app.kubernetes.io/component: ${VAR_LABEL}
+      app.kubernetes.io/component: ${VAR_CERT_LABEL}
   subject:
     organizations:
       - ${MY_LDAP_ORGANISATION}
     countries:
-      - ${MY_LDAP_COUNTRY}
+      - ${MY_CERT_COUNTRY}
     localities:
-      - ${MY_LDAP_LOCALITY}
+      - ${MY_CERT_LOCALITY}
     provinces:
-      - ${MY_LDAP_STATE}
+      - ${MY_CERT_STATE}

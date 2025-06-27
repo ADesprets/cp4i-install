@@ -3,7 +3,7 @@ kind: Route
 metadata:
   annotations:
     cert-manager.io/issuer-kind: Issuer
-    cert-manager.io/issuer-name: ${VAR_ISSUER}
+    cert-manager.io/issuer-name: ${VAR_CERT_ISSUER}
   name: keycloak-route
   namespace: ${VAR_KEYCLOAK_NAMESPACE}
 spec:

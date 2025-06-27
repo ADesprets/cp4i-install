@@ -249,7 +249,7 @@ for index in ${!catalog_name[@]}
         mylog info "Catalog ${catalog_name[$index]} already exists, use it."
       fi
 
-      # TODO Check if we can skeep this action if already done
+      # TODO Check if we can skip this action if already done
       mylog info "Create the portal site in Drupal for: "${catalog_summary[$index]}"";
       res=$(curl -sk -X PUT "$catURL/settings" \
        -H "Authorization: Bearer $amToken" \

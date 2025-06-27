@@ -2,15 +2,16 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: ${VAR_CERT_NAME}
-  namespace: ${VAR_CERT_NAMESPACE}
+  namespace: ${VAR_NAMESPACE}
 spec:
   isCA: true
   renewBefore: 720h0m0s
   duration: 8760h  # 1 year
   usages:
+    - key encipherment
     - digital signature
     - cert sign
-    - key encipherment
+
   commonName: "${VAR_CERT_COMMON_NAME}"
   issuerRef:
     kind: Issuer

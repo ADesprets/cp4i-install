@@ -9,5 +9,5 @@ spec:
   isCA: true
   secretName: graphql-to-graph-server-cert-secret
   issuerRef:
-    name: ${VAR_ISSUER}
+    name: ${VAR_CERT_ISSUER}
     kind: Issuer

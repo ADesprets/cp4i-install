@@ -7,4 +7,4 @@ metadata:
     backup.integration.ibm.com/component: $VAR_OPERATORGROUP  
 spec:
   targetNamespaces:
-  - $VAR_NAMESPACE  
+  - $VAR_NAMESPACE

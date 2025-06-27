@@ -9,7 +9,7 @@ function create_issuer () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel create_issuer
   
-  create_oc_resource "Issuer" "${VAR_QMGR}-issuer" "${MY_TLS_SCRIPTDIR}resources/" "${sc_mq_kafka_demo_workingdir}" "Issuer_ca.yaml" "${VAR_MQ_NAMESPACE}"
+  create_oc_resource "Issuer" "${VAR_QMGR}-issuer" "${MY_YAMLDIR}tls/" "${sc_mq_kafka_demo_workingdir}" "Issuer_ca.yaml" "${VAR_MQ_NAMESPACE}"
 
    trace_out $lf_tracelevel create_issuer
 }
@@ -19,11 +19,11 @@ function create_qmgr_certificate () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel create_qmgr_certificate
 
-  export VAR_ISSUER="${VAR_QMGR}-issuer"
+  export VAR_CERT_ISSUER="${VAR_QMGR}-issuer"
   export VAR_SECRET="${VAR_QMGR}-secret"
-  export VAR_LABEL="${VAR_QMGR}-label" 
-  create_oc_resource "Certificate" "${VAR_QMGR}-cert" "${sc_mq_kafka_demo_yaml_dir}" "${sc_mq_kafka_demo_workingdir}" "qmgr_CACertificate.yaml" "$VAR_MQ_NAMESPACE"
-  unset VAR_ISSUER VAR_SECRET VAR_LABEL
+  export VAR_CERT_LABEL="${VAR_QMGR}-label" 
+  create_oc_resource "Certificate" "${VAR_QMGR}-cert" "${sc_mq_kafka_demo_yaml_dir}" "${sc_mq_kafka_demo_workingdir}" "qmgr_ca_certificate.yaml" "$VAR_MQ_NAMESPACE"
+  unset VAR_CERT_ISSUER VAR_SECRET VAR_CERT_LABEL
 
   trace_out $lf_tracelevel create_qmgr_certificate
 }
@@ -265,29 +265,29 @@ function mq_kafka_demo_generate_certs() {
 
   # Create Issuer, CA Certificate, MQ Server cert, JMS client cert, kafka client cert
   #create_oc_resource "Issuer" "${VAR_QMGR}-issuer" "${sc_mq_kafka_demo_tls_dir}" "${sc_mq_kafka_demo_workingdir}" "issuer.yaml" "$VAR_MQ_NAMESPACE"
-  export VAR_ISSUER="${VAR_QMGR}-issuer"
+  export VAR_CERT_ISSUER="${VAR_QMGR}-issuer"
   export VAR_SECRET="${VAR_QMGR}-secret"
-  export VAR_LABEL="ca-root-cert-label" 
+  export VAR_CERT_LABEL="ca-root-cert-label" 
   create_oc_resource "Certificate" "ca-root-cert" "${sc_mq_kafka_demo_tls_dir}" "${sc_mq_kafka_demo_workingdir}" "ca_certificate.yaml" "$VAR_MQ_NAMESPACE"
-  unset VAR_ISSUER VAR_SECRET VAR_LABEL
+  unset VAR_CERT_ISSUER VAR_SECRET VAR_CERT_LABEL
 
-  export VAR_ISSUER="${VAR_QMGR}-issuer"
+  export VAR_CERT_ISSUER="${VAR_QMGR}-issuer"
   export VAR_SECRET="${VAR_QMGR}-secret"
-  export VAR_LABEL="${VAR_QMGR}-label" 
+  export VAR_CERT_LABEL="${VAR_QMGR}-label" 
   create_oc_resource "Certificate" "${VAR_QMGR}" "${sc_mq_kafka_demo_tls_dir}" "${sc_mq_kafka_demo_workingdir}" "mq_server_certificate.yaml" "$VAR_MQ_NAMESPACE"
-  unset VAR_ISSUER VAR_SECRET VAR_LABEL
+  unset VAR_CERT_ISSUER VAR_SECRET VAR_CERT_LABEL
 
-  export VAR_ISSUER="${VAR_QMGR}-issuer"
+  export VAR_CERT_ISSUER="${VAR_QMGR}-issuer"
   export VAR_SECRET="${VAR_QMGR}-secret"
-  export VAR_LABEL="jms-client-cert-label" 
+  export VAR_CERT_LABEL="jms-client-cert-label" 
   create_oc_resource "Certificate" "jms-client-cert" "${sc_mq_kafka_demo_tls_dir}" "${sc_mq_kafka_demo_workingdir}" "jms_client_certificate.yaml" "$VAR_MQ_NAMESPACE"
-  unset VAR_ISSUER VAR_SECRET VAR_LABEL
+  unset VAR_CERT_ISSUER VAR_SECRET VAR_CERT_LABEL
 
-  export VAR_ISSUER="${VAR_QMGR}-issuer"
+  export VAR_CERT_ISSUER="${VAR_QMGR}-issuer"
   export VAR_SECRET="${VAR_QMGR}-secret"
-  export VAR_LABEL="kafka-client-cert-label" 
+  export VAR_CERT_LABEL="kafka-client-cert-label" 
   create_oc_resource "Certificate" "kafka-client-cert" "${sc_mq_kafka_demo_tls_dir}" "${sc_mq_kafka_demo_workingdir}" "kafka_client_certificate.yaml" "$VAR_MQ_NAMESPACE"
-  unset VAR_ISSUER VAR_SECRET VAR_LABEL
+  unset VAR_CERT_ISSUER VAR_SECRET VAR_CERT_LABEL
 
 
   #save_certificate ca-root-cert-secret tls.crt ${sc_mq_kafka_demo_workingdir} $VAR_MQ_NAMESPACE
@@ -414,7 +414,7 @@ function mq_kafka_demo_run_all () {
   create_project "${VAR_MQ_NAMESPACE}" "${VAR_MQ_NAMESPACE} project" "For MQ Kafka Demo" "${MY_RESOURCESDIR}" "${sc_mq_kafka_demo_workingdir}"  
 
   # This demo is based on the following one :  https://github.com/dalelane/mq-kafka-connect-tutorial
-  # in case it it's not already installed (happy with idempotence !!!)
+  # in case it's not already installed (happy with idempotence !!!)
   #${PROVISION_SCRIPTDIR}provision_cluster-v3.sh --call install_openldap, customise_openldap, install_mq, install_es $VAR_ES_NAMESPACE
   ${PROVISION_SCRIPTDIR}provision_cluster-v2.sh --call install_openldap, customise_openldap
   

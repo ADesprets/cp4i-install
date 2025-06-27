@@ -9,5 +9,5 @@ spec:
   isCA: true
   secretName: ${MY_KEYCLOAK_TLS_SECRET}
   issuerRef:
-    name: ${VAR_ISSUER}
+    name: ${VAR_CERT_ISSUER}
     kind: Issuer

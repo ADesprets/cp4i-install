@@ -2,18 +2,20 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: ${VAR_CERT_NAME}
-  namespace: ${VAR_CERT_NAMESPACE}
+  namespace: ${VAR_NAMESPACE}
 spec:
   commonName: "${VAR_CERT_COMMON_NAME}"
   dnsNames:
     - "${VAR_CERT_SAN_EXT_DNS}"
     - "${VAR_CERT_SAN_LOCAL_DNS}"
   duration: 8760h
+  isCA: false
   issuerRef:
-    name: ${VAR_CERT_ISSUER_REF}
     kind: Issuer
+    name: ${VAR_CERT_ISSUER_REF}
   privateKey:
     algorithm: RSA
+    rotationPolicy: Always
     size: 2048
   renewBefore: 720h
   secretName: ${VAR_CERT}

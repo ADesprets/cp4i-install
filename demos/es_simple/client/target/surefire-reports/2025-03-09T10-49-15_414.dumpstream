@@ -1,5 +1,0 @@
-# Created at 2025-03-09T10:49:15.661
-Boot Manifest-JAR contains absolute paths in classpath 'd:\CurrentProjects\CP4I\Installation\cp4i-install\customisation\ES\client\target\test-classes'
-Hint: <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
-'other' has different root
-

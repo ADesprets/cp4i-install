@@ -8,12 +8,13 @@ function create_root_issuer () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel create_root_issuer
 
-  export VAR_ISSUER="${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR}-self-signed"
+  export VAR_CERT_ISSUER="${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR}-self-signed"
   export VAR_NAMESPACE=${VAR_MQ_NAMESPACE}
 
-  create_oc_resource "Issuer" "${VAR_ISSUER}" "${MY_MQ_SIMPLE_DEMODIR}tls/" "${MY_MQ_WORKINGDIR}" "root_issuer.yaml" "${VAR_MQ_NAMESPACE}"
+  # TODO Instead use cp4i-install\templates\tls\config\Issuer_ca.yaml templates/tls/
+  create_oc_resource "Issuer" "${VAR_CERT_ISSUER}" "${MY_YAMLDIR}tls/" "${MY_MQ_WORKINGDIR}" "Issuer_ca.yaml" "${VAR_MQ_NAMESPACE}"
 
-  unset VAR_ISSUER VAR_NAMESPACE
+  unset VAR_CERT_ISSUER VAR_NAMESPACE
 
   trace_out $lf_tracelevel create_root_issuer
 }
@@ -24,7 +25,7 @@ function create_root_certificate () {
   trace_in $lf_tracelevel create_root_certificate
 
   export VAR_CERT_NAME=${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR}-root
-  export VAR_CERT_NAMESPACE=${VAR_MQ_NAMESPACE}
+  export VAR_NAMESPACE=${VAR_MQ_NAMESPACE}
   export VAR_CERT_ISSUER_REF="${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR}-self-signed"
   export VAR_CERT_SECRET_NAME=${VAR_CERT_NAME}-secret
   export VAR_CERT_COMMON_NAME=${VAR_CERT_NAME}
@@ -36,7 +37,7 @@ function create_root_certificate () {
 
   create_oc_resource "Certificate" "${VAR_CERT_NAME}" "${MY_MQ_SIMPLE_DEMODIR}tls/" "${MY_MQ_WORKINGDIR}" "ca_certificate.yaml" "${VAR_MQ_NAMESPACE}"
 
-  unset VAR_CERT_NAME VAR_CERT_NAMESPACE VAR_CERT_ISSUER_REF VAR_CERT_COMMON_NAME VAR_CERT_ORGANISATION VAR_CERT_COUNTRY VAR_CERT_LOCALITY VAR_CERT_STATE
+  unset VAR_CERT_NAME VAR_NAMESPACE VAR_CERT_ISSUER_REF VAR_CERT_COMMON_NAME VAR_CERT_ORGANISATION VAR_CERT_COUNTRY VAR_CERT_LOCALITY VAR_CERT_STATE
 
   trace_out $lf_tracelevel create_root_certificate
 }
@@ -46,13 +47,13 @@ function create_intermediate_issuer () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel create_intermediate_issuer
 
-  export VAR_ISSUER="${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR}-int-issuer"
-  export VAR_CERT_NAMESPACE=${VAR_MQ_NAMESPACE}
+  export VAR_CERT_ISSUER="${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR}-int-issuer"
+  export VAR_NAMESPACE=${VAR_MQ_NAMESPACE}
   export VAR_SECRET_REF=${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR}-root-secret
-  
-  create_oc_resource "Issuer" "${VAR_ISSUER}" "${MY_MQ_SIMPLE_DEMODIR}tls/" "${MY_MQ_WORKINGDIR}" "intermediate_issuer.yaml" "${VAR_MQ_NAMESPACE}"
 
-  unset VAR_CERT_NAME VAR_CERT_NAMESPACE VAR_SECRET_REF
+  create_oc_resource "Issuer" "${VAR_CERT_ISSUER}" "${MY_YAMLDIR}tls/" "${MY_MQ_WORKINGDIR}" "Issuer_non_ca.yaml" "${VAR_MQ_NAMESPACE}"
+
+  unset VAR_CERT_NAME VAR_NAMESPACE VAR_SECRET_REF
 
   trace_out $lf_tracelevel create_intermediate_issuer
 }
@@ -66,7 +67,7 @@ function create_leaf_certificate () {
   local lf_cluster_domain=$($MY_CLUSTER_COMMAND get dns cluster -o jsonpath='{.spec.baseDomain}')
   
   export VAR_CERT_NAME=${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR}-server
-  export VAR_CERT_NAMESPACE=${VAR_MQ_NAMESPACE}
+  export VAR_NAMESPACE=${VAR_MQ_NAMESPACE}
   export VAR_CERT_COMMON_NAME=${VAR_CERT_NAME}
   export VAR_CERT_SAN_EXT_DNS="*.${lf_cluster_domain}"
   export VAR_CERT_SAN_LOCAL_DNS="${VAR_QMGR}-ibm-mq.${VAR_MQ_NAMESPACE}.svc.cluster.local"
@@ -79,7 +80,7 @@ function create_leaf_certificate () {
 
   create_oc_resource "Certificate" "${VAR_CERT_NAME}" "${MY_MQ_SIMPLE_DEMODIR}tls/" "${MY_MQ_WORKINGDIR}" "mq_server_certificate.yaml" "${VAR_MQ_NAMESPACE}"
 
-  unset VAR_CERT_NAME VAR_CERT_NAMESPACE VAR_CERT_COMMON_NAME VAR_CERT_SAN_EXT_DNS VAR_CERT_SAN_LOCAL_DNS VAR_CERT_ISSUER_REF VAR_CERT_ORGANISATION VAR_CERT_COUNTRY VAR_CERT_LOCALITY VAR_CERT_STATE
+  unset VAR_CERT_NAME VAR_NAMESPACE VAR_CERT_COMMON_NAME VAR_CERT_SAN_EXT_DNS VAR_CERT_SAN_LOCAL_DNS VAR_CERT_ISSUER_REF VAR_CERT_ORGANISATION VAR_CERT_COUNTRY VAR_CERT_LOCALITY VAR_CERT_STATE
   
   trace_out $lf_tracelevel create_leaf_certificate
 }

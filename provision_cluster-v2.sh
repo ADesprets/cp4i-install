@@ -481,23 +481,24 @@ function install_openldap() {
     provision_persistence_openldap
 
     create_oc_resource "ServiceAccount" "$MY_LDAP_SERVICEACCOUNT" "${MY_RESOURCESDIR}" "${MY_LDAP_WORKINGDIR}" "serviceaccount.yaml" "$VAR_LDAP_NAMESPACE"
-    #SB# $MY_CLUSTER_COMMAND adm policy add-scc-to-user privileged system:serviceaccount:${VAR_LDAP_NAMESPACE}:${MY_LDAP_SERVICEACCOUNT}
-    #SB# $MY_CLUSTER_COMMAND adm policy add-scc-to-user anyuid system:serviceaccount:${VAR_LDAP_NAMESPACE}:${MY_LDAP_SERVICEACCOUNT}
-    #$MY_CLUSTER_COMMAND adm policy add-scc-to-group anyuid system:serviceaccounts:${VAR_LDAP_NAMESPACE}
-
+    
+    create_oc_resource "SecurityContextConstraints" "openldap-scc" "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}" "scc.yaml" "$VAR_LDAP_NAMESPACE"
+    
+    oc adm policy add-scc-to-user openldap-scc -z $MY_LDAP_SERVICEACCOUNT -n ${VAR_LDAP_NAMESPACE}
+    
     create_oc_resource "Deployment" "${MY_LDAP_DEPLOYMENT}" "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}" "ldap_deployment.yaml" "$VAR_LDAP_NAMESPACE"
     # create_oc_resource "Deployment" "${MY_LDAP_DEPLOYMENT}" "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}" "ldap_deployment_k8s.yaml" "$VAR_LDAP_NAMESPACE"
 
-    read_config_file "${MY_YAMLDIR}ldap/ldap_dit.properties"
-    adapt_file "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}" "ldap_config.json" 
-    $MY_CLUSTER_COMMAND -n ${VAR_LDAP_NAMESPACE} patch deployment.apps/${MY_LDAP_DEPLOYMENT} --patch-file "${MY_LDAP_WORKINGDIR}ldap_config.json"
+    # read_config_file "${MY_YAMLDIR}ldap/ldap_dit.properties"
+    # adapt_file "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}" "ldap_config.json" 
+    # $MY_CLUSTER_COMMAND -n ${VAR_LDAP_NAMESPACE} patch deployment.apps/${MY_LDAP_DEPLOYMENT} --patch-file "${MY_LDAP_WORKINGDIR}ldap_config.json"
 
     # Create the service to expose the openldap server
     create_oc_resource "Service" "${VAR_LDAP_SERVICE}" "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}" "ldap_svc.yaml" "${VAR_LDAP_NAMESPACE}"
     
     case $MY_CLUSTER_COMMAND in
     kubectl)  create_openldap_route_k8s;;
-    oc) create_openldap_route ;;
+    oc)  create_openldap_route ;;
     esac
 
   fi
@@ -522,14 +523,14 @@ function install_openldap() {
 function install_cert_manager() {
   SECONDS=0
   local lf_starting_date=$(date)
-  mylog info "==== Installing Cert Manager (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+  mylog info "==== Installing Redhat Cert Manager (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_cert_manager
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
-  if $MY_CERTMANAGER; then
+  if $MY_CERT_MANAGER; then
     check_directory_exist_create "${MY_CERTMANAGER_WORKINGDIR}"
     
     create_project "$MY_CERTMANAGER_OPERATOR_NAMESPACE" "${MY_CERTMANAGER_OPERATOR_NAMESPACE} project" "For Cert Manager" "${MY_RESOURCESDIR}" "${MY_CERTMANAGER_WORKINGDIR}"
@@ -546,7 +547,7 @@ function install_cert_manager() {
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
-  mylog info "==== Installation of Cert Manager (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+  mylog info "==== Installation of Redhat Cert Manager (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
@@ -579,7 +580,10 @@ function install_lic_svc() {
     local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
     unset VAR_CATALOG_SOURCE
 
+    export VAR_OPERATORGROUP=${MY_LICENSE_SERVICE_OPERATOR}-group
+    export VAR_NAMESPACE=$MY_LICENSE_SERVICE_NAMESPACE
     create_oc_resource "OperatorGroup" "$MY_LICENSE_SERVICE_OPERATORGROUP" "$MY_RESOURCESDIR" "$MY_LICENSE_SERVICE_WORKINGDIR" "operator-group-single.yaml" "$MY_LICENSE_SERVICE_NAMESPACE"
+    unset VAR_OPERATORGROUP VAR_NAMESPACE
 
     # Create a subscription object for license service Operator
     # The only case where for a Subscription we have to use "externally" the function wait_for_resource because the IBMLicensing instance name is not known before the subscription is created
@@ -647,7 +651,10 @@ function install_lic_reporter_svc() {
     if [[ $MY_LICENSE_SERVICE_NAMESPACE != $MY_LICENSE_SERVICE_REPORTER_NAMESPACE ]]; then
       mylog info "License Service and License Service Reporter are in different namespaces. Please check the documentation."
       mylog info "https://www.ibm.com/docs/en/cloud-paks/foundational-services/4.6?topic=repository-installing-license-service-reporter-cli"
+      export VAR_OPERATORGROUP=${MY_LICENSE_SERVICE_REPORTER_OPERATOR}-group
+      export VAR_NAMESPACE=$MY_LICENSE_SERVICE_REPORTER_NAMESPACE
       create_oc_resource "OperatorGroup" "$MY_LICENSE_SERVICE_REPORTER_OPERATORGROUP" "$MY_RESOURCESDIR" "$MY_LICENSE_SERVICE_REPORTER_WORKINGDIR" "operator-group-single.yaml" "$MY_LICENSE_SERVICE_REPORTER_NAMESPACE"
+      unset VAR_OPERATORGROUP VAR_NAMESPACE
     fi
 
     # Create a subscription object for license service reporter Operator
@@ -823,7 +830,10 @@ function install_wasliberty() {
     unset VAR_CATALOG_SOURCE
 
     # Operator group for WAS Liberty in single namespace
+    export VAR_OPERATORGROUP=$MY_WASLIBERTY_OPERATORGROUP
+    export VAR_NAMESPACE=$VAR_WASLIBERTY_NAMESPACE
     create_oc_resource "OperatorGroup" "$MY_WASLIBERTY_OPERATORGROUP" "${MY_RESOURCESDIR}" "${MY_WASLIBERTY_WORKINGDIR}" "operator-group-single.yaml" "$VAR_WASLIBERTY_NAMESPACE"
+    unset VAR_OPERATORGROUP VAR_NAMESPACE
 
     # Creating WebSphere Liberty operator subscription
     create_operator_instance "${MY_WASLIBERTY_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_WASLIBERTY_WORKINGDIR}" "${VAR_WASLIBERTY_NAMESPACE}"
@@ -970,7 +980,7 @@ function install_intassembly() {
 function install_ace() {
   SECONDS=0
   local lf_starting_date=$(date)
-  mylog info "==== Installing  ACE (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+  mylog info "==== Installing ACE (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
   
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_ace
@@ -1009,7 +1019,7 @@ function install_ace() {
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
-  mylog info "==== Installation of  ACE (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+  mylog info "==== Installation of ACE (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
@@ -1017,7 +1027,7 @@ function install_ace() {
 function install_apic() {
   SECONDS=0
   local lf_starting_date=$(date)
-  mylog info "==== Installing  APIC (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+  mylog info "==== Installing APIC (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_apic
@@ -1031,7 +1041,21 @@ function install_apic() {
 
     create_project "${VAR_APIC_NAMESPACE}" "${VAR_APIC_NAMESPACE} project" "For API ConnectC" "${MY_RESOURCESDIR}" "${MY_APIC_WORKINGDIR}"
 
+    # add catalog DataPower sources using ibm_pak plugin
+    check_add_cs_ibm_pak $MY_DPGW_CASE $MY_DPGW_OPERATOR $MY_DPGW_CATALOGSOURCE_LABEL amd64
+    if [[ -z $MY_DPGW_VERSION ]]; then
+      export MY_DPGW_VERSION=$VAR_APP_VERSION
+      unset VAR_APP_VERSION
+    fi
+
+    # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
+    local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
+    unset VAR_CATALOG_SOURCE
+
+    # Creating DataPower operator subscription
+    create_operator_instance "${MY_DPGW_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_APIC_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
     # add catalog sources using ibm_pak plugin
+
     check_add_cs_ibm_pak $MY_APIC_CASE $MY_APIC_OPERATOR $MY_APIC_CATALOGSOURCE_LABEL amd64
     if [[ -z $MY_APIC_VERSION ]]; then
       export MY_APIC_VERSION=$VAR_APP_VERSION
@@ -1067,7 +1091,7 @@ function install_apic() {
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
-  mylog info "==== Installation of  APIC (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+  mylog info "==== Installation of APIC (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
@@ -1077,7 +1101,7 @@ function install_apic() {
 function install_apic_graphql() {
   SECONDS=0
   local lf_starting_date=$(date)
-  mylog info "==== Installing  APIC Graphql (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+  mylog info "==== Installing APIC Graphql (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_apic_graphql
@@ -1117,7 +1141,7 @@ function install_apic_graphql() {
     #$MY_CLUSTER_COMMAND create secret generic ${MY_APIC_GRAPHQL_DSN_SECRET} \
   #--from-literal=dsn="postgresql://${VAR_POSTGRES_USER}:$($MY_CLUSTER_COMMAND get secret ${VAR_POSTGRES_SECRET} -n ${VAR_POSTGRES_NAMESPACE} -o jsonpath='{.data.password}' | base64 -d)@${VAR_POSTGRES_CLUSTER}-rw.${VAR_POSTGRES_NAMESPACE}.svc:5432/${VAR_POSTGRES_DATABASE}?sslmode=disable" \
   #--namespace ${VAR_APIC_GRAPHQL_NAMESPACE}
-    unset VAR_NAMESPACE VAR_SECRET_NAME VAR_DSN
+    unset VAR_NAMESPACE VAR_CERT_SECRET_NAME VAR_DSN
     #$MY_CLUSTER_COMMAND -n ${VAR_APIC_GRAPHQL_NAMESPACE} create secret generic $MY_POSTGRES_DSN_SECRET --from-literal=DSN="${lf_dsn}"
 
     # Download and extract the CASE bundle.
@@ -1144,7 +1168,7 @@ function install_apic_graphql() {
     create_operand_instance "StepZenGraphServer" "${VAR_APIC_GRAPHQL_INSTANCE_NAME}" "${MY_APIC_GRAPHQL_DIR}" "${MY_APIC_GRAPHQL_WORKINGDIR}" "APIC-Stepzen-Capability.yaml" "$VAR_APIC_GRAPHQL_NAMESPACE" "{.status.conditions[-1].type}" "Ready"
 
     # Add the certificate csr for routes (following chatgpt advice)
-    export VAR_ISSUER="${VAR_APIC_GRAPHQL_INSTANCE_NAME}-issuer"
+    export VAR_CERT_ISSUER="${VAR_APIC_GRAPHQL_INSTANCE_NAME}-issuer"
     # Create apic graphql certificates
     lf_certs_pairs=("graphql-to-graph-server-cert" "graphql_2_graph_server_cert.yaml" "graphql-to-graph-server-subscriptions-cert" "graphql_2_graph_server_subscription_cert.yaml" "introspection-cert" "introspection_cert.yaml" "stepzen-to-graph-server-cert" "stepzen_2_graph_server_cert.yaml")
     create_oc_objects "Certificate" "${MY_APIC_GRAPHQL_DIR}" "${MY_APIC_GRAPHQL_WORKINGDIR}" "${VAR_APIC_GRAPHQL_NAMESPACE}" lf_certs_pairs
@@ -1176,13 +1200,13 @@ function install_apic_graphql() {
       exit 1
     fi
   fi
-  unset VAR_ISSUER 
+  unset VAR_CERT_ISSUER 
 
   trace_out $lf_tracelevel install_apic_graphql
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
-  mylog info "==== Installation of  APIC Graphql (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+  mylog info "==== Installation of APIC Graphql (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
@@ -1199,7 +1223,7 @@ function install_es_k8s() {
     check_directory_exist_create "${MY_ES_WORKINGDIR}"
 
     create_project "$VAR_ES_NAMESPACE" "$VAR_ES_NAMESPACE project" "For Eventstreams" "${MY_RESOURCESDIR}" "${MY_ES_WORKINGDIR}"
-    mylog info "Creating entitlement, need to check if it is needed or works"
+    mylog info "Creating entitlement, needed for ES installation"
     add_ibm_entitlement "$VAR_ES_NAMESPACE"
 
     # install the operator
@@ -1228,8 +1252,8 @@ function install_es_oc() {
     add_ibm_entitlement "$VAR_ES_NAMESPACE"
 
     # add catalog sources using ibm_pak plugin
-    # SB]20250221 : problem with IBM Eventstreams, the command oc ibm-pak list does not return the "latest" version of the pak
-    # this command used in lib.sh to return the latest version of the pak: lf_app_version=$(oc ibm-pak list --case-name $lf_in_case_name -o json | jq --arg v "$lf_in_case_version" '.versions[$v].appVersion')
+    # SB]20250221 : problem with IBM Eventstreams, the command $MY_CLUSTER_COMMAND ibm-pak list does not return the "latest" version of the pak
+    # this command used in lib.sh to return the latest version of the pak: lf_app_version=$($MY_CLUSTER_COMMAND ibm-pak list --case-name $lf_in_case_name -o json | jq --arg v "$lf_in_case_version" '.versions[$v].appVersion')
     # when used with "latest" returns null, so we need to set the version of the pak in the variable MY_ES_VERSION
     check_add_cs_ibm_pak $MY_ES_CASE $MY_ES_OPERATOR $MY_ES_CATALOGSOURCE_LABEL amd64
     if [[ -z $MY_ES_VERSION ]]; then
@@ -1647,6 +1671,8 @@ function customise_es() {
   # - operands properties file,
   # - topics, ...
   if $MY_ES_CUSTOM; then
+    mylog info "==== Customise Event Streams (es.config.sh)." 0
+
     check_directory_exist_create "${MY_ES_WORKINGDIR}"
 
     # generate the differents properties files
@@ -1657,8 +1683,9 @@ function customise_es() {
     check_directory_exist_create "${MY_ES_WORKINGDIR}resources"
     generate_files $MY_ES_SIMPLE_DEMODIR $MY_ES_WORKINGDIR true
 
+    # Calls the scripts for demos
     ${MY_ES_SIMPLE_DEMODIR}scripts/es.config.sh --call es_run_all
-    #${MY_ES_MM2_DEMODIR}scripts/es.config.sh --call es_run_all
+    # ${MY_ES_MM2_DEMODIR}scripts/es.config.sh --call es_run_all
   fi
 
   trace_out $lf_tracelevel customise_es
@@ -1879,11 +1906,11 @@ function create_edb_postgres_db() {
 
   # Create a PostGreSQL DB secret
   export VAR_NAMESPACE=$VAR_POSTGRES_NAMESPACE
-  export VAR_SECRET_NAME=$lf_in_secret_name
+  export VAR_CERT_SECRET_NAME=$lf_in_secret_name
   export VAR_USERNAME=$lf_in_db_username
   export VAR_PASSWORD=$lf_in_db_password
   create_oc_resource "Secret" "${lf_in_secret_name}" "${MY_RESOURCESDIR}" "${MY_EDB_POSTGRES_WORKINGDIR}" "secret.yaml" "$VAR_POSTGRES_NAMESPACE"
-  unset VAR_NAMESPACE VAR_SECRET_NAME VAR_USERNAME VAR_PASSWORD
+  unset VAR_NAMESPACE VAR_CERT_SECRET_NAME VAR_USERNAME VAR_PASSWORD
 
   # PostGreSQL DB
   export VAR_POSTGRES_CLUSTER="${lf_in_cluster_name}"
@@ -2005,15 +2032,16 @@ function provision_cluster_init() {
   # get the dns name which will be used for certficate generation and other usages
   export VAR_CLUSTER_DOMAIN=$($MY_CLUSTER_COMMAND get dns cluster -o jsonpath='{.spec.baseDomain}')
   export VAR_SAN_DNS="*.${VAR_CLUSTER_DOMAIN}"
-  export VAR_COMMON_NAME=$VAR_SAN_DNS
+  export VAR_CERT_COMMON_NAME=$VAR_SAN_DNS
 
   # create PVC for registry
-  echo ">>>MY_WORKINGDIR: ${MY_WORKINGDIR}"
   create_operand_instance "PersistentVolumeClaim" "registry-storage" "${MY_RESOURCESDIR}" "${MY_WORKINGDIR}" "registry_pvc.yaml" "openshift-image-registry" "{.status.phase}" "Bound"
+  mylog info "Updating cluster configuration to use the PVC 'registry-storage'." 0
   $MY_CLUSTER_COMMAND patch configs.imageregistry.operator.openshift.io/cluster --type=merge -p '{"spec":{"storage":{"pvc":{"claim":"registry-storage"}}}}'
   $MY_CLUSTER_COMMAND patch configs.imageregistry.operator.openshift.io/cluster --type=merge -p '{"spec":{"managementState":"Managed"}}'
 
   # Expose service using default route
+  mylog info "Enabling default route for the image registry." 0
   $MY_CLUSTER_COMMAND patch configs.imageregistry.operator.openshift.io/cluster --patch '{"spec":{"defaultRoute":true}}' --type=merge
   wait_for_resource Route default-route openshift-image-registry
 

@@ -117,10 +117,10 @@ function ldap_init() {
   case $MY_CLUSTER_COMMAND in
   kubectl)  create_openldap_route_k8s;;
   oc) create_openldap_route 
-      oc apply -f "${MY_YAMLDIR}ldap/scc.yaml"
+      $MY_CLUSTER_COMMAND apply -f "${MY_YAMLDIR}ldap/scc.yaml"
 
       # Then assign it to your service account
-      oc adm policy add-scc-to-user openldap-scc -z $MY_LDAP_SERVICEACCOUNT -n ${VAR_LDAP_NAMESPACE}
+      $MY_CLUSTER_COMMAND adm policy add-scc-to-user openldap-scc -z $MY_LDAP_SERVICEACCOUNT -n ${VAR_LDAP_NAMESPACE}
       ;;
   esac
 

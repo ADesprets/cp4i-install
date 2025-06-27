@@ -1,8 +1,0 @@
-apiVersion: cert-manager.io/v1
-kind: Issuer
-metadata:
-  name: ${VAR_ISSUER}
-  namespace: ${VAR_NAMESPACE}  # Replace with your OpenShift namespace
-spec:
-  ca:
-    secretName: ${VAR_SECRET_REF}   # ${TLS_ROOT_CERT_NAME}

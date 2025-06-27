@@ -4,9 +4,9 @@ metadata:
   name: registry-storage
   namespace: openshift-image-registry
 spec:
-  storageClassName: $MY_FILE_STORAGE_CLASS
   accessModes:
     - ReadWriteMany
+  volumeMode: Block
   resources:
     requests:
       storage: 100Gi

@@ -8,7 +8,7 @@ metadata:
     haproxy.router.openshift.io/timeout-tunnel: 5d
   annotations:
     cert-manager.io/issuer-kind: Issuer
-    cert-manager.io/issuer-name: ${VAR_ISSUER}
+    cert-manager.io/issuer-name: ${VAR_CERT_ISSUER}
   labels:
     route: stepzen-service
   name: introspection-route

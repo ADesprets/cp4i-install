@@ -138,7 +138,7 @@ function install_flink_oc() {
     unset VAR_CATALOG_SOURCE
 
     ## SB]20231020 For Flink and Event processing install the operator with the following command :
-    ## https://ibm.github.io/event-automation/ep/installing/installing/, Chapter : Install the operator by using the CLI (oc ibm-pak)
+    ## https://ibm.github.io/event-automation/ep/installing/installing/, Chapter : Install the operator by using the CLI ($MY_CLUSTER_COMMAND ibm-pak)
     ## event flink
     ## Creating Eventautomation Flink operator subscription
     create_operator_instance "${MY_FLINK_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_FLINK_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
@@ -608,8 +608,8 @@ function install_eem_local_oc() {
     add_ibm_entitlement "$VAR_EEM_NAMESPACE"
 
     ## event endpoint management
-    ## to get the name of the pak to use : oc ibm-pak list
-    ## https://ibm.github.io/event-automation/eem/installing/installing/, chapter : Install the operator by using the CLI (oc ibm-pak)
+    ## to get the name of the pak to use : $MY_CLUSTER_COMMAND ibm-pak list
+    ## https://ibm.github.io/event-automation/eem/installing/installing/, chapter : Install the operator by using the CLI ($MY_CLUSTER_COMMAND ibm-pak)
     check_add_cs_ibm_pak $MY_EEM_OPERATOR $MY_EEM_OPERATOR $MY_EEM_CATALOGSOURCE_LABEL amd64
     if [[ -z $MY_EEM_VERSION ]]; then
       export MY_EEM_VERSION=$VAR_APP_VERSION
@@ -677,8 +677,8 @@ function install_eem_keycloak_oc() {
     add_ibm_entitlement "$VAR_EEM_NAMESPACE"
 
     ## event endpoint management
-    ## to get the name of the pak to use : oc ibm-pak list
-    ## https://ibm.github.io/event-automation/eem/installing/installing/, chapter : Install the operator by using the CLI (oc ibm-pak)
+    ## to get the name of the pak to use : $MY_CLUSTER_COMMAND ibm-pak list
+    ## https://ibm.github.io/event-automation/eem/installing/installing/, chapter : Install the operator by using the CLI ($MY_CLUSTER_COMMAND ibm-pak)
     check_add_cs_ibm_pak $MY_EEM_OPERATOR $MY_EEM_OPERATOR $MY_EEM_CATALOGSOURCE_LABEL amd64
     if [[ -z $MY_EEM_VERSION ]]; then
       export MY_EEM_VERSION=$VAR_APP_VERSION
@@ -954,10 +954,10 @@ function get_dns () {
              
              export VAR_CLUSTER_DOMAIN="cluster.local"
              export VAR_SAN_DNS="*.${VAR_CLUSTER_DOMAIN}"
-             export VAR_COMMON_NAME=$VAR_SAN_DNS;;
+             export VAR_CERT_COMMON_NAME=$VAR_SAN_DNS;;
   oc) export VAR_CLUSTER_DOMAIN=$($MY_CLUSTER_COMMAND get dns cluster -o jsonpath='{.spec.baseDomain}')
       export VAR_SAN_DNS="*.${VAR_CLUSTER_DOMAIN}"
-      export VAR_COMMON_NAME=$VAR_SAN_DNS
+      export VAR_CERT_COMMON_NAME=$VAR_SAN_DNS
       ;;
   esac
 
@@ -1983,7 +1983,7 @@ function check_create_oc_yaml() {
 }
 
 ################################################
-# 
+# Create PVC for osixia/openldap, it needs 2 PVC called data and config
 # @param 1: namespace
 function provision_persistence_openldap() {
   local lf_tracelevel=3
@@ -1991,13 +1991,11 @@ function provision_persistence_openldap() {
 
   decho $lf_tracelevel "Parameters: |no parameters|"
   
-  # handle persitence for Openldap
-  # only check one, assume that if one is created the other one is also created (short cut to optimize time)
   export VAR_NAMESPACE=$VAR_LDAP_NAMESPACE
 
   # create PVCs for LDAP
   mylog info "Creating PersistentVolumeClaims for OpenLDAP in namespace $VAR_LDAP_NAMESPACE"
-  create_operand_instance "PersistentVolumeClaim" "${MY_LDAP_PVC_MAIN}" "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}" "ldap_pvc.main.yaml" "$VAR_LDAP_NAMESPACE" "{.status.phase}" "Bound"
+  create_operand_instance "PersistentVolumeClaim" "${MY_LDAP_PVC_DATA}" "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}" "ldap_pvc.data.yaml" "$VAR_LDAP_NAMESPACE" "{.status.phase}" "Bound"
 
   create_operand_instance "PersistentVolumeClaim" "${MY_LDAP_PVC_CONFIG}" "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}" "ldap_pvc.config.yaml" "$VAR_LDAP_NAMESPACE" "{.status.phase}" "Bound"
 
@@ -2238,8 +2236,8 @@ function create_openldap_route() {
 
   # expose service externaly and get host and port
   $MY_CLUSTER_COMMAND -n ${VAR_LDAP_NAMESPACE} get service ${VAR_LDAP_SERVICE} -o json | \
-     jq '.spec.ports |= map(if .name == "389-tcp" then . + { "nodePort": 30389 } else . end)' | \
-     jq '.spec.ports |= map(if .name == "636-tcp" then . + { "nodePort": 30686 } else . end)' >${MY_LDAP_WORKINGDIR}openldap-service.json
+     jq '.spec.ports |= map(if .name == "ldap" then . + { "nodePort": 30389 } else . end)' | \
+     jq '.spec.ports |= map(if .name == "ldaps" then . + { "nodePort": 30686 } else . end)' >${MY_LDAP_WORKINGDIR}openldap-service.json
 
   # Saad there was a bug the openldap-service.json did not exist when those two calls were made in the deploy_openldap function, I moved them here
   # I do not think all this code is needed, what did you want to do?
@@ -2738,30 +2736,31 @@ function create_certificate_chain() {
   # Create both Issuers
   local lf_tls_ca_issuer_name=${lf_in_namespace}-${lf_in_issuername}-ca     # TLS_CA_ISSUER_NAME
   local lf_tls_root_cert_name=${lf_in_namespace}-${lf_in_root_cert_name}-ca # TLS_ROOT_CERT_NAME
-  create_oc_resource "Issuer" "$lf_tls_ca_issuer_name" "${MY_TLS_SCRIPTDIR}resources/" "${lf_in_workingdir}" "Issuer_ca.yaml" "$lf_in_namespace"
+  create_oc_resource "Issuer" "$lf_tls_ca_issuer_name" "${MY_YAMLDIR}tls/" "${lf_in_workingdir}" "Issuer_ca.yaml" "$lf_in_namespace"
   
   local lf_tls_cert_issuer_name=${lf_in_namespace}-${lf_in_issuername}-tls   # TLS_CERT_ISSUER_NAME
   export VAR_SECRET=$lf_tls_root_cert_name
-  create_oc_resource "Issuer" "$lf_tls_cert_issuer_name" "${MY_TLS_SCRIPTDIR}resources/" "${lf_in_workingdir}" "Issuer_non_ca.yaml" "$lf_in_namespace"
+  create_oc_resource "Issuer" "$lf_tls_cert_issuer_name" "${MY_YAMLDIR}tls/" "${lf_in_workingdir}" "Issuer_non_ca.yaml" "$lf_in_namespace"
   unser VAR_SECRET
 
   # For Self-signed Certificate and Root Certificate
-  export VAR_COMMON_NAME=${lf_tls_root_cert_name}
-  export VAR_ISSUER=${lf_tls_ca_issuer_name}
+  # TODO a Root Certificate is a Self-signed Certificate, so fix the confusion
+  export VAR_CERT_COMMON_NAME=${lf_tls_root_cert_name}
+  export VAR_CERT_ISSUER=${lf_tls_ca_issuer_name}
   export VAR_SECRET=${lf_tls_root_cert_name}
-  export VAR_LABEL=${lf_in_tls_label1}
-  create_oc_resource "Certificate" "$lf_tls_root_cert_name" "${MY_TLS_SCRIPTDIR}resources/" "${lf_in_workingdir}" "CACertificate.yaml" "$lf_in_namespace"
-  unset VAR_COMMON_NAME VAR_ISSUER VAR_SECRET VAR_LABEL
+  export VAR_CERT_LABEL=${lf_in_tls_label1}
+  create_oc_resource "Certificate" "$lf_tls_root_cert_name" "${MY_YAMLDIR}tls/" "${lf_in_workingdir}" "ca_certificate.yaml" "$lf_in_namespace"
+  unset VAR_CERT_COMMON_NAME VAR_CERT_ISSUER VAR_SECRET VAR_CERT_LABEL
 
   # For TLS Certificate
   local lf_tls_cert_name=${lf_in_namespace}-${lf_in_tls_certname}-tls           # TLS_CERT_NAME
-  export VAR_COMMON_NAME=${lf_tls_cert_name}
-  export VAR_ISSUER=${lf_tls_cert_issuer_name}
+  export VAR_CERT_COMMON_NAME=${lf_tls_cert_name}
+  export VAR_CERT_ISSUER=${lf_tls_cert_issuer_name}
   export VAR_SECRET=${lf_tls_cert_name}
-  export VAR_LABEL=${lf_in_tls_label1}
+  export VAR_CERT_LABEL=${lf_in_tls_label1}
   export VAR_INGRESS=$($MY_CLUSTER_COMMAND get ingresses.resources/cluster -o jsonpath='{.spec.domain}')
-  create_oc_resource "Certificate" "$lf_tls_cert_name" "${MY_TLS_SCRIPTDIR}resources/" "${lf_in_workingdir}" "TLSCertificate.yaml" "$lf_in_namespace"
-  unset VAR_COMMON_NAME VAR_ISSUER VAR_SECRET VAR_LABEL VAR_INGRESS
+  create_oc_resource "Certificate" "$lf_tls_cert_name" "${MY_YAMLDIR}tls/" "${lf_in_workingdir}" "server_certificate.yaml" "$lf_in_namespace"
+  unset VAR_CERT_COMMON_NAME VAR_CERT_ISSUER VAR_SECRET VAR_CERT_LABEL VAR_INGRESS
 
   trace_out $lf_tracelevel create_certificate_chain
 }
@@ -2857,7 +2856,7 @@ function create_oc_resource() {
   case $lf_in_type in
     Certificate)    export VAR_CERT="${lf_in_cr_name}"
                     export VAR_NAMESPACE="${lf_in_namespace}";;
-    Issuer)         export VAR_ISSUER="${lf_in_cr_name}"
+    Issuer)         export VAR_CERT_ISSUER="${lf_in_cr_name}"
                     export VAR_NAMESPACE="${lf_in_namespace}";;
     OperatorGroup)  export VAR_OPERATORGROUP="${lf_in_cr_name}"
                     export VAR_NAMESPACE="${lf_in_namespace}";;
@@ -2875,10 +2874,10 @@ function create_oc_resource() {
 
   case $lf_in_type in
     Certificate)  unset VAR_CERT VAR_NAMESPACE;;
-    Issuer) unset VAR_ISSUER VAR_NAMESPACE;;
+    Issuer) unset VAR_CERT_ISSUER VAR_NAMESPACE;;
     OperatorGroup) unset VAR_OPERATORGROUP VAR_NAMESPACE;;
     Role) unset VAR_ROLE VAR_NAMESPACE;;
-    Secret) unset VAR_SECRET_NAME VAR_NAMESPACE;;
+    Secret) unset VAR_CERT_SECRET_NAME VAR_NAMESPACE;;
     ServiceAccount) unset VAR_SERVICEACCOUNT VAR_NAMESPACE;;
     SharedSecret) unset VAR_SHARED_SECRET;;
   esac
