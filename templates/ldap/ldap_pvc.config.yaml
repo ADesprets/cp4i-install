@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: pvc-ldap-config
+  name: ${MY_LDAP_PVC_CONFIG}
   namespace: $VAR_NAMESPACE
 spec:
   accessModes:

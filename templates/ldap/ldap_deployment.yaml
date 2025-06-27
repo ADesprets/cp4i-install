@@ -69,7 +69,7 @@ spec:
       volumes:
       - name: ldap-data
         persistentVolumeClaim:
-          claimName: ${MY_LDAP_PVC_DATA}
+          claimName: ${MY_LDAP_PVC_MAIN}
       - name: ldap-config
         persistentVolumeClaim:
           claimName: ${MY_LDAP_PVC_CONFIG}

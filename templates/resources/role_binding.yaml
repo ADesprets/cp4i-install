@@ -10,4 +10,4 @@ roleRef:
 subjects:                                          
   - kind: ServiceAccount                           
     name: $MY_LOGGING_COLLECTOR_SA                 
-    namespace: $MY_LOGGING_NAMESPACE                   
+    namespace: $MY_LOGGING_NAMESPACE

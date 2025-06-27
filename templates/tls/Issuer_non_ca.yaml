@@ -5,4 +5,4 @@ metadata:
   namespace: ${VAR_NAMESPACE}   # ${TLS_NAMESPACE}
 spec:
   ca:
-    secretName: ${VAR_SECRET}   # ${TLS_ROOT_CERT_NAME}
+    secretName: ${VAR_SECRET_REF}   # ${TLS_ROOT_CERT_NAME}

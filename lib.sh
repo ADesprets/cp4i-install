@@ -1995,7 +1995,7 @@ function provision_persistence_openldap() {
 
   # create PVCs for LDAP
   mylog info "Creating PersistentVolumeClaims for OpenLDAP in namespace $VAR_LDAP_NAMESPACE"
-  create_operand_instance "PersistentVolumeClaim" "${MY_LDAP_PVC_DATA}" "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}" "ldap_pvc.data.yaml" "$VAR_LDAP_NAMESPACE" "{.status.phase}" "Bound"
+  create_operand_instance "PersistentVolumeClaim" "${MY_LDAP_PVC_MAIN}" "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}" "ldap_pvc.main.yaml" "$VAR_LDAP_NAMESPACE" "{.status.phase}" "Bound"
 
   create_operand_instance "PersistentVolumeClaim" "${MY_LDAP_PVC_CONFIG}" "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}" "ldap_pvc.config.yaml" "$VAR_LDAP_NAMESPACE" "{.status.phase}" "Bound"
 

@@ -734,7 +734,7 @@ function install_fs() {
     # Create a subscription object for common services Operator
     create_operator_instance "${MY_COMMONSERVICES_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_COMMONSERVICES_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
 
-    ## Setting hardware  Accept the license to use foundational services by adding spec.license.accept: true in the spec section.
+    ## Setting hardware Accept the license to use foundational services by adding spec.license.accept: true in the spec section.
     accept_license_fs CommonService $MY_COMMONSERVICES_INSTANCE_NAME $MY_OPERATORS_NAMESPACE
 
     # Configuring foundational services by using the CommonService custom resource.

@@ -35,7 +35,7 @@ function create_root_certificate () {
   export VAR_CERT_STATE=${MY_CERT_STATE}
   # export VAR_CERT_SERIAL=$(uuidgen)
 
-  create_oc_resource "Certificate" "${VAR_CERT_NAME}" "${MY_MQ_SIMPLE_DEMODIR}tls/" "${MY_MQ_WORKINGDIR}" "ca_certificate.yaml" "${VAR_MQ_NAMESPACE}"
+  create_oc_resource "Certificate" "${VAR_CERT_NAME}" "${MY_YAMLDIR}tls/" "${MY_MQ_WORKINGDIR}" "ca_certificate.yaml" "${VAR_MQ_NAMESPACE}"
 
   unset VAR_CERT_NAME VAR_NAMESPACE VAR_CERT_ISSUER_REF VAR_CERT_COMMON_NAME VAR_CERT_ORGANISATION VAR_CERT_COUNTRY VAR_CERT_LOCALITY VAR_CERT_STATE
 
@@ -78,7 +78,7 @@ function create_leaf_certificate () {
   export VAR_CERT_STATE=${MY_CERT_STATE}
   # export VAR_CERT_SERIAL=$(uuidgen)
 
-  create_oc_resource "Certificate" "${VAR_CERT_NAME}" "${MY_MQ_SIMPLE_DEMODIR}tls/" "${MY_MQ_WORKINGDIR}" "mq_server_certificate.yaml" "${VAR_MQ_NAMESPACE}"
+  create_oc_resource "Certificate" "${VAR_CERT_NAME}" "${MY_YAMLDIR}tls/" "${MY_MQ_WORKINGDIR}" "server_certificate.yaml" "${VAR_MQ_NAMESPACE}"
 
   unset VAR_CERT_NAME VAR_NAMESPACE VAR_CERT_COMMON_NAME VAR_CERT_SAN_EXT_DNS VAR_CERT_SAN_LOCAL_DNS VAR_CERT_ISSUER_REF VAR_CERT_ORGANISATION VAR_CERT_COUNTRY VAR_CERT_LOCALITY VAR_CERT_STATE
   
