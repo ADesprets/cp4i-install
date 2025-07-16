@@ -7,3 +7,4 @@ demos/was_liberty/target/*
 demos/mq_simple/client/target/*
 demos/es_simple/client/target/*
 tmp/*
+*.class

@@ -7,11 +7,6 @@ spec:
   isCA: true
   renewBefore: 720h0m0s
   duration: 8760h  # 1 year
-  usages:
-    - key encipherment
-    - digital signature
-    - cert sign
-
   commonName: "${VAR_CERT_COMMON_NAME}"
   issuerRef:
     kind: Issuer
@@ -32,3 +27,7 @@ spec:
       - "${VAR_CERT_LOCALITY}"
     provinces:
       - "${VAR_CERT_STATE}"
+  usages:
+    - key encipherment
+    - digital signature
+    - cert sign

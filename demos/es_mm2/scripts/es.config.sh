@@ -24,7 +24,7 @@ function create_es() {
   if $MY_ES; then
 
     # Creating Event Streams instance
-    #create_operand_instance "EventStreams" "${VAR_ES_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_ES_WORKINGDIR}" "ES-Capability.yaml" "$VAR_ES_NAMESPACE" "{.status.phase}" "Ready"
+
     export VAR_ES_INSTANCE_NAME=$lf_in_cr_name
     export VAR_ES_NAMESPACE=$lf_in_namespace
     create_operand_instance "EventStreams" "${lf_in_cr_name}" "${lf_in_source_directory}" "${lf_in_target_directory}" "${lf_in_yaml_file}" "${lf_in_namespace}" "{.status.phase}" "Ready"

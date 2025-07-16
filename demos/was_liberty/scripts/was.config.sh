@@ -78,9 +78,10 @@ function login_to_registry() {
   decho $lf_tracelevel "Internal image registry host: $IMAGE_REGISTRY_HOST"
   local lf_cluster_server=$($MY_CLUSTER_COMMAND whoami --show-server)
   decho $lf_tracelevel "Cluster server host: $lf_cluster_server"
-  #echo "kubeadmin password: $MY_TECHZONE_PASSWORD"
+  # echo "kubeadmin password: $MY_TECHZONE_PASSWORD"
   $MY_CLUSTER_COMMAND login -p $MY_TECHZONE_PASSWORD -u kubeadmin $lf_cluster_server
   local lf_token=$($MY_CLUSTER_COMMAND whoami -t)
+  decho $lf_tracelevel "Token: $lf_token"
   #docker login -u kubeadmin -p $lf_token $IMAGE_REGISTRY_HOST
   echo "$lf_token" | docker login -u kubeadmin --password-stdin "$IMAGE_REGISTRY_HOST"
   

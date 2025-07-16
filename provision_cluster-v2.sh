@@ -2043,7 +2043,8 @@ function provision_cluster_init() {
   # Expose service using default route
   mylog info "Enabling default route for the image registry." 0
   $MY_CLUSTER_COMMAND patch configs.imageregistry.operator.openshift.io/cluster --patch '{"spec":{"defaultRoute":true}}' --type=merge
-  wait_for_resource Route default-route openshift-image-registry
+  echo "TODO problem when enabling the default route for the image-registry"
+  # wait_for_resource Route default-route openshift-image-registry
 
   # Get the default registry route:
   export VAR_IMAGE_REGISTRY_HOST=$($MY_CLUSTER_COMMAND get route default-route -n openshift-image-registry --template='{{ .spec.host }}')
