@@ -130,3 +130,53 @@ Voir comment on peut complémenter l'existant et s'intègre avec l'existant.
 
 Attention au script versus Ansible (best practices)
 Tim Wigly (integration)
+
+Equivalent dos2unix under windows
+Get-ChildItem -Path "." -Recurse -Filter *.pem -File | ForEach-Object {
+    (Get-Content -Raw -Path $_.FullName) -replace "`r`n", "`n" | Set-Content -NoNewline -Path $_.FullName
+}
+Get-ChildItem -Path "." -Recurse -Filter *.json -File | ForEach-Object {
+    (Get-Content -Raw -Path $_.FullName) -replace "`r`n", "`n" | Set-Content -NoNewline -Path $_.FullName
+}
+Get-ChildItem -Path "." -Recurse -Filter *.yaml -File | ForEach-Object {
+    (Get-Content -Raw -Path $_.FullName) -replace "`r`n", "`n" | Set-Content -NoNewline -Path $_.FullName
+}
+Get-ChildItem -Path "." -Recurse -Filter *.java -File | ForEach-Object {
+    (Get-Content -Raw -Path $_.FullName) -replace "`r`n", "`n" | Set-Content -NoNewline -Path $_.FullName
+}
+Get-ChildItem -Path "." -Recurse -Filter *.properties -File | ForEach-Object {
+    (Get-Content -Raw -Path $_.FullName) -replace "`r`n", "`n" | Set-Content -NoNewline -Path $_.FullName
+}
+Get-ChildItem -Path "." -Recurse -Filter *.md -File | ForEach-Object {
+    (Get-Content -Raw -Path $_.FullName) -replace "`r`n", "`n" | Set-Content -NoNewline -Path $_.FullName
+}
+Get-ChildItem -Path "." -Recurse -Filter *.xml -File | ForEach-Object {
+    (Get-Content -Raw -Path $_.FullName) -replace "`r`n", "`n" | Set-Content -NoNewline -Path $_.FullName
+}
+Get-ChildItem -Path "." -Recurse -Filter *.sh -File | ForEach-Object {
+    (Get-Content -Raw -Path $_.FullName) -replace "`r`n", "`n" | Set-Content -NoNewline -Path $_.FullName
+}
+Get-ChildItem -Path "." -Recurse -Filter *.txt -File | ForEach-Object {
+    (Get-Content -Raw -Path $_.FullName) -replace "`r`n", "`n" | Set-Content -NoNewline -Path $_.FullName
+}
+Get-ChildItem -Path "." -Recurse -Filter *.yml -File | ForEach-Object {
+    (Get-Content -Raw -Path $_.FullName) -replace "`r`n", "`n" | Set-Content -NoNewline -Path $_.FullName
+}
+Get-ChildItem -Path "." -Recurse -Filter *.cfg -File | ForEach-Object {
+    (Get-Content -Raw -Path $_.FullName) -replace "`r`n", "`n" | Set-Content -NoNewline -Path $_.FullName
+}
+Get-ChildItem -Path "." -Recurse -Filter *.avsc -File | ForEach-Object {
+    (Get-Content -Raw -Path $_.FullName) -replace "`r`n", "`n" | Set-Content -NoNewline -Path $_.FullName
+}
+Get-ChildItem -Path "." -Recurse -Filter *.avro -File | ForEach-Object {
+    (Get-Content -Raw -Path $_.FullName) -replace "`r`n", "`n" | Set-Content -NoNewline -Path $_.FullName
+}
+Get-ChildItem -Path "." -Recurse -Filter *.ldif -File | ForEach-Object {
+    (Get-Content -Raw -Path $_.FullName) -replace "`r`n", "`n" | Set-Content -NoNewline -Path $_.FullName
+}
+Get-ChildItem -Path "." -Recurse -Filter *.html -File | ForEach-Object {
+    (Get-Content -Raw -Path $_.FullName) -replace "`r`n", "`n" | Set-Content -NoNewline -Path $_.FullName
+}
+Get-ChildItem -Path "." -Recurse -Filter *.tf -File | ForEach-Object {
+    (Get-Content -Raw -Path $_.FullName) -replace "`r`n", "`n" | Set-Content -NoNewline -Path $_.FullName
+}
