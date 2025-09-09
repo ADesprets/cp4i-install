@@ -10,15 +10,28 @@ spec:
   tasksMax: 1
   config:
     mq.channel.name: $VAR_CHL_UC
-    value.converter: org.apache.kafka.connect.storage.StringConverter
-    mq.connection.name.list: ${VAR_QMGR}-ibm-mq(1414)
     mq.connection.mode: client
+    # Connection details for the QM: Should be orders
     mq.queue.manager: ${VAR_QMGR}
-    mq.queue: TO.KAFKA
-    mq.record.builder: com.ibm.eventstreams.connect.mqsource.builders.DefaultRecordBuilder
+    # Connection details for the QM: Should be orders-ibm-mq
+    mq.connection.name.list: ${VAR_QMGR}-ibm-mq(1414)
+    # Connection details for the QM: Should be SYSTEM.DEF.SVRCONN
+    mq.channel.name: $VAR_CHL_UC
+    # the MQ queue to get messages from (Streaming Queue)
+    mq.queue: PAYMT.REQ.CPY
+     # the Kafka topic to produce to
     topic: LH.ORDERS              
-    key.converter: org.apache.kafka.connect.storage.StringConverter
+    # format of the messages to transfer
     mq.message.body.jms: true 
+    mq.record.builder: com.ibm.eventstreams.connect.mqsource.builders.DefaultRecordBuilder
+    key.converter: org.apache.kafka.connect.storage.StringConverter
+    # For the values could be JsonConverter
+    value.converter: org.apache.kafka.connect.storage.StringConverter
+
+    # whether to send the schema with the messages
+    key.converter.schemas.enable: false
+    value.converter.schemas.enable: false
+
     mq.user.authentication.mqcsp: false
     mq.user.name: ""
     mq.password: ""

@@ -31,7 +31,7 @@ public class SampleApplication {
 
     Properties props = new Properties();
 
-    props.put("bootstrap.servers", "cp4i-es-kafka-bootstrap-cp4i.apps.67ae0126c733f6fb2846efe2.eu1.techzone.ibm.com:443");
+    props.put("bootstrap.servers", "cp4i-es-kafka-bootstrap-cp4i.apps.itz-790npj.infra01-lb.fra02.techzone.ibm.com:443");
     props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
     // props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
     props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
@@ -47,7 +47,7 @@ public class SampleApplication {
       // ES is using SCRAM Properties
       props.put(SaslConfigs.SASL_MECHANISM, "SCRAM-SHA-512");
       String saslJaasConfig = "org.apache.kafka.common.security.scram.ScramLoginModule required "
-              + "username=\"es-admin\" password=\"uWx0g8N6UXWPAjJNIcq7tUA3UPxRwQTu\";";
+              + "username=\"es-admin\" password=\"XylvKCXHUOpTTB16pSxKGiaCcZmNxUq3\";";
       props.put(SaslConfigs.SASL_JAAS_CONFIG, saslJaasConfig);
 
       // Mutual auth properties
@@ -57,8 +57,8 @@ public class SampleApplication {
 
       // TLS Properties
       props.put(SslConfigs.SSL_PROTOCOL_CONFIG, "TLSv1.2");
-      props.put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, "D:\\CurrentProjects\\CP4I\\Installation\\cp4i-install\\tmp\\es-cert.p12");
-      props.put(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, "lnrj1rVr6e3a");
+      props.put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, "C:\\CurrentProjects\\CP4I\\Installation\\cp4i-install\\tmp\\es-cert.p12");
+      props.put(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, "UFOMvK19gl1M");
       props.put(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PKCS12");
     } else {
       props.put(SaslConfigs.SASL_MECHANISM, "PLAIN");

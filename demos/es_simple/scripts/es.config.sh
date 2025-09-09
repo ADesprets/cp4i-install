@@ -111,11 +111,12 @@ function es_run_all () {
   # Create namespace 
   create_project "$VAR_ES_NAMESPACE" "$VAR_ES_NAMESPACE project" "For Event Streams customisation" "${MY_RESOURCESDIR}" "${MY_ES_WORKINGDIR}"
 
-  create_es
+  echo "Commented to work on the connector framework, need to uncomment when done"
+  # create_es
 
-  create_kafka_topics
+  # create_kafka_topics
 
-  create_kafka_users
+  # create_kafka_users
 
   create_kafka_connector
 

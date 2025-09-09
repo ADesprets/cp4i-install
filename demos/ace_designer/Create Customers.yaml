@@ -1,0 +1,158 @@
+$integration: http://ibm.com/appconnect/integration/v2/integrationFile
+integration:
+  type: trigger-action
+  trigger-interfaces:
+    trigger-interface-1:
+      type: request-trigger
+      connector-type: iiboc
+      triggers:
+        INVOKE:
+          assembly:
+            $ref: '#/integration/assemblies/assembly-1'
+          input-context:
+            data: input
+          options:
+            connectorServiceOptions:
+              httpMethod: post
+              path: resources/input/operations/INVOKE/subscribe
+              action: invoke
+      account-name: Account 2
+  action-interfaces:
+    action-interface-1:
+      type: api-action
+      business-object: Contact
+      connector-type: salesforce
+      account-name: Account 1
+      actions:
+        RETRIEVEALL: {}
+      options:
+        connectorServiceOptions:
+          httpMethod: get
+          path: resources/Contact
+          action: retrievewithwhere
+    action-interface-2:
+      type: api-action
+      business-object: Contact
+      connector-type: insightly
+      account-name: Account 1
+      actions:
+        CREATE: {}
+      options:
+        connectorServiceOptions:
+          httpMethod: post
+          path: resources/Contact
+          action: create
+  assemblies:
+    assembly-1:
+      assembly:
+        execute:
+          - retrieve-action:
+              name: Salesforce Retrieve contacts
+              target:
+                $ref: '#/integration/action-interfaces/action-interface-1'
+              allow-empty-output: false
+              filter:
+                limit: 10
+              allow-truncation: true
+              pagination-type: TOKEN
+          - for-each:
+              map:
+                $map: http://ibm.com/appconnect/map/v1
+                mappings: []
+              source:
+                expression: '$SalesforceRetrievecontacts '
+                input:
+                  - variable: Trigger
+                    $ref: '#/trigger/payload'
+                  - variable: SalesforceRetrievecontacts
+                    $ref: >-
+                      #/node-output/Salesforce Retrieve
+                      contacts/response/payload
+                  - variable: SalesforceRetrievecontactsMetadata
+                    $ref: '#/node-output/Salesforce Retrieve contacts/response'
+                  - variable: flowDetails
+                    $ref: '#/flowDetails'
+              mode: sequential
+              continue-on-error: true
+              name: For each
+              assembly:
+                $ref: '#/integration/assemblies/assembly-2'
+              display-name: Salesforce Contact
+          - response:
+              name: Callable flow Reply
+              reply-maps:
+                - title: Callable flow reply
+                  status-code: '200'
+                  map: {}
+                  input: []
+    assembly-2:
+      assembly:
+        execute:
+          - create-action:
+              name: Insightly Create contact
+              target:
+                $ref: '#/integration/action-interfaces/action-interface-2'
+              map:
+                mappings:
+                  - ADDRESS_MAIL_CITY:
+                      template: '{{$Foreachitem.MailingCity}}'
+                  - ADDRESS_MAIL_COUNTRY:
+                      template: '{{$Foreachitem.MailingCountry}}'
+                  - ADDRESS_MAIL_POSTCODE:
+                      template: '{{$Foreachitem.MailingPostalCode}}'
+                  - ADDRESS_MAIL_STATE:
+                      template: '{{$Foreachitem.MailingState}}'
+                  - ADDRESS_MAIL_STREET:
+                      template: '{{$Foreachitem.MailingStreet}}'
+                  - ADDRESS_OTHER_CITY:
+                      template: '{{$Foreachitem.OtherCity}}'
+                  - ADDRESS_OTHER_COUNTRY:
+                      template: '{{$Foreachitem.OtherCountry}}'
+                  - ADDRESS_OTHER_POSTCODE:
+                      template: '{{$Foreachitem.OtherPostalCode}}'
+                  - ADDRESS_OTHER_STATE:
+                      template: '{{$Foreachitem.OtherState}}'
+                  - ADDRESS_OTHER_STREET:
+                      template: '{{$Foreachitem.OtherStreet}}'
+                  - ASSISTANT_NAME:
+                      template: >-
+                        {{($substring($Foreachitem.AssistantName, 0, 1))&('.
+                        ')&($split($Foreachitem.AssistantName, ' ')[1])}}
+                  - DATE_OF_BIRTH:
+                      template: '{{$Foreachitem.Birthdate}}'
+                  - EMAIL_ADDRESS:
+                      template: '{{$Foreachitem.Email}}'
+                  - FIRST_NAME:
+                      template: '{{$Foreachitem.FirstName}}'
+                  - LAST_NAME:
+                      template: '{{$Foreachitem.LastName}}'
+                  - PHONE:
+                      template: '{{$Foreachitem.Phone}}'
+                  - PHONE_ASSISTANT:
+                      template: '{{$Foreachitem.AssistantPhone}}'
+                  - PHONE_HOME:
+                      template: '{{$Foreachitem.HomePhone}}'
+                  - PHONE_MOBILE:
+                      template: '{{$Foreachitem.MobilePhone}}'
+                  - PHONE_OTHER:
+                      template: '{{$Foreachitem.OtherPhone}}'
+                  - SALUTATION:
+                      template: '{{$Foreachitem.Salutation}}'
+                  - TITLE:
+                      template: '{{$Foreachitem.Title}}'
+                $map: http://ibm.com/appconnect/map/v1
+                input:
+                  - variable: Trigger
+                    $ref: '#/trigger/payload'
+                  - variable: SalesforceRetrievecontacts
+                    $ref: >-
+                      #/node-output/Salesforce Retrieve
+                      contacts/response/payload
+                  - variable: SalesforceRetrievecontactsMetadata
+                    $ref: '#/node-output/Salesforce Retrieve contacts/response'
+                  - variable: Foreachitem
+                    $ref: '#/block/For each/current-item'
+                  - variable: flowDetails
+                    $ref: '#/flowDetails'
+  name: Create Customers
+models: {}

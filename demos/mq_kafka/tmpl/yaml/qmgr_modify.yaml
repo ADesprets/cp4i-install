@@ -8,6 +8,7 @@ spec:
     accept: true
     license: $MY_MQ_LIC
     use: "NonProduction"
+  terminationGracePeriodSeconds: 30
   pki:
     keys:
       - name: $VAR_QMGR
@@ -29,13 +30,23 @@ spec:
     resources:
       limits:
         cpu: 500m
+        memory: 1Gi
       requests:
         cpu: 500m
+        memory: 1Gi
+    route:
+      enabled: true
     storage:
+      defaultClass: $MY_BLOCK_STORAGE_CLASS
       queueManager:
-        type: ephemeral
+        deleteClaim: true
+        type: persistent-claim
     availability:
       type: SingleInstance
+      updateStrategy: RollingUpdate
+    imagePullPolicy: IfNotPresent
+    debug: false
+    logFormat: Basic
     mqsc:
       - configMap:
           name: $VAR_MQSC_OBJECTS_CM

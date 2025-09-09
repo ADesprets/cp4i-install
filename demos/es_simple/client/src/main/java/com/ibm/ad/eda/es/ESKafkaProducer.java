@@ -21,11 +21,11 @@ public class ESKafkaProducer {
         File certPemFile = new File(classLoader.getResource("es-cert.p12").getFile());
 
         props.put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, certPemFile.getAbsolutePath());
-        props.put(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, "SsmWqwkTMwtB");
+        props.put(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, "UFOMvK19gl1M");
         props.put(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PKCS12");
         props.put(SslConfigs.SSL_PROTOCOL_CONFIG, "TLSv1.2");
 
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "cp4i-es-kafka-bootstrap-cp4i.apps.67ae0126c733f6fb2846efe2.eu1.techzone.ibm.com:443");
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "cp4i-es-kafka-bootstrap-cp4i.apps.itz-790npj.infra01-lb.fra02.techzone.ibm.com:443");
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         props.put(ProducerConfig.ACKS_CONFIG, "all");
@@ -40,15 +40,15 @@ public class ESKafkaProducer {
         props.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SASL_SSL");
         props.put("sasl.jaas.config", 
                 "org.apache.kafka.common.security.scram.ScramLoginModule required " +
-                "username=\"sensors.user1\" " +
-                "password=\"yBOaV8EGYKG3PDowD5TMP1w6rBymwBIT\";");
+                "username=\"es-admin\" " +
+                "password=\"XylvKCXHUOpTTB16pSxKGiaCcZmNxUq3\";");
 
         // Create a new Kafka producer
         KafkaProducer<String, String> producer = new KafkaProducer<>(props);
 
         // Define the topic and message
 
-        String topic = "ORDERS.O";
+        String topic = "LH.ORDERS";
         for (int i = 0; i < 10; i++) {
             String key = UUID.randomUUID().toString();
             // String value = "{\"sensortime\": \"Sun Mar 09 09:22:22 GMT 2025\",\"sensorid\": \"A-2-17\",\"temperature\": 22.5,\"humidity\": 57}";

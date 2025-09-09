@@ -89,7 +89,12 @@ function create_leaf_certificate () {
 function create_qmgr_configmaps () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel create_qmgr_configmaps
-
+  
+  echo "VAR_QMGR: ${VAR_QMGR}"
+  echo "VAR_MQSC_OBJECTS_CM: ${VAR_MQSC_OBJECTS_CM}"
+  export VAR_QMGR="testqms"
+  echo "VAR_MQSC_OBJECTS_CM: ${VAR_MQSC_OBJECTS_CM}"
+   
   create_oc_resource "ConfigMap" "${VAR_INI_CM}" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}" "qmgr_cm_ini.yaml" "$VAR_MQ_NAMESPACE"
   create_oc_resource "ConfigMap" "${VAR_MQSC_OBJECTS_CM}" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}" "qmgr_cm_mqsc.yaml" "$VAR_MQ_NAMESPACE"
   create_oc_resource "ConfigMap" "${VAR_AUTH_CM}" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}" "qmgr_cm_mqsc_auth.yaml" "$VAR_MQ_NAMESPACE"
@@ -111,7 +116,13 @@ function create_qmgr_route () {
 #############################################################
 function create_qmgr () {
   local lf_tracelevel=3
+  
   trace_in $lf_tracelevel create_qmgr
+
+  # First create the configmaps and the route for this QMgr
+  create_qmgr_configmaps
+  
+  create_qmgr_route
 
   # Use the new CRD MessagingServer(available since CP4I 16.1.0-SC2) 
   if $MY_MESSAGINGSERVER; then
@@ -218,23 +229,39 @@ function create_ccdt () {
 }
 
 #############################################################
-# Run this script natively (from terminal) 
+# Run this script natively (from terminal)
+# create_root_issuer Issuer cp4imq-mq-qms-self-signed Issuer_ca.yaml cp4imq
+# create_root_certificate Certificate cp4imq-mq-qms-root ca_certificate.yam cp4imq
+# create_intermediate_issuer	 Issuer cp4imq-mq-qms-int-issuer Issuer_non_ca.yaml cp4imq
+# create_leaf_certificate Certificate cp4imq-mq-qms-server cp4imq
+# create_pki_cr	
+# Creating : client key database for clnt1 to use with MQSSLKEYR env variable.	
+#   create_clnt_kdb: client key database for clnt1 to use with MQSSLKEYR env variable.	
+#   add_qmgr_crt_2_clnt_kdb: qmgr certificate to the client key database
+# create_qmgr_configmaps	
+#   create_oc_resource	ConfigMap qms-ini-cm qmgr_cm_ini.yaml cp4imq
+#   create_oc_resource ConfigMap qms-mqsc-cm qmgr_cm_mqsc.yaml cp4imq 
+#   create_oc_resource ConfigMap qms-auth-cm qmgr_cm_mqsc_auth.yaml cp4imq
+#   create_oc_resource	configMap qms-webconfig-cm qmgr_cm_web.yaml cp4imq
+# create_qmgr_route	
+#   create_oc_resource	Route qms-route qmgr_route.yaml cp4imq 
+# create_qmgr	
+#   create_operand_instance QueueManager qms qmgr.yaml cp4imq {.status.phase} Running	
+# 	  create_oc_resource	QueueManager qms qmgr.yaml cp4imq
+# create_ccdt	
 #############################################################
 function mq_run_all () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel mq_run_all
   
   # Create tls artifacts
-  create_root_issuer
-  create_root_certificate
-  create_intermediate_issuer
-  create_leaf_certificate
+  
+  # create_root_issuer
+  # create_root_certificate
+  # create_intermediate_issuer
+  # create_leaf_certificate
 
-  create_pki_cr
-
-  create_qmgr_configmaps
-
-  create_qmgr_route
+  # create_pki_cr
 
   create_qmgr
 

@@ -13,10 +13,10 @@ spec:
     keys:
       - name: $VAR_QMGR
         secret:
+          secretName: ${VAR_QMGR}-secret
           items:
             - tls.key
             - tls.crt
-          secretName: ${VAR_QMGR}-secret
     trust:
       - name: $VAR_QMGR
         secret:

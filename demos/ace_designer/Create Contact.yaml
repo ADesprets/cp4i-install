@@ -1,0 +1,100 @@
+$integration: http://ibm.com/appconnect/integration/v2/integrationFile
+integration:
+  type: api
+  trigger-interfaces:
+    trigger-interface-1:
+      triggers:
+        createCustomer:
+          assembly:
+            $ref: '#/integration/assemblies/assembly-1'
+          input-context:
+            data: createCustomer
+          output-context:
+            data: createCustomer
+      options:
+        resources:
+          - business-object: Customer
+            triggers:
+              create: createCustomer
+            model:
+              $ref: '#/models/Customer'
+      type: api-trigger
+  action-interfaces:
+    action-interface-1:
+      type: api-action
+      business-object: Contact
+      connector-type: salesforce
+      account-name: Account 1
+      actions:
+        CREATE: {}
+      options:
+        connectorServiceOptions:
+          httpMethod: post
+          path: resources/Contact
+          action: create
+  assemblies:
+    assembly-1:
+      assembly:
+        execute:
+          - create-action:
+              name: Salesforce Create contact
+              target:
+                $ref: '#/integration/action-interfaces/action-interface-1'
+              map:
+                mappings:
+                  - Email:
+                      template: '{{$Request.Email}}'
+                  - FirstName:
+                      template: '{{$Request.FirstName}}'
+                  - LastName:
+                      template: '{{$Request.LastName}}'
+                $map: http://ibm.com/appconnect/map/v1
+                input:
+                  - variable: flowDetails
+                    $ref: '#/flowDetails'
+                  - variable: Request
+                    $ref: '#/trigger/payload'
+          - response:
+              name: response
+              reply-maps:
+                - title: Customer successfully created
+                  status-code: 201
+                  map:
+                    mappings:
+                      - CustomerID:
+                          template: '{{$SalesforceCreatecontact.Id}}'
+                    $map: http://ibm.com/appconnect/map/v1
+                    input:
+                      - variable: SalesforceCreatecontact
+                        $ref: >-
+                          #/node-output/Salesforce Create
+                          contact/response/payload
+                      - variable: flowDetails
+                        $ref: '#/flowDetails'
+                      - variable: Request
+                        $ref: '#/trigger/payload'
+  name: Create Contact
+models:
+  Customer:
+    name: Customer
+    plural: Customer
+    properties:
+      CustomerID:
+        required: false
+        id: true
+        type: string
+      FirstName:
+        required: false
+        id: false
+        type: string
+      LastName:
+        required: false
+        id: false
+        type: string
+      Email:
+        required: false
+        id: false
+        type: string
+    operations:
+      create: '#/integration/assemblies/assembly-1'
+    description: ''
