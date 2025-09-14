@@ -74,7 +74,7 @@ function login_to_registry() {
   local lf_tracelevel=3
   trace_in $lf_tracelevel login_to_registry
 
-  mylog info "Do not forget to update the password of kubeadmin in private/user.properties (MY_TECHZONE_PASSWORD)"
+  mylog info "Do not forget to update the password of kubeadmin in private/user.properties (MY_TECHZONE_PASSWORD)" 0
   decho $lf_tracelevel "Internal image registry host: $IMAGE_REGISTRY_HOST"
   local lf_cluster_server=$($MY_CLUSTER_COMMAND whoami --show-server)
   decho $lf_tracelevel "Cluster server host: $lf_cluster_server"
@@ -110,7 +110,7 @@ function create_application() {
   local lf_tracelevel=3
   trace_in $lf_tracelevel create_application
 
-  mylog info "Application:version ${MY_WASLIBERTY_APP_NAME_VERSION}"
+  mylog info "Application:version ${MY_WASLIBERTY_APP_NAME_VERSION}" 0
 
   check_directory_exist_create "${MY_WASLIBERTY_WORKINGDIR}"
 

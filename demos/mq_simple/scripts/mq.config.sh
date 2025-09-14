@@ -8,7 +8,7 @@ function create_root_issuer () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel create_root_issuer
 
-  export VAR_CERT_ISSUER="${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR}-self-signed"
+  export VAR_CERT_ISSUER="${VAR_MQ_NAMESPACE}-mq-self-signed"
   export VAR_NAMESPACE=${VAR_MQ_NAMESPACE}
 
   # TODO Instead use cp4i-install\templates\tls\config\Issuer_ca.yaml templates/tls/
@@ -24,9 +24,9 @@ function create_root_certificate () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel create_root_certificate
 
-  export VAR_CERT_NAME=${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR}-root
+  export VAR_CERT_NAME=${VAR_MQ_NAMESPACE}-mq-root
   export VAR_NAMESPACE=${VAR_MQ_NAMESPACE}
-  export VAR_CERT_ISSUER_REF="${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR}-self-signed"
+  export VAR_CERT_ISSUER_REF="${VAR_MQ_NAMESPACE}-mq-self-signed"
   export VAR_CERT_SECRET_NAME=${VAR_CERT_NAME}-secret
   export VAR_CERT_COMMON_NAME=${VAR_CERT_NAME}
   export VAR_CERT_ORGANISATION=${MY_CERT_ORGANISATION}
@@ -47,9 +47,9 @@ function create_intermediate_issuer () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel create_intermediate_issuer
 
-  export VAR_CERT_ISSUER="${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR}-int-issuer"
+  export VAR_CERT_ISSUER="${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR_LC}-int-issuer"
   export VAR_NAMESPACE=${VAR_MQ_NAMESPACE}
-  export VAR_SECRET_REF=${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR}-root-secret
+  export VAR_SECRET_REF=${VAR_MQ_NAMESPACE}-mq-root-secret
 
   create_oc_resource "Issuer" "${VAR_CERT_ISSUER}" "${MY_YAMLDIR}tls/" "${MY_MQ_WORKINGDIR}" "Issuer_non_ca.yaml" "${VAR_MQ_NAMESPACE}"
 
@@ -66,12 +66,12 @@ function create_leaf_certificate () {
   # get the dns name of the cluster
   local lf_cluster_domain=$($MY_CLUSTER_COMMAND get dns cluster -o jsonpath='{.spec.baseDomain}')
   
-  export VAR_CERT_NAME=${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR}-server
+  export VAR_CERT_NAME=${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR_LC}-server
   export VAR_NAMESPACE=${VAR_MQ_NAMESPACE}
   export VAR_CERT_COMMON_NAME=${VAR_CERT_NAME}
   export VAR_CERT_SAN_EXT_DNS="*.${lf_cluster_domain}"
-  export VAR_CERT_SAN_LOCAL_DNS="${VAR_QMGR}-ibm-mq.${VAR_MQ_NAMESPACE}.svc.cluster.local"
-  export VAR_CERT_ISSUER_REF=${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR}-int-issuer
+  export VAR_CERT_SAN_LOCAL_DNS="${VAR_QMGR_LC}-ibm-mq.${VAR_MQ_NAMESPACE}.svc.cluster.local"
+  export VAR_CERT_ISSUER_REF=${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR_LC}-int-issuer
   export VAR_CERT_ORGANISATION=${MY_CERT_ORGANISATION}
   export VAR_CERT_COUNTRY=${MY_CERT_COUNTRY}
   export VAR_CERT_LOCALITY=${MY_CERT_LOCALITY}
@@ -86,29 +86,11 @@ function create_leaf_certificate () {
 }
 
 #############################################################
-function create_qmgr_configmaps () {
-  local lf_tracelevel=3
-  trace_in $lf_tracelevel create_qmgr_configmaps
-  
-  echo "VAR_QMGR: ${VAR_QMGR}"
-  echo "VAR_MQSC_OBJECTS_CM: ${VAR_MQSC_OBJECTS_CM}"
-  export VAR_QMGR="testqms"
-  echo "VAR_MQSC_OBJECTS_CM: ${VAR_MQSC_OBJECTS_CM}"
-   
-  create_oc_resource "ConfigMap" "${VAR_INI_CM}" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}" "qmgr_cm_ini.yaml" "$VAR_MQ_NAMESPACE"
-  create_oc_resource "ConfigMap" "${VAR_MQSC_OBJECTS_CM}" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}" "qmgr_cm_mqsc.yaml" "$VAR_MQ_NAMESPACE"
-  create_oc_resource "ConfigMap" "${VAR_AUTH_CM}" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}" "qmgr_cm_mqsc_auth.yaml" "$VAR_MQ_NAMESPACE"
-  create_oc_resource "ConfigMap" "${VAR_WEBCONFIG_CM}" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}" "qmgr_cm_web.yaml" "$VAR_MQ_NAMESPACE"
-
-  trace_out $lf_tracelevel create_qmgr_configmaps
-}
-
-#############################################################
 function create_qmgr_route () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel create_qmgr_route
 
-  create_oc_resource "Route" "${VAR_QMGR}-route" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}" "qmgr_route.yaml" "$VAR_MQ_NAMESPACE"
+  create_oc_resource "Route" "${VAR_QMGR_LC}-route" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}" "qmgr_route.yaml" "$VAR_MQ_NAMESPACE"
 
   trace_out $lf_tracelevel create_qmgr_route
 }
@@ -118,19 +100,62 @@ function create_qmgr () {
   local lf_tracelevel=3
   
   trace_in $lf_tracelevel create_qmgr
+  local lf_qm_defs=("$@")
 
-  # First create the configmaps and the route for this QMgr
-  create_qmgr_configmaps
+  export VAR_QMGR=${lf_qm_defs[0]}
+  export VAR_QMGR_UC=$(echo $VAR_QMGR | tr '[:lower:]' '[:upper:]')
+  export VAR_QMGR_LC=$(echo $VAR_QMGR | tr '[:upper:]' '[:lower:]')
+  export VAR_INI_CM="${VAR_QMGR_LC}-ini-cm"
+  export VAR_MQSC_OBJECTS_CM="${VAR_QMGR_LC}-mqsc-cm"
+  export VAR_AUTH_CM="${VAR_QMGR_LC}-auth-cm"
+  export VAR_WEBCONFIG_CM="${VAR_QMGR_LC}-webconfig-cm"
+
+  mkdir -p ${MY_MQ_WORKINGDIR}${VAR_QMGR}
   
-  create_qmgr_route
+  mylog info "Creating Queue Manager: ${VAR_QMGR} in namespace: ${VAR_MQ_NAMESPACE}"
 
+  create_intermediate_issuer
+  create_leaf_certificate
+
+  # Copy the template to add the missing lines
+  mkdir -p "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/tmp/"
+  cp -f "${MY_MQ_SIMPLE_DEMODIR}tmpl/qmgr_cm_mqsc.yaml" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/tmp/."
+  cp -f "${MY_MQ_SIMPLE_DEMODIR}tmpl/qmgr_cm_mqsc_auth.yaml" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/tmp/."
+
+  for ((i=1; i<${#lf_qm_defs[@]}; i++)); do
+    # For each Queue update the template file for the queues definitions and authentication definitions will be generated in working directory
+    # If ends by CPY then it is a streaming queue
+    if [[ "${lf_qm_defs[$i]}" == *CPY ]]; then
+      mylog info "Adding Queue ${lf_qm_defs[$i]} and streaming queue definitions."
+      lf_qn=${lf_qm_defs[$i]%".CPY"}
+      addLineToFileAtEnd 4 "DEFINE QLOCAL('${lf_qm_defs[$i]}')" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/tmp/qmgr_cm_mqsc.yaml"
+      addLineToFileAtEnd 4 "DEFINE QLOCAL('${lf_qn}') STREAMQ('${lf_qm_defs[$i]}') REPLACE DEFPSIST(YES)" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/tmp/qmgr_cm_mqsc.yaml"
+      addLineToFileAtEnd 4 "SET AUTHREC PROFILE('${lf_qn}') PRINCIPAL('${MY_USER}') OBJTYPE(QUEUE) AUTHADD(BROWSE,GET,INQ,PUT,DSP)" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/tmp/qmgr_cm_mqsc_auth.yaml"
+      addLineToFileAtEnd 4 "SET AUTHREC PROFILE('${lf_qm_defs[$i]}') PRINCIPAL('${MY_USER}') OBJTYPE(QUEUE) AUTHADD(BROWSE,GET,INQ,PUT,DSP)" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/tmp/qmgr_cm_mqsc_auth.yaml"
+    else
+      mylog info "Adding Queue ${lf_qm_defs[$i]} definitions."
+      addLineToFileAtEnd 4 "DEFINE QLOCAL('${lf_qm_defs[$i]}') REPLACE DEFPSIST(YES)" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/tmp/qmgr_cm_mqsc.yaml"
+      addLineToFileAtEnd 4 "SET AUTHREC PROFILE('${lf_qm_defs[$i]}') PRINCIPAL('${MY_USER}') OBJTYPE(QUEUE) AUTHADD(BROWSE,GET,INQ,PUT,DSP)" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/tmp/qmgr_cm_mqsc_auth.yaml"
+    fi
+  done
+  # Create QM config maps
+  create_oc_resource "ConfigMap" "${VAR_INI_CM}" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/" "qmgr_cm_ini.yaml" "$VAR_MQ_NAMESPACE"
+  create_oc_resource "ConfigMap" "${VAR_MQSC_OBJECTS_CM}" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/tmp/" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/" "qmgr_cm_mqsc.yaml" "$VAR_MQ_NAMESPACE"
+  create_oc_resource "ConfigMap" "${VAR_AUTH_CM}" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/tmp/" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/" "qmgr_cm_mqsc_auth.yaml" "$VAR_MQ_NAMESPACE"
+  create_oc_resource "ConfigMap" "${VAR_WEBCONFIG_CM}" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/" "qmgr_cm_web.yaml" "$VAR_MQ_NAMESPACE"
+  
+  # At this stage VAR_QMGR_LC is exported
+  create_qmgr_route
+  
   # Use the new CRD MessagingServer(available since CP4I 16.1.0-SC2) 
   if $MY_MESSAGINGSERVER; then
     # Creating MQ MessagingServer instance
-    create_operand_instance "MessagingServer" "${VAR_MSGSRV_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_MQ_WORKINGDIR}" "MessagingServer-Capability.yaml" "$VAR_MQ_NAMESPACE" "{.status.conditions[0].type}" "Ready"
+    create_operand_instance "MessagingServer" "${VAR_MSGSRV_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/" "MessagingServer-Capability.yaml" "$VAR_MQ_NAMESPACE" "{.status.conditions[0].type}" "Ready"
   else 
-    create_operand_instance "QueueManager" "${VAR_QMGR}" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}" "qmgr.yaml" "$VAR_MQ_NAMESPACE" "{.status.phase}" "Running"
+    create_operand_instance "QueueManager" "${VAR_QMGR_LC}" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/" "qmgr.yaml" "$VAR_MQ_NAMESPACE" "{.status.phase}" "Running"
   fi
+
+  unset VAR_QMGR VAR_QMGR_UC VAR_INI_CM VAR_MQSC_OBJECTS_CM VAR_AUTH_CM VAR_WEBCONFIG_CM
   
   trace_out $lf_tracelevel create_qmgr
 }
@@ -230,41 +255,20 @@ function create_ccdt () {
 
 #############################################################
 # Run this script natively (from terminal)
-# create_root_issuer Issuer cp4imq-mq-qms-self-signed Issuer_ca.yaml cp4imq
-# create_root_certificate Certificate cp4imq-mq-qms-root ca_certificate.yam cp4imq
-# create_intermediate_issuer	 Issuer cp4imq-mq-qms-int-issuer Issuer_non_ca.yaml cp4imq
-# create_leaf_certificate Certificate cp4imq-mq-qms-server cp4imq
-# create_pki_cr	
-# Creating : client key database for clnt1 to use with MQSSLKEYR env variable.	
-#   create_clnt_kdb: client key database for clnt1 to use with MQSSLKEYR env variable.	
-#   add_qmgr_crt_2_clnt_kdb: qmgr certificate to the client key database
-# create_qmgr_configmaps	
-#   create_oc_resource	ConfigMap qms-ini-cm qmgr_cm_ini.yaml cp4imq
-#   create_oc_resource ConfigMap qms-mqsc-cm qmgr_cm_mqsc.yaml cp4imq 
-#   create_oc_resource ConfigMap qms-auth-cm qmgr_cm_mqsc_auth.yaml cp4imq
-#   create_oc_resource	configMap qms-webconfig-cm qmgr_cm_web.yaml cp4imq
-# create_qmgr_route	
-#   create_oc_resource	Route qms-route qmgr_route.yaml cp4imq 
-# create_qmgr	
-#   create_operand_instance QueueManager qms qmgr.yaml cp4imq {.status.phase} Running	
-# 	  create_oc_resource	QueueManager qms qmgr.yaml cp4imq
-# create_ccdt	
 #############################################################
 function mq_run_all () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel mq_run_all
   
-  # Create tls artifacts
-  
-  # create_root_issuer
-  # create_root_certificate
-  # create_intermediate_issuer
-  # create_leaf_certificate
+  # Create tls artifacts for all QMs in the project
+  create_root_issuer
+  create_root_certificate
 
-  # create_pki_cr
+  create_pki_cr
 
-  create_qmgr
-
+  create_qmgr "Orders" "PAYMT.RESP" "PAYMT.REQ.CPY"
+  create_qmgr "Sensors" "WEATHER.PAR"
+  exit 0
   # Create qmgr ccdt
   create_ccdt
 
@@ -397,7 +401,7 @@ set +a
 . "${sc_provision_lib_file}"
 
 echo "VAR_QMGR=${VAR_QMGR}"
-export MY_MQ_WORKINGDIR="${PROVISION_SCRIPTDIR}working/demos/mq_simple/${VAR_QMGR}/"
+export MY_MQ_WORKINGDIR="${PROVISION_SCRIPTDIR}working/demos/mq_simple/"
 
 mq_init
 

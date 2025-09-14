@@ -1,13 +1,13 @@
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
-  name: ${VAR_QMGR}-route
+  name: ${VAR_QMGR_LC}-route
   namespace: $VAR_MQ_NAMESPACE
 spec:
-  host: ${VAR_CHL}.chl.mq.ibm.com
+  host: ${VAR_QMGR_LC}.chl.mq.ibm.com
   to:
     kind: Service
-    name: ${VAR_QMGR}-ibm-mq
+    name: ${VAR_QMGR_LC}-ibm-mq
   port:
     targetPort: 1414
   tls:

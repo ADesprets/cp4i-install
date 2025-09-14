@@ -12,7 +12,7 @@ function install_mq_k8s() {
     check_directory_exist_create "${MY_MQ_WORKINGDIR}"
 
     create_project "$VAR_MQ_NAMESPACE" "$VAR_MQ_NAMESPACE project" "For MQ" "${MY_YAMLDIR}mq/" "${MY_MQ_WORKINGDIR}"
-    mylog info "Creating entitlement, need to check if it is needed or works"
+    mylog info "Creating entitlement, need to check if it is needed or works" 0
     add_ibm_entitlement "$VAR_MQ_NAMESPACE"
 
     # create a mq service 
@@ -78,7 +78,7 @@ function install_flink_k8s() {
 
     create_project "${VAR_FLINK_NAMESPACE}" "${VAR_FLINK_NAMESPACE} project" "For Flink" "${MY_RESOURCESDIR}" "${MY_FLINK_WORKINGDIR}"
 
-    mylog info "Creating entitlement, need to check if it is needed or works"
+    mylog info "Creating entitlement, need to check if it is needed or works" 0
     add_ibm_entitlement "$VAR_FLINK_NAMESPACE"
 
     # install the operator
@@ -180,7 +180,7 @@ function install_ep_keycloak_k8s() {
 
     create_project "${VAR_EP_NAMESPACE}" "${VAR_EP_NAMESPACE} project" "For Event Processing" "${MY_RESOURCESDIR}" "${MY_EP_WORKINGDIR}"
 
-    mylog info "Creating entitlement, need to check if it is needed or works"
+    mylog info "Creating entitlement, need to check if it is needed or works" 0
     add_ibm_entitlement "$VAR_EP_NAMESPACE"
 
     # install the operator
@@ -257,7 +257,7 @@ function install_ep_local_k8s() {
 
     create_project "${VAR_EP_NAMESPACE}" "${VAR_EP_NAMESPACE} project" "For Event Processing" "${MY_RESOURCESDIR}" "${MY_EP_WORKINGDIR}"
 
-    mylog info "Creating entitlement, need to check if it is needed or works"
+    mylog info "Creating entitlement, need to check if it is needed or works" 0
     add_ibm_entitlement "$VAR_EP_NAMESPACE"
 
     # install the operator
@@ -604,7 +604,7 @@ function install_eem_local_oc() {
     check_directory_exist_create "${MY_EEM_WORKINGDIR}"
 
     create_project "$VAR_EEM_NAMESPACE" "$VAR_EEM_NAMESPACE project" "For Eventstreams" "${MY_RESOURCESDIR}" "${MY_EEM_WORKINGDIR}"
-    mylog info "Creating entitlement, need to check if it is needed or works"
+    mylog info "Creating entitlement, need to check if it is needed or works" 0
     add_ibm_entitlement "$VAR_EEM_NAMESPACE"
 
     ## event endpoint management
@@ -673,7 +673,7 @@ function install_eem_keycloak_oc() {
     check_directory_exist_create "${MY_EEM_WORKINGDIR}"
 
     create_project "$VAR_EEM_NAMESPACE" "$VAR_EEM_NAMESPACE project" "For Eventstreams" "${MY_RESOURCESDIR}" "${MY_EEM_WORKINGDIR}"
-    mylog info "Creating entitlement, need to check if it is needed or works"
+    mylog info "Creating entitlement, need to check if it is needed or works" 0
     add_ibm_entitlement "$VAR_EEM_NAMESPACE"
 
     ## event endpoint management
@@ -725,7 +725,7 @@ function install_eem_local_k8s() {
 
     create_project "${VAR_EEM_NAMESPACE}" "${VAR_EEM_NAMESPACE} project" "For Event Endpoint Management" "${MY_RESOURCESDIR}" "${MY_EEM_WORKINGDIR}"
 
-    mylog info "Creating entitlement, need to check if it is needed or works"
+    mylog info "Creating entitlement, need to check if it is needed or works" 0
     add_ibm_entitlement "$VAR_EEM_NAMESPACE"
 
     # Creating EventStreams operator subscription
@@ -779,7 +779,7 @@ function install_eem_keycloak_k8s() {
 
     create_project "${VAR_EEM_NAMESPACE}" "${VAR_EEM_NAMESPACE} project" "For Event Endpoint Management" "${MY_RESOURCESDIR}" "${MY_EEM_WORKINGDIR}"
 
-    mylog info "Creating entitlement, need to check if it is needed or works"
+    mylog info "Creating entitlement, need to check if it is needed or works" 0
     add_ibm_entitlement "$VAR_EEM_NAMESPACE"
 
     # Creating EventStreams operator subscription
@@ -853,7 +853,7 @@ function install_microk8s_cluster {
 
   decho $lf_tracelevel "Parameters: |no parameters|"
   
-  mylog info "📦 Creating MicroK8s master node..."
+  mylog info "📦 Creating MicroK8s master node..." 0
   multipass launch --name $MY_MASTER --cpus $MY_CPU --memory $MY_RAM --disk $MY_DISK $MY_IMAGE
   multipass exec $MY_MASTER -- sudo snap install microk8s --classic
   multipass exec $MY_MASTER -- sudo usermod -a -G microk8s ubuntu
@@ -861,26 +861,26 @@ function install_microk8s_cluster {
   
   # Fetch the join command
   for lf_worker in "${MY_WORKERS[@]}"; do
-    mylog info  "🔧 Creating and joining worker nodes..."
+    mylog info  "🔧 Creating and joining worker nodes..." 0
     multipass launch --name $lf_worker --cpus $MY_CPU --memory $MY_RAM --disk $MY_DISK $MY_IMAGE
     multipass exec $lf_worker -- sudo snap install microk8s --classic
     multipass exec $lf_worker -- sudo usermod -a -G microk8s ubuntu
     multipass exec $lf_worker -- sudo apt update && sudo apt install -y nfs-common
   
-    mylog info  "🧪 Generating join command for $lf_worker..."
+    mylog info  "🧪 Generating join command for $lf_worker..." 0
     lf_joind_cmd=$(multipass exec $MY_MASTER -- microk8s add-node | grep 'microk8s join' | head -n1)
   
-    mylog info  "🔗 Joining $lf_worker to cluster..."
+    mylog info  "🔗 Joining $lf_worker to cluster..." 0
     multipass exec $lf_worker -- bash -c "sudo $lf_joind_cmd --worker"
   done
   
-  mylog info  "⏳ Waiting for nodes to be ready..."
+  mylog info  "⏳ Waiting for nodes to be ready..." 0
   sleep 30
   multipass exec $MY_MASTER -- microk8s kubectl get nodes
   
   multipass exec $MY_MASTER --  microk8s enable cert-manager dashboard community nfs ingress registry
   
-  mylog info  "🔧 Creating the k8s config file in ~/.kube..."
+  mylog info  "🔧 Creating the k8s config file in ~/.kube..." 0
   multipass exec $MY_MASTER -- microk8s config > microk8s-config
   cp microk8s-config ~/.kube/config  
 
@@ -1034,7 +1034,7 @@ function wait_for_catalogsource_2be_ready() {
     # Check if all catalog source pods are ready
     check_pod_status "${lf_in_label_selector}" "${lf_in_namespace}"
     if [[ $? -eq 0 ]] ; then
-      mylog info "All catalog source pods are ready"
+      mylog info "All catalog source pods are ready" 0
       trace_out $lf_tracelevel wait_for_catalogsource_2be_ready
       return 0
     fi
@@ -1299,12 +1299,12 @@ function install_networkpolicies() {
   # applying network policies
   case $lf_in_entity in
   lic_svc)
-    mylog info "Applying network policies for IBM License service" 
+    mylog info "Applying network policies for IBM License service" 0
     check_create_oc_yaml "NetworkPolicy" "egress-ibm-licensing-operator" "${MY_RESOURCESDIR}" "${MY_LICENSE_SERVICE_WORKINGDIR}" "${MY_LICENSE_SERVICE_BEDROCK_EGRESS_OPERATOR_FILE}" "${MY_LICENSE_SERVICE_NAMESPACE}"
     check_create_oc_yaml "NetworkPolicy" "egress-ibm-licensing-service-instance" "${MY_RESOURCESDIR}" "${MY_LICENSE_SERVICE_WORKINGDIR}" "${MY_LICENSE_SERVICE_BEDROCK_EGRESS_INSTANCE_FILE}" "${MY_LICENSE_SERVICE_NAMESPACE}"
     ;;
   lic_reporter)
-    mylog info "Applying network policies for IBM License service reporter" 
+    mylog info "Applying network policies for IBM License service reporter" 0
     check_create_oc_yaml "NetworkPolicy" "egress-ibm-license-service-reporter-operator" "${MY_RESOURCESDIR}" "${MY_LICENSE_SERVICE_REPORTER_WORKINGDIR}" "${MY_LICENSE_SERVICE_REPORTER_BEDROCK_EGRESS_OPERATOR_FILE}" "${MY_LICENSE_SERVICE_REPORTER_NAMESPACE}"
     check_create_oc_yaml "NetworkPolicy" "access-to-ibm-licensing-service-reporter" "${MY_RESOURCESDIR}" "${MY_LICENSE_SERVICE_REPORTER_WORKINGDIR}" "${MY_LICENSE_SERVICE_REPORTER_BEDROCK_INGRESS_OPERATOR_FILE}" "${MY_LICENSE_SERVICE_REPORTER_NAMESPACE}"
     ;;
@@ -1394,6 +1394,23 @@ function encode_b64_file() {
 
   lf_encoded=$(cat $lf_in_file | base64 -w 0)
   echo $lf_encoded
+}
+
+################################################
+# Add a line at the end of a file
+# @param 1: number of spaces to indent
+# @param 2: line to be added
+# @param 3: line added
+#
+function addLineToFileAtEnd() {
+  local lf_indent="$1"
+  local lf_line="$2"
+  local lf_file="$3"
+  # Ensure the directory exists
+  mkdir -p "$(dirname "$lf_file")"
+  # Append the line to the file
+  spaces=$(printf '%*s' "$lf_indent" '')
+  echo "${spaces}${lf_line}" >> "$lf_file"
 }
 
 ################################################

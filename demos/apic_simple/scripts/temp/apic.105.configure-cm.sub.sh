@@ -632,7 +632,7 @@ if [ -z "$pingAPI" ] || [ "$pingAPI" = "null" ]; then
     --data "{\"draft_api\":$api}" );
   mylog info $draftAPI;
 else
-  mylog info "$api_name already exists, do not load it."
+  mylog info "$api_name already exists, do not load it." 0
 fi
 
 # Removed analytics-client-default not used anymore

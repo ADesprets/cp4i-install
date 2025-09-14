@@ -1023,6 +1023,43 @@ function install_ace() {
 }
 
 ################################################
+# Install MILVUS
+# Requires CertManager
+function install_milvus(){
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing MILVUS database for AI Agent (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel install_milvus
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+  # Reuse API Connect flag, because it is linked to APIC
+  if $MY_APIC; then
+    # Installation Milvus DB (https://milvus.io/docs/fr/openshift.md)
+	  # Self-Signed issuer and Certificate (milvus-operator-certificate.yaml) for Milvus Operator in openshift-operators
+    
+    # Create secret 
+    # kubectl create secret generic milvus-creds --from-literal=username=$MILVUS_USER_NAME --from-literal=password=$MILVUS_API_KEY
+    # voir loki_secret with secret.yaml
+
+    # Add the Milvus Operator Helm repository:
+	  # helm repo add milvus-operator  
+	  # helm repo update milvus-operator
+
+    # Deploy Milvus Cluster (Operand creation)
+    # kubectl apply -f https://raw.githubusercontent.com/milvus-io/milvus-operator/main/config/samples/demo.yaml
+
+  fi
+
+  trace_out $lf_tracelevel install_milvus
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of MILVUS database (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+}
+
+################################################
 # Install APIC
 function install_apic() {
   SECONDS=0

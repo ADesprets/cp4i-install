@@ -21,7 +21,7 @@ echo "eem-demo_project: ${eem-demo_project}"
 SECONDS=0
 	mylog check "Checking ${name}/${octype} in ${ns}"
 	if ! $MY_CLUSTER_COMMAND -n ${ns} get deployement ${name} > /dev/null 2>&1; then 
-	  mylog info "Creating LDAP server"
+	  mylog info "Creating LDAP server" 0
 
 	  # deploy openldap and take in account the PVCs just created
 	  # check that deployment of openldap was not done

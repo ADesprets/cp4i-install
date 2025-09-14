@@ -30,7 +30,7 @@ function create_application() {
   local lf_tracelevel=3
   trace_in $lf_tracelevel create_application
 
-  mylog info "Application:version ${MY_OPENLIBERTY_APP_NAME_VERSION}"
+  mylog info "Application:version ${MY_OPENLIBERTY_APP_NAME_VERSION}" 0
 
   check_directory_exist_create "${MY_OPENLIBERTY_WORKINGDIR}"
 

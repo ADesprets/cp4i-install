@@ -20,7 +20,7 @@ function eem_run_all () {
   
   export VAR_EEM_APIC_INGRESS_CA_CERT_SECRET_NAME=apim-cpd
   if ! $MY_CLUSTER_COMMAND -n ${VAR_EEM_NAMESPACE} get secret $VAR_EEM_APIC_INGRESS_CA_CERT_SECRET_NAME >/dev/null 2>&1; then
-    mylog info "Configure Event Endpoint Management to trust API Connect"
+    mylog info "Configure Event Endpoint Management to trust API Connect" 0
   
     decho $lf_tracelevel "$MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get secret ${VAR_APIC_INSTANCE_NAME}-ingress-ca -o=jsonpath=\"{.data['ca\.crt']}\""
     lf_apic_ca_ingress=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get secret ${VAR_APIC_INSTANCE_NAME}-ingress-ca -o=jsonpath="{.data['ca\.crt']}")

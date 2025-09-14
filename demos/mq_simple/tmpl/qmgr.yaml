@@ -3,7 +3,7 @@ kind: QueueManager
 metadata:
   annotations:
     com.ibm.mq/write-defaults-spec: 'false'
-  name: ${VAR_QMGR}
+  name: ${VAR_QMGR_LC}
   namespace: ${VAR_MQ_NAMESPACE}
 
 spec:
@@ -13,15 +13,15 @@ spec:
     use: NonProduction
   pki:
     keys:
-      - name: ${VAR_QMGR}
+      - name: ${VAR_QMGR_LC}
         secret:
-          secretName: ${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR}-server
+          secretName: ${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR_LC}-server
           items:
             - tls.key
             - tls.crt
             - ca.crt
   queueManager:
-    name: ${VAR_QMGR}
+    name: ${VAR_QMGR_LC}
     ini:
       - configMap:
           items:
@@ -31,11 +31,11 @@ spec:
       - configMap:
           name: ${VAR_MQSC_OBJECTS_CM}
           items:
-          - ${VAR_QMGR}.mqsc
+          - ${VAR_QMGR_LC}.mqsc
       - configMap:
           name: ${VAR_AUTH_CM}
           items:
-            - ${VAR_QMGR}.auth
+            - ${VAR_QMGR_LC}.auth
     resources:
       limits:
         cpu: 500m

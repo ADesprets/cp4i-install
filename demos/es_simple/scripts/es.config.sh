@@ -30,14 +30,14 @@ function create_kafka_topics () {
   local lf_target_directory="${MY_ES_WORKINGDIR}resources/"
 
   # Creation of the Topics used for taxi demo
-  mylog info "Creating topics"
+  mylog info "Creating topics" 0
   topic_names=("connect-configs" "connect-offsets" "connect-status" "toolbox.stater" "demo-flight-takeoffs" "demo-weather-armonk" "demo-weather-hursley" "demo-weather-northharbour" "demo-weather-paris" "demo-weather-southbank" "demo-stock-apple" "demo-stock-google" "demo-stock-ibm" "demo-stock-microsoft" "demo-stock-salesforce" "orders" "cancellations" "doors" "stock" "customers" "sensors" "online-orders" "nostock")
   topic_spec_names=("connect-configs" "connect-offsets" "connect-status" "TOOLBOX.STATER" "FLIGHT.TAKEOFFS" "WEATHER.ARMONK" "WEATHER.HURSLEY" "WEATHER.NORTHHARBOUR" "WEATHER.PARIS" "WEATHER.SOUTHBANK" "STOCK.APPLE" "STOCK.GOOGLE" "STOCK.IBM" "STOCK.MICROSOFT" "STOCK.SALESFORCE" "LH.ORDERS" "LH.CANCELLATIONS" "LH.DOORS" "LH.STOCK" "LH.CUSTOMERS" "LH.SENSORS" "ORDERS.ONLINE" "STOCK.NOSTOCK")
   topic_partitions=(1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 3 3 1 2 3 2 1 1)
   topic_replicas=(3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 1 1 3 1 1 1)
   for index in ${!topic_names[@]}
   do
-      mylog info "Create topic: name: ${topic_names[$index]}, spec: ${topic_spec_names[$index]}, partitions: ${topic_partitions[$index]}, replicas: ${topic_replicas[$index]}, es_instance: ${VAR_ES_INSTANCE_NAME}, project: ${VAR_ES_NAMESPACE}"
+      mylog info "Create topic: name: ${topic_names[$index]}, spec: ${topic_spec_names[$index]}, partitions: ${topic_partitions[$index]}, replicas: ${topic_replicas[$index]}, es_instance: ${VAR_ES_INSTANCE_NAME}, project: ${VAR_ES_NAMESPACE}" 0
       # Need to make those variables visible to the envsubst command used in lib.sh
       export VAR_ES_TOPIC_NAME=${topic_names[$index]}
       export VAR_ES_SPEC_TOPIC_NAME=${topic_spec_names[$index]}
@@ -82,12 +82,12 @@ function create_kafka_connector () {
   local lf_target_directory="${MY_ES_WORKINGDIR}resources/"
 
   # Create KafkaConnect and KafkaConnector in $ES_APPS_PROJECT project
-  mylog info "Create Kafka Connect for datagen, and MQ connectors"
+  mylog info "Create Kafka Connect for datagen, and MQ connectors" 0
    
   create_oc_resource "KafkaConnect" "${VAR_ES_KAFKA_CONNECT_INSTANCE_NAME}" "${lf_source_directory}" "${MY_ES_WORKINGDIR}" "KConnect.yaml" "$VAR_ES_NAMESPACE"
   # TODO check for the TLS configuration: https://ibm.github.io/event-automation/es/connecting/mq/#configuration-options
   
-  mylog info "Create Kafka Connectors for datagen and MQ connectors"
+  mylog info "Create Kafka Connectors for datagen and MQ connectors" 0
   create_oc_resource "KafkaConnector" "datagen" "${lf_source_directory}" "${lf_target_directory}" "KConnector_datagen.yaml" "$VAR_ES_NAMESPACE"
 
   create_oc_resource "KafkaConnector" "mq-sink" "${lf_source_directory}" "${lf_target_directory}" "KConnector_MQ_sink.yaml" "$VAR_ES_NAMESPACE"
