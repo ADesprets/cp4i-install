@@ -383,6 +383,23 @@ function create_apic_resources() {
   trace_out $lf_tracelevel create_apic_resources
 }
 
+
+################################################
+# Configure the AI Agent for VS Code extension
+# Check if it can be done at cloud or org level ?
+# @param .
+function configureAIAgent() {
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel configureAIAgent
+
+  # Configure the AI Agent for VS Code extension with watsonx.ai settings
+  # host, credential (token) and project
+
+
+  trace_out $lf_tracelevel configureAIAgent
+}
+
+
 ################################################
 # Load an API
 # @param org_name: The name of the organisation.
@@ -520,7 +537,7 @@ function download_tools () {
   trace_out $lf_tracelevel download_tools
 }
 
-#######################################################
+################################################
 # Create Cloud Manager token (its name is access_token)
 function create_cm_token(){
   local lf_tracelevel=3
@@ -562,7 +579,7 @@ function create_cm_token(){
   trace_out $lf_tracelevel create_cm_token
 }
 
-#######################################################
+################################################
 # Create API Manager token for the org 
 # todo : think about params
 function create_am_token(){
@@ -586,7 +603,7 @@ function create_am_token(){
   trace_out $lf_tracelevel create_am_token
 }
 
-#####################################
+################################################
 # run all
 function apic_run_all () {
   local lf_tracelevel=3
@@ -716,12 +733,12 @@ function main() {
   exit 0
 }
 
-################################################################################################
+################################################
 # Start of the script main entry
-################################################################################################
+################################################
 # other example: ./apic.config.sh --call <function_name1>, <function_name2>, ...
 # other example: ./apic.config.sh --all
-################################################################################################
+################################################
 
 # SB] getting the path of this script independently from using it directly or calling it from another script
 # sc_component_script_dir="$( cd "$( dirname "$0" )" && pwd )/": this statement returns the calling script path
@@ -768,9 +785,9 @@ set +a
 
 apic_init
 
-######################################################
+################################################
 # main entry
-######################################################
+################################################
 # Main execution block (only runs if executed directly)
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     main "$@"

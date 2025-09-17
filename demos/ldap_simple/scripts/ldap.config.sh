@@ -59,9 +59,9 @@ function ldap_build_image() {
   trace_out $lf_tracelevel ldap_build_image
 }
 
-#############################################################
+################################################
 # Run this script
-#############################################################
+################################################
 function ldap_run_all () {
   local lf_tracelevel=2
   trace_in $lf_tracelevel ldap_run_all
@@ -87,9 +87,9 @@ function ldap_run_all () {
   trace_out $lf_tracelevel ldap_run_all
 }
 
-#############################################################
+################################################
 # Run this script
-#############################################################
+################################################
 function ldap_run_all_k8s () {
   local lf_tracelevel=2
   trace_in $lf_tracelevel ldap_run_all_k8s
@@ -186,12 +186,12 @@ function main() {
   exit 0
 }
 
-################################################################################################
+################################################
 # Start of the script main entry
-################################################################################################
+################################################
 # other example: ./ldap.config.sh --call <function_name1>, <function_name2>, ...
 # other example: ./ldap.config.sh --all
-################################################################################################
+################################################
 
 # SB] getting the path of this script independently from using it directly or calling it from another script
 # sc_component_script_dir="$( cd "$( dirname "$0" )" && pwd )/": this statement returns the calling script path
@@ -243,9 +243,9 @@ set +a
 ldap_init
 
 trap '$MY_CLUSTER_COMMAND config use-context $sc_current_context' EXIT
-######################################################
+################################################
 # main entry
-######################################################
+################################################
 # Main execution block (only runs if executed directly)
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     main "$@"

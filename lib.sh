@@ -12,7 +12,7 @@ function install_mq_k8s() {
     check_directory_exist_create "${MY_MQ_WORKINGDIR}"
 
     create_project "$VAR_MQ_NAMESPACE" "$VAR_MQ_NAMESPACE project" "For MQ" "${MY_YAMLDIR}mq/" "${MY_MQ_WORKINGDIR}"
-    mylog info "Creating entitlement, need to check if it is needed or works" 0
+    mylog info "Creating entitlement, need to check if it is needed or works"
     add_ibm_entitlement "$VAR_MQ_NAMESPACE"
 
     # create a mq service 
@@ -78,7 +78,7 @@ function install_flink_k8s() {
 
     create_project "${VAR_FLINK_NAMESPACE}" "${VAR_FLINK_NAMESPACE} project" "For Flink" "${MY_RESOURCESDIR}" "${MY_FLINK_WORKINGDIR}"
 
-    mylog info "Creating entitlement, need to check if it is needed or works" 0
+    mylog info "Creating entitlement, need to check if it is needed or works"
     add_ibm_entitlement "$VAR_FLINK_NAMESPACE"
 
     # install the operator
@@ -180,7 +180,7 @@ function install_ep_keycloak_k8s() {
 
     create_project "${VAR_EP_NAMESPACE}" "${VAR_EP_NAMESPACE} project" "For Event Processing" "${MY_RESOURCESDIR}" "${MY_EP_WORKINGDIR}"
 
-    mylog info "Creating entitlement, need to check if it is needed or works" 0
+    mylog info "Creating entitlement, need to check if it is needed or works"
     add_ibm_entitlement "$VAR_EP_NAMESPACE"
 
     # install the operator
@@ -257,7 +257,7 @@ function install_ep_local_k8s() {
 
     create_project "${VAR_EP_NAMESPACE}" "${VAR_EP_NAMESPACE} project" "For Event Processing" "${MY_RESOURCESDIR}" "${MY_EP_WORKINGDIR}"
 
-    mylog info "Creating entitlement, need to check if it is needed or works" 0
+    mylog info "Creating entitlement, need to check if it is needed or works"
     add_ibm_entitlement "$VAR_EP_NAMESPACE"
 
     # install the operator
@@ -604,7 +604,7 @@ function install_eem_local_oc() {
     check_directory_exist_create "${MY_EEM_WORKINGDIR}"
 
     create_project "$VAR_EEM_NAMESPACE" "$VAR_EEM_NAMESPACE project" "For Eventstreams" "${MY_RESOURCESDIR}" "${MY_EEM_WORKINGDIR}"
-    mylog info "Creating entitlement, need to check if it is needed or works" 0
+    mylog info "Creating entitlement, need to check if it is needed or works"
     add_ibm_entitlement "$VAR_EEM_NAMESPACE"
 
     ## event endpoint management
@@ -673,7 +673,7 @@ function install_eem_keycloak_oc() {
     check_directory_exist_create "${MY_EEM_WORKINGDIR}"
 
     create_project "$VAR_EEM_NAMESPACE" "$VAR_EEM_NAMESPACE project" "For Eventstreams" "${MY_RESOURCESDIR}" "${MY_EEM_WORKINGDIR}"
-    mylog info "Creating entitlement, need to check if it is needed or works" 0
+    mylog info "Creating entitlement, need to check if it is needed or works"
     add_ibm_entitlement "$VAR_EEM_NAMESPACE"
 
     ## event endpoint management
@@ -725,7 +725,7 @@ function install_eem_local_k8s() {
 
     create_project "${VAR_EEM_NAMESPACE}" "${VAR_EEM_NAMESPACE} project" "For Event Endpoint Management" "${MY_RESOURCESDIR}" "${MY_EEM_WORKINGDIR}"
 
-    mylog info "Creating entitlement, need to check if it is needed or works" 0
+    mylog info "Creating entitlement, need to check if it is needed or works"
     add_ibm_entitlement "$VAR_EEM_NAMESPACE"
 
     # Creating EventStreams operator subscription
@@ -779,7 +779,7 @@ function install_eem_keycloak_k8s() {
 
     create_project "${VAR_EEM_NAMESPACE}" "${VAR_EEM_NAMESPACE} project" "For Event Endpoint Management" "${MY_RESOURCESDIR}" "${MY_EEM_WORKINGDIR}"
 
-    mylog info "Creating entitlement, need to check if it is needed or works" 0
+    mylog info "Creating entitlement, need to check if it is needed or works"
     add_ibm_entitlement "$VAR_EEM_NAMESPACE"
 
     # Creating EventStreams operator subscription
@@ -853,7 +853,7 @@ function install_microk8s_cluster {
 
   decho $lf_tracelevel "Parameters: |no parameters|"
   
-  mylog info "📦 Creating MicroK8s master node..." 0
+  mylog info "📦 Creating MicroK8s master node..."
   multipass launch --name $MY_MASTER --cpus $MY_CPU --memory $MY_RAM --disk $MY_DISK $MY_IMAGE
   multipass exec $MY_MASTER -- sudo snap install microk8s --classic
   multipass exec $MY_MASTER -- sudo usermod -a -G microk8s ubuntu
@@ -861,34 +861,33 @@ function install_microk8s_cluster {
   
   # Fetch the join command
   for lf_worker in "${MY_WORKERS[@]}"; do
-    mylog info  "🔧 Creating and joining worker nodes..." 0
+    mylog info  "🔧 Creating and joining worker nodes..."
     multipass launch --name $lf_worker --cpus $MY_CPU --memory $MY_RAM --disk $MY_DISK $MY_IMAGE
     multipass exec $lf_worker -- sudo snap install microk8s --classic
     multipass exec $lf_worker -- sudo usermod -a -G microk8s ubuntu
     multipass exec $lf_worker -- sudo apt update && sudo apt install -y nfs-common
   
-    mylog info  "🧪 Generating join command for $lf_worker..." 0
+    mylog info  "🧪 Generating join command for $lf_worker..."
     lf_joind_cmd=$(multipass exec $MY_MASTER -- microk8s add-node | grep 'microk8s join' | head -n1)
   
-    mylog info  "🔗 Joining $lf_worker to cluster..." 0
+    mylog info  "🔗 Joining $lf_worker to cluster..."
     multipass exec $lf_worker -- bash -c "sudo $lf_joind_cmd --worker"
   done
   
-  mylog info  "⏳ Waiting for nodes to be ready..." 0
+  mylog info  "⏳ Waiting for nodes to be ready..."
   sleep 30
   multipass exec $MY_MASTER -- microk8s kubectl get nodes
   
   multipass exec $MY_MASTER --  microk8s enable cert-manager dashboard community nfs ingress registry
   
-  mylog info  "🔧 Creating the k8s config file in ~/.kube..." 0
+  mylog info  "🔧 Creating the k8s config file in ~/.kube..."
   multipass exec $MY_MASTER -- microk8s config > microk8s-config
   cp microk8s-config ~/.kube/config  
 
   trace_out $lf_tracelevel install_microk8s_cluster
 }
  
-######################################################################
-# Create minikube cluster if it does not exist
+################################################
 # and wait for availability of the cluster
 function install_minikube_cluster {
   local lf_tracelevel=2
@@ -1034,7 +1033,7 @@ function wait_for_catalogsource_2be_ready() {
     # Check if all catalog source pods are ready
     check_pod_status "${lf_in_label_selector}" "${lf_in_namespace}"
     if [[ $? -eq 0 ]] ; then
-      mylog info "All catalog source pods are ready" 0
+      mylog info "All catalog source pods are ready"
       trace_out $lf_tracelevel wait_for_catalogsource_2be_ready
       return 0
     fi
@@ -1062,8 +1061,8 @@ function display_access_info() {
 
   # OpenShift Console
   local lf_console_url
-  lf_console_url=$(oc whoami --showconsole)
-  mylog info "OpenShift Console accessible at ${lf_console_url}" 0
+  lf_console_url=$(oc whoami --show-console)
+  mylog info "OpenShift Console accessible at ${lf_console_url}"
   echo "<TR><TD><A HREF=http://${lf_console_url}>OpenShift console</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
 
   # Mailhog
@@ -1238,8 +1237,7 @@ function display_access_info() {
 
   trace_out $lf_tracelevel display_access_info
 }
-
-#############################################################
+################################################
 # Function to process array of (object id, yaml file)
 # @param 1: type
 # @param 2: dir: the source directory
@@ -1280,7 +1278,7 @@ function create_oc_objects() {
   trace_out $lf_tracelevel create_oc_objects
 }
 
-###########################################################
+################################################
 # install_networkpolicies function for License Service
 # https://www.ibm.com/docs/en/cloud-paks/foundational-services/4.6?topic=service-installing-network-policies-license
 function install_networkpolicies() {
@@ -1299,12 +1297,12 @@ function install_networkpolicies() {
   # applying network policies
   case $lf_in_entity in
   lic_svc)
-    mylog info "Applying network policies for IBM License service" 0
+    mylog info "Applying network policies for IBM License service"
     check_create_oc_yaml "NetworkPolicy" "egress-ibm-licensing-operator" "${MY_RESOURCESDIR}" "${MY_LICENSE_SERVICE_WORKINGDIR}" "${MY_LICENSE_SERVICE_BEDROCK_EGRESS_OPERATOR_FILE}" "${MY_LICENSE_SERVICE_NAMESPACE}"
     check_create_oc_yaml "NetworkPolicy" "egress-ibm-licensing-service-instance" "${MY_RESOURCESDIR}" "${MY_LICENSE_SERVICE_WORKINGDIR}" "${MY_LICENSE_SERVICE_BEDROCK_EGRESS_INSTANCE_FILE}" "${MY_LICENSE_SERVICE_NAMESPACE}"
     ;;
   lic_reporter)
-    mylog info "Applying network policies for IBM License service reporter" 0
+    mylog info "Applying network policies for IBM License service reporter"
     check_create_oc_yaml "NetworkPolicy" "egress-ibm-license-service-reporter-operator" "${MY_RESOURCESDIR}" "${MY_LICENSE_SERVICE_REPORTER_WORKINGDIR}" "${MY_LICENSE_SERVICE_REPORTER_BEDROCK_EGRESS_OPERATOR_FILE}" "${MY_LICENSE_SERVICE_REPORTER_NAMESPACE}"
     check_create_oc_yaml "NetworkPolicy" "access-to-ibm-licensing-service-reporter" "${MY_RESOURCESDIR}" "${MY_LICENSE_SERVICE_REPORTER_WORKINGDIR}" "${MY_LICENSE_SERVICE_REPORTER_BEDROCK_INGRESS_OPERATOR_FILE}" "${MY_LICENSE_SERVICE_REPORTER_NAMESPACE}"
     ;;
@@ -1398,9 +1396,9 @@ function encode_b64_file() {
 
 ################################################
 # Add a line at the end of a file
-# @param 1: number of spaces to indent
+# @param 1: number of spaces to indent (at the begining of the line)
 # @param 2: line to be added
-# @param 3: line added
+# @param 3: file where the line is added
 #
 function addLineToFileAtEnd() {
   local lf_indent="$1"
@@ -1416,6 +1414,8 @@ function addLineToFileAtEnd() {
 ################################################
 # simple logging with colors
 # @param 1: level (info/error/warn/wait/check/ok/no)
+# @param 2: text
+# @param 3: indent level (optional)
 function mylog() {
 
   local lf_in_level=$1
@@ -1474,7 +1474,7 @@ function var_fail() {
   fi
 }
 
-#########################################################################
+################################################
 # Print message with levels
 # @param 1:
 # @param 2:
@@ -1662,7 +1662,7 @@ function check_command_exist() {
   trace_out $lf_tracelevel check_command_exist
 }
 
-######################################################
+################################################
 # checks if the file exist, if no print a msg and exit
 # @param 1:
 function check_file_exist() {
@@ -1685,7 +1685,7 @@ function check_file_exist() {
   trace_out $lf_tracelevel check_file_exist
 }
 
-######################################################
+################################################
 # checks if the directory exist, if no print a msg and exit
 # @param 1: directory path
 function check_directory_exist() {
@@ -1709,7 +1709,7 @@ function check_directory_exist() {
   trace_out $lf_tracelevel check_directory_exist
 }
 
-######################################################
+################################################
 # checks if the directory contains files, if no print a msg and exit
 # @param 1:
 function check_directory_contains_files() {
@@ -1721,7 +1721,7 @@ function check_directory_contains_files() {
   return $lf_files
 }
 
-######################################################
+################################################
 # checks if the directory exist, otherwise create it
 # @param 1: directory name
 function check_directory_exist_create() {
@@ -2615,7 +2615,7 @@ function check_add_cs_ibm_pak() {
   trace_out $lf_tracelevel check_add_cs_ibm_pak
 }
 
-#########################################################################################################
+################################################
 ##SB]20231109 Generate properties and yaml/json files
 ## input parameter the operand custom dir (and generated dir both with resources and scripts subdirectories)
 # TODO Decide if it only works with files in the directory, or with subdirectories. Today just one level no subdirectories.
@@ -2692,7 +2692,7 @@ function generate_files() {
   trace_out $lf_tracelevel generate_files
 }
 
-#########################################################################################################
+################################################
 ## adapt file into working dir
 ## called generate_files before
 # @param 1: Directory where the source file is located.
@@ -2725,13 +2725,12 @@ function adapt_file() {
 
 ################################################
 # Create a certificate chain using the Cert manager
-# @param 1: 
-# @param 2: 
-# @param 3:
-# @param 4:
-# @param 5:
-# @param 6:
-# @param 7:
+# @param 1: issuer name
+# @param 2: root cert name
+# @param 3: tls label
+# @param 4: cert name
+# @param 5: working directory where the generated yaml file will be stored
+# @param 6: namespace
 function create_certificate_chain() {
   local lf_tracelevel=3
   trace_in $lf_tracelevel create_certificate_chain
@@ -2743,7 +2742,7 @@ function create_certificate_chain() {
   local lf_in_workingdir="$5"
   local lf_in_namespace="$6"
 
-  #local lf_working_relative_path=$(echo "${lf_in_workingdir#"$MY_WORKINGDIR"}")
+  # local lf_working_relative_path=$(echo "${lf_in_workingdir#"$MY_WORKINGDIR"}")
   decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|\"$5\"|\"$6\"|"
   
   if [[ $# -ne 6 ]]; then

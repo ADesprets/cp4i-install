@@ -39,7 +39,7 @@ function create_es() {
   trace_out $lf_tracelevel create_es
 }
 
-#####################################
+################################################
 # Create kafka topics
 function create_kafka_topics () {
   local lf_tracelevel=3
@@ -79,7 +79,7 @@ function create_kafka_topics () {
   trace_out $lf_tracelevel create_kafka_topics
 }
 
-#####################################
+################################################
 # Create kafka users
 function create_kafka_users () {
   local lf_tracelevel=3
@@ -110,7 +110,7 @@ function create_kafka_users () {
   trace_out $lf_tracelevel create_kafka_users
 }
 
-#####################################
+################################################
 # Create kafka connector 
 function create_kafka_connector () {
  	local lf_tracelevel=3
@@ -141,7 +141,7 @@ function create_kafka_connector () {
   trace_out $lf_tracelevel create_kafka_connector
 }
 
-#####################################
+################################################
 # Create Evenstreams instance with topics and users and connectors
 # @param 1: dir: the source directory example: "${subscriptionsdir}"
 # @param 2: dir: the target directory example: "${workingdir}apic/"
@@ -185,7 +185,7 @@ function create_eventstreams_instance () {
   trace_out $lf_tracelevel create_eventstreams_instance
 }
 
-#####################################
+################################################
 # run all
 function es_run_all () {
   local lf_tracelevel=3
@@ -327,12 +327,12 @@ function main() {
   exit 0
 }
 
-################################################################################################
+################################################
 # Start of the script main entry
-################################################################################################
+################################################
 # other example: ./es.config.sh --call <function_name1>, <function_name2>, ...
 # other example: ./es.config.sh --all
-################################################################################################
+################################################
 
 # SB] getting the path of this script independently from using it directly or calling it from another script
 # sc_component_script_dir="$( cd "$( dirname "$0" )" && pwd )/": this statement returns the calling script path
@@ -380,9 +380,9 @@ es_init
 
 #trap 'es_display_access_info' EXIT
 
-######################################################
+################################################
 # main entry
-######################################################
+################################################
 # Main execution block (only runs if executed directly)
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     main "$@"

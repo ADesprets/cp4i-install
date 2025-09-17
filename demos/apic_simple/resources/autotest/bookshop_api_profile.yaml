@@ -1,11 +1,11 @@
 
-########################################################################
+################################################
 # Default profile for the API Exerciser
-########################################################################
+################################################
 
 
 # The API
-########################################################################
+################################################
 
 # The endpoint to test (must be set)
 ServerURL: 'https://cp4i-apic-gw-gateway-cp4i.ad202341-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/${APIC_PROVIDER_ORG}/sandbox'
@@ -13,7 +13,7 @@ ServerURL: 'https://cp4i-apic-gw-gateway-cp4i.ad202341-b34dfa42ccf328c7da72e2882
 
 # Stopping Criteria:
 # the tester will stop when the first of these limits is reached
-########################################################################
+################################################
 
 # The maximum length of time to run, in minutes
 TimeToRun: 2
@@ -26,7 +26,7 @@ MaxErrors: 6
 
 
 # Execution Control
-########################################################################
+################################################
 
 # Whether to submit requests in parallel:
 # this can be helpful in exposing concurrency issues in the API
@@ -41,7 +41,7 @@ ErrorPercent: 1.5
 
 
 # Resources
-########################################################################
+################################################
 
 # Specify here the relative weights of any resource types that you want
 # to test more or less often; any resource type not listed here takes
@@ -63,7 +63,7 @@ InstanceDefault:
   maximum: unlimited
 
 # Operations
-########################################################################
+################################################
 
 # Specify here the relative weights of any operations that you want
 # to test more or less often; any operation not listed here takes
@@ -80,7 +80,7 @@ OperationDefault:
 
 
 # Datatypes
-########################################################################
+################################################
 # Specify here any data-generation constraints, where you need to
 # override the defaults derived from the API definition and the semantic
 # extensions

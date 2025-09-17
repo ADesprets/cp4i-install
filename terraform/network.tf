@@ -1,7 +1,7 @@
 
-##############################################################################
+################################################
 # Create a VPC
-##############################################################################
+################################################
 
 resource "ibm_is_vpc" "vpc" {
   name                        = "${var.prefix}-vpc"
@@ -14,9 +14,9 @@ resource "ibm_is_vpc" "vpc" {
 }
 
 
-##############################################################################
+################################################
 # Prefixes and subnets for zone 1
-##############################################################################
+################################################
 
 resource "ibm_is_vpc_address_prefix" "address_prefix" {
 
@@ -28,9 +28,9 @@ resource "ibm_is_vpc_address_prefix" "address_prefix" {
 }
 
 
-##############################################################################
+################################################
 # Public Gateways
-##############################################################################
+################################################
 
 resource "ibm_is_public_gateway" "pgw" {
 
@@ -42,10 +42,10 @@ resource "ibm_is_public_gateway" "pgw" {
 }
 
 # Security Groups
-##############################################################################
+################################################
 
 # Rules required to allow necessary inbound traffic to your cluster (IKS/OCP)
-##############################################################################
+################################################
 # To expose apps by using load balancers or Ingress, allow traffic through VPC 
 # load balancers. For example, for Ingress listening on TCP/443
 resource "ibm_is_security_group_rule" "sg-rule-inbound-icmp" {
@@ -70,7 +70,7 @@ resource "ibm_is_security_group_rule" "sg-rule-inbound-https" {
   }
 }
 
-##############################################################################
+################################################
 resource "ibm_is_security_group_rule" "sg-rule-inbound-ssh" {
   group     = ibm_is_vpc.vpc.default_security_group
   direction = "inbound"
@@ -84,7 +84,7 @@ resource "ibm_is_security_group_rule" "sg-rule-inbound-ssh" {
 
 
 # Network ACLs
-##############################################################################
+################################################
 resource "ibm_is_network_acl" "multizone_acl" {
 
   name = "${var.prefix}-multizone-acl"
@@ -106,9 +106,9 @@ resource "ibm_is_network_acl" "multizone_acl" {
 }
 
 
-##############################################################################
+################################################
 # Create Subnets
-##############################################################################
+################################################
 
 resource "ibm_is_subnet" "subnet" {
 

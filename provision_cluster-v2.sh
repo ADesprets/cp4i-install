@@ -124,7 +124,7 @@ function install_gitops() {
   
 }
 
-###############################################
+################################################
 # Install CP4I Cluster Logging : Loki log store
 # use Openshift Logging
 # https://docs.openshift.com/container-platform/4.16/observability/logging/cluster-logging-deploying.html#logging-loki-cli-install_cluster-logging-deploying
@@ -240,7 +240,7 @@ function install_logging_loki() {
   mylog info "==== Installation of Cluster Logging : Loki log store (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
-###############################################
+################################################
 # Install Redhat Cluster Observability Operator
 # # https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html-single/cluster_observability_operator/index#cluster-observability-operator-overview
 # SB]20250116 TODO : Revoir la configuration de l'observabilité du cluster à la lumière de la documentation ci-dessus.
@@ -288,7 +288,7 @@ function install_cluster_observability() {
   mylog info "==== Installation of Cluster Observability (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
-###############################################
+################################################
 # Install Logging OpenTelemetry
 # https://docs.openshift.com/container-platform/4.16/observability/logging/logging-6.1/log6x-about-6.1.html
 # Pre requisite : Install the Red Hat OpenShift Logging Operator, Loki Operator, and Cluster Observability Operator (COO)
@@ -331,7 +331,7 @@ function install_logging_otel() {
 }
 
 
-###############################################
+################################################
 # Install/Configure Redhat Cluster Monitoring
 # https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/monitoring/index
 # https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/monitoring/common-monitoring-configuration-scenarios#configuring-core-platform-monitoring-postinstallation-steps_common-monitoring-configuration-scenarios
@@ -364,7 +364,7 @@ function install_cluster_monitoring() {
   mylog info "==== Installation of Redhat Cluster Monitoring (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
-##################################################
+################################################
 # https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/backup_and_restore/oadp-application-backup-and-restore#installing-and-configuring-oadp
 # Install OADP (OpenShift API for Data Protection)
 function install_oadp() {
@@ -585,7 +585,7 @@ function install_lic_svc() {
     create_oc_resource "OperatorGroup" "$MY_LICENSE_SERVICE_OPERATORGROUP" "$MY_RESOURCESDIR" "$MY_LICENSE_SERVICE_WORKINGDIR" "operator-group-single.yaml" "$MY_LICENSE_SERVICE_NAMESPACE"
     unset VAR_OPERATORGROUP VAR_NAMESPACE
 
-    # Create a subscription object for license service Operator
+    # Create a subscription object for License Service Operator
     # The only case where for a Subscription we have to use "externally" the function wait_for_resource because the IBMLicensing instance name is not known before the subscription is created
     # and it uses a fixed name : instance.
     create_operator_instance "${MY_LICENSE_SERVICE_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_LICENSE_SERVICE_WORKINGDIR}" "${MY_LICENSE_SERVICE_NAMESPACE}"
@@ -594,7 +594,7 @@ function install_lic_svc() {
     # accept license
     accept_license_fs IBMLicensing $MY_LICENSE_SERVICE_INSTANCE_NAME $MY_LICENSE_SERVICE_NAMESPACE
 
-    mylog info "Check if Installing network policies for license Service is needed" 1>&2
+    mylog info "Check if Installing network policies for License Service is needed" 1>&2
     #mylog info "https://www.ibm.com/docs/en/cloud-paks/foundational-services/4.6?topic=service-installing-network-policies-license"
     search_networkpolicies
     local lf_res=$?
@@ -647,7 +647,7 @@ function install_lic_reporter_svc() {
     local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
     unset VAR_CATALOG_SOURCE
 
-    # check if the license service and license service reporter are in the same namespace, then only one operator group is needed
+    # check if the license service and License Service reporter are in the same namespace, then only one operator group is needed
     if [[ $MY_LICENSE_SERVICE_NAMESPACE != $MY_LICENSE_SERVICE_REPORTER_NAMESPACE ]]; then
       mylog info "License Service and License Service Reporter are in different namespaces. Please check the documentation."
       mylog info "https://www.ibm.com/docs/en/cloud-paks/foundational-services/4.6?topic=repository-installing-license-service-reporter-cli"
@@ -657,21 +657,21 @@ function install_lic_reporter_svc() {
       unset VAR_OPERATORGROUP VAR_NAMESPACE
     fi
 
-    # Create a subscription object for license service reporter Operator
+    # Create a subscription object for License Service reporter Operator
     create_operator_instance "${MY_LICENSE_SERVICE_REPORTER_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_LICENSE_SERVICE_REPORTER_WORKINGDIR}" "${MY_LICENSE_SERVICE_REPORTER_NAMESPACE}"
       
     export MY_LICENSE_SERVICE_REPORTER_VERSION=$($MY_CLUSTER_COMMAND -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest $MY_LICENSE_SERVICE_REPORTER_OPERATOR -o json | jq -r '.status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSVDesc.version')
     create_operand_instance "IBMLicenseServiceReporter" "$MY_LICENSE_SERVICE_REPORTER_INSTANCE_NAME" "${MY_OPERANDSDIR}" "${MY_LICENSE_SERVICE_REPORTER_WORKINGDIR}" "LIC-Reporter-Capability.yaml" "$MY_LICENSE_SERVICE_REPORTER_NAMESPACE" "{.status.LicenseServiceReporterPods[-1].phase}" "Running"
 
-    # Add license service to the reporter
+    # Add License Service to the reporter
     # $MY_CLUSTER_COMMAND get routes -n ibm-licensing | grep ibm-license-service-reporter | awk '{print $2}'
-    mylog info "Add license service to the reporter" 1>&2
+    mylog info "Add License Service to the reporter" 1>&2
     decho $lf_tracelevel "$MY_CLUSTER_COMMAND -n ${MY_LICENSE_SERVICE_REPORTER_NAMESPACE} get Route -o=jsonpath='{.items[?(@.metadata.name==ibm-license-service-reporter)].spec.host}'"
     lf_licensing_service_reporter_url=$($MY_CLUSTER_COMMAND -n ${MY_LICENSE_SERVICE_REPORTER_NAMESPACE} get Route -o=jsonpath='{.items[?(@.metadata.name=="ibm-license-service-reporter")].spec.host}')
     decho $lf_tracelevel "License Service Reporter URL: $lf_licensing_service_reporter_url"
     $MY_CLUSTER_COMMAND -n $MY_LICENSE_SERVICE_NAMESPACE patch IBMLicensing ${MY_LICENSE_SERVICE_INSTANCE_NAME} --type merge --patch "{\"spec\":{\"sender\":{\"reporterSecretToken\":\"ibm-license-service-reporter-token\",\"reporterURL\":\"https://$lf_licensing_service_reporter_url/\",\"clusterID\":\"MyClusterTest1\",\"clusterName\":\"MyClusterTest1\"}}}"
 
-    mylog info "Check if Installing network policies for license Service is needed" 1>&2
+    mylog info "Check if Installing network policies for License Service is needed" 1>&2
     #mylog info "https://www.ibm.com/docs/en/cloud-paks/foundational-services/4.6?topic=service-installing-network-policies-license"
     search_networkpolicies
     local lf_res=$?
@@ -693,7 +693,7 @@ function install_lic_reporter_svc() {
   mylog info "==== Installation of IBM License Service Reporter (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
-############################################################################################################################################
+################################################
 #SB]20231214 Installing Foundational services v4.3
 # Referring to https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.4?topic=whats-new-in-cloud-pak-integration-202341
 # "The IBM Cloud Pak foundational services operator is no longer installed automatically.
@@ -704,7 +704,7 @@ function install_lic_reporter_svc() {
 # The IBM Cloud Pak foundational services in Cloud Pak for Integration enable functions such as Keycloak and EDB.
 # 20250110 https://www.ibm.com/docs/en/cloud-paks/cp-integration/16.1.1?topic=operators-installing-by-using-cli#before-you-begin__title__1
 # It's stated clearly that : CP4I uses only the Keycloak installation that is installed by Cloud Pak foundational services.
-############################################################################################################################################
+################################################
 function install_fs() {
   SECONDS=0
   local lf_starting_date=$(date)
@@ -1022,22 +1022,54 @@ function install_ace() {
   mylog info "==== Installation of ACE (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
+
+################################################
+#TO BE REVIEWED
+function create_milvus_root_certificate () {
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel create_milvus_root_issuer
+
+  mylog warn "TODO: (${FUNCNAME[0]}) should be refactored with more generic approach." 0
+
+  export VAR_CERT_NAME=${VAR_APIC_NAMESPACE}-milvus-ca
+  export VAR_NAMESPACE=${VAR_APIC_NAMESPACE}
+  export VAR_CERT_ISSUER_REF="${VAR_APIC_NAMESPACE}-apic-self-signed issuer"
+  export VAR_CERT_SECRET_NAME=${VAR_CERT_NAME}-secret
+  export VAR_CERT_COMMON_NAME=${VAR_CERT_NAME}
+  export VAR_CERT_ORGANISATION=${MY_CERT_ORGANISATION}
+  export VAR_CERT_COUNTRY=${MY_CERT_COUNTRY}
+  export VAR_CERT_LOCALITY=${MY_CERT_LOCALITY}
+  export VAR_CERT_STATE=${MY_CERT_STATE}
+  # export VAR_CERT_SERIAL=$(uuidgen)
+
+  create_oc_resource "Certificate" "${VAR_CERT_NAME}" "${MY_YAMLDIR}tls/" "${MY_APIC_WORKINGDIR}" "ca_certificate.yaml" "${VAR_APIC_NAMESPACE}"
+
+  unset VAR_CERT_NAME VAR_NAMESPACE VAR_CERT_ISSUER_REF VAR_CERT_COMMON_NAME VAR_CERT_ORGANISATION VAR_CERT_COUNTRY VAR_CERT_LOCALITY VAR_CERT_STATE
+
+  trace_out $lf_tracelevel create_milvus_root_certificate
+}
+
 ################################################
 # Install MILVUS
 # Requires CertManager
-function install_milvus(){
+# https://www.ibm.com/docs/en/api-connect/saas?topic=agent-getting-started
+# https://www.ibm.com/docs/en/api-connect/saas?topic=configuring-watsonxai-settings
+# https://www.ibm.com/docs/en/api-connect/saas?topic=configuring-api-agent-settings
+function install_milvus() {
   SECONDS=0
   local lf_starting_date=$(date)
-  mylog info "==== Installing MILVUS database for AI Agent (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+  mylog info "==== Installing MILVUS vector database for AI Agent (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_milvus
 
   decho $lf_tracelevel "Parameters: |no parameters|"
-  # Reuse API Connect flag, because it is linked to APIC
   if $MY_APIC; then
+    mylog info "Create self-signed issuer for Milvus"  1>&2
+    mylog info "Create certificate for Milvus"  1>&2
     # Installation Milvus DB (https://milvus.io/docs/fr/openshift.md)
-	  # Self-Signed issuer and Certificate (milvus-operator-certificate.yaml) for Milvus Operator in openshift-operators
+	  # CA Certificate for Milvus Operator in openshift-operators
+    create_milvus_root_certificate
     
     # Create secret 
     # kubectl create secret generic milvus-creds --from-literal=username=$MILVUS_USER_NAME --from-literal=password=$MILVUS_API_KEY
@@ -1047,8 +1079,8 @@ function install_milvus(){
 	  # helm repo add milvus-operator  
 	  # helm repo update milvus-operator
 
-    # Deploy Milvus Cluster (Operand creation)
-    # kubectl apply -f https://raw.githubusercontent.com/milvus-io/milvus-operator/main/config/samples/demo.yaml
+    # Deploy Milvus Cluster (Operand creation) inspired by https://raw.githubusercontent.com/milvus-io/milvus-operator/main/config/samples/demo.yaml
+    # kubectl apply -f <TEMPLATE_DIR>APIC_milvus_database.yaml
 
   fi
 
@@ -1982,7 +2014,7 @@ function create_edb_postgres_db() {
   trace_out $lf_tracelevel create_edb_postgres_db
 }
 
-######################################################################
+################################################
 # start the default podman machine
 #
 function start_podman_machine () {
@@ -2141,7 +2173,7 @@ function install_part() {
   install_instana
   install_cluster_monitoring
 
-  #test_keycloak
+  # test_keycloak
 
   trace_out $lf_tracelevel install_part
 }
@@ -2257,9 +2289,9 @@ function main() {
   exit 0
 }
 
-################################################################################################
+################################################
 # Start of the script main entry
-################################################################################################
+################################################
 # other example: ./provision_cluster-v2.sh --call <function_name1>, <function_name2>, ...
 # other example: ./provision_cluster-v2.sh --all
 #
@@ -2301,7 +2333,7 @@ set +a
 
 # trap 'display_access_info' EXIT
 
-######################################################
+################################################
 # main entry
-######################################################
+################################################
 main "$@"

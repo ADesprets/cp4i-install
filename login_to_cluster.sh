@@ -80,9 +80,9 @@ function Login2OpenshiftCluster () {
   fi
 }
 
-################################################################################################
+################################################
 # Start of the script main entry
-################################################################################################
+################################################
 # This is the default value for the cluster if no argument is passed, change it to your favorite cluster
 my_cluster_name=cp4iad22023
 

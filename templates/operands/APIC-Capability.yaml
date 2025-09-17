@@ -31,5 +31,17 @@ spec:
     metric: VIRTUAL_PROCESSOR_CORE
     use: nonproduction
   profile: $MY_APIC_PROFILE
+  ai:
+    enabled: true
+    apiAgent:
+      enabled: true
+      vectorDatabaseSource: remote
+      remoteVectorDatabase:
+        type: milvus
+        host: milvus.host
+        port: 30279
+        databaseName: default
+        collectionName: apic_agent
+        credentials: milvus-creds
   storageClassName: $MY_BLOCK_STORAGE_CLASS
   version: $MY_APIC_VERSION

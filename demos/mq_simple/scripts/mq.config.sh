@@ -1,9 +1,9 @@
 #!/bin/bash
-#####################################################################################################################
+################################################
 # Script using cert manager
-#####################################################################################################################
+################################################
 
-#############################################################
+################################################
 function create_root_issuer () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel create_root_issuer
@@ -19,7 +19,7 @@ function create_root_issuer () {
   trace_out $lf_tracelevel create_root_issuer
 }
 
-#############################################################
+################################################
 function create_root_certificate () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel create_root_certificate
@@ -42,7 +42,7 @@ function create_root_certificate () {
   trace_out $lf_tracelevel create_root_certificate
 }
 
-#############################################################
+################################################
 function create_intermediate_issuer () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel create_intermediate_issuer
@@ -58,7 +58,7 @@ function create_intermediate_issuer () {
   trace_out $lf_tracelevel create_intermediate_issuer
 }
 
-#############################################################
+################################################
 function create_leaf_certificate () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel create_leaf_certificate
@@ -85,7 +85,7 @@ function create_leaf_certificate () {
   trace_out $lf_tracelevel create_leaf_certificate
 }
 
-#############################################################
+################################################
 function create_qmgr_route () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel create_qmgr_route
@@ -95,7 +95,7 @@ function create_qmgr_route () {
   trace_out $lf_tracelevel create_qmgr_route
 }
 
-#############################################################
+################################################
 function create_qmgr () {
   local lf_tracelevel=3
   
@@ -160,9 +160,9 @@ function create_qmgr () {
   trace_out $lf_tracelevel create_qmgr
 }
 
-#################################################
+################################################
 # Create client key repository
-#################################################
+################################################
 function create_clnt_kdb () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel create_clnt_kdb
@@ -180,9 +180,9 @@ function create_clnt_kdb () {
   trace_out $lf_tracelevel create_clnt_kdb
 }
 
-#####################################################
+################################################
 # Create pki infrastructure : keys, certs, kdb, ....
-#####################################################
+################################################
 function create_pki_cr () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel create_pki_cr
@@ -204,7 +204,7 @@ function create_pki_cr () {
 
 ################################################
 # Add certs to client keydb
-#################################################
+################################################
 function add_qmgr_crt_2_clnt_kdb () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel add_qmgr_crt_2_clnt_kdb
@@ -253,9 +253,9 @@ function create_ccdt () {
   trace_out $lf_tracelevel create_ccdt
 }
 
-#############################################################
+################################################
 # Run this script natively (from terminal)
-#############################################################
+################################################
 function mq_run_all () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel mq_run_all
@@ -351,12 +351,12 @@ function main() {
   exit 0
 }
 
-################################################################################################
+################################################
 # Start of the script main entry
-################################################################################################
+################################################
 # other example: ./mq.config.sh --call <function_name1>, <function_name2>, ...
 # other example: ./mq.config.sh --all
-################################################################################################
+################################################
 
 # SB] getting the path of this script independently from using it directly or calling it from another script
 # sc_component_script_dir="$( cd "$( dirname "$0" )" && pwd )/": this statement returns the calling script path
@@ -405,9 +405,9 @@ export MY_MQ_WORKINGDIR="${PROVISION_SCRIPTDIR}working/demos/mq_simple/"
 
 mq_init
 
-######################################################
+################################################
 # main entry
-######################################################
+################################################
 # Main execution block (only runs if executed directly)
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     main "$@"

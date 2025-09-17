@@ -31,10 +31,10 @@ function ace_display_access_info() {
   trace_out $lf_tracelevel ace_display_access_info
 }
 
-################################################################
+################################################
 # Create secret to be used by barauth type
 # this secret will be used to access theserver hosting bar files
-################################################################
+################################################
 function create_secret_for_barauth () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel create_secret_for_barauth
@@ -66,7 +66,7 @@ function create_secret_for_barauth () {
 
 ################################################
 # Create Openshift ACE config type : barauth
-#################################################
+################################################
 function create_ace_config_barauth () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel create_ace_config_barauth
@@ -104,7 +104,7 @@ function create_ace_config_barauth () {
 
 ################################################
 # Create Openshift ACE config type : serverconf
-#################################################
+################################################
 function create_ace_config_serverconf () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel create_ace_config_serverconf
@@ -147,9 +147,9 @@ function create_ace_config_serverconf () {
   trace_out $lf_tracelevel create_ace_config_serverconf
 }
 
-#############################################################
+################################################
 # run all 
-#############################################################
+################################################
 function ace_run_all () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel ace_run_all
@@ -327,12 +327,12 @@ function main() {
   exit 0
 }
 
-################################################################################################
+################################################
 # Start of the script main entry
-################################################################################################
+################################################
 # other example: ./ace.config.sh --call <function_name1>, <function_name2>, ...
 # other example: ./ace.config.sh --all
-################################################################################################
+################################################
 
 # SB] getting the path of this script independently from using it directly or calling it from another script
 # sc_component_script_dir="$( cd "$( dirname "$0" )" && pwd )/": this statement returns the calling script path
@@ -380,9 +380,9 @@ ace_init
 
 trap 'ace_display_access_info' EXIT
 
-######################################################
+################################################
 # main entry
-######################################################
+################################################
 # Main execution block (only runs if executed directly)
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     main "$@"

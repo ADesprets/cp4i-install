@@ -104,7 +104,7 @@ function create_p12_certificate() {
 # @param 2: name of the secret
 # @param 3: Data in the secret that contains the certificate
 # @param 4: Directory where to save the certificate
-##################################################
+################################################
 function create_jks_keystore_secret() {
   local lf_tracelevel=5
   trace_in $lf_tracelevel create_jks_keystore_secret
@@ -138,7 +138,7 @@ function create_jks_keystore_secret() {
 # @param 2: name of the secret
 # @param 3: Data in the secret that contains the certificate
 # @param 4: Directory where to save the certificate
-##################################################
+################################################
 function create_jks_keystore_secret() {
   local lf_tracelevel=5
   trace_in $lf_tracelevel create_jks_keystore_secret

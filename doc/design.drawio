@@ -1,4 +1,4 @@
-<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/28.0.4 Chrome/138.0.7204.97 Electron/37.2.1 Safari/537.36" version="28.0.4" pages="12">
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/28.0.4 Chrome/138.0.7204.97 Electron/37.2.1 Safari/537.36" version="28.0.4" pages="13">
   <diagram id="tJqLn7msZHwJoY5_B4Vj" name="Capabilities">
     <mxGraphModel dx="1840" dy="1089" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
       <root>
@@ -268,7 +268,7 @@
     </mxGraphModel>
   </diagram>
   <diagram id="oYA6_6Ym801ekZOoSG76" name="Design code">
-    <mxGraphModel dx="1840" dy="1089" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="1554" dy="914" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -284,14 +284,14 @@
         <mxCell id="6Q7j6Nrw7Aon5TtV7gxB-1" value="provision.sh" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="340" y="290" width="120" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="6Q7j6Nrw7Aon5TtV7gxB-2" value="cp4i.properties" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-          <mxGeometry x="340" y="400" width="120" height="60" as="geometry" />
+        <mxCell id="6Q7j6Nrw7Aon5TtV7gxB-2" value="cp4i-constants.properties" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="320" y="400" width="160" height="60" as="geometry" />
         </mxCell>
         <mxCell id="6Q7j6Nrw7Aon5TtV7gxB-3" value="script-parameters.properties" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-          <mxGeometry x="150" y="400" width="120" height="60" as="geometry" />
+          <mxGeometry x="90" y="400" width="180" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="6Q7j6Nrw7Aon5TtV7gxB-4" value="versions.properties" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-          <mxGeometry x="520" y="400" width="120" height="60" as="geometry" />
+        <mxCell id="6Q7j6Nrw7Aon5TtV7gxB-4" value="cp4i-variables.properties" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="520" y="400" width="150" height="60" as="geometry" />
         </mxCell>
         <mxCell id="6Q7j6Nrw7Aon5TtV7gxB-5" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="6Q7j6Nrw7Aon5TtV7gxB-1" target="6Q7j6Nrw7Aon5TtV7gxB-3" edge="1">
           <mxGeometry relative="1" as="geometry" />
@@ -309,7 +309,7 @@
     </mxGraphModel>
   </diagram>
   <diagram id="8wNfLeNThi20D-himaWw" name="Architecture">
-    <mxGraphModel dx="1749" dy="1024" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+    <mxGraphModel dx="1554" dy="914" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -379,7 +379,7 @@
           <mxGeometry x="890" y="575" width="110" height="70" as="geometry" />
         </mxCell>
         <mxCell id="flnhZq-FwbGgtsd0HrOw-21" value="Database" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;fillColor=default;strokeColor=default;align=center;fontFamily=Helvetica;fontSize=12;fontColor=default;" parent="1" vertex="1">
-          <mxGeometry x="875" y="810" width="140" height="70" as="geometry" />
+          <mxGeometry x="875" y="810" width="265" height="70" as="geometry" />
         </mxCell>
         <mxCell id="flnhZq-FwbGgtsd0HrOw-22" value="WAS" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
           <mxGeometry x="910" y="414" width="140" height="100" as="geometry" />
@@ -408,8 +408,8 @@
         <mxCell id="flnhZq-FwbGgtsd0HrOw-31" value="Instana" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
           <mxGeometry x="850" y="170" width="190" height="70" as="geometry" />
         </mxCell>
-        <mxCell id="flnhZq-FwbGgtsd0HrOw-32" value="Derby ou Postgre" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;fillColor=#fff2cc;strokeColor=#d6b656;align=center;fontFamily=Helvetica;fontSize=12;" parent="1" vertex="1">
-          <mxGeometry x="895" y="840" width="100" height="30" as="geometry" />
+        <mxCell id="flnhZq-FwbGgtsd0HrOw-32" value="Derby ou Postgre and Melvus" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;fillColor=#fff2cc;strokeColor=#d6b656;align=center;fontFamily=Helvetica;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="895" y="840" width="205" height="30" as="geometry" />
         </mxCell>
         <mxCell id="flnhZq-FwbGgtsd0HrOw-34" style="edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=default;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=default;labelBackgroundColor=default;endArrow=classic;entryX=0.542;entryY=0.017;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="flnhZq-FwbGgtsd0HrOw-33" target="flnhZq-FwbGgtsd0HrOw-6" edge="1">
           <mxGeometry relative="1" as="geometry" />
@@ -916,7 +916,7 @@
     </mxGraphModel>
   </diagram>
   <diagram id="7BhQDi70umXX2ms-lZuC" name="Images">
-    <mxGraphModel dx="2074" dy="2023" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+    <mxGraphModel dx="1554" dy="1741" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -924,42 +924,42 @@
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="iGjpVeRC_H579PY2v30k-1" value="channel" style="rounded=0;whiteSpace=wrap;html=1;fontSize=16;" parent="1" vertex="1">
-          <mxGeometry x="201" y="299" width="120" height="60" as="geometry" />
+          <mxGeometry x="186" y="-401" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="iGjpVeRC_H579PY2v30k-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=16;" parent="1" source="iGjpVeRC_H579PY2v30k-2" target="iGjpVeRC_H579PY2v30k-3" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="iGjpVeRC_H579PY2v30k-2" value="currentCSVDesc" style="rounded=0;whiteSpace=wrap;html=1;fontSize=16;" parent="1" vertex="1">
-          <mxGeometry x="381" y="299" width="120" height="60" as="geometry" />
+          <mxGeometry x="366" y="-401" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="iGjpVeRC_H579PY2v30k-3" value="relatedImages" style="rounded=0;whiteSpace=wrap;html=1;fontSize=16;" parent="1" vertex="1">
-          <mxGeometry x="551" y="299" width="120" height="60" as="geometry" />
+          <mxGeometry x="536" y="-401" width="120" height="60" as="geometry" />
         </mxCell>
         <UserObject label="oc ibm-pak list --case-name ibm-mq&lt;br&gt;&lt;br&gt;cd /home/desprets/.ibm-pak/data/mirror/ibm-mq/3.4.1&lt;br&gt;more images-mapping.txt&lt;div&gt;Example:&amp;nbsp;&lt;span style=&quot;background-color: transparent;&quot;&gt;cp.icr.io/cp/ibm-mqadvanced-server@sha256:1b754ab08d4852777a8050335abca29f22b7b4ccb2fe20948622694f5b78d6e6=icr.io/cp/ibm-mqadvanced-server:9.4.0.7-r1&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;OR&lt;br&gt;oc get packagemanifest ibm-mq -o json&lt;div&gt;&lt;br&gt;&lt;div&gt;kubectl&amp;nbsp;&amp;nbsp;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;get packagemanifest ibm-mq -o json&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;br&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Maybe use API as well&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;" link="oc ibm-pak list --case-name ibm-mq&#xa;&#xa;&#xa;&#xa;&#xa;cd /home/desprets/.ibm-pak/data/mirror/ibm-mq/3.4.1&#xa;more images-mapping.txt&#xa;OR&#xa;oc get packagemanifest ibm-mq -o json" id="iGjpVeRC_H579PY2v30k-6">
-          <mxCell style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;" parent="1" vertex="1">
-            <mxGeometry x="45" y="10" width="1070" height="200" as="geometry" />
+          <mxCell style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=16;" parent="1" vertex="1">
+            <mxGeometry x="30" y="-790" width="1070" height="300" as="geometry" />
           </mxCell>
         </UserObject>
         <mxCell id="iGjpVeRC_H579PY2v30k-7" value="entitlement to access the images" style="rounded=0;whiteSpace=wrap;html=1;fontSize=16;" parent="1" vertex="1">
-          <mxGeometry x="340" y="590" width="120" height="60" as="geometry" />
+          <mxGeometry x="325" y="-110" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="iGjpVeRC_H579PY2v30k-8" value="secret in your cluster to access the images" style="rounded=0;whiteSpace=wrap;html=1;fontSize=16;" parent="1" vertex="1">
-          <mxGeometry x="510" y="590" width="140" height="60" as="geometry" />
+          <mxGeometry x="495" y="-110" width="140" height="60" as="geometry" />
         </mxCell>
         <mxCell id="iGjpVeRC_H579PY2v30k-9" value="Catalog Source" style="rounded=0;whiteSpace=wrap;html=1;fontSize=16;" parent="1" vertex="1">
-          <mxGeometry x="200" y="400" width="120" height="60" as="geometry" />
+          <mxGeometry x="185" y="-300" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="iGjpVeRC_H579PY2v30k-10" value="Package Manifest" style="rounded=0;whiteSpace=wrap;html=1;fontSize=16;" parent="1" vertex="1">
-          <mxGeometry x="410" y="400" width="120" height="60" as="geometry" />
+          <mxGeometry x="395" y="-300" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="iGjpVeRC_H579PY2v30k-11" value="Resource Group" style="rounded=0;whiteSpace=wrap;html=1;fontSize=16;" parent="1" vertex="1">
-          <mxGeometry x="800" y="400" width="120" height="60" as="geometry" />
+          <mxGeometry x="785" y="-300" width="120" height="60" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
   </diagram>
   <diagram id="tAwYNA3uFQUVHqpSkI3z" name="ES">
-    <mxGraphModel dx="1250" dy="684" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+    <mxGraphModel dx="1554" dy="914" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -1165,6 +1165,78 @@
         </mxCell>
         <mxCell id="GBeKUc6dDYZakJcaIJuS-13" value="Controls" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
           <mxGeometry x="449" y="390" width="120" height="60" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="eyEYM46dYrB1LGinaiKP" name="APIC">
+    <mxGraphModel dx="958" dy="713" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="dJ-PkrwfgdUpv-2pIN9V-1" value="API Connect Gateway Cluster" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="703" y="320" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="dJ-PkrwfgdUpv-2pIN9V-2" value="&lt;span style=&quot;color: rgb(0, 0, 0); font-family: Helvetica; font-size: 12px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: center; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: normal; text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; float: none; display: inline !important;&quot;&gt;API Connect&lt;/span&gt;&lt;div&gt;&lt;span style=&quot;color: rgb(0, 0, 0); font-family: Helvetica; font-size: 12px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: center; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: normal; text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; float: none; display: inline !important;&quot;&gt;Management Cluster&lt;/span&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
+          <mxGeometry x="460" y="320" width="220" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="dJ-PkrwfgdUpv-2pIN9V-3" value="API Connect&lt;div&gt;Portal Cluster&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="840" y="320" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="dJ-PkrwfgdUpv-2pIN9V-4" value="API Connect Analytics Cluster" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="970" y="320" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="dJ-PkrwfgdUpv-2pIN9V-6" value="Milvus DB" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
+          <mxGeometry x="590" y="379" width="80" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="dJ-PkrwfgdUpv-2pIN9V-7" value="watsonx.ai&lt;div&gt;(Cloud)&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="479" y="220" width="102" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="dJ-PkrwfgdUpv-2pIN9V-8" value="watsonx.ai&lt;div&gt;(onPrem)&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="472.5" y="480" width="115" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="dJ-PkrwfgdUpv-2pIN9V-12" value="VS Studio" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
+          <mxGeometry x="250" y="320" width="180" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="dJ-PkrwfgdUpv-2pIN9V-13" value="AI Agent" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
+          <mxGeometry x="490" y="379" width="80" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="dJ-PkrwfgdUpv-2pIN9V-15" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="dJ-PkrwfgdUpv-2pIN9V-14" target="dJ-PkrwfgdUpv-2pIN9V-13" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="dJ-PkrwfgdUpv-2pIN9V-14" value="API Connect Extension" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
+          <mxGeometry x="260" y="379" width="160" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="dJ-PkrwfgdUpv-2pIN9V-10" value="either&lt;div&gt;inference&lt;/div&gt;" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;" parent="1" source="dJ-PkrwfgdUpv-2pIN9V-13" target="dJ-PkrwfgdUpv-2pIN9V-7" edge="1">
+          <mxGeometry x="0.5478" relative="1" as="geometry">
+            <mxPoint x="330" y="200" as="sourcePoint" />
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dJ-PkrwfgdUpv-2pIN9V-11" value="either&lt;div&gt;inference&lt;/div&gt;" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="dJ-PkrwfgdUpv-2pIN9V-13" target="dJ-PkrwfgdUpv-2pIN9V-8" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="320" y="530" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dJ-PkrwfgdUpv-2pIN9V-19" value="Configured by script" style="endArrow=classic;html=1;rounded=0;entryX=0.75;entryY=1;entryDx=0;entryDy=0;labelPosition=right;verticalLabelPosition=bottom;align=left;verticalAlign=top;dashed=1;" parent="1" target="dJ-PkrwfgdUpv-2pIN9V-13" edge="1">
+          <mxGeometry x="-1" width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="630" y="460" as="sourcePoint" />
+            <mxPoint x="680" y="450" as="targetPoint" />
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dJ-PkrwfgdUpv-2pIN9V-20" value="Configured manually" style="endArrow=classic;html=1;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;labelPosition=right;verticalLabelPosition=bottom;align=left;verticalAlign=top;dashed=1;" parent="1" target="dJ-PkrwfgdUpv-2pIN9V-14" edge="1">
+          <mxGeometry x="-1" width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="300" y="460" as="sourcePoint" />
+            <mxPoint x="180" y="450" as="targetPoint" />
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="vIiSv9AeWRfZ2fVq4_u9-1" value="API Studio" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="250" y="190" width="180" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="vIiSv9AeWRfZ2fVq4_u9-2" value="Dépendences&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;Milvus (internal or not) - RAG Context&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;watsonx (versions?)&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;on cloud or onPremise&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;no model required (to be checked)&lt;br&gt;&lt;/div&gt;&lt;div&gt;Form factor&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;Any of this prerequisites not in OVA?&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;OVA is not on CD 10.0.x&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&amp;nbsp;(10.0.10.x as of 17/09/2025), not on OVA&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;Will OVA be supported on next LTS? A priori oui&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;Exists on 10.0.10.x today&lt;/div&gt;" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="240" y="560" width="500" height="180" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

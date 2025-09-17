@@ -1,5 +1,5 @@
 
-#######################################################################################################DEBUT
+########################################DEBUT
 # run all
 function eem_run_all () {
   	local lf_tracelevel=3
@@ -146,12 +146,12 @@ function main() {
   exit 0
 }
 
-################################################################################################
+################################################
 # Start of the script main entry
-################################################################################################
+################################################
 # other example: ./eem.config.sh --call <function_name1>, <function_name2>, ...
 # other example: ./eem.config.sh --all
-################################################################################################
+################################################
 
 # SB] getting the path of this script independently from using it directly or calling it from another script
 # sc_component_script_dir="$( cd "$( dirname "$0" )" && pwd )/": this statement returns the calling script path
@@ -198,9 +198,9 @@ set +a
 
 eem_init
 
-######################################################
+################################################
 # main entry
-######################################################
+################################################
 # Main execution block (only runs if executed directly)
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     main "$@"

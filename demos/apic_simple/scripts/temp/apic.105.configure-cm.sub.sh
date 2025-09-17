@@ -428,7 +428,7 @@ function Get_APIC_Infos() {
   mylog info  "integration_url: $integration_url"
 
 }
-################################################################################################
+#################################
 # Start of the script main entry
 # main
 # This script ineeds to be started in the same directory as this script.
