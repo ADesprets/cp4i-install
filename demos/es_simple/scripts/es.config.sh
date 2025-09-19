@@ -31,10 +31,10 @@ function create_kafka_topics () {
 
   # Creation of the Topics used for taxi demo
   mylog info "Creating topics" 0
-  topic_names=("connect-configs" "connect-offsets" "connect-status" "toolbox.stater" "demo-flight-takeoffs" "demo-weather-armonk" "demo-weather-hursley" "demo-weather-northharbour" "demo-weather-paris" "demo-weather-southbank" "demo-stock-apple" "demo-stock-google" "demo-stock-ibm" "demo-stock-microsoft" "demo-stock-salesforce" "orders" "cancellations" "doors" "stock" "customers" "sensors" "online-orders" "nostock")
-  topic_spec_names=("connect-configs" "connect-offsets" "connect-status" "TOOLBOX.STATER" "FLIGHT.TAKEOFFS" "WEATHER.ARMONK" "WEATHER.HURSLEY" "WEATHER.NORTHHARBOUR" "WEATHER.PARIS" "WEATHER.SOUTHBANK" "STOCK.APPLE" "STOCK.GOOGLE" "STOCK.IBM" "STOCK.MICROSOFT" "STOCK.SALESFORCE" "LH.ORDERS" "LH.CANCELLATIONS" "LH.DOORS" "LH.STOCK" "LH.CUSTOMERS" "LH.SENSORS" "ORDERS.ONLINE" "STOCK.NOSTOCK")
-  topic_partitions=(1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 3 3 1 2 3 2 1 1)
-  topic_replicas=(3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 1 1 3 1 1 1)
+  topic_names=("connect-configs" "connect-offsets" "connect-status" "toolbox.stater" "demo-flight-takeoffs" "demo-door-badgein " "demo-cancellations " "demo-customers-new " "demo-orders-new " "demo-sensor-readings " "demo-stock-movement " "demo-orders-online " "demo-stock-nostock " "demo-product-returns " "demo-product-reviews " "demo-transactions " "demo-orders-abandoned" "orders" "doors" "stock")
+  topic_spec_names=("connect-configs" "connect-offsets" "connect-status" "TOOLBOX.STATER" "FLIGHT.TAKEOFFS" "DOOR.BADGEIN " "CANCELLATIONS " "CUSTOMERS.NEW " "ORDERS.NEW " "SENSOR.READINGS " "STOCK.MOVEMENT " "ORDERS.ONLINE " "STOCK.NOSTOCK " "PRODUCT.RETURNS " "PRODUCT.REVIEWS " "TRANSACTIONS " "ORDERS.ABANDONED " "LH.ORDERS" "LH.DOORS" "LH.STOCK")
+  topic_partitions=(1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 2 3 3 1 2)
+  topic_replicas=(3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 1 1)
   for index in ${!topic_names[@]}
   do
       mylog info "Create topic: name: ${topic_names[$index]}, spec: ${topic_spec_names[$index]}, partitions: ${topic_partitions[$index]}, replicas: ${topic_replicas[$index]}, es_instance: ${VAR_ES_INSTANCE_NAME}, project: ${VAR_ES_NAMESPACE}" 0
@@ -83,14 +83,22 @@ function create_kafka_connector () {
 
   # Create KafkaConnect and KafkaConnector in $ES_APPS_PROJECT project
   mylog info "Create Kafka Connect for datagen, and MQ connectors" 0
+
+  # Need to position a few variables for the source connector, for now hard coded, could be defined as parameters
+  export VAR_CHL_UC="ORDERSCHL"
+  export VAR_QMGR_LC="orders"  
+  export VAR_ES_MQ_SOURCE="PAYMT.REQ.CPY"
+  export VAR_ES_TOPIC_DEST="LH.ORDERS"
+  export VAR_QMGR_CONNECTION_HOST=""
    
   create_oc_resource "KafkaConnect" "${VAR_ES_KAFKA_CONNECT_INSTANCE_NAME}" "${lf_source_directory}" "${MY_ES_WORKINGDIR}" "KConnect.yaml" "$VAR_ES_NAMESPACE"
+  export VAR_MQ_ORDERS_TLS_SECRET=${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR_LC}-server
   # TODO check for the TLS configuration: https://ibm.github.io/event-automation/es/connecting/mq/#configuration-options
   
   mylog info "Create Kafka Connectors for datagen and MQ connectors" 0
   create_oc_resource "KafkaConnector" "datagen" "${lf_source_directory}" "${lf_target_directory}" "KConnector_datagen.yaml" "$VAR_ES_NAMESPACE"
 
-  create_oc_resource "KafkaConnector" "mq-sink" "${lf_source_directory}" "${lf_target_directory}" "KConnector_MQ_sink.yaml" "$VAR_ES_NAMESPACE"
+  # create_oc_resource "KafkaConnector" "mq-sink" "${lf_source_directory}" "${lf_target_directory}" "KConnector_MQ_sink.yaml" "$VAR_ES_NAMESPACE"
 
   create_oc_resource "KafkaConnector" "mq-source" "${lf_source_directory}" "${lf_target_directory}" "KConnector_MQ_source.yaml" "$VAR_ES_NAMESPACE"
 
@@ -111,12 +119,11 @@ function es_run_all () {
   # Create namespace 
   create_project "$VAR_ES_NAMESPACE" "$VAR_ES_NAMESPACE project" "For Event Streams customisation" "${MY_RESOURCESDIR}" "${MY_ES_WORKINGDIR}"
 
-  echo "Commented to work on the connector framework, need to uncomment when done"
-  # create_es
+  create_es
 
-  # create_kafka_topics
+  create_kafka_topics
 
-  # create_kafka_users
+  create_kafka_users
 
   create_kafka_connector
 

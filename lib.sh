@@ -1200,7 +1200,7 @@ function display_access_info() {
 
     local lf_mq_authentication_method=$($MY_CLUSTER_COMMAND -n $VAR_MQ_NAMESPACE get qmgr $VAR_MQ_INSTANCE_NAME -o jsonpath='{.spec.web.console.authentication.provider}')
     if [[ $lf_mq_authentication_method == "manual" ]]; then
-      #TOTO# : we suppose here that the user is mqadmin !!!!
+      # TODO: we suppose here that the user mqadmin
       lf_mq_admin_password=$($MY_CLUSTER_COMMAND -n $VAR_MQ_NAMESPACE get cm $VAR_WEBCONFIG_CM -o jsonpath='{.data.mqwebuser\.xml}' | yq -p=xml -o=json | jq -r '.server.basicRegistry.user[] | select(.["+@name"]=="mqadmin") | .["+@password"]')
       #echo "$MY_CLUSTER_COMMAND -n $VAR_MQ_NAMESPACE get cm $VAR_WEBCONFIG_CM -o jsonpath='{.data.mqwebuser\.xml}' | yq -p=xml -o=json" #| jq -r '.server.basicRegistry.user[] | select(.["+@name"]=="mqadmin") | .["+@password"]'
       mylog info "MQ Management Console authentication method: $lf_mq_authentication_method|user=mqadmin|password=$lf_mq_admin_password" 0
@@ -2619,9 +2619,9 @@ function check_add_cs_ibm_pak() {
 ##SB]20231109 Generate properties and yaml/json files
 ## input parameter the operand custom dir (and generated dir both with resources and scripts subdirectories)
 # TODO Decide if it only works with files in the directory, or with subdirectories. Today just one level no subdirectories.
-# @param 1:
-# @param 2:
-# @param 3:
+# @param 1: source directory
+# @param 2: target directory
+# @param 3: boolean true|false : if true transform the file, else just copy it
 function generate_files() {
   local lf_tracelevel=3
   trace_in $lf_tracelevel generate_files
@@ -2721,6 +2721,30 @@ function adapt_file() {
   envsubst < "${lf_in_source_directory}${lf_in_filename}" > "${lf_in_target_directory}${lf_in_filename}"
 
   trace_out $lf_tracelevel adapt_file
+}
+
+################################################
+# Create a self-signed issuer
+# @param 1: issuer name
+# @param 2: namespace
+# @param 3: working directory
+function create_self_signed_issuer () {
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel create_self_signed_issuer
+
+  local lf_issuer_name=$1
+  local lf_namespace=$2
+  local lf_workingdir=$3
+
+  export VAR_CERT_ISSUER="${lf_issuer_name}"
+  export VAR_NAMESPACE="${lf_namespace}"
+
+  # TODO Instead use cp4i-install\templates\tls\config\Issuer_ca.yaml templates/tls/
+  create_oc_resource "Issuer" "${lf_issuer_name}" "${MY_YAMLDIR}tls/" "${lf_workingdir}" "Issuer_ca.yaml" "${lf_namespace}"
+
+  unset VAR_CERT_ISSUER VAR_NAMESPACE
+
+  trace_out $lf_tracelevel create_self_signed_issuer
 }
 
 ################################################

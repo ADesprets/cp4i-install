@@ -3,17 +3,6 @@
 # Script using cert manager
 ################################################
 
-
-################################################
-function create_issuer () {
-  local lf_tracelevel=3
-  trace_in $lf_tracelevel create_issuer
-  
-  create_oc_resource "Issuer" "${VAR_QMGR}-issuer" "${MY_YAMLDIR}tls/" "${sc_mq_kafka_demo_workingdir}" "Issuer_ca.yaml" "${VAR_MQ_NAMESPACE}"
-
-   trace_out $lf_tracelevel create_issuer
-}
-
 ################################################
 function create_qmgr_certificate () {
   local lf_tracelevel=3

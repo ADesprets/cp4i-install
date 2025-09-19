@@ -70,6 +70,10 @@ spec:
     trustedCertificates:
       - certificate: ca.crt
         secretName: ${VAR_ES_INSTANCE_NAME}-cluster-ca-cert
+      - certificate: ca.crt
+        secretName: ${VAR_MQ_ORDERS_TLS_SECRET}
+      - certificate: tls.crt
+        secretName: ${VAR_MQ_ORDERS_TLS_SECRET}
   replicas: 1
   build:
     output:
@@ -86,7 +90,3 @@ spec:
         artifacts:
           - type: jar
             url: https://github.com/ibm-messaging/kafka-connect-mq-source/releases/download/v2.6.0/kafka-connect-mq-source-2.6.0-jar-with-dependencies.jar
-      - name: mq-sink
-        artifacts:
-          - type: jar
-            url: https://github.com/ibm-messaging/kafka-connect-mq-sink/releases/download/v2.2.1/kafka-connect-mq-sink-2.2.1-jar-with-dependencies.jar

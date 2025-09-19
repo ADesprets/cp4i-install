@@ -20,22 +20,71 @@ spec:
     #
     # name of the topics to produce to
     #
-    topic.name.orders: LH.ORDERS
-    topic.name.cancellations: LH.CANCELLATIONS
-    topic.name.badgeins: LH.DOORS
-    topic.name.stockmovements: LH.STOCK
-    topic.name.newcustomers: LH.CUSTOMERS
-    topic.name.sensorreadings: LH.SENSORS
+    topic.name.orders: ORDERS.NEW
+    topic.name.cancellations: CANCELLATIONS
+    topic.name.stockmovements: STOCK.MOVEMENT
+    topic.name.badgeins: DOOR.BADGEIN
+    topic.name.newcustomers: CUSTOMERS.NEW
+    topic.name.sensorreadings: SENSOR.READINGS
+    topic.name.onlineorders: ORDERS.ONLINE
+    topic.name.outofstocks: STOCK.NOSTOCK
+    topic.name.returnrequests: PRODUCT.RETURNS
+    topic.name.productreviews: PRODUCT.REVIEWS
+    topic.name.transactions: TRANSACTIONS
+    topic.name.abandonedorders: ORDERS.ABANDONED
+
+    #
+    # startup behavior
+    #
+    # if true, the connector will generate one week of historical
+    #  events when starting for the first time
+    startup.history.enabled: false
+
+    #
+    # format of timestamps to produce
+    #
+    #    default is chosen to be suitable for use with Event Processing,
+    #    but you could modify this if you want to demo how to reformat
+    #    timestamps to be compatible with Event Processing
+    #
+    #    NOTE: sensor readings topic is an exception. Events on this topic
+    #           ignore this config option
+    #
+    formats.timestamps: yyyy-MM-dd HH:mm:ss.SSS
+    # format of timestamps with local time zone (UTC time in ISO 8601 format)
+    #    NOTE: this format is used by default for online orders
+    formats.timestamps.ltz: yyyy-MM-dd'T'HH:mm:ss.SSS'Z'
 
     #
     # how often events should be created
     #
-    timings.ms.orders: 10000
-    timings.ms.badgeins: 10000
-    timings.ms.cancellations: 10000
-    timings.ms.stockmovements: 60000
-    timings.ms.newcustomers: 10000
-    timings.ms.sensorreadings: 10000
+    # 'normal' random orders
+    timings.ms.orders: 30000              # every 30 seconds
+    # cancellations of a large order followed by a small order of the same item
+    timings.ms.falsepositives: 600000     # every 10 minutes
+    # repeated cancellations of a large order followed by a small order of the same item
+    timings.ms.suspiciousorders: 3600000  # every hour
+    # stock movement events
+    timings.ms.stockmovements: 300000     # every 5 minutes
+    # door badge events
+    timings.ms.badgeins: 600              # sub-second
+    # new customer events
+    timings.ms.newcustomers: 543400       # a little over 9 minutes
+    # sensor reading events
+    timings.ms.sensorreadings: 27000      # every 27 seconds
+    # sensor reading events
+    #  from a single sensor that periodically generates very high and increasing readings (before returning to a normal range)
+    timings.ms.highsensorreadings: 18000  # every 18 seconds
+    # online orders
+    timings.ms.onlineorders: 30000        # every 30 seconds
+    # return requests
+    timings.ms.returnrequests: 300000     # every 5 minutes
+    # product reviews
+    timings.ms.productreviews: 60000      # every 1 minute
+    # transactions
+    timings.ms.transactions: 20000        # every 20 seconds
+    # abandoned orders
+    timings.ms.abandonedorders: 300000    # every 5 minutes
 
     #
     # how much of a delay to introduce when producing events
@@ -47,7 +96,7 @@ spec:
     #    time after the timestamp contained in the message payload
     #
     #    the result is that the timestamp in the message metadata
-    #    will be later then the message in the message payload
+    #    will be later than the message in the message payload
     #
     #    because the delay will be random (up to the specified max)
     #    the impact of this is that messages on the topic will be
@@ -55,21 +104,29 @@ spec:
     #    the message payload)
     #
     # orders
-    eventdelays.orders.secs.max: 0             # payload time matches event time by default
+    eventdelays.orders.secs.max: 0              # payload time matches event time by default
     # cancellations
-    eventdelays.cancellations.secs.max: 0      # payload time matches event time by default
+    eventdelays.cancellations.secs.max: 0       # payload time matches event time by default
     # stock movements
-    eventdelays.stockmovements.secs.max: 0     # payload time matches event time by default
+    eventdelays.stockmovements.secs.max: 0      # payload time matches event time by default
     # door badge events
-    eventdelays.badgeins.secs.max: 180         # payload time can be up to 3 minutes (180 secs) behind event time
+    eventdelays.badgeins.secs.max: 180          # payload time can be up to 3 minutes (180 secs) behind event time
     # new customer events
-    eventdelays.newcustomers.secs.max: 0       # payload time matches event time by default
+    eventdelays.newcustomers.secs.max: 0        # payload time matches event time by default
     # sensor readings events
-    eventdelays.sensorreadings.secs.max: 300   # payload time can be up to 5 minutes (300 secs) behind event time
+    eventdelays.sensorreadings.secs.max: 300    # payload time can be up to 5 minutes (300 secs) behind event time
     # online orders
-    eventdelays.onlineorders.secs.max: 0       # payload time matches event time by default
+    eventdelays.onlineorders.secs.max: 0        # payload time matches event time by default
     # out-of-stock events
-    eventdelays.outofstocks.secs.max: 0        # payload time matches event time by default
+    eventdelays.outofstocks.secs.max: 0         # payload time matches event time by default
+    # return requests
+    eventdelays.returnrequests.secs.max: 0      # payload time matches event time by default
+    # product reviews
+    eventdelays.productreviews.secs.max: 0      # payload time matches event time by default
+    # transactions
+    eventdelays.transactions.secs.max: 0        # payload time matches event time by default
+    # abandoned orders
+    eventdelays.abandonedorders.secs.max: 0     # payload time matches event time by default
 
     #
     # how many events should be duplicated
@@ -84,32 +141,29 @@ spec:
     #                         1.0 means all events will be duplicated
     #
     # orders
-    duplicates.orders.ratio: 0             # events not duplicated
+    duplicates.orders.ratio: 0              # events not duplicated
     # cancellations
-    duplicates.cancellations.ratio: 0      # events not duplicated
+    duplicates.cancellations.ratio: 0       # events not duplicated
     # stock movements
-    duplicates.stockmovements.ratio: 0.1   # duplicate roughly 10% of the events
+    duplicates.stockmovements.ratio: 0.1    # duplicate roughly 10% of the events
     # door badge events
-    duplicates.badgeins.ratio: 0           # events not duplicated
+    duplicates.badgeins.ratio: 0            # events not duplicated
     # new customer events
-    duplicates.newcustomers.ratio: 0       # events not duplicated
+    duplicates.newcustomers.ratio: 0        # events not duplicated
     # sensor reading events
-    duplicates.sensorreadings.ratio: 0     # events not duplicated
-
-    #
-    # format of timestamps to produce
-    #
-    #    default is chosen to be suitable for use with Event Processing,
-    #    but you could modify this if you want to demo how to reformat
-    #    timestamps to be compatible with Event Processing
-    #
-    #    NOTE: sensor readings topic is an exception. Events on this topic
-    #           ignore this config option
-    #
-    formats.timestamps: yyyy-MM-dd HH:mm:ss.SSS
-    # format of timestamps with local time zone (UTC time in ISO 8601 format)
-    #    NOTE: this format is used by default for online orders 
-    formats.timestamps.ltz: yyyy-MM-dd'T'HH:mm:ss.SSS'Z'
+    duplicates.sensorreadings.ratio: 0      # events not duplicated
+    # online orders
+    duplicates.onlineorders.ratio: 0        # events not duplicated
+    # out-of-stock events
+    duplicates.outofstocks.ratio: 0         # events not duplicated
+    # return requests
+    duplicates.returnrequests.ratio: 0      # events not duplicated
+    # product reviews
+    duplicates.productreviews.ratio: 0      # events not duplicated
+    # transactions
+    duplicates.transactions.ratio: 0        # events not duplicated
+    # abandoned orders
+    duplicates.abandonedorders.ratio: 0     # events not duplicated
 
     #
     # product names to use in events
@@ -189,11 +243,11 @@ spec:
     #  should they wait before making their order
     newcustomers.order.delay.ms.min: 180000     # wait at least 3 minutes
     newcustomers.order.delay.ms.max: 1380000    # order within 23 minutes
-    
+
     #
     # online orders
     #
-    #  these events are intended to represent orders for several products, 
+    #  these events are intended to represent orders for several products,
     #   illustrating the use of complex objects and primitive arrays
     #
     # number of products to include in an online order: between 1 and 5 (inclusive)
@@ -213,8 +267,8 @@ spec:
     # how many online orders have at least one product that runs out-of-stock after the order has been placed
     #  between 0.0 and 1.0 : 0.0 means no online order has some product that runs out-of-stock
     #                        1.0 means all online orders have products that run out-of-stock
-    onlineorders.outofstock.ratio: 0.22 
-    
+    onlineorders.outofstock.ratio: 0.22
+
     #
     # out-of-stocks
     #
@@ -226,9 +280,92 @@ spec:
     # how long after an online order should the out-of-stock happen (in milliseconds)
     outofstocks.delay.ms.min: 300000   # 5 minutes
     outofstocks.delay.ms.max: 7200000  # 2 hours
-  
+
+    #
+    # return requests
+    #
+    #  these events are intended to represent return requests for several products,
+    #   illustrating the use of complex objects and complex arrays
+    #
+    # number of products to include in a return request: between 1 and 4 (inclusive)
+    returnrequests.products.min: 1
+    returnrequests.products.max: 4
+    # quantity for each product to include in a return request: between 1 and 3 (inclusive)
+    returnrequests.product.quantity.min: 1
+    returnrequests.product.quantity.max: 3
+    # number of emails for the customer who issued a return request: between 1 and 2 (inclusive)
+    returnrequests.customer.emails.min: 1
+    returnrequests.customer.emails.max: 2
+    # number of phones in an address for a return request: between 0 and 2 (inclusive)
+    #    NOTE: in case of 0 phone number, `null` is generated in the events as value for the `phones` property
+    returnrequests.address.phones.min: 0
+    returnrequests.address.phones.max: 2
+    # how many return requests use the same address as shipping and billing address
+    #  between 0.0 and 1.0 : 0.0 means no return request will use the same address as shipping and billing address
+    #                        1.0 means all return requests will use the same address as shipping and billing address
+    returnrequests.reuse.address.ratio: 0.75
+    # reason given for a product return
+    returnrequests.reasons: CHANGEDMIND,BADFIT,SHIPPINGDELAY,DELIVERYERROR,CHEAPERELSEWHERE,OTHER
+    # how many return requests have at least one product that has a review that is posted after the return request has been issued
+    #  between 0.0 and 1.0 : 0.0 means no return request has some product that has a review that is posted
+    #                        1.0 means all return requests have products that have a review that is posted
+    returnrequests.review.ratio: 0.32
+    # how many products have a size issue in a return request
+    #  between 0.0 and 1.0 : 0.0 means no product has a size issue in a given return request
+    #                        1.0 means all products have a size issue in a given return request
+    returnrequests.product.with.size.issue.ratio: 0.22
+
+    #
+    # product reviews
+    #
+    #  these events are intended to represent reviews for products returned in return requests.
+    #
+    # number of products that have a size issue for product reviews
+    productreviews.products.with.size.issue.count: 10
+    # how many product reviews have a size issue for products that are supposed to have a size issue
+    #  between 0.0 and 1.0 : 0.0 means no review with a size issue is generated for products that are supposed to have a size issue
+    #                        1.0 means all generated reviews have a size issue for products that are supposed to have a size issue
+    productreviews.review.with.size.issue.ratio: 0.75
+    # how long after a return request should the product review happen (in milliseconds)
+    productreviews.delay.ms.min: 300000   # 5 minutes
+    productreviews.delay.ms.max: 3600000  # 1 hour
+
+    #
+    # abandoned orders
+    #
+    # these events are intended to represent orders that were abandoned before checkout.
+    #
+    # number of products to include in an abandoned order: between 1 and 5 (inclusive)
+    abandonedorders.products.min: 1
+    abandonedorders.products.max: 5
+    # number of emails for the customer who abandoned the order: between 1 and 2 (inclusive)
+    abandonedorders.customer.emails.min: 1
+    abandonedorders.customer.emails.max: 2
+
     #
     # locations that are referred to in generated events
     #
     locations.regions: NA,SA,EMEA,APAC,ANZ
+    # countries in each region
+    #  NA   : CA (Canada), US (United States), MX (Mexico)
+    #  SA   : BR (Brazil), PY (Paraguay), UY (Uruguay)
+    #  EMEA : BE (Belgium), FR (France), CH (Switzerland), GB (United Kingdom), DE (Germany), ES (Spain)
+    #  APAC : ID (Indonesia), SG (Singapore), BN (Brunei), PH (Philippines)
+    #  ANZ  : AU (Australia), NZ (New Zealand)
+    locations.regions.countries: NA:CA,US,MX;SA:BR,PY,UY;EMEA:BE,FR,CH,GB,DE,ES;APAC:ID,SG,BN,PH;ANZ:AU,NZ
     locations.warehouses: North,South,West,East,Central
+
+    #
+    # transactions
+    #
+    #  these events are intended to represent transaction requests
+    #
+    transactions.max.ids: 6
+    # minimum amount of a transaction
+    transactions.amount.min: 100.0
+    # maximum amount of a transaction
+    transactions.amount.max: 1000.0
+    # ratio of the transactions that should be a complete sequence of
+    #  STARTED -> PROCESSING -> PROCESSING -> COMPLETED
+    transactions.valid.ratio: 0.8  # 80% of transactions are complete
+                                   # 20% of transactions omit an event

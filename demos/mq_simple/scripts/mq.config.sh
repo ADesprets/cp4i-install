@@ -4,22 +4,6 @@
 ################################################
 
 ################################################
-function create_root_issuer () {
-  local lf_tracelevel=3
-  trace_in $lf_tracelevel create_root_issuer
-
-  export VAR_CERT_ISSUER="${VAR_MQ_NAMESPACE}-mq-self-signed"
-  export VAR_NAMESPACE=${VAR_MQ_NAMESPACE}
-
-  # TODO Instead use cp4i-install\templates\tls\config\Issuer_ca.yaml templates/tls/
-  create_oc_resource "Issuer" "${VAR_CERT_ISSUER}" "${MY_YAMLDIR}tls/" "${MY_MQ_WORKINGDIR}" "Issuer_ca.yaml" "${VAR_MQ_NAMESPACE}"
-
-  unset VAR_CERT_ISSUER VAR_NAMESPACE
-
-  trace_out $lf_tracelevel create_root_issuer
-}
-
-################################################
 function create_root_certificate () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel create_root_certificate
@@ -96,6 +80,10 @@ function create_qmgr_route () {
 }
 
 ################################################
+# Create Queue Manager
+# param 1: Queue Manager name
+# param 2: TODO add the channel name for applications as parameter
+# param 3..n: Queues names
 function create_qmgr () {
   local lf_tracelevel=3
   
@@ -103,6 +91,7 @@ function create_qmgr () {
   local lf_qm_defs=("$@")
 
   export VAR_QMGR=${lf_qm_defs[0]}
+  # for SNI to be check
   export VAR_QMGR_UC=$(echo $VAR_QMGR | tr '[:lower:]' '[:upper:]')
   export VAR_QMGR_LC=$(echo $VAR_QMGR | tr '[:upper:]' '[:lower:]')
   export VAR_INI_CM="${VAR_QMGR_LC}-ini-cm"
@@ -125,17 +114,18 @@ function create_qmgr () {
   for ((i=1; i<${#lf_qm_defs[@]}; i++)); do
     # For each Queue update the template file for the queues definitions and authentication definitions will be generated in working directory
     # If ends by CPY then it is a streaming queue
+    # TODO Improve authentication instead of user default user and impact with certificate usage
     if [[ "${lf_qm_defs[$i]}" == *CPY ]]; then
       mylog info "Adding Queue ${lf_qm_defs[$i]} and streaming queue definitions."
       lf_qn=${lf_qm_defs[$i]%".CPY"}
       addLineToFileAtEnd 4 "DEFINE QLOCAL('${lf_qm_defs[$i]}')" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/tmp/qmgr_cm_mqsc.yaml"
       addLineToFileAtEnd 4 "DEFINE QLOCAL('${lf_qn}') STREAMQ('${lf_qm_defs[$i]}') REPLACE DEFPSIST(YES)" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/tmp/qmgr_cm_mqsc.yaml"
-      addLineToFileAtEnd 4 "SET AUTHREC PROFILE('${lf_qn}') PRINCIPAL('${MY_USER}') OBJTYPE(QUEUE) AUTHADD(BROWSE,GET,INQ,PUT,DSP)" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/tmp/qmgr_cm_mqsc_auth.yaml"
-      addLineToFileAtEnd 4 "SET AUTHREC PROFILE('${lf_qm_defs[$i]}') PRINCIPAL('${MY_USER}') OBJTYPE(QUEUE) AUTHADD(BROWSE,GET,INQ,PUT,DSP)" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/tmp/qmgr_cm_mqsc_auth.yaml"
+      addLineToFileAtEnd 4 "SET AUTHREC PROFILE('${lf_qn}') PRINCIPAL('${VAR_MQ_USER}') OBJTYPE(QUEUE) AUTHADD(BROWSE,GET,INQ,PUT,DSP)" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/tmp/qmgr_cm_mqsc_auth.yaml"
+      addLineToFileAtEnd 4 "SET AUTHREC PROFILE('${lf_qm_defs[$i]}') PRINCIPAL('${VAR_MQ_USER}') OBJTYPE(QUEUE) AUTHADD(BROWSE,GET,INQ,PUT,DSP)" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/tmp/qmgr_cm_mqsc_auth.yaml"
     else
       mylog info "Adding Queue ${lf_qm_defs[$i]} definitions."
       addLineToFileAtEnd 4 "DEFINE QLOCAL('${lf_qm_defs[$i]}') REPLACE DEFPSIST(YES)" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/tmp/qmgr_cm_mqsc.yaml"
-      addLineToFileAtEnd 4 "SET AUTHREC PROFILE('${lf_qm_defs[$i]}') PRINCIPAL('${MY_USER}') OBJTYPE(QUEUE) AUTHADD(BROWSE,GET,INQ,PUT,DSP)" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/tmp/qmgr_cm_mqsc_auth.yaml"
+      addLineToFileAtEnd 4 "SET AUTHREC PROFILE('${lf_qm_defs[$i]}') PRINCIPAL('${VAR_MQ_USER}') OBJTYPE(QUEUE) AUTHADD(BROWSE,GET,INQ,PUT,DSP)" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/tmp/qmgr_cm_mqsc_auth.yaml"
     fi
   done
   # Create QM config maps
@@ -147,7 +137,7 @@ function create_qmgr () {
   # At this stage VAR_QMGR_LC is exported
   create_qmgr_route
   
-  # Use the new CRD MessagingServer(available since CP4I 16.1.0-SC2) 
+  # Use the new CRD MessagingServer(available since CP4I 16.1.0-SC2)
   if $MY_MESSAGINGSERVER; then
     # Creating MQ MessagingServer instance
     create_operand_instance "MessagingServer" "${VAR_MSGSRV_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/" "MessagingServer-Capability.yaml" "$VAR_MQ_NAMESPACE" "{.status.conditions[0].type}" "Ready"
@@ -261,7 +251,7 @@ function mq_run_all () {
   trace_in $lf_tracelevel mq_run_all
   
   # Create tls artifacts for all QMs in the project
-  create_root_issuer
+  create_self_signed_issuer "${VAR_MQ_NAMESPACE}-mq-self-signed" "${VAR_MQ_NAMESPACE}" "${MY_MQ_WORKINGDIR}"
   create_root_certificate
 
   create_pki_cr

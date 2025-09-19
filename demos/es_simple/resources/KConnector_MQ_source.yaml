@@ -2,25 +2,24 @@ apiVersion: eventstreams.ibm.com/v1beta2
 kind: KafkaConnector
 metadata:
   labels:
-        eventstreams.ibm.com/cluster: ${VAR_ES_KAFKA_CONNECT_INSTANCE_NAME}
+        eventstreams.ibm.com/cluster: $VAR_ES_KAFKA_CONNECT_INSTANCE_NAME
   name: mq-source
   namespace: $VAR_ES_NAMESPACE
 spec:
   class: com.ibm.eventstreams.connect.mqsource.MQSourceConnector
   tasksMax: 1
   config:
+    # Connection details (type SVRCONN)
     mq.channel.name: $VAR_CHL_UC
     mq.connection.mode: client
-    # Connection details for the QM: Should be orders
-    mq.queue.manager: ${VAR_QMGR}
-    # Connection details for the QM: Should be orders-ibm-mq
-    mq.connection.name.list: ${VAR_QMGR}-ibm-mq(1414)
-    # Connection details for the QM: Should be SYSTEM.DEF.SVRCONN
-    mq.channel.name: $VAR_CHL_UC
-    # the MQ queue to get messages from (Streaming Queue)
-    mq.queue: PAYMT.REQ.CPY
-     # the Kafka topic to produce to
-    topic: LH.ORDERS              
+    mq.connection.name.list: ${VAR_QMGR_LC}-ibm-mq.${VAR_MQ_NAMESPACE}.svc.cluster.local(1414)
+    mq.ssl.cipher.suite: '*TLS12ORHIGHER'
+    # Source QM name
+    mq.queue.manager: $VAR_QMGR_LC
+    # the MQ queue to get messages from (Streaming Queue) for example PAYMT.REQ.CPY
+    mq.queue: $VAR_ES_MQ_SOURCE 
+     # the Kafka topic to produce to for example LH.ORDERS
+    topic: $VAR_ES_TOPIC_DEST
     # format of the messages to transfer
     mq.message.body.jms: true 
     mq.record.builder: com.ibm.eventstreams.connect.mqsource.builders.DefaultRecordBuilder
@@ -32,6 +31,7 @@ spec:
     key.converter.schemas.enable: false
     value.converter.schemas.enable: false
 
+    # We disable topic authentication for this demo, possible because of the CHCKCLNT(OPTIONAL)
     mq.user.authentication.mqcsp: false
     mq.user.name: ""
     mq.password: ""

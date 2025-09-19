@@ -92,4 +92,4 @@ spec:
         provider: manual
       manualConfig:
         secret:
-          name: cp4imq-web-secret
+          name: ${VAR_MQ_NAMESPACE}-web-secret
