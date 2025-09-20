@@ -1063,7 +1063,7 @@ function display_access_info() {
   local lf_console_url
   lf_console_url=$(oc whoami --show-console)
   mylog info "OpenShift Console accessible at ${lf_console_url}"
-  echo "<TR><TD><A HREF=http://${lf_console_url}>OpenShift console</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
+  echo "<TR><TD><A HREF=${lf_console_url}>OpenShift console</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
 
   # Mailhog
   local lf_mailhog_hostname

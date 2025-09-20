@@ -58,7 +58,7 @@ function create_kafka_topics () {
     exit 1
   fi
     
-  mylog info "Creating topics" 0
+  mylog info "Creating topics"
   topic_names=("connect-configs" "connect-offsets" "connect-status" "tp1" "orders" "cancellations" "doors" "stock" "customers" "sensors")
   topic_spec_names=("connect-configs" "connect-offsets" "connect-status" "MY.TP1" "LH.ORDERS" "LH.CANCELLATIONS" "LH.DOORS" "LH.STOCK" "LH.CUSTOMERS" "LH.SENSORS")
   topic_partitions=(1 1 1 1 3 3 1 2 3 2)
@@ -130,12 +130,12 @@ function create_kafka_connector () {
   fi
 
   # Create KafkaConnect and KafkaConnector in $ES_APPS_PROJECT project
-  mylog info "Create Kafka Connect for datagen, and MQ connectors" 0
+  mylog info "Create Kafka Connect for datagen, and MQ connectors"
    
   create_oc_resource "KafkaConnect" "${VAR_ES_KAFKA_CONNECT_INSTANCE_NAME}" "${lf_in_source_directory}" "${lf_in_target_directory}" "KConnect.yaml" "$VAR_ES_NAMESPACE"
   # TODO check for the TLS configuration: https://ibm.github.io/event-automation/es/connecting/mq/#configuration-options
   
-  mylog info "Create Kafka Connectors for datagen and MQ connectors" 0
+  mylog info "Create Kafka Connectors for datagen and MQ connectors"
   create_oc_resource "KafkaConnector" "datagen" "${lf_in_source_directory}" "${lf_in_target_directory}" "KConnector_datagen.yaml" "$VAR_ES_NAMESPACE"
 
   trace_out $lf_tracelevel create_kafka_connector
