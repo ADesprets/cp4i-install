@@ -484,7 +484,7 @@ function install_openldap() {
     
     create_oc_resource "SecurityContextConstraints" "openldap-scc" "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}" "scc.yaml" "$VAR_LDAP_NAMESPACE"
     
-    oc adm policy add-scc-to-user openldap-scc -z $MY_LDAP_SERVICEACCOUNT -n ${VAR_LDAP_NAMESPACE}
+    $MY_CLUSTER_COMMAND adm policy add-scc-to-user openldap-scc -z $MY_LDAP_SERVICEACCOUNT -n ${VAR_LDAP_NAMESPACE}
     
     create_oc_resource "Deployment" "${MY_LDAP_DEPLOYMENT}" "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}" "ldap_deployment.yaml" "$VAR_LDAP_NAMESPACE"
     # create_oc_resource "Deployment" "${MY_LDAP_DEPLOYMENT}" "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}" "ldap_deployment_k8s.yaml" "$VAR_LDAP_NAMESPACE"
@@ -497,8 +497,8 @@ function install_openldap() {
     create_oc_resource "Service" "${VAR_LDAP_SERVICE}" "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}" "ldap_svc.yaml" "${VAR_LDAP_NAMESPACE}"
     
     case $MY_CLUSTER_COMMAND in
-    kubectl)  create_openldap_route_k8s;;
-    oc)  create_openldap_route ;;
+      kubectl)  create_openldap_route_k8s;;
+      oc)  create_openldap_route ;;
     esac
 
   fi
@@ -537,9 +537,9 @@ function install_cert_manager() {
     
     # Create a subscription object for cert manager Operator
     case $MY_CLUSTER_COMMAND in
-    kubectl) $MY_CLUSTER_COMMAND apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.17.2/cert-manager.yaml;;
-    oc) create_oc_resource "OperatorGroup" "$MY_CERTMANAGER_OPERATOR" "$MY_RESOURCESDIR" "$MY_CERTMANAGER_WORKINGDIR" "operator-group-cert-manager.yaml" "$MY_CERTMANAGER_OPERATOR_NAMESPACE"
-        create_operator_instance "${MY_CERTMANAGER_OPERATOR}" "${MY_RH_OPERATORS_CATALOG}" "${MY_OPERATORSDIR}" "${MY_CERTMANAGER_WORKINGDIR}" "${MY_CERTMANAGER_OPERATOR_NAMESPACE}";;
+      kubectl) $MY_CLUSTER_COMMAND apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.17.2/cert-manager.yaml;;
+      oc) create_oc_resource "OperatorGroup" "$MY_CERTMANAGER_OPERATOR" "$MY_RESOURCESDIR" "$MY_CERTMANAGER_WORKINGDIR" "operator-group-cert-manager.yaml" "$MY_CERTMANAGER_OPERATOR_NAMESPACE"
+          create_operator_instance "${MY_CERTMANAGER_OPERATOR}" "${MY_RH_OPERATORS_CATALOG}" "${MY_OPERATORSDIR}" "${MY_CERTMANAGER_WORKINGDIR}" "${MY_CERTMANAGER_OPERATOR_NAMESPACE}";;
     esac
   fi
 
@@ -1051,6 +1051,7 @@ function create_milvus_root_certificate () {
 ################################################
 # Install MILVUS
 # Requires CertManager
+# Log in to API Manager: https://<environment short id>.a-vir.apiconnect.ipaas.automation.ibm.com
 # https://www.ibm.com/docs/en/api-connect/saas?topic=agent-getting-started
 # https://www.ibm.com/docs/en/api-connect/saas?topic=configuring-watsonxai-settings
 # https://www.ibm.com/docs/en/api-connect/saas?topic=configuring-api-agent-settings
@@ -1074,17 +1075,17 @@ function install_milvus() {
 	  # CA Certificate for Milvus Operator in milvus namespace
     create_milvus_root_certificate
     
-    # Create secret 
-    # kubectl create secret generic milvus-creds --from-literal=username=$MILVUS_USER_NAME --from-literal=password=$MILVUS_API_KEY
-    # voir loki_secret with secret.yaml
+    # Create secret
+    create_generic_secret "milvus-db-cred" "milvus-admin" "milvusPassw0rd!" "${MY_MILVUS_NAMESPACE}" "${MY_MILVUS_WORKINGDIR}"
 
-    # Add the Milvus Operator Helm repository:
-    # helm_repo_init <operator_name> <watchAnyNamespace boolean>
-      # helm repo add milvus-operator  
-	    # helm repo update milvus-operator
+    # Add the Milvus Operator Helm repository (https://milvus.io/docs/v2.4.x/install_cluster-milvusoperator.md)
+    # helm_install "https://github.com/zilliztech/milvus-operator/releases/download/v1.1.9/milvus-operator-1.1.9.tgz" false "$MY_MILVUS_NAMESPACE"
+    $MY_CLUSTER_COMMAND -n "${MY_MILVUS_NAMESPACE}" apply -f templates\operators\milvus-operator.yaml
 
     # Deploy Milvus Cluster (Operand creation) inspired by https://raw.githubusercontent.com/milvus-io/milvus-operator/main/config/samples/demo.yaml
-    # kubectl apply -f <TEMPLATE_DIR>APIC_milvus_database.yaml
+    # $MY_CLUSTER_COMMAND apply -f <TEMPLATE_DIR>APIC_milvus_database.yaml
+    $MY_CLUSTER_COMMAND -n "${MY_MILVUS_NAMESPACE}" apply -f templates\operands\APIC_MILVUS_DB.yaml
+
 
   fi
 
@@ -2054,8 +2055,8 @@ function provision_cluster_init() {
 
   # check the differents pre requisites
   check_exec_prereqs
-  check_resource_exist storageclass $MY_BLOCK_STORAGE_CLASS
-  check_resource_exist storageclass $MY_FILE_STORAGE_CLASS
+  check_resource_exist storageclass $MY_BLOCK_STORAGE_CLASS true
+  check_resource_exist storageclass $MY_FILE_STORAGE_CLASS true
   check_directory_exist_create "$MY_WORKINGDIR"
 
   # Get all manifests
@@ -2107,7 +2108,7 @@ function provision_cluster_init() {
   export VAR_SAN_DNS="*.${VAR_CLUSTER_DOMAIN}"
   export VAR_CERT_COMMON_NAME=$VAR_SAN_DNS
 
-  # create PVC for registry (oc get config cluster)
+  # create PVC for registry ($MY_CLUSTER_COMMAND get config cluster)
   create_operand_instance "PersistentVolumeClaim" "registry-storage" "${MY_RESOURCESDIR}" "${MY_WORKINGDIR}" "registry_pvc.yaml" "openshift-image-registry" "{.status.phase}" "Bound"
   mylog info "Updating cluster configuration to use the PVC 'registry-storage'." 0
   $MY_CLUSTER_COMMAND patch configs.imageregistry.operator.openshift.io/cluster --type=merge -p '{"spec":{"storage":{"pvc":{"claim":"registry-storage"}}}}'

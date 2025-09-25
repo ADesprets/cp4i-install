@@ -14,9 +14,6 @@ spec:
     license: $MY_ES_LIC
     accept: true
     use: $MY_ES_LIC_USAGE
-  requestIbmServices:
-    iam: false
-    monitoring: false    
   strimziOverrides:
     entityOperator:
       topicOperator: {}

@@ -34,6 +34,10 @@ spec:
     buildConfig:
       pullSecret: ibm-entitlement-key
     connectContainer:
+      volumeMounts:
+        - mountPath: /mnt/mqca
+          name: certs
+          readOnly: true
       securityContext:
         allowPrivilegeEscalation: false
         capabilities:
@@ -55,6 +59,10 @@ spec:
           cloudpakId: c8b82d189e7545f0892db9ef2731b90d
           cloudpakName: IBM Cloud Pak for Integration
           productCloudpakRatio: '2:1'
+      volumes:
+        - name: certs
+          secret:
+            secretName: cp4i-mq-root-secret
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -70,10 +78,6 @@ spec:
     trustedCertificates:
       - certificate: ca.crt
         secretName: ${VAR_ES_INSTANCE_NAME}-cluster-ca-cert
-      - certificate: ca.crt
-        secretName: ${VAR_MQ_ORDERS_TLS_SECRET}
-      - certificate: tls.crt
-        secretName: ${VAR_MQ_ORDERS_TLS_SECRET}
   replicas: 1
   build:
     output:

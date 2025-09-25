@@ -729,7 +729,7 @@ function install_eem_local_k8s() {
     add_ibm_entitlement "$VAR_EEM_NAMESPACE"
 
     # Creating EventStreams operator subscription
-    # install the operator
+    # Install the operator
     # Note: If you are installing any subsequent operators in the same cluster, ensure you run the helm install command with the --set createGlobalResources=false option (as these resources have already been installed).
     helm install "${MY_EEM_OPERATOR}-crd" ibm-helm/ibm-eem-operator-crd -n "$VAR_EEM_NAMESPACE"
 
@@ -1151,7 +1151,7 @@ function display_access_info() {
     echo  "<TR><TD><A HREF=${lf_eem_ui_url}>Event Endpoint Management UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
     lf_eem_lf_gtw_url=$($MY_CLUSTER_COMMAND -n $VAR_EEM_NAMESPACE get EventEndpointManagement -o=jsonpath='{.items[?(@.kind=="EventEndpointManagement")].status.endpoints[?(@.name=="gateway")].uri}')
     mylog info "Event Endpoint Management Gateway endpoint: ${lf_eem_lf_gtw_url}" 0
-    mylog info "The credentials are defined in the file ./customisation/EP/resources/user-credentials.yaml" 0
+    mylog info "The credentials are defined in the file ./working/EP/resources/user-credentials.yaml" 0
   fi
 
   # Event Processing
@@ -1160,7 +1160,7 @@ function display_access_info() {
     lf_ep_ui_url=$($MY_CLUSTER_COMMAND -n $VAR_EP_NAMESPACE get EventProcessing -o=jsonpath='{.items[?(@.kind=="EventProcessing")].status.endpoints[?(@.name=="ui")].uri}')
     mylog info "Event Processing UI endpoint: ${lf_ep_ui_url}" 0
     echo "<TR><TD><A HREF=${lf_ep_ui_url}>Event Processing UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
-    mylog info "The credentials are defined in the file ./customisation/EP/resources/user-credentials.yaml" 0
+    mylog info "The credentials are defined in the file ./working/EP/resources/user-credentials.yaml" 0
   fi
   
   # LDAP
@@ -1194,9 +1194,12 @@ function display_access_info() {
       lf_mq_qm_url=$($MY_CLUSTER_COMMAND -n $VAR_MQ_NAMESPACE get MessagingServer ${VAR_MSGSRV_INSTANCE_NAME} -o jsonpath='{.status.adminUiUrl}')
     fi
 
-    lf_mq_admin_url=$($MY_CLUSTER_COMMAND -n $VAR_MQ_NAMESPACE get QueueManager $VAR_MQ_INSTANCE_NAME -o jsonpath='{.status.adminUiUrl}')
-    mylog info "MQ Management Console : ${lf_mq_admin_url}" 0
-    echo  "<TR><TD><A HREF=${lf_mq_admin_url}>MQ Management Console</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
+    # (range is a control structure in JSONPath that allows you to iterate over a list of items.), the , is the separator
+    qms=$(oc -n $VAR_MQ_NAMESPACE get QueueManager -o=jsonpath='{range .items[*]}{.metadata.name},{.status.adminUiUrl}{"\n"}{end}')
+    while IFS=, read -r name console; do
+      mylog info "${qm_name} MQ Management Console : ${qm_console}" 0
+      echo  "<TR><TD><A HREF=${qm_console}>${qm_name} MQ Management Console</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
+    done <<< "$qms"
 
     local lf_mq_authentication_method=$($MY_CLUSTER_COMMAND -n $VAR_MQ_NAMESPACE get qmgr $VAR_MQ_INSTANCE_NAME -o jsonpath='{.spec.web.console.authentication.provider}')
     if [[ $lf_mq_authentication_method == "manual" ]]; then
@@ -1811,30 +1814,43 @@ function check_exec_prereqs() {
 # @param the resource to be checked
 # @param 1: resource type
 # @param 2: resource name
+# @param 3 : boolean, if true exit in case if resource does not exit, false return 1 if resource does not exist, 0 if it exists
 function check_resource_exist() {
   local lf_tracelevel=5
   trace_in $lf_tracelevel check_resource_exist
-
   local lf_in_type=$1
   local lf_in_name=$2
-  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|"
-
-  if [[ $# -ne 2 ]]; then
-    mylog error "You have to provide 2 arguments: resource type and resource name"
+  local lf_in_exit_on_not_exist=${3:-true}
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|"
+  if [[ $# -ne 3 ]]; then
+    mylog error "You have to provide 3 arguments: resource type, resource name and boolean exit_on_not_exist"
     trace_out $lf_tracelevel check_resource_exist
     exit  1
   fi
-
   # check resource exist
   local lf_res
-  
   lf_res=$($MY_CLUSTER_COMMAND get $lf_in_type $lf_in_name --ignore-not-found=true -o jsonpath='{.metadata.name}')
-  if test -z $lf_res; then
-    mylog error "Resource $lf_in_name of type $lf_in_type does not exist, exiting."
-    exit 1
-  fi
-
-  trace_out $lf_tracelevel check_resource_exist
+  case $lf_in_exit_on_not_exist in
+  true)
+    if test -z $lf_res; then
+      mylog error "Resource $lf_in_name of type $lf_in_type does not exist, exiting."
+      trace_out $lf_tracelevel check_resource_exist
+      exit 1
+    else
+      trace_out $lf_tracelevel check_resource_exist
+      return 1
+    fi
+    ;;
+  false)
+    if test -z $lf_res; then
+      trace_out $lf_tracelevel check_resource_exist
+      return 1
+    else
+      trace_out $lf_tracelevel check_resource_exist
+      return 0
+    fi
+    ;;
+  esac
 }
 
 ################################################
@@ -2745,6 +2761,70 @@ function create_self_signed_issuer () {
   unset VAR_CERT_ISSUER VAR_NAMESPACE
 
   trace_out $lf_tracelevel create_self_signed_issuer
+}
+
+################################################
+# Create a generic secret, username or password can be empty, in those case only one entry (username or password) will be created
+# @param 1: secret name
+# @param 2: user name
+# @param 3: password
+# @param 4: namespace
+# @param 5: working directory where the generated yaml file will be stored
+function create_generic_secret() {
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel create_generic_secret
+
+  local lf_in_secret_name="$1"
+  local lf_in_username="$2"
+  local lf_in_password="$3"
+  local lf_in_namespace="$4"
+  local lf_in_workingdir="$5"
+
+  # local lf_working_relative_path=$(echo "${lf_in_workingdir#"$MY_WORKINGDIR"}")
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|"
+  
+  if [[ $# -ne 5 ]]; then
+    mylog error "You have to provide 4 arguments: secret name, user name, user password, namespace and working directory"
+    trace_out $lf_tracelevel create_generic_secret
+    exit  1
+  fi
+
+  mylog info "Create generic secret in ${lf_in_namespace} namespace"
+  export VAR_SECRET_NAME=$lf_in_secret_name
+  export VAR_USERNAME=$lf_in_username
+  export VAR_PASSWORD=$lf_in_password
+  export VAR_NAMESPACE=$lf_in_namespace
+
+  create_oc_resource "Secret" "$lf_in_secret_name" "${MY_YAMLDIR}resources/" "${lf_in_workingdir}" "secret.yaml" "$lf_in_namespace"
+  
+  unset VAR_SECRET_NAME VAR_USERNAME VAR_PASSWORD VAR_NAMESPACE
+
+  trace_out $lf_tracelevel create_generic_secret
+}
+
+################################################
+# Create a certificate chain using the Cert manager
+# @param 1: operator source (helm chart or operatorhub)
+# @param 2: watchAnyNamespace (true/false)
+# @param 3: namespace
+function helm_install() {
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel helm_repo_init
+
+  local lf_in_operator_source="$1"
+  local lf_in_watch_any_namespace="$2"
+  local lf_in_namespace="$3"
+
+  # helm repo add "$repo_name" "$repo_url"
+  # helm repo update
+
+  if [[ "$lf_in_watch" == "true" ]]; then
+    helm install -n  "$lf_in_namespace" --wait --wait-for-jobs "$lf_in_operator_source" --set watchAnyNamespace=true
+  else
+    helm install -n  "$lf_in_namespace" --wait --wait-for-jobs "$lf_in_operator_source" --set watchAnyNamespace=false
+  fi
+
+  trace_out $lf_tracelevel helm_repo_init
 }
 
 ################################################

@@ -102,7 +102,22 @@ function create_kafka_connector () {
 
   # create_oc_resource "KafkaConnector" "mq-sink" "${lf_source_directory}" "${lf_target_directory}" "KConnector_MQ_sink.yaml" "$VAR_ES_NAMESPACE"
 
+  # We are using a secure QM. Since this is secured we aregoing to create a secret for the password with the TLS certificate of the queue manager
+  local lf_secret_name="${VAR_QMGR_LC}-store-pass"
+
+  if check_resource_exist secret $lf_secret_name false; then
+    mylog info "Secret $lf_secret_name in ${VAR_ES_NAMESPACE} namespace already exists." 1>&2
+    local lf_store_password=$(oc -n "${VAR_ES_NAMESPACE}" get secret "$lf_secret_name" -o jsonpath='{.data.password}' | base64 --decode)
+    export VAR_ES_MQ_SOURCE_STORE_PASSWORD=${lf_store_password}
+  else
+    mylog info "Secret $lf_secret_name in ${VAR_ES_NAMESPACE} namespace does not exist." 1>&2
+    local lf_store_password=$(tr -dc 'A-Za-z0-9!@#$%^&*()_+-=' < /dev/urandom | fold -w 20 | head -n 1)
+    create_generic_secret "$lf_secret_name" "" "$lf_store_password" "${VAR_ES_NAMESPACE}" "${MY_ES_WORKINGDIR}"
+    export VAR_ES_MQ_SOURCE_STORE_PASSWORD=${lf_store_password}
+  fi
+
   create_oc_resource "KafkaConnector" "mq-source" "${lf_source_directory}" "${lf_target_directory}" "KConnector_MQ_source.yaml" "$VAR_ES_NAMESPACE"
+  unset $VAR_ES_MQ_SOURCE_STORE_PASSWORD
 
   trace_out $lf_tracelevel create_kafka_connector
 }
@@ -120,12 +135,12 @@ function es_run_all () {
 
   # Create namespace 
   create_project "$VAR_ES_NAMESPACE" "$VAR_ES_NAMESPACE project" "For Event Streams customisation" "${MY_RESOURCESDIR}" "${MY_ES_WORKINGDIR}"
+# toto
+  # create_es
 
-  create_es
+  # create_kafka_topics
 
-  create_kafka_topics
-
-  create_kafka_users
+  # create_kafka_users
 
   create_kafka_connector
 

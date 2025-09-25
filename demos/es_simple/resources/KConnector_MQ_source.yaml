@@ -7,13 +7,16 @@ metadata:
   namespace: $VAR_ES_NAMESPACE
 spec:
   class: com.ibm.eventstreams.connect.mqsource.MQSourceConnector
-  tasksMax: 1
+  tasksMax: 2
   config:
     # Connection details (type SVRCONN)
     mq.channel.name: $VAR_CHL_UC
     mq.connection.mode: client
     mq.connection.name.list: ${VAR_QMGR_LC}-ibm-mq.${VAR_MQ_NAMESPACE}.svc.cluster.local(1414)
     mq.ssl.cipher.suite: '*TLS12ORHIGHER'
+    # How do I add the TLS cert from MQ to the connector ?
+    mq.ssl.truststore.location: "/mnt/mqca/truststore.jks" # The path to the JKS truststore to use for SSL (TLS) connections.
+    mq.ssl.truststore.password: "$VAR_ES_MQ_SOURCE_STORE_PASSWORD" # The password of the JKS truststore to use for SSL (TLS) connections.
     # Source QM name
     mq.queue.manager: $VAR_QMGR_LC
     # the MQ queue to get messages from (Streaming Queue) for example PAYMT.REQ.CPY

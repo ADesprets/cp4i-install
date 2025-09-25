@@ -1,0 +1,15 @@
+{
+  "cartid": "c5a4e2fc-13ee-4fde-b4f2-4a22b565d09d",
+  "customer": {
+    "id": "573b6b1d-6070-4f4b-afb1-be480554930a",
+    "name": "Inger Orn",
+    "emails": [
+      "inger.orn@example.com"
+    ]
+  },
+  "products": [
+    "Navy Capri Jeans",
+    "Retro Crochet Jeans"
+  ],
+  "abandonedtime": "2025-04-24T20:01:32.136Z"
+}

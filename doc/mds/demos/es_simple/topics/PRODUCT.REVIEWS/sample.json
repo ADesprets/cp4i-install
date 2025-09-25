@@ -1,0 +1,20 @@
+{
+  "id": "485b7010-75f9-4c1a-82db-49c9f4c2b0c3",
+  "product": "Retro Crochet Jeans",
+  "size": "XXL",
+  "review": {
+    "rating": 2,
+    "comment": "The high-waisted fit sits a bit lower than I'd like, but it's not a complete low-rise either. Just okay.",
+    "characteristics": [
+      {
+        "id": "Size",
+        "ranking": 2
+      },
+      {
+        "id": "Length",
+        "ranking": 2
+      }
+    ]
+  },
+  "reviewtime": "2024-06-17T22:24:43.239Z"
+}
