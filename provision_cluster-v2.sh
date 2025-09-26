@@ -1694,7 +1694,7 @@ function customise_ace() {
   decho $lf_tracelevel "Parameters: |no parameters|"
 
   # Takes all the templates associated with the capabilities and generate the files from the context variables
-  # The files are generated into ./customisation/working/<capability>/resources
+  # The files are generated into ./working/<capability>/resources
 
   # launch custom script
   if $MY_ACE_CUSTOM; then
@@ -1721,7 +1721,7 @@ function customise_apic() {
   decho $lf_tracelevel "Parameters: |no parameters|"
 
   # Takes all the templates associated with the capabilities and generate the files from the context variables
-  # The files are generated into ./customisation/working/<capability>/resources
+  # The files are generated into ./working/<capability>/resources
   # launch custom script
   if $MY_APIC_CUSTOM; then
     mylog info "==== Customise APIC (apic.config.sh)." 0
@@ -1749,7 +1749,7 @@ function customise_es() {
 
   # start customization
   # Takes all the templates associated with the capabilities and resources the files from the context variables
-  # The files are generated into ./customisation/working/<capability>/resources
+  # The files are generated into ./working/<capability>/resources
 
   # SB]20231026 Creating :
   # - operands properties file,
@@ -1851,7 +1851,7 @@ function customise_ep() {
   decho $lf_tracelevel "Parameters: |no parameters|"
 
   # Takes all the templates associated with the capabilities and generate the files from the context variables
-  # The files are generated into ./customisation/working/<capability>/resources
+  # The files are generated into ./working/<capability>/resources
   ## Creating Event Processing users and roles
   if $MY_EP_CUSTOM; then
     mylog info "==== Place Holder."
@@ -1921,7 +1921,7 @@ function customise_mq() {
   decho $lf_tracelevel "Parameters: |no parameters|"
 
   # Takes all the templates associated with the capabilities and generate the files from the context variables
-  # The files are generated into ./customisation/working/<capability>/resources
+  # The files are generated into ./working/<capability>/resources
   if $MY_MQ_CUSTOM; then
     #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
     if [[ -z $MY_MQ_VERSION ]]; then

@@ -237,9 +237,9 @@ If you have a timeout error with oc ibm-pak command, you can increase the timeou
 
 ## Customisation
 
-1) The source of documents are in the customisation/<capability>/scripts (or config) folders
-2) The generated files are in customisation/<capability>/scripts (or config) folders
-3) We execute the customisation from customisation/<capability>/scripts
+1) The source of documents are in the working/<capability>/scripts (or config) folders
+2) The generated files are in working/<capability>/scripts (or config) folders
+3) We execute the the demos from working/<capability>/scripts
 
 This asset is the result of the collaboration of several people included in the git. You are welcome to join the gang.
 
