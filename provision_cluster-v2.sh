@@ -604,7 +604,7 @@ function install_lic_svc() {
       mylog info "https://www.ibm.com/docs/en/cloud-paks/foundational-services/4.6?topic=service-installing-network-policies-license#installing-network-policies"
       mylog info "Download the two files and put them in $MY_RESOURCESDIR, then modify the namespace to use IBM License Service namespace"
       install_networkpolicies "lic_svc"
-     else
+    else
       mylog info "Network policies for License Service not needed."
     fi
   fi

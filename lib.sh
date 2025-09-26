@@ -1799,7 +1799,7 @@ function check_exec_prereqs() {
 
   if $MY_LDAP; then
     check_command_exist ldapsearch
-    check_resource_exist storageclass $MY_LDAP_FILE_STORAGE_CLASS
+    check_resource_exist storageclass "default" $MY_LDAP_FILE_STORAGE_CLASS
   fi
 
   if $MY_APIC_GRAPHQL; then
