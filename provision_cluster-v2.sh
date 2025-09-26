@@ -597,13 +597,15 @@ function install_lic_svc() {
     mylog info "Check if Installing network policies for License Service is needed" 1>&2
     #mylog info "https://www.ibm.com/docs/en/cloud-paks/foundational-services/4.6?topic=service-installing-network-policies-license"
     search_networkpolicies
+    # toto
     local lf_res=$?
     decho $lf_tracelevel "lf_res=$lf_res"
     if [[ $lf_res -eq 1 ]]; then
       mylog info "Please import and install network policies for License Service."
       mylog info "https://www.ibm.com/docs/en/cloud-paks/foundational-services/4.6?topic=service-installing-network-policies-license#installing-network-policies"
       mylog info "Download the two files and put them in $MY_RESOURCESDIR, then modify the namespace to use IBM License Service namespace"
-      install_networkpolicies "lic_svc"
+      mylog warn "TODO: This has been commented out until further analysis (bedrock-egress-ibm-licensing-service-instance.yaml)."
+      # install_networkpolicies "lic_svc"
     else
       mylog info "Network policies for License Service not needed."
     fi
@@ -2129,7 +2131,6 @@ function provision_cluster_init() {
 
   # Expose service using default route
   mylog info "Enabling default route for the image registry." 0
-  mylog warn "There is a problem with this function." 0
   $MY_CLUSTER_COMMAND patch configs.imageregistry.operator.openshift.io/cluster --patch '{"spec":{"defaultRoute":true}}' --type=merge
   # wait_for_resource Route default-route openshift-image-registry
 

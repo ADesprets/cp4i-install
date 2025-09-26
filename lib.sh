@@ -1333,10 +1333,12 @@ function search_networkpolicies() {
   # Search for deny-all networkpolicies
   mylog info "Searching for deny-all networkpolicies..." 1>&2
   lf_deny_all=$($MY_CLUSTER_COMMAND get networkpolicy --all-namespaces -o json | jq '.items[] | select(.spec.ingress == null and .spec.egress == null) | {namespace: .metadata.namespace, name: .metadata.name}')
+  decho $lf_tracelevel "Deny-all networkpolicies found: $lf_deny_all"
 
   # Search for allow-same-namespace networkpolicies
   mylog info "Searching for allow-same-namespace networkpolicies..." 1>&2
   lf_allow_same_namespace=$($MY_CLUSTER_COMMAND get networkpolicy --all-namespaces -o json | jq '.items[] | select(.spec.ingress != null and .spec.ingress[].from[]?.namespaceSelector.matchLabels."project" == .metadata.namespace) | {namespace: .metadata.namespace, name: .metadata.name}')
+  decho $lf_tracelevel "Allow-same-namespace networkpolicies found: $lf_allow_same_namespace"
 
   if [[ -n $lf_deny_all ]] || [[ -n $lf_allow_same_namespace ]]; then
     lf_res=1
@@ -1799,7 +1801,7 @@ function check_exec_prereqs() {
 
   if $MY_LDAP; then
     check_command_exist ldapsearch
-    check_resource_exist storageclass "default" $MY_LDAP_FILE_STORAGE_CLASS
+    check_resource_exist storageclass $MY_LDAP_FILE_STORAGE_CLASS "default" true
   fi
 
   if $MY_APIC_GRAPHQL; then
