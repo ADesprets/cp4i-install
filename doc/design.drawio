@@ -959,7 +959,7 @@
     </mxGraphModel>
   </diagram>
   <diagram id="tAwYNA3uFQUVHqpSkI3z" name="ES">
-    <mxGraphModel dx="2412" dy="731" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+    <mxGraphModel dx="2723" dy="914" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -1050,7 +1050,7 @@
         <mxCell id="B0ALNfMf-xH7wfVbO2A7-10" value="Application Java&lt;div&gt;Client&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
           <mxGeometry x="690" y="676" width="130" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="B0ALNfMf-xH7wfVbO2A7-13" value="sync (GET)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="B0ALNfMf-xH7wfVbO2A7-6" target="B0ALNfMf-xH7wfVbO2A7-30" edge="1">
+        <mxCell id="B0ALNfMf-xH7wfVbO2A7-13" value="sync (GET)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;endFill=0;" parent="1" source="B0ALNfMf-xH7wfVbO2A7-6" target="B0ALNfMf-xH7wfVbO2A7-30" edge="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint x="630" y="484" as="targetPoint" />
           </mxGeometry>
@@ -1112,7 +1112,7 @@
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="B0ALNfMf-xH7wfVbO2A7-37" value="Kafka Connect" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=middle;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
-          <mxGeometry x="780" y="348" width="130" height="30" as="geometry" />
+          <mxGeometry x="780" y="320" width="130" height="58" as="geometry" />
         </mxCell>
         <mxCell id="B0ALNfMf-xH7wfVbO2A7-38" value="Queue&lt;div&gt;PAYMT.RESP&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=middle;" parent="1" vertex="1">
           <mxGeometry x="530" y="358" width="130" height="50" as="geometry" />

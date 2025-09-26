@@ -92,6 +92,13 @@ function create_kafka_connector () {
   export VAR_QMGR_CONNECTION_HOST=""
   # for example cp4i-mq-orders-server
   export VAR_MQ_ORDERS_TLS_SECRET="${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR_LC}-server"
+
+  # Will exit if the secret does not exist
+  local lf_jks_secret_name="${VAR_MQ_NAMESPACE}-mq-store-root-secret"
+  if check_resource_exist secret $lf_jks_secret_name $VAR_MQ_NAMESPACE true; then
+    local lf_store_password=$(oc -n "${VAR_MQ_NAMESPACE}" get secret "$lf_jks_secret_name" -o jsonpath='{.data.password}' | base64 --decode)
+    export VAR_ES_MQ_SOURCE_STORE_PASSWORD=${lf_store_password}
+  fi
   
   create_oc_resource "KafkaConnect" "${VAR_ES_KAFKA_CONNECT_INSTANCE_NAME}" "${lf_source_directory}" "${MY_ES_WORKINGDIR}" "KConnect.yaml" "$VAR_ES_NAMESPACE"
   export VAR_MQ_ORDERS_TLS_SECRET=${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR_LC}-server
@@ -101,20 +108,6 @@ function create_kafka_connector () {
   create_oc_resource "KafkaConnector" "datagen" "${lf_source_directory}" "${lf_target_directory}" "KConnector_datagen.yaml" "$VAR_ES_NAMESPACE"
 
   # create_oc_resource "KafkaConnector" "mq-sink" "${lf_source_directory}" "${lf_target_directory}" "KConnector_MQ_sink.yaml" "$VAR_ES_NAMESPACE"
-
-  # We are using a secure QM. Since this is secured we aregoing to create a secret for the password with the TLS certificate of the queue manager
-  local lf_secret_name="${VAR_QMGR_LC}-store-pass"
-
-  if check_resource_exist secret $lf_secret_name false; then
-    mylog info "Secret $lf_secret_name in ${VAR_ES_NAMESPACE} namespace already exists." 1>&2
-    local lf_store_password=$(oc -n "${VAR_ES_NAMESPACE}" get secret "$lf_secret_name" -o jsonpath='{.data.password}' | base64 --decode)
-    export VAR_ES_MQ_SOURCE_STORE_PASSWORD=${lf_store_password}
-  else
-    mylog info "Secret $lf_secret_name in ${VAR_ES_NAMESPACE} namespace does not exist." 1>&2
-    local lf_store_password=$(tr -dc 'A-Za-z0-9!@#$%^&*()_+-=' < /dev/urandom | fold -w 20 | head -n 1)
-    create_generic_secret "$lf_secret_name" "" "$lf_store_password" "${VAR_ES_NAMESPACE}" "${MY_ES_WORKINGDIR}"
-    export VAR_ES_MQ_SOURCE_STORE_PASSWORD=${lf_store_password}
-  fi
 
   create_oc_resource "KafkaConnector" "mq-source" "${lf_source_directory}" "${lf_target_directory}" "KConnector_MQ_source.yaml" "$VAR_ES_NAMESPACE"
   unset $VAR_ES_MQ_SOURCE_STORE_PASSWORD

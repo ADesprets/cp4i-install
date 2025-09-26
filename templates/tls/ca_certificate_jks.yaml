@@ -1,0 +1,39 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ${VAR_CERT_NAME}
+  namespace: ${VAR_NAMESPACE}
+spec:
+  isCA: true
+  renewBefore: 720h0m0s
+  duration: 8760h  # 1 year
+  commonName: "${VAR_CERT_COMMON_NAME}"
+  issuerRef:
+    kind: Issuer
+    name: ${VAR_CERT_ISSUER_REF}
+  secretName: ${VAR_CERT_SECRET_NAME}
+  privateKey:
+    algorithm: RSA
+    size: 4096
+    rotationPolicy: Always
+  subject:
+    organizations:
+      - "${VAR_CERT_ORGANISATION}"
+    organizationalUnits:
+      - "${VAR_CERT_ORGANISATION}_PKI"
+    countries:
+      - "${VAR_CERT_COUNTRY}"
+    localities:
+      - "${VAR_CERT_LOCALITY}"
+    provinces:
+      - "${VAR_CERT_STATE}"
+  keystores:
+    jks:
+      create: true
+      passwordSecretRef:
+        key: password
+        name: ${VAR_CERT_JKS_SECRET_REF}
+  usages:
+    - key encipherment
+    - digital signature
+    - cert sign

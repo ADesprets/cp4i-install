@@ -17,11 +17,27 @@ function create_root_certificate () {
   export VAR_CERT_COUNTRY=${MY_CERT_COUNTRY}
   export VAR_CERT_LOCALITY=${MY_CERT_LOCALITY}
   export VAR_CERT_STATE=${MY_CERT_STATE}
+  export VAR_CERT_JKS_SECRET_REF=${VAR_MQ_NAMESPACE}-mq-store-root-secret
   # export VAR_CERT_SERIAL=$(uuidgen)
 
-  create_oc_resource "Certificate" "${VAR_CERT_NAME}" "${MY_YAMLDIR}tls/" "${MY_MQ_WORKINGDIR}" "ca_certificate.yaml" "${VAR_MQ_NAMESPACE}"
+  # We are using a secure QM, we want to expose the jks in the secret asociated to the root certificate. Since this is secured we are going to create a secret for the password with the TLS certificate of the queue manager
+  # TODO Need to check what is happening hen the certificate is regenerated maybe automatically by Cert Manager
+  local lf_jks_secret_name="${VAR_MQ_NAMESPACE}-mq-store-root-secret"
 
-  unset VAR_CERT_NAME VAR_NAMESPACE VAR_CERT_ISSUER_REF VAR_CERT_COMMON_NAME VAR_CERT_ORGANISATION VAR_CERT_COUNTRY VAR_CERT_LOCALITY VAR_CERT_STATE
+  if check_resource_exist secret $lf_jks_secret_name $VAR_ES_NAMESPACE false; then
+    mylog info "Secret $lf_jks_secret_name in ${VAR_ES_NAMESPACE} namespace already exists." 1>&2
+    local lf_store_password=$(oc -n "${VAR_ES_NAMESPACE}" get secret "$lf_jks_secret_name" -o jsonpath='{.data.password}' | base64 --decode)
+    export VAR_ES_MQ_SOURCE_STORE_PASSWORD=${lf_store_password}
+  else
+    mylog info "Secret $lf_jks_secret_name in ${VAR_ES_NAMESPACE} namespace does not exist." 1>&2
+    local lf_store_password=$(tr -dc 'A-Za-z0-9!@#$%^&*()_+-=' < /dev/urandom | fold -w 20 | head -n 1)
+    create_generic_secret "$lf_jks_secret_name" "" "$lf_store_password" "${VAR_ES_NAMESPACE}" "${MY_ES_WORKINGDIR}"
+    export VAR_ES_MQ_SOURCE_STORE_PASSWORD=${lf_store_password}
+  fi
+
+  create_oc_resource "Certificate" "${VAR_CERT_NAME}" "${MY_YAMLDIR}tls/" "${MY_MQ_WORKINGDIR}" "ca_certificate_jks.yaml" "${VAR_MQ_NAMESPACE}"
+
+  unset VAR_CERT_NAME VAR_NAMESPACE VAR_CERT_ISSUER_REF VAR_CERT_COMMON_NAME VAR_CERT_ORGANISATION VAR_CERT_COUNTRY VAR_CERT_LOCALITY VAR_CERT_STATE VAR_CERT_JKS_SECRET_REF
 
   trace_out $lf_tracelevel create_root_certificate
 }

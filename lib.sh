@@ -1810,26 +1810,34 @@ function check_exec_prereqs() {
 }
 
 ################################################
-# Check that the resource exists
+# Check that the resource exists, it return 0 if it exists, 1 if it does not exist. If $3 is true and the resource does not exists, it will exit.
 # @param the resource to be checked
 # @param 1: resource type
 # @param 2: resource name
-# @param 3 : boolean, if true exit in case if resource does not exit, false return 1 if resource does not exist, 0 if it exists
+# @param 3 : boolean, if true exit in case if resource does not exit, false return 1 if resource does not exist, 0 if it exists. On Linux 
+# @param 4: namespace
 function check_resource_exist() {
   local lf_tracelevel=5
   trace_in $lf_tracelevel check_resource_exist
+
   local lf_in_type=$1
   local lf_in_name=$2
-  local lf_in_exit_on_not_exist=${3:-true}
-  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|"
-  if [[ $# -ne 3 ]]; then
+  local lf_in_namespace=$3
+  local lf_in_exit_on_not_exist=${4:-true}
+  decho $lf_tracelevel "lf_in_exit_on_not_exist=$lf_in_exit_on_not_exist"
+
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|"
+  if [[ $# -ne 4 ]]; then
     mylog error "You have to provide 3 arguments: resource type, resource name and boolean exit_on_not_exist"
     trace_out $lf_tracelevel check_resource_exist
     exit  1
   fi
+
   # check resource exist
   local lf_res
-  lf_res=$($MY_CLUSTER_COMMAND get $lf_in_type $lf_in_name --ignore-not-found=true -o jsonpath='{.metadata.name}')
+  lf_res=$($MY_CLUSTER_COMMAND -n $lf_in_namespace get $lf_in_type $lf_in_name --ignore-not-found=true -o jsonpath='{.metadata.name}')
+  decho $lf_tracelevel "Resource found : $lf_res"
+
   case $lf_in_exit_on_not_exist in
   true)
     if test -z $lf_res; then
@@ -1838,7 +1846,7 @@ function check_resource_exist() {
       exit 1
     else
       trace_out $lf_tracelevel check_resource_exist
-      return 1
+      return 0
     fi
     ;;
   false)
@@ -1846,6 +1854,7 @@ function check_resource_exist() {
       trace_out $lf_tracelevel check_resource_exist
       return 1
     else
+      # Resource exists
       trace_out $lf_tracelevel check_resource_exist
       return 0
     fi
@@ -2781,7 +2790,7 @@ function create_generic_secret() {
   local lf_in_workingdir="$5"
 
   # local lf_working_relative_path=$(echo "${lf_in_workingdir#"$MY_WORKINGDIR"}")
-  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|"
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"********\"|\"$4\"|\"$5\"|"
   
   if [[ $# -ne 5 ]]; then
     mylog error "You have to provide 4 arguments: secret name, user name, user password, namespace and working directory"

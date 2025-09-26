@@ -2055,8 +2055,8 @@ function provision_cluster_init() {
 
   # check the differents pre requisites
   check_exec_prereqs
-  check_resource_exist storageclass $MY_BLOCK_STORAGE_CLASS true
-  check_resource_exist storageclass $MY_FILE_STORAGE_CLASS true
+  check_resource_exist storageclass $MY_BLOCK_STORAGE_CLASS "default" true
+  check_resource_exist storageclass $MY_FILE_STORAGE_CLASS "default" true
   check_directory_exist_create "$MY_WORKINGDIR"
 
   # Get all manifests
