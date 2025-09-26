@@ -1622,6 +1622,7 @@ function customise_openldap() {
     check_file_exist ${MY_YAMLDIR}ldap/ldap_config.json
 
     # launch custom script
+    chmod a+x ${MY_LDAP_SIMPLE_DEMODIR}scripts/ldap.config.sh
     ${MY_LDAP_SIMPLE_DEMODIR}scripts/ldap.config.sh --all
   fi
 
@@ -1644,7 +1645,9 @@ function customise_openliberty() {
   decho $lf_tracelevel "Parameters: |no parameters|"
 
   # backend J2EE applications
+  # launch custom script
   if $MY_OPENLIBERTY_CUSTOM; then
+    chmod a+x ${MY_OPENLIBERTY_SCRIPTDIR}scripts/olp.config.sh
     ${MY_OPENLIBERTY_SCRIPTDIR}scripts/olp.config.sh --call olp_run_all
   fi
 
@@ -1665,8 +1668,10 @@ function customise_wasliberty() {
   trace_in $lf_tracelevel customise_wasliberty
 
   decho $lf_tracelevel "Parameters: |no parameters|"
-
+  
+  # launch custom script
   if $MY_WASLIBERTY_CUSTOM; then
+    chmod a+x ${MY_WASLIBERTY_DEMODIR}scripts/was.config.sh
     ${MY_WASLIBERTY_DEMODIR}scripts/was.config.sh --call was_run_all
   fi
 
@@ -1690,7 +1695,10 @@ function customise_ace() {
 
   # Takes all the templates associated with the capabilities and generate the files from the context variables
   # The files are generated into ./customisation/working/<capability>/resources
+
+  # launch custom script
   if $MY_ACE_CUSTOM; then
+    chmod a+x ${MY_ACE_SIMPLE_DEMODIR}scripts/ace.config.sh
     ${MY_ACE_SIMPLE_DEMODIR}scripts/ace.config.sh --call ace_run_all
   fi
 
@@ -1714,8 +1722,10 @@ function customise_apic() {
 
   # Takes all the templates associated with the capabilities and generate the files from the context variables
   # The files are generated into ./customisation/working/<capability>/resources
+  # launch custom script
   if $MY_APIC_CUSTOM; then
     mylog info "==== Customise APIC (apic.config.sh)." 0
+    chmod a+x ${MY_APIC_SIMPLE_DEMODIR}scripts/apic.config.sh
     ${MY_APIC_SIMPLE_DEMODIR}scripts/apic.config.sh --call apic_run_all
   fi
 
@@ -1757,7 +1767,8 @@ function customise_es() {
     check_directory_exist_create "${MY_ES_WORKINGDIR}resources"
     generate_files $MY_ES_SIMPLE_DEMODIR $MY_ES_WORKINGDIR true
 
-    # Calls the scripts for demos
+    # launch custom script
+    chmod a+x ${MY_ES_SIMPLE_DEMODIR}scripts/es.config.sh
     ${MY_ES_SIMPLE_DEMODIR}scripts/es.config.sh --call es_run_all
     # ${MY_ES_MM2_DEMODIR}scripts/es.config.sh --call es_run_all
   fi
@@ -1782,6 +1793,7 @@ function customise_eem() {
 
   if $MY_EEM_CUSTOM; then
     # launch custom script
+    chmod a+x ${MY_EEM_SIMPLE_DEMODIR}scripts/eem.config.sh
     ${MY_EEM_SIMPLE_DEMODIR}scripts/eem.config.sh --call eem_run_all
   fi
 
@@ -1917,6 +1929,7 @@ function customise_mq() {
     fi
 
     # launch custom script
+    chmod a+x ${MY_MQ_SIMPLE_DEMODIR}scripts/mq.config.sh
     ${MY_MQ_SIMPLE_DEMODIR}scripts/mq.config.sh --call mq_run_all
   fi
 
