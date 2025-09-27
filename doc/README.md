@@ -123,16 +123,16 @@ The following tasks will happen:
 | Creation of Event Streams instance | ~ 7 minutes |
 |===
 
-1. Launch the Shell script
+1. Launch the Shell script, it can performs everything or you can just call one function at a time
 
     ```bash
-    ./provision_cluster-v2.sh <cp4i.properties file path> <namespace> <cluster_name>
+    ./provision_cluster-v2.sh --run_all or ./provision_cluster-v2.sh --call <function_name>
     ```
 
     example
 
     ```bash
-    ./provision_cluster-v2.sh ./cp4i.properties cp4i cp4i-cluster-2023
+    ./provision_cluster-v2.sh --call display_access_info
     ```
 
 > If you have already created a cluster, the script will install CP4I on top of the existing cluster.
@@ -145,7 +145,7 @@ For long-running steps, a progress message is displayed.
 
 ## Directory structure
 
-TO BE REMOVED
+TO BE ENHANCED
 Here is the post install directory structure:
 
 ```text
@@ -153,6 +153,13 @@ D:.
 │   .gitignore
 
 ```
+
+## Working directory
+
+In the working directory, you will find all the files that have been generated. Some files are simply the yaml generated, but there are also usefull files such as CA certificates that have been saved to be added in our browser. There is also a very usefull one, bookmark.html, that will provide you all the links to the various web UI (you need to call the display_access_info function).
+Here is a screen capture of the HTML file generated.
+
+![bookmark.html](./images/inst_gen_bookmark.png "bookmark.html")
 
 ## Getting the initial admin password
 

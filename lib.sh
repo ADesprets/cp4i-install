@@ -495,7 +495,7 @@ function install_egw_local_oc() {
     local lf_timeout=$MY_MAX_TIMEOUT
     local lf_interval=$MY_DELAY_SECONDS
     while [[ $lf_timeout -gt 0 ]]; do
-      lf_eem_manager_gateway_route=$($MY_CLUSTER_COMMAND -n $VAR_EEM_NAMESPACE get eem ${VAR_EEM_INSTANCE_NAME} -o jsonpath='{.status.endpoints}' | jq -r '.[] | select (.name=="gateway").uri')      
+      lf_eem_manager_gateway_route=$($MY_CLUSTER_COMMAND -n $VAR_EEM_NAMESPACE get eem ${VAR_EEM_INSTANCE_NAME} -o jsonpath='{.status.endpoints[?(@.name=="gateway")].uri}')
       if [[ -n "$lf_eem_manager_gateway_route" ]]; then
         decho $lf_tracelevel "EEM Manager Gateway route\"$lf_eem_manager_gateway_route\" for instance \"$instance\""
         break
@@ -1205,7 +1205,6 @@ function display_access_info() {
     if [[ $lf_mq_authentication_method == "manual" ]]; then
       # TODO: we suppose here that the user mqadmin
       lf_mq_admin_password=$($MY_CLUSTER_COMMAND -n $VAR_MQ_NAMESPACE get cm $VAR_WEBCONFIG_CM -o jsonpath='{.data.mqwebuser\.xml}' | yq -p=xml -o=json | jq -r '.server.basicRegistry.user[] | select(.["+@name"]=="mqadmin") | .["+@password"]')
-      #echo "$MY_CLUSTER_COMMAND -n $VAR_MQ_NAMESPACE get cm $VAR_WEBCONFIG_CM -o jsonpath='{.data.mqwebuser\.xml}' | yq -p=xml -o=json" #| jq -r '.server.basicRegistry.user[] | select(.["+@name"]=="mqadmin") | .["+@password"]'
       mylog info "MQ Management Console authentication method: $lf_mq_authentication_method|user=mqadmin|password=$lf_mq_admin_password" 0
       mylog info "MQ admin/password: mqadmin/${lf_mq_admin_password}" 0
     else
@@ -1618,7 +1617,6 @@ function is_case_downloaded() {
     if [[ -z $lf_result ]]; then
       lf_res=0
     else
-      # Pb avec le passage de variables à jsonpath ; décision retour vers jq
       lf_result=$(echo $lf_result | jq -r --arg case "$lf_in_case" '[.[] | select (.name == $case )]')
       if [[ -z $lf_result ]]; then
         lf_res=0

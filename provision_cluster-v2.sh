@@ -597,7 +597,6 @@ function install_lic_svc() {
     mylog info "Check if Installing network policies for License Service is needed" 1>&2
     #mylog info "https://www.ibm.com/docs/en/cloud-paks/foundational-services/4.6?topic=service-installing-network-policies-license"
     search_networkpolicies
-    # toto
     local lf_res=$?
     decho $lf_tracelevel "lf_res=$lf_res"
     if [[ $lf_res -eq 1 ]]; then
@@ -1032,9 +1031,9 @@ function create_milvus_root_certificate () {
   trace_in $lf_tracelevel create_milvus_root_issuer
 
   mylog warn "TODO: (${FUNCNAME[0]}) should be refactored with more generic approach." 0
-  export VAR_CERT_NAME=${VAR_APIC_NAMESPACE}-milvus-ca
-  export VAR_NAMESPACE=${VAR_APIC_NAMESPACE}
-  export VAR_CERT_ISSUER_REF="${VAR_MILVUS_NAMESPACE}-operator-ca-issuer"
+  export VAR_CERT_NAME=${VAR_MILVUS_OPERATOR_NAMESPACE}-milvus-ca
+  export VAR_NAMESPACE=${VAR_MILVUS_OPERATOR_NAMESPACE}
+  export VAR_CERT_ISSUER_REF="${VAR_MILVUS_OPERATOR_NAMESPACE}-ca-issuer"
   export VAR_CERT_SECRET_NAME=${VAR_CERT_NAME}-secret
   export VAR_CERT_COMMON_NAME=${VAR_CERT_NAME}
   export VAR_CERT_ORGANISATION=${MY_CERT_ORGANISATION}
@@ -1043,7 +1042,7 @@ function create_milvus_root_certificate () {
   export VAR_CERT_STATE=${MY_CERT_STATE}
   # export VAR_CERT_SERIAL=$(uuidgen)
 
-  create_oc_resource "Certificate" "${VAR_CERT_NAME}" "${MY_YAMLDIR}tls/" "${MY_APIC_WORKINGDIR}" "ca_certificate.yaml" "${VAR_MILVUS_NAMESPACE}"
+  create_oc_resource "Certificate" "${VAR_CERT_NAME}" "${MY_YAMLDIR}tls/" "${MY_MILVUS_WORKINGDIR}" "ca_certificate.yaml" "${VAR_MILVUS_OPERATOR_NAMESPACE}"
 
   unset VAR_CERT_NAME VAR_NAMESPACE VAR_CERT_ISSUER_REF VAR_CERT_COMMON_NAME VAR_CERT_ORGANISATION VAR_CERT_COUNTRY VAR_CERT_LOCALITY VAR_CERT_STATE
 
@@ -1062,7 +1061,7 @@ function install_milvus() {
   local lf_starting_date=$(date)
   mylog info "==== Installing MILVUS vector database for AI Agent (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
-  create_project "${VAR_MILVUS_NAMESPACE}" "${VAR_MILVUS_NAMESPACE} project" "For Milvus Vector Database" "${MY_RESOURCESDIR}" "${MY_APIC_WORKINGDIR}"
+  create_project "${VAR_MILVUS_OPERATOR_NAMESPACE}" "${VAR_MILVUS_OPERATOR_NAMESPACE} project" "For Milvus Vector Database" "${MY_RESOURCESDIR}" "${MY_APIC_WORKINGDIR}"
 
   local lf_tracelevel=2
   trace_in $lf_tracelevel install_milvus
@@ -1070,7 +1069,7 @@ function install_milvus() {
   decho $lf_tracelevel "Parameters: |no parameters|"
   if $MY_APIC; then
     mylog info "Create self-signed issuer for Milvus"  1>&2
-    create_self_signed_issuer "${VAR_MILVUS_NAMESPACE}-operator-ca-issuer" "${VAR_MILVUS_NAMESPACE}" "${MY_APIC_WORKINGDIR}"
+    create_self_signed_issuer "${VAR_MILVUS_OPERATOR_NAMESPACE}-ca-issuer" "${VAR_MILVUS_OPERATOR_NAMESPACE}" "${MY_MILVUS_WORKINGDIR}"
 
     mylog info "Create certificate for Milvus"  1>&2
     # Installation Milvus DB (https://milvus.io/docs/fr/openshift.md)
@@ -1078,17 +1077,15 @@ function install_milvus() {
     create_milvus_root_certificate
     
     # Create secret
-    create_generic_secret "milvus-db-cred" "milvus-admin" "milvusPassw0rd!" "${MY_MILVUS_NAMESPACE}" "${MY_MILVUS_WORKINGDIR}"
+    create_generic_secret "milvus-db-cred" "milvus-admin" "milvusPassw0rd!" "${VAR_MILVUS_OPERATOR_NAMESPACE}" "${MY_MILVUS_WORKINGDIR}"
 
     # Add the Milvus Operator Helm repository (https://milvus.io/docs/v2.4.x/install_cluster-milvusoperator.md)
-    # helm_install "https://github.com/zilliztech/milvus-operator/releases/download/v1.1.9/milvus-operator-1.1.9.tgz" false "$MY_MILVUS_NAMESPACE"
-    $MY_CLUSTER_COMMAND -n "${MY_MILVUS_NAMESPACE}" apply -f templates\operators\milvus-operator.yaml
+    # helm_install "https://github.com/zilliztech/milvus-operator/releases/download/v1.1.9/milvus-operator-1.1.9.tgz" false "$VAR_MILVUS_OPERATOR_NAMESPACE"
+    $MY_CLUSTER_COMMAND -n "${VAR_MILVUS_OPERATOR_NAMESPACE}" apply -f ${MY_YAMLDIR}operators/milvus-operator.yaml
 
     # Deploy Milvus Cluster (Operand creation) inspired by https://raw.githubusercontent.com/milvus-io/milvus-operator/main/config/samples/demo.yaml
     # $MY_CLUSTER_COMMAND apply -f <TEMPLATE_DIR>APIC_milvus_database.yaml
-    $MY_CLUSTER_COMMAND -n "${MY_MILVUS_NAMESPACE}" apply -f templates\operands\APIC_MILVUS_DB.yaml
-
-
+    $MY_CLUSTER_COMMAND -n "${VAR_MILVUS_NAMESPACE}" apply -f ${MY_YAMLDIR}operands/APIC_MILVUS_DB.yaml
   fi
 
   trace_out $lf_tracelevel install_milvus
