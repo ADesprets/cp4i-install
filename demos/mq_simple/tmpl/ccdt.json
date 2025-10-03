@@ -16,7 +16,7 @@
                         "port": 443
                     }
                 ],
-                "queueManager": "${VAR_QMGR_UC}"
+                "queueManager": "${VAR_QMGR}"
             },
             "transmissionSecurity":
             {

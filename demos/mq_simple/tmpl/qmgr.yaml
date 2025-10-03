@@ -21,7 +21,7 @@ spec:
             - tls.crt
             - ca.crt
   queueManager:
-    name: ${VAR_QMGR_LC}
+    name: ${VAR_QMGR}
     ini:
       - configMap:
           items:
