@@ -18216,6 +18216,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
   name: "milvus-operator"
   namespace: "milvus-operator"
+annotations: 
+  openshift.io/required-scc: anyuid
 spec:
   selector:
     matchLabels:

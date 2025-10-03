@@ -720,6 +720,7 @@ function install_fs() {
     check_directory_exist_create "${MY_COMMONSERVICES_WORKINGDIR}"
 
     create_project "$MY_COMMONSERVICES_NAMESPACE" "$MY_COMMONSERVICES_NAMESPACE project" "For the common services" "${MY_RESOURCESDIR}" "${MY_COMMONSERVICES_WORKINGDIR}"
+    add_ibm_entitlement $MY_COMMONSERVICES_NAMESPACE
 
     # ibm-cp-common-services
     check_add_cs_ibm_pak $MY_COMMONSERVICES_CASE $MY_COMMONSERVICES_OPERATOR $MY_COMMONSERVICES_CATALOGSOURCE_LABEL amd64 $MY_COMMONSERVICES_VERSION
@@ -1081,11 +1082,14 @@ function install_milvus() {
 
     # Add the Milvus Operator Helm repository (https://milvus.io/docs/v2.4.x/install_cluster-milvusoperator.md)
     # helm_install "https://github.com/zilliztech/milvus-operator/releases/download/v1.1.9/milvus-operator-1.1.9.tgz" false "$VAR_MILVUS_OPERATOR_NAMESPACE"
+    oc adm policy add-scc-to-user anyuid -z milvus-operator -n milvus-operator
     $MY_CLUSTER_COMMAND -n "${VAR_MILVUS_OPERATOR_NAMESPACE}" apply -f ${MY_YAMLDIR}operators/milvus-operator.yaml
 
     # Deploy Milvus Cluster (Operand creation) inspired by https://raw.githubusercontent.com/milvus-io/milvus-operator/main/config/samples/demo.yaml
-    # $MY_CLUSTER_COMMAND apply -f <TEMPLATE_DIR>APIC_milvus_database.yaml
-    $MY_CLUSTER_COMMAND -n "${VAR_MILVUS_NAMESPACE}" apply -f ${MY_YAMLDIR}operands/APIC_MILVUS_DB.yaml
+    # $MY_CLUSTER_COMMAND apply -f <TEMPLATE_DIR>APIC_milvus_database.yaml toto
+    # create_operand_instance "Milvus" "apic-ai-agent-milvus-db" "${MY_OPERANDSDIR}" "${MY_MILVUS_WORKINGDIR}" "APIC_MILVUS_DB.yaml" "$VAR_MILVUS_NAMESPACE" "{.status.phase}" "Bound"
+    create_operand_instance "Milvus" "apic-ai-agent-milvus-db" "${MY_OPERANDSDIR}" "${MY_MILVUS_WORKINGDIR}" "APIC_MILVUS_DB.yaml" "milvus" "{.status.status}" "Healthy"
+    # $MY_CLUSTER_COMMAND -n "${VAR_MILVUS_NAMESPACE}" apply -f ${MY_YAMLDIR}operands/APIC_MILVUS_DB.yaml
   fi
 
   trace_out $lf_tracelevel install_milvus

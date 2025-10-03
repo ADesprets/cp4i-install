@@ -1,12 +1,56 @@
-# This is a sample to deploy a milvus cluster in milvus-operator's default configurations.
+# Deploy Milvus Database 2.6.2.
 apiVersion: milvus.io/v1beta1
 kind: Milvus
 metadata:
-  name: my-release
+  name: apic-ai-agent-milvus-db
+  namespace: milvus
   labels:
     app: milvus
 spec:
-  mode: cluster
-  dependencies: {}
-  components: {}
-  config: {}
+  mode: standalone
+  dependencies:
+    etcd:
+      inCluster:
+        values:
+          persistence:
+            enabled: true
+            storageClass: "${MY_BLOCK_STORAGE_CLASS}"
+            size: 10Gi
+    msgStreamType: kafka
+    kafka:
+      inCluster:
+        values:
+          persistence:
+            enabled: true
+            storageClass: "${MY_BLOCK_STORAGE_CLASS}"
+            size: 10Gi
+    storage:
+      inCluster:
+        values:
+          mode: standalone
+          resources:
+            requests:
+              memory: 1Gi
+          deletionPolicy: Delete # or Retain
+          pvcDeletion: true
+  components:
+    serviceAccountName: "apic-ai-agent-milvus-db-kafka"
+    standalone:
+      serviceAccountName: "apic-ai-agent-milvus-db-kafka"
+      serviceType: LoadBalancer
+      nodeSelector: {}           # Optionally specify node labels
+      tolerations: []            # Add tolerations if needed
+      resources:
+        requests:
+          cpu: "2"
+          memory: "8Gi"
+        limits:
+          cpu: "4"
+          memory: "16Gi"
+      persistence:
+        enabled: true
+        storageClass: "${MY_BLOCK_STORAGE_CLASS}"
+        size: 100Gi
+  config:
+    log:
+      level: "info"

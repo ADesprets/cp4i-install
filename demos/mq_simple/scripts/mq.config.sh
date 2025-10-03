@@ -173,14 +173,14 @@ function create_clnt_kdb () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel create_clnt_kdb
 
-  mylog "info" "Creating   : client key database for $VAR_CLNT1 to use with MQSSLKEYR env variable."
+  mylog "info" "Creating client key database for $VAR_CLNT1 to use with MQSSLKEYR env variable in ${sc_qmgr_clnt_crtdir} directory."
 
   case $VAR_KEYDB_TYPE in
     cms)  local lf_clnt_keydb="${sc_qmgr_clnt_crtdir}${VAR_CLNT1}-keystore.kdb";;
     pkcs12) local lf_clnt_keydb="${sc_qmgr_clnt_crtdir}${VAR_CLNT1}-keystore.p12";;
   esac  
 
-  # Create the client1 key database:
+  # Create the empty client1 key database (password is hard coded for now):
   runmqakm -keydb -create -db $lf_clnt_keydb -pw password -type $VAR_KEYDB_TYPE -stash > /dev/null 2>&1  
 
   trace_out $lf_tracelevel create_clnt_kdb
@@ -202,7 +202,7 @@ function create_pki_cr () {
   create_clnt_kdb $VAR_MQ_NAMESPACE
   
   ##-- Add the queue manager's certificate to the client key database:
-  mylog "info" "Adding     : qmgr certificate to the client key database"
+  mylog "info" "Adding root certificate to the client key database"
   add_qmgr_crt_2_clnt_kdb $VAR_MQ_NAMESPACE
   
   trace_out $lf_tracelevel create_pki_cr
@@ -215,27 +215,20 @@ function add_qmgr_crt_2_clnt_kdb () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel add_qmgr_crt_2_clnt_kdb
 
-  mylog "info" "Adding     : qmgr certificate to the client key database"
-  save_certificate ${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR}-server tls.key ${MY_MQ_WORKINGDIR} $VAR_MQ_NAMESPACE
-  save_certificate ${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR}-server tls.crt ${MY_MQ_WORKINGDIR} $VAR_MQ_NAMESPACE
-  save_certificate ${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR}-server ca.crt ${MY_MQ_WORKINGDIR} $VAR_MQ_NAMESPACE
-  
-  local lf_srv_crt="${MY_MQ_WORKINGDIR}${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR}-server.tls.crt.pem"
-  local lf_ca_crt="${MY_MQ_WORKINGDIR}${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR}-server.ca.crt.pem"
+  # Assumption: all queue managers use the same root CA certificate
+  mylog "info" "Adding the QMGRs root certificate to the client key database"
+  save_certificate ${VAR_MQ_NAMESPACE}-mq-root-secret ca.crt ${MY_MQ_WORKINGDIR} $VAR_MQ_NAMESPACE
+
+  local lf_ca_crt="${MY_MQ_WORKINGDIR}${VAR_MQ_NAMESPACE}-mq-root-secret.ca.crt.pem"
   
   case $VAR_KEYDB_TYPE in
     cms)  local lf_clnt_keydb="${sc_qmgr_clnt_crtdir}${VAR_CLNT1}-keystore.kdb";;
     pkcs12) local lf_clnt_keydb="${sc_qmgr_clnt_crtdir}${VAR_CLNT1}-keystore.p12";;
   esac  
-
-  #decho $lf_tracelevel "lf_clnt_keydb=$lf_clnt_keydb|lf_srv_crt=$lf_srv_crt"
-
-  # Add the queue manager public key to the client key database
-	runmqakm -cert -add -db $lf_clnt_keydb -label $VAR_QMGR-crt -file $lf_srv_crt -format ascii -stashed > /dev/null 2>&1
-	runmqakm -cert -add -db $lf_clnt_keydb -label $VAR_QMGR-ca -file $lf_ca_crt -format ascii -stashed > /dev/null 2>&1
+	runmqakm -cert -add -db $lf_clnt_keydb -label mq-root-ca -file $lf_ca_crt -format ascii -stashed > /dev/null 2>&1
 
   # Check. List the database certificates:
-  mylog "info" "listing    : certificates in keydb : $lf_clnt_keydb"
+  mylog "info" "listing certificates in keydb : $lf_clnt_keydb"
   runmqakm -cert -list -db $lf_clnt_keydb -stashed #> /dev/null 2>&1
 
   trace_out $lf_tracelevel add_qmgr_crt_2_clnt_kdb
@@ -243,18 +236,32 @@ function add_qmgr_crt_2_clnt_kdb () {
 
 ################################################
 # Create Openshift CCDT file
+# param 1: Queue Manager name
 ################################################
 function create_ccdt () {
-  local lf_tracelevel=3
+  local lf_tracelevel=5
   trace_in $lf_tracelevel create_ccdt
+
+  local lf_in_qmgr=$1
+  local lf_in_qmgr_uc=$(echo $lf_in_qmgr | tr '[:lower:]' '[:upper:]')
+  local lf_in_qmgr_lc=$(echo $lf_in_qmgr | tr '[:upper:]' '[:lower:]')
+
+  # CCDT template file
+  local sc_ccdt_tmpl_file="${MY_MQ_SIMPLE_DEMODIR}tmpl/ccdt.json";
  
   # Generate ccdt file
-  mylog "info" "Creating   : ccdt file to use with MQCCDTURL env variabe. Located here : $MQCCDTURL"
-  decho $lf_tracelevel "$MY_CLUSTER_COMMAND get route -n $VAR_MQ_NAMESPACE \"${VAR_QMGR}-ibm-mq-qm\" -o jsonpath='{.spec.host}'"
-  export ROOTURL=$($MY_CLUSTER_COMMAND get route -n $VAR_MQ_NAMESPACE "${VAR_QMGR}-ibm-mq-qm" -o jsonpath='{.spec.host}')
-  decho $lf_tracelevel "VAR_CHL_UC=$VAR_CHL_UC|VAR_QMGR_UC=$VAR_QMGR_UC|ROOTURL=$ROOTURL"
+  export MQCCDTURL="${MY_MQ_WORKINGDIR}${lf_in_qmgr_lc}/ccdt.json"
+  export ROOTURL=$($MY_CLUSTER_COMMAND get route -n $VAR_MQ_NAMESPACE "${lf_in_qmgr_lc}-ibm-mq-qm" -o jsonpath='{.spec.host}')
+  export VAR_QMGR_UC=$lf_in_qmgr_uc
+  export VAR_CHL_UC="${lf_in_qmgr_uc}CHL"
 
-  adapt_file "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}" ccdt.json
+  mylog "info" "Creating ccdt file for Queue Manager ${lf_in_qmgr} to use with MQCCDTURL env variabe. Located here : $MQCCDTURL"
+  decho $lf_tracelevel "$MY_CLUSTER_COMMAND get route -n $VAR_MQ_NAMESPACE \"${lf_in_qmgr}-ibm-mq-qm\" -o jsonpath='{.spec.host}'"
+  decho $lf_tracelevel "VAR_CHL_UC=$VAR_CHL_UC|lf_in_qmgr=$VAR_QMGR_UC|ROOTURL=$ROOTURL"
+
+  adapt_file "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}${lf_in_qmgr_lc}/" ccdt.json
+
+  unset VAR_QMGR_UC VAR_CHL_UC ROOTURL
 
   trace_out $lf_tracelevel create_ccdt
 }
@@ -274,9 +281,10 @@ function mq_run_all () {
 
   create_qmgr "Orders" "PAYMT.RESP" "PAYMT.REQ.CPY"
   create_qmgr "Sensors" "WEATHER.PAR"
-  exit 0
+  
   # Create qmgr ccdt
-  create_ccdt
+  create_ccdt "Orders"
+  create_ccdt "Sensors"
 
   trace_out $lf_tracelevel mq_run_all
 }
@@ -296,10 +304,6 @@ function mq_init() {
   check_directory_exist_create  "${MY_MQ_WORKINGDIR}${VAR_CLNT1}"
   sc_qmgr_clnt_crtdir="${MY_MQ_WORKINGDIR}${VAR_CLNT1}/"
   
-  # CCDT tmpl file
-  sc_ccdt_tmpl_file="${MY_MQ_SIMPLE_DEMODIR}tmpl/ccdt.json";
-  MQCCDTURL="${MY_MQ_WORKINGDIR}ccdt.json"
-
   trace_out $lf_tracelevel mq_init
 }
 
@@ -406,7 +410,6 @@ set +a
 # load helper functions
 . "${sc_provision_lib_file}"
 
-echo "VAR_QMGR=${VAR_QMGR}"
 export MY_MQ_WORKINGDIR="${PROVISION_SCRIPTDIR}working/demos/mq_simple/"
 
 mq_init

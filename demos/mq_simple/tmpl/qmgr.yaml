@@ -15,7 +15,7 @@ spec:
     keys:
       - name: ${VAR_QMGR_LC}
         secret:
-          secretName: ${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR_LC}-server
+          secretName: ${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR_LC}-server-secret
           items:
             - tls.key
             - tls.crt

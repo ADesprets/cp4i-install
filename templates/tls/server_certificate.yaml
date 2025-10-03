@@ -18,7 +18,7 @@ spec:
     rotationPolicy: Always
     size: 2048
   renewBefore: 720h
-  secretName: ${VAR_CERT}
+  secretName: ${VAR_CERT}-secret
   subject:
     organizations:
       - "${VAR_CERT_ORGANISATION}"

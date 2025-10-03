@@ -1,4 +1,4 @@
-<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/28.0.4 Chrome/138.0.7204.97 Electron/37.2.1 Safari/537.36" version="28.0.4" pages="13">
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/28.0.4 Chrome/138.0.7204.97 Electron/37.2.1 Safari/537.36" version="28.0.4" pages="14">
   <diagram id="tJqLn7msZHwJoY5_B4Vj" name="Capabilities">
     <mxGraphModel dx="1840" dy="1089" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
       <root>
@@ -959,7 +959,7 @@
     </mxGraphModel>
   </diagram>
   <diagram id="tAwYNA3uFQUVHqpSkI3z" name="ES">
-    <mxGraphModel dx="2723" dy="914" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+    <mxGraphModel dx="2437" dy="707" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -1173,7 +1173,7 @@
     </mxGraphModel>
   </diagram>
   <diagram id="eyEYM46dYrB1LGinaiKP" name="APIC">
-    <mxGraphModel dx="1426" dy="841" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+    <mxGraphModel dx="1554" dy="914" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -1201,6 +1201,9 @@
         <mxCell id="dJ-PkrwfgdUpv-2pIN9V-12" value="VS Studio" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
           <mxGeometry x="180" y="320" width="180" height="100" as="geometry" />
         </mxCell>
+        <mxCell id="BNOPa55tus8an9g29GOF-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="dJ-PkrwfgdUpv-2pIN9V-13" target="dJ-PkrwfgdUpv-2pIN9V-6" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
         <mxCell id="dJ-PkrwfgdUpv-2pIN9V-13" value="AI Agent" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
           <mxGeometry x="490" y="379" width="80" height="30" as="geometry" />
         </mxCell>
@@ -1224,7 +1227,7 @@
         </mxCell>
         <mxCell id="dJ-PkrwfgdUpv-2pIN9V-19" value="Configured by script" style="endArrow=classic;html=1;rounded=0;entryX=0.75;entryY=1;entryDx=0;entryDy=0;labelPosition=right;verticalLabelPosition=bottom;align=left;verticalAlign=top;dashed=1;" parent="1" target="dJ-PkrwfgdUpv-2pIN9V-13" edge="1">
           <mxGeometry x="-1" width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="630" y="460" as="sourcePoint" />
+            <mxPoint x="610" y="440" as="sourcePoint" />
             <mxPoint x="680" y="450" as="targetPoint" />
             <mxPoint as="offset" />
           </mxGeometry>
@@ -1240,13 +1243,104 @@
           <mxGeometry x="180" y="210" width="180" height="60" as="geometry" />
         </mxCell>
         <mxCell id="vIiSv9AeWRfZ2fVq4_u9-2" value="&lt;b&gt;Dépendences&lt;/b&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;Milvus (internal or not) - RAG Context&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;watsonx (versions?)&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;on cloud or onPremise&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;no model required (to be checked)&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;Form factor&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;Any of this prerequisites not in OVA?&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;OVA is not on CD 10.0.x&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&amp;nbsp;(10.0.10.x as of 17/09/2025), not on OVA&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;Will OVA be supported on next LTS? A priori oui&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;Exists on 10.0.10.x today&lt;/div&gt;" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
-          <mxGeometry x="240" y="560" width="500" height="180" as="geometry" />
+          <mxGeometry x="240" y="560" width="410" height="160" as="geometry" />
         </mxCell>
         <mxCell id="8oeQGiEkz8o-O9_RUU4d-1" value="Python" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
           <mxGeometry x="180" y="430" width="180" height="30" as="geometry" />
         </mxCell>
         <mxCell id="8oeQGiEkz8o-O9_RUU4d-2" value="PostGre DB" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
           <mxGeometry x="180" y="464" width="180" height="30" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="N1dClnGUU_zqtOOuqlcU" name="MQ Simple">
+    <mxGraphModel dx="1426" dy="707" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="eutZ2Ef2vnV4VTgKjZGC-1" value="MQ" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="240" y="160" width="230" height="531" as="geometry" />
+        </mxCell>
+        <mxCell id="eutZ2Ef2vnV4VTgKjZGC-2" value="Queue Manager&lt;div&gt;Orders&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="265" y="360" width="180" height="320" as="geometry" />
+        </mxCell>
+        <mxCell id="eutZ2Ef2vnV4VTgKjZGC-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="eutZ2Ef2vnV4VTgKjZGC-4" target="eutZ2Ef2vnV4VTgKjZGC-7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eutZ2Ef2vnV4VTgKjZGC-4" value="Queue&lt;div&gt;PAYMT.REQ&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="290" y="478" width="130" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="eutZ2Ef2vnV4VTgKjZGC-5" value="Queue Manager&lt;div&gt;Sensors&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="265" y="250" width="180" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="eutZ2Ef2vnV4VTgKjZGC-6" value="Queue&lt;div&gt;WEATHER.PAR&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="290" y="290" width="130" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="eutZ2Ef2vnV4VTgKjZGC-7" value="Streaming Queue&lt;div&gt;PAYMT.REQ.CPY&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="290" y="552" width="130" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="eutZ2Ef2vnV4VTgKjZGC-8" value="Queue&lt;div&gt;PAYMT.RESP&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="290" y="408" width="130" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="eutZ2Ef2vnV4VTgKjZGC-9" value="ChannelAuth&lt;div&gt;SSLPEER: optional&lt;/div&gt;&lt;div&gt;MCAUSER: mquser&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="290" y="613" width="130" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="VnT33EnW7pnPuwVSOwZV-4" value="PUT/GET/Browse" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="VnT33EnW7pnPuwVSOwZV-5" target="eutZ2Ef2vnV4VTgKjZGC-4">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="180" y="515" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="VnT33EnW7pnPuwVSOwZV-5" value="Application Java&lt;div&gt;Payments&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="20" y="478" width="130" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="VnT33EnW7pnPuwVSOwZV-13" value="ref" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="VnT33EnW7pnPuwVSOwZV-6" target="VnT33EnW7pnPuwVSOwZV-9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="VnT33EnW7pnPuwVSOwZV-14" value="generates" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="VnT33EnW7pnPuwVSOwZV-6" target="VnT33EnW7pnPuwVSOwZV-12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="VnT33EnW7pnPuwVSOwZV-6" value="Certificate&lt;div&gt;&amp;lt;ns&amp;gt;-mq-root&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="750" y="602" width="160" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="VnT33EnW7pnPuwVSOwZV-15" value="ref" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="VnT33EnW7pnPuwVSOwZV-7" target="VnT33EnW7pnPuwVSOwZV-12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="VnT33EnW7pnPuwVSOwZV-16" value="ref" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="VnT33EnW7pnPuwVSOwZV-7" target="VnT33EnW7pnPuwVSOwZV-8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="VnT33EnW7pnPuwVSOwZV-17" value="generates" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="VnT33EnW7pnPuwVSOwZV-7" target="VnT33EnW7pnPuwVSOwZV-11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="VnT33EnW7pnPuwVSOwZV-7" value="Certificate&lt;div&gt;&amp;lt;ns&amp;gt;-mq-&amp;lt;qmgr&amp;gt;-server&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="750" y="490" width="160" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="VnT33EnW7pnPuwVSOwZV-8" value="Issuer&lt;div&gt;&amp;lt;ns&amp;gt;-mq-&amp;lt;qmgr&amp;gt;-int-issuer&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="520" y="490" width="170" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="VnT33EnW7pnPuwVSOwZV-9" value="Issuer&lt;div&gt;&amp;lt;ns&amp;gt;-mq-self-signed&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="520" y="602" width="170" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="VnT33EnW7pnPuwVSOwZV-11" value="Secret&lt;div&gt;&amp;lt;ns&amp;gt;-mq-&amp;lt;qmgr&amp;gt;-server-secret&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="970" y="490" width="180" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="VnT33EnW7pnPuwVSOwZV-12" value="Secret&lt;div&gt;&amp;lt;ns&amp;gt;-mq-root-secret&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="970" y="602" width="180" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="VnT33EnW7pnPuwVSOwZV-18" value="P12" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="630" y="230" width="320" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="VnT33EnW7pnPuwVSOwZV-19" value="Server" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="660" y="440" width="260" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="VnT33EnW7pnPuwVSOwZV-20" value="Client" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="660" y="200" width="260" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="VnT33EnW7pnPuwVSOwZV-21" value="in working/MQ/..." style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="970" y="230" width="170" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="VnT33EnW7pnPuwVSOwZV-22" value="Cert. from Secret&lt;div&gt;&amp;lt;ns&amp;gt;-mq-root-secret&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="640" y="290" width="120" height="40" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
