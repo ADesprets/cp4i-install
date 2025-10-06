@@ -124,9 +124,9 @@ function create_qmgr () {
   create_leaf_certificate
 
   # Copy the template to add the missing lines
-  mkdir -p "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/tmp/"
-  cp -f "${MY_MQ_SIMPLE_DEMODIR}tmpl/qmgr_cm_mqsc.yaml" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/tmp/."
-  cp -f "${MY_MQ_SIMPLE_DEMODIR}tmpl/qmgr_cm_mqsc_auth.yaml" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/tmp/."
+  mkdir -p "${MY_MQ_WORKINGDIR}${VAR_QMGR}/tmp/"
+  cp -f "${MY_MQ_SIMPLE_DEMODIR}tmpl/qmgr_cm_mqsc.yaml" "${MY_MQ_WORKINGDIR}${VAR_QMGR}/tmp/."
+  cp -f "${MY_MQ_SIMPLE_DEMODIR}tmpl/qmgr_cm_mqsc_auth.yaml" "${MY_MQ_WORKINGDIR}${VAR_QMGR}/tmp/."
 
   for ((i=1; i<${#lf_qm_defs[@]}; i++)); do
     # For each Queue update the template file for the queues definitions and authentication definitions will be generated in working directory
@@ -135,31 +135,31 @@ function create_qmgr () {
     if [[ "${lf_qm_defs[$i]}" == *CPY ]]; then
       mylog info "Adding Queue ${lf_qm_defs[$i]} and streaming queue definitions."
       lf_qn=${lf_qm_defs[$i]%".CPY"}
-      addLineToFileAtEnd 4 "DEFINE QLOCAL('${lf_qm_defs[$i]}')" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/tmp/qmgr_cm_mqsc.yaml"
-      addLineToFileAtEnd 4 "DEFINE QLOCAL('${lf_qn}') STREAMQ('${lf_qm_defs[$i]}') REPLACE DEFPSIST(YES)" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/tmp/qmgr_cm_mqsc.yaml"
-      addLineToFileAtEnd 4 "SET AUTHREC PROFILE('${lf_qn}') PRINCIPAL('${VAR_MQ_USER}') OBJTYPE(QUEUE) AUTHADD(BROWSE,GET,INQ,PUT,DSP)" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/tmp/qmgr_cm_mqsc_auth.yaml"
-      addLineToFileAtEnd 4 "SET AUTHREC PROFILE('${lf_qm_defs[$i]}') PRINCIPAL('${VAR_MQ_USER}') OBJTYPE(QUEUE) AUTHADD(BROWSE,GET,INQ,PUT,DSP)" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/tmp/qmgr_cm_mqsc_auth.yaml"
+      addLineToFileAtEnd 4 "DEFINE QLOCAL('${lf_qm_defs[$i]}')" "${MY_MQ_WORKINGDIR}${VAR_QMGR}/tmp/qmgr_cm_mqsc.yaml"
+      addLineToFileAtEnd 4 "DEFINE QLOCAL('${lf_qn}') STREAMQ('${lf_qm_defs[$i]}') REPLACE DEFPSIST(YES)" "${MY_MQ_WORKINGDIR}${VAR_QMGR}/tmp/qmgr_cm_mqsc.yaml"
+      addLineToFileAtEnd 4 "SET AUTHREC PROFILE('${lf_qn}') PRINCIPAL('${VAR_MQ_USER}') OBJTYPE(QUEUE) AUTHADD(BROWSE,GET,INQ,PUT,DSP)" "${MY_MQ_WORKINGDIR}${VAR_QMGR}/tmp/qmgr_cm_mqsc_auth.yaml"
+      addLineToFileAtEnd 4 "SET AUTHREC PROFILE('${lf_qm_defs[$i]}') PRINCIPAL('${VAR_MQ_USER}') OBJTYPE(QUEUE) AUTHADD(BROWSE,GET,INQ,PUT,DSP)" "${MY_MQ_WORKINGDIR}${VAR_QMGR}/tmp/qmgr_cm_mqsc_auth.yaml"
     else
       mylog info "Adding Queue ${lf_qm_defs[$i]} definitions."
-      addLineToFileAtEnd 4 "DEFINE QLOCAL('${lf_qm_defs[$i]}') REPLACE DEFPSIST(YES)" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/tmp/qmgr_cm_mqsc.yaml"
-      addLineToFileAtEnd 4 "SET AUTHREC PROFILE('${lf_qm_defs[$i]}') PRINCIPAL('${VAR_MQ_USER}') OBJTYPE(QUEUE) AUTHADD(BROWSE,GET,INQ,PUT,DSP)" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/tmp/qmgr_cm_mqsc_auth.yaml"
+      addLineToFileAtEnd 4 "DEFINE QLOCAL('${lf_qm_defs[$i]}') REPLACE DEFPSIST(YES)" "${MY_MQ_WORKINGDIR}${VAR_QMGR}/tmp/qmgr_cm_mqsc.yaml"
+      addLineToFileAtEnd 4 "SET AUTHREC PROFILE('${lf_qm_defs[$i]}') PRINCIPAL('${VAR_MQ_USER}') OBJTYPE(QUEUE) AUTHADD(BROWSE,GET,INQ,PUT,DSP)" "${MY_MQ_WORKINGDIR}${VAR_QMGR}/tmp/qmgr_cm_mqsc_auth.yaml"
     fi
   done
   # Create QM config maps
-  create_oc_resource "ConfigMap" "${VAR_INI_CM}" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/" "qmgr_cm_ini.yaml" "$VAR_MQ_NAMESPACE"
-  create_oc_resource "ConfigMap" "${VAR_MQSC_OBJECTS_CM}" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/tmp/" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/" "qmgr_cm_mqsc.yaml" "$VAR_MQ_NAMESPACE"
-  create_oc_resource "ConfigMap" "${VAR_AUTH_CM}" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/tmp/" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/" "qmgr_cm_mqsc_auth.yaml" "$VAR_MQ_NAMESPACE"
-  create_oc_resource "ConfigMap" "${VAR_WEBCONFIG_CM}" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/" "qmgr_cm_web.yaml" "$VAR_MQ_NAMESPACE"
+  create_oc_resource "ConfigMap" "${VAR_INI_CM}" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}${VAR_QMGR}/" "qmgr_cm_ini.yaml" "$VAR_MQ_NAMESPACE"
+  create_oc_resource "ConfigMap" "${VAR_MQSC_OBJECTS_CM}" "${MY_MQ_WORKINGDIR}${VAR_QMGR}/tmp/" "${MY_MQ_WORKINGDIR}${VAR_QMGR}/" "qmgr_cm_mqsc.yaml" "$VAR_MQ_NAMESPACE"
+  create_oc_resource "ConfigMap" "${VAR_AUTH_CM}" "${MY_MQ_WORKINGDIR}${VAR_QMGR}/tmp/" "${MY_MQ_WORKINGDIR}${VAR_QMGR}/" "qmgr_cm_mqsc_auth.yaml" "$VAR_MQ_NAMESPACE"
+  create_oc_resource "ConfigMap" "${VAR_WEBCONFIG_CM}" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}${VAR_QMGR}/" "qmgr_cm_web.yaml" "$VAR_MQ_NAMESPACE"
   
   # At this stage VAR_QMGR_LC is exported
   create_qmgr_route
   
-  # Use the new CRD MessagingServer(available since CP4I 16.1.0-SC2)
+  # Use the new CRD MessagingServer (available since CP4I 16.1.0-SC2)
   if $MY_MESSAGINGSERVER; then
     # Creating MQ MessagingServer instance
-    create_operand_instance "MessagingServer" "${VAR_MSGSRV_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/" "MessagingServer-Capability.yaml" "$VAR_MQ_NAMESPACE" "{.status.conditions[0].type}" "Ready"
+    create_operand_instance "MessagingServer" "${VAR_MSGSRV_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_MQ_WORKINGDIR}${VAR_QMGR}/" "MessagingServer-Capability.yaml" "$VAR_MQ_NAMESPACE" "{.status.conditions[0].type}" "Ready"
   else 
-    create_operand_instance "QueueManager" "${VAR_QMGR_LC}" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}${VAR_QMGR_LC}/" "qmgr.yaml" "$VAR_MQ_NAMESPACE" "{.status.phase}" "Running"
+    create_operand_instance "QueueManager" "${VAR_QMGR_LC}" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}${VAR_QMGR}/" "qmgr.yaml" "$VAR_MQ_NAMESPACE" "{.status.phase}" "Running"
   fi
 
   unset VAR_QMGR VAR_QMGR_UC VAR_INI_CM VAR_MQSC_OBJECTS_CM VAR_AUTH_CM VAR_WEBCONFIG_CM
@@ -226,16 +226,21 @@ function add_qmgr_crt_2_clnt_kdb () {
   trace_in $lf_tracelevel add_qmgr_crt_2_clnt_kdb
 
   local lf_in_qmgr=$1
+  local lf_in_qmgr_lc=$(echo $lf_in_qmgr | tr '[:upper:]' '[:lower:]')
 
   local lf_clnt_workingdir="${MY_MQ_WORKINGDIR}${lf_in_qmgr}/${VAR_CLNT1}/"
+  local root_cert_secret_name=${VAR_MQ_NAMESPACE}-mq-root-secret
+  local leaf_cert_secret_name=${VAR_MQ_NAMESPACE}-mq-${lf_in_qmgr_lc}-server-secret
 
-  # Assumption: all queue managers use the same root CA certificate
-  mylog "info" "Adding the QMGRs root certificate to the client key database"
-  save_certificate ${VAR_MQ_NAMESPACE}-mq-root-secret ca.crt ${lf_clnt_workingdir} $VAR_MQ_NAMESPACE
-  save_certificate ${VAR_MQ_NAMESPACE}-mq-root-secret tls.crt ${lf_clnt_workingdir} $VAR_MQ_NAMESPACE
+  mylog "info" "Adding the QMGR certificates to the client key database"
+  # For the self-signed certificate the root (ca.crt) and server (tls.crt) are the same
+  save_certificate ${root_cert_secret_name} ca.crt ${lf_clnt_workingdir} $VAR_MQ_NAMESPACE
+  # Leaf certificate <ns>-mq-<qmgr>-server-secret, the ca.crt is from the root (equals), we could have used it.
+  save_certificate ${leaf_cert_secret_name} tls.crt ${lf_clnt_workingdir} $VAR_MQ_NAMESPACE
 
-  local lf_ca_crt="${lf_clnt_workingdir}${VAR_MQ_NAMESPACE}-mq-root-secret.ca.crt.pem"
-  local lf_server_crt="${lf_clnt_workingdir}${VAR_MQ_NAMESPACE}-mq-server-secret.tls.crt.pem"
+  # The name is derived from the secret name
+  local lf_ca_crt="${lf_clnt_workingdir}${root_cert_secret_name}.ca.crt.pem"
+  local lf_server_crt="${lf_clnt_workingdir}${leaf_cert_secret_name}.tls.crt.pem"
   
   case $VAR_KEYDB_TYPE in
     cms)  local lf_clnt_keydb="${lf_clnt_workingdir}${VAR_CLNT1}-keystore.kdb";;
@@ -243,11 +248,15 @@ function add_qmgr_crt_2_clnt_kdb () {
   esac
 
   # Order is important, root at the end
-  runmqakm -cert -add -db $lf_clnt_keydb -label mq-root-server -file $lf_server_crt -format ascii -stashed > /dev/null 2>&1
+  # runmqakm -cert -add -db $lf_clnt_keydb -label mq-root-server -file $lf_server_crt -format ascii -stashed > /dev/null 2>&1
+  decho $lf_tracelevel "runmqakm -cert -add -db $lf_clnt_keydb -label mq-root-ca -file $lf_ca_crt -format ascii -stashed"
 	runmqakm -cert -add -db $lf_clnt_keydb -label mq-root-ca -file $lf_ca_crt -format ascii -stashed > /dev/null 2>&1
+  decho $lf_tracelevel "runmqakm -cert -add -db $lf_clnt_keydb -label mq-leaf-server -file $lf_server_crt -format ascii -stashed"
+  runmqakm -cert -add -db $lf_clnt_keydb -label mq-leaf-server -file $lf_server_crt -format ascii -stashed > /dev/null 2>&1
 
   # Check. List the database certificates:
   mylog "info" "listing certificates in keydb : $lf_clnt_keydb"
+  decho $lf_tracelevel "runmqakm -cert -list -db $lf_clnt_keydb -stashed"
   runmqakm -cert -list -db $lf_clnt_keydb -stashed #> /dev/null 2>&1
 
   trace_out $lf_tracelevel add_qmgr_crt_2_clnt_kdb
@@ -269,7 +278,7 @@ function create_ccdt () {
   local sc_ccdt_tmpl_file="${MY_MQ_SIMPLE_DEMODIR}tmpl/ccdt.json";
  
   # Generate ccdt file
-  export MQCCDTURL="${MY_MQ_WORKINGDIR}${lf_in_qmgr_lc}/ccdt.json"
+  export MQCCDTURL="${MY_MQ_WORKINGDIR}${lf_in_qmgr}/ccdt.json"
   export ROOTURL=$($MY_CLUSTER_COMMAND get route -n $VAR_MQ_NAMESPACE "${lf_in_qmgr_lc}-ibm-mq-qm" -o jsonpath='{.spec.host}')
   export VAR_QMGR=$lf_in_qmgr
   export VAR_CHL_UC="${lf_in_qmgr_uc}CHL"
@@ -278,7 +287,7 @@ function create_ccdt () {
   decho $lf_tracelevel "$MY_CLUSTER_COMMAND get route -n $VAR_MQ_NAMESPACE \"${lf_in_qmgr}-ibm-mq-qm\" -o jsonpath='{.spec.host}'"
   decho $lf_tracelevel "VAR_CHL_UC=$VAR_CHL_UC|lf_in_qmgr=$VAR_QMGR_UC|ROOTURL=$ROOTURL"
 
-  adapt_file "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}${lf_in_qmgr_lc}/" ccdt.json
+  adapt_file "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}${lf_in_qmgr}/" ccdt.json
 
   unset VAR_QMGR_UC VAR_CHL_UC ROOTURL
 
