@@ -17,14 +17,14 @@ function create_es() {
     #unset VAR_ES_NAMESPACE
   fi
 
-  trace_out $lf_tracelevel create_es
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 # Create kafka topics
 function create_kafka_topics () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_kafka_topics
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_source_directory="${MY_ES_SIMPLE_DEMODIR}resources/"
   local lf_target_directory="${MY_ES_WORKINGDIR}resources/"
@@ -48,14 +48,14 @@ function create_kafka_topics () {
       create_oc_resource "KafkaTopic" "${VAR_ES_TOPIC_NAME}" "${lf_source_directory}" "${lf_target_directory}" "topic.yaml" "$VAR_ES_NAMESPACE"
   done
       
-  trace_out $lf_tracelevel create_kafka_topics
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 # Create kafka users
 function create_kafka_users () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_kafka_users
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_source_directory="${MY_ES_SIMPLE_DEMODIR}resources/"
   local lf_target_directory="${MY_ES_WORKINGDIR}resources/"
@@ -69,14 +69,14 @@ function create_kafka_users () {
 
   create_oc_resource "KafkaUser" "kafka-user1" "${lf_source_directory}" "${lf_target_directory}" "kafka-user1.yaml" "$VAR_ES_NAMESPACE"
 
-  trace_out $lf_tracelevel create_kafka_users
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 # Create kafka connector 
 function create_kafka_connector () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_kafka_connector
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_source_directory="${MY_ES_SIMPLE_DEMODIR}resources/"
   local lf_target_directory="${MY_ES_WORKINGDIR}resources/"
@@ -112,14 +112,14 @@ function create_kafka_connector () {
   create_oc_resource "KafkaConnector" "mq-source" "${lf_source_directory}" "${lf_target_directory}" "KConnector_MQ_source.yaml" "$VAR_ES_NAMESPACE"
   unset $VAR_ES_MQ_SOURCE_STORE_PASSWORD
 
-  trace_out $lf_tracelevel create_kafka_connector
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 # run all
 function es_run_all () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel es_run_all
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   SECONDS=0
   local lf_starting_date=$(date);
@@ -141,7 +141,7 @@ function es_run_all () {
     
   mylog info "==== Customisation of es [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 
-  trace_out $lf_tracelevel es_run_all
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 
@@ -149,11 +149,11 @@ function es_run_all () {
 # initialisation
 function es_init() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel es_init
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
   
   sc_tmpl_dir="${sc_component_script_dir}../tmpl/"
   
-  trace_out $lf_tracelevel es_init
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -161,7 +161,7 @@ function es_init() {
 # Main logic
 function main() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel main
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   if [[ $# -eq 0 ]]; then
     mylog error "No arguments provided. Use --all or --call function_name parameters, function_name parameters, ...."
@@ -187,7 +187,7 @@ function main() {
         ;;
       *)
         mylog error "Invalid option '$1'. Use --all or --call function_name parameters, function_name parameters, ...."
-        trace_out $lf_tracelevel main
+        trace_out $lf_tracelevel ${FUNCNAME[0]}
         return 1
         ;;
       esac
@@ -202,12 +202,12 @@ function main() {
               process_calls "$lf_calls"
             else
               mylog error "No function to call. Use --call function_name parameters, function_name parameters, ...."
-              trace_out $lf_tracelevel main
+              trace_out $lf_tracelevel ${FUNCNAME[0]}
               return 1
             fi;;
     esac
 
-  trace_out $lf_tracelevel main
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
   exit 0
 }
 

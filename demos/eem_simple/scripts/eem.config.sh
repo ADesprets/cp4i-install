@@ -3,7 +3,7 @@
 # run all
 function eem_run_all () {
   	local lf_tracelevel=3
-		trace_in $lf_tracelevel eem_run_all
+		trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   SECONDS=0
   local lf_starting_date=$(date);
@@ -78,7 +78,7 @@ function eem_run_all () {
   local lf_ending_date=$(date)
     
   mylog info "==== Customisation of eem (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
-  trace_out $lf_tracelevel eem_run_all
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 
@@ -86,9 +86,9 @@ function eem_run_all () {
 # initialisation
 function eem_init() {
   	local lf_tracelevel=2
-		trace_in $lf_tracelevel eem_init
+		trace_in $lf_tracelevel ${FUNCNAME[0]}
 
-  trace_out $lf_tracelevel eem_init
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -96,7 +96,7 @@ function eem_init() {
 # Main logic
 function main() {
   	local lf_tracelevel=3
-		trace_in $lf_tracelevel main
+		trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   if [[ $# -eq 0 ]]; then
     mylog error "No arguments provided. Use --all or --call function_name parameters, function_name parameters, ...."
@@ -122,7 +122,7 @@ function main() {
         ;;
       *)
         mylog error "Invalid option '$1'. Use --all or --call function_name parameters, function_name parameters, ...."
-        trace_out $lf_tracelevel main
+        trace_out $lf_tracelevel ${FUNCNAME[0]}
         return 1
         ;;
       esac
@@ -137,12 +137,12 @@ function main() {
               process_calls "$lf_calls"
             else
               mylog error "No function to call. Use --call function_name parameters, function_name parameters, ...."
-              trace_out $lf_tracelevel main
+              trace_out $lf_tracelevel ${FUNCNAME[0]}
               return 1
             fi;;
     esac
 
-  trace_out $lf_tracelevel main
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
   exit 0
 }
 

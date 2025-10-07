@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.ibm.ad.demo</groupId>
-    <artifactId>demo</artifactId>
+    <artifactId>was-demo</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>war</packaging>
     <!-- To install a wlp, you can use maven liberty:package and unzip in the directory you want -->

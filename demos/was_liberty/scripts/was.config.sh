@@ -5,7 +5,7 @@
 ################################################
 function create_service_account() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_service_account
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   # create the SA
   $MY_CLUSTER_COMMAND -n $VAR_WASLIBERTY_NAMESPACE create sa my-service-account 
@@ -17,7 +17,7 @@ function create_service_account() {
   # export VAR_TOKEN=$($MY_CLUSTER_COMMAND -n $MY_WASLIBERTY_NAMESPACE sa get-token my-service-account)
   export VAR_TOKEN=$($MY_CLUSTER_COMMAND -n $VAR_WASLIBERTY_NAMESPACE create token my-service-account)
 
-  trace_out $lf_tracelevel create_service_account
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -25,7 +25,7 @@ function create_service_account() {
 ################################################
 function prepare_internal_registry() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel prepare_internal_registry
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   # Expose service using default route
   $MY_CLUSTER_COMMAND patch configs.imageregistry.operator.openshift.io/cluster --patch '{"spec":{"defaultRoute":true}}' --type=merge
@@ -40,7 +40,7 @@ function prepare_internal_registry() {
   # For Ubuntu:  update-ca-certificates / For Mac: / For RH: update-ca-trust / For Windows: 
   # sudo update-ca-trust enable
 
-  trace_out $lf_tracelevel prepare_internal_registry
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -48,11 +48,11 @@ function prepare_internal_registry() {
 ################################################
 function compile_code() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel compile_code
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   mvn clean install
 
-  trace_out $lf_tracelevel compile_code
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -60,11 +60,11 @@ function compile_code() {
 ################################################
 function was_build_image() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel was_build_image
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   $MY_CONTAINER_ENGINE build -t ${MY_WASLIBERTY_APP_NAME_VERSION} .
 
-  trace_out $lf_tracelevel was_build_image
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -72,7 +72,7 @@ function was_build_image() {
 ################################################
 function login_to_registry() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel login_to_registry
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   mylog info "Do not forget to update the password of kubeadmin in private/user.properties (MY_TECHZONE_PASSWORD)" 0
   decho $lf_tracelevel "Internal image registry host: $IMAGE_REGISTRY_HOST"
@@ -85,7 +85,7 @@ function login_to_registry() {
   #docker login -u kubeadmin -p $lf_token $IMAGE_REGISTRY_HOST
   echo "$lf_token" | docker login -u kubeadmin --password-stdin "$IMAGE_REGISTRY_HOST"
   
-  trace_out $lf_tracelevel login_to_registry
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -93,14 +93,14 @@ function login_to_registry() {
 ################################################
 function push_image_to_registry() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel push_image_to_registry
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
   
   #	tag the local image with details of image registry
   decho $lf_tracelevel "$MY_CONTAINER_ENGINE tag ${MY_WASLIBERTY_APP_NAME_VERSION} ${IMAGE_REGISTRY_HOST}/${VAR_WASLIBERTY_NAMESPACE}/${MY_WASLIBERTY_APP_NAME_VERSION}"
   $MY_CONTAINER_ENGINE tag ${MY_WASLIBERTY_APP_NAME_VERSION} ${IMAGE_REGISTRY_HOST}/${VAR_WASLIBERTY_NAMESPACE}/${MY_WASLIBERTY_APP_NAME_VERSION}
   $MY_CONTAINER_ENGINE push ${IMAGE_REGISTRY_HOST}/${VAR_WASLIBERTY_NAMESPACE}/${MY_WASLIBERTY_APP_NAME_VERSION}
     
-  trace_out $lf_tracelevel push_image_to_registry
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -108,7 +108,7 @@ function push_image_to_registry() {
 ################################################
 function create_application() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_application
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   mylog info "Application:version ${MY_WASLIBERTY_APP_NAME_VERSION}" 0
 
@@ -116,7 +116,7 @@ function create_application() {
 
   create_operand_instance "WebSphereLibertyApplication" "$MY_WASLIBERTY_APP_NAME" "$MY_OPERANDSDIR" "$MY_WASLIBERTY_WORKINGDIR" "WAS-WLApp.yaml" "$VAR_WASLIBERTY_NAMESPACE" "{.status.conditions[-1].type}" "ResourcesReady"
   
-  trace_out $lf_tracelevel create_application
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -124,7 +124,7 @@ function create_application() {
 ################################################
 function was_run_all () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel was_run_all
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   SECONDS=0
   local lf_starting_date=$(date);
@@ -153,16 +153,16 @@ function was_run_all () {
   local lf_ending_date=$(date)
     
   mylog info "==== Creation back end applications (WAS Liberty) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
-  trace_out $lf_tracelevel was_run_all
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 # initialisation
 function was_init() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel was_init
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
-  trace_out $lf_tracelevel was_init
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -170,7 +170,7 @@ function was_init() {
 # Main logic
 function main() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel main
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   if [[ $# -eq 0 ]]; then
     mylog error "No arguments provided. Use --all or --call function_name parameters, function_name parameters, ...."
@@ -196,7 +196,7 @@ function main() {
         ;;
       *)
         mylog error "Invalid option '$1'. Use --all or --call function_name parameters, function_name parameters, ...."
-        trace_out $lf_tracelevel main
+        trace_out $lf_tracelevel ${FUNCNAME[0]}
         return 1
         ;;
       esac
@@ -211,12 +211,12 @@ function main() {
               process_calls "$lf_calls"
             else
               mylog error "No function to call. Use --call function_name parameters, function_name parameters, ...."
-              trace_out $lf_tracelevel main
+              trace_out $lf_tracelevel ${FUNCNAME[0]}
               return 1
             fi;;
     esac
 
-  trace_out $lf_tracelevel main
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
   exit 0
 }
 

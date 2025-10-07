@@ -6,7 +6,7 @@
 ################################################
 function create_qmgr_certificate () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_qmgr_certificate
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   export VAR_CERT_ISSUER="${VAR_QMGR}-issuer"
   export VAR_SECRET="${VAR_QMGR}-secret"
@@ -14,7 +14,7 @@ function create_qmgr_certificate () {
   create_oc_resource "Certificate" "${VAR_QMGR}-cert" "${sc_mq_kafka_demo_yaml_dir}" "${sc_mq_kafka_demo_workingdir}" "qmgr_ca_certificate.yaml" "$VAR_MQ_NAMESPACE"
   unset VAR_CERT_ISSUER VAR_SECRET VAR_CERT_LABEL
 
-  trace_out $lf_tracelevel create_qmgr_certificate
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -27,7 +27,7 @@ function create_qmgr_certificate () {
 
 function create_oc_objects() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_oc_objects
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
   
   local lf_in_type="$1"
   local lf_in_source_directory="$2"
@@ -42,7 +42,7 @@ function create_oc_objects() {
   # Ensure the array contains an even number of elements
   if (( lf_length % 2 != 0 )); then
     mylog error "Error: Odd number of elements in the array. Ensure pairs are complete."
-    trace_out $lf_tracelevel create_oc_objects
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit 1
   fi
 
@@ -53,13 +53,13 @@ function create_oc_objects() {
     create_oc_resource "$lf_in_type" "$lf_cm_id" "${lf_in_source_directory}" "${lf_in_target_directory}" "$lf_file" "${lf_in_namespace}"
   done
   
-  trace_out $lf_tracelevel create_oc_objects
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 function create_qmgr_configmaps_old () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_qmgr_configmaps_old
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   create_oc_resource "ConfigMap" "$VAR_MQSC_OBJECTS_CM" "${sc_mq_kafka_demo_yaml_dir}" "${sc_mq_kafka_demo_workingdir}" "qmgr_cm_mqsc_objects.yaml" "${VAR_MQ_NAMESPACE}"
   create_oc_resource "ConfigMap" "$VAR_MQSC_LDAP_CM" "${sc_mq_kafka_demo_yaml_dir}" "${sc_mq_kafka_demo_workingdir}" "qmgr_cm_mqsc_ldap.yaml" "${VAR_MQ_NAMESPACE}"
@@ -68,23 +68,23 @@ function create_qmgr_configmaps_old () {
   #create_oc_resource "ConfigMap" "$VAR_INI_CM" "${sc_mq_kafka_demo_yaml_dir}" "${sc_mq_kafka_demo_workingdir}" "qmgr_cm_ini_v3.yaml" "${VAR_MQ_NAMESPACE}"
   create_oc_resource "ConfigMap" "$VAR_WEBCONFIG_CM" "${sc_mq_kafka_demo_yaml_dir}" "${sc_mq_kafka_demo_workingdir}" "qmgr_cm_webconfig.yaml" "${VAR_MQ_NAMESPACE}"
 
-  trace_out $lf_tracelevel create_qmgr_configmaps_old
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 function create_qmgr_route () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_qmgr_route
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   create_oc_resource "Route" "${VAR_QMGR}-route" "${sc_mq_kafka_demo_yaml_dir}" "${sc_mq_kafka_demo_workingdir}" "qmgr_route.yaml" "${VAR_MQ_NAMESPACE}"
 
-  trace_out $lf_tracelevel create_qmgr_route
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 function save_qmgr_tls () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel save_qmgr_tls
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   save_certificate ${VAR_QMGR}-secret tls.crt ${sc_mq_kafka_demo_workingdir} $VAR_MQ_NAMESPACE
   save_certificate ${VAR_QMGR}-secret key.crt ${sc_mq_kafka_demo_workingdir} $VAR_MQ_NAMESPACE
@@ -94,13 +94,13 @@ function save_qmgr_tls () {
   local lf_srv_crt="${sc_mq_kafka_demo_workingdir}${VAR_QMGR}-secret.tls.crt.pem"
   local lf_srv_key="${sc_mq_kafka_demo_workingdir}${VAR_QMGR}-secret.key.crt.pem"
 
-  trace_out $lf_tracelevel save_qmgr_tls
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 function create_qmgr () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_qmgr
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_file=$1
 
@@ -108,7 +108,7 @@ function create_qmgr () {
 
   if [[ $# -ne 1 ]]; then
     mylog error "You have to provide one argument: yaml file"
-    trace_out $lf_tracelevel create_qmgr
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
@@ -121,7 +121,7 @@ function create_qmgr () {
   fi
 
   
-  trace_out $lf_tracelevel create_qmgr
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -129,7 +129,7 @@ function create_qmgr () {
 ################################################
 function create_clnt_kdb () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_clnt_kdb
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   mylog "info" "Creating   : client key database for $VAR_CLNT1 to use with MQSSLKEYR env variable."
 
@@ -141,7 +141,7 @@ function create_clnt_kdb () {
   # Create the client1 key database:
   runmqakm -keydb -create -db $lf_clnt_keydb -pw password -type $VAR_KEYDB_TYPE -stash > /dev/null 2>&1  
 
-  trace_out $lf_tracelevel create_clnt_kdb
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -149,7 +149,7 @@ function create_clnt_kdb () {
 ################################################
 function create_pki_cr () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_pki_cr
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   ##-- Get the private/cert/ca for the Issuer cs-ca-issuer 
   #mylog "info" "Getting   : certificate and key for CA"
@@ -164,7 +164,7 @@ function create_pki_cr () {
   ##-- Add CA crt to client kdb
   add_ca_crt_2_clnt_kdb
 
-  trace_out $lf_tracelevel create_pki_cr
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -172,7 +172,7 @@ function create_pki_cr () {
 ################################################
 function add_qmgr_crt_2_clnt_kdb () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel add_qmgr_crt_2_clnt_kdb
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   mylog "info" "Adding     : qmgr certificate to the client key database"
 
@@ -193,7 +193,7 @@ function add_qmgr_crt_2_clnt_kdb () {
   mylog "info" "listing    : certificates in keydb : $lf_clnt_keydb"
   runmqakm -cert -list -db $lf_clnt_keydb -stashed #> /dev/null 2>&1
 
-  trace_out $lf_tracelevel add_qmgr_crt_2_clnt_kdb
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -201,7 +201,7 @@ function add_qmgr_crt_2_clnt_kdb () {
 ################################################
 function add_ca_crt_2_clnt_kdb () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel add_ca_crt_2_clnt_kdb
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   mylog "info" "Adding     : ca certificate to client kdb for $VAR_CLNT1"
   
@@ -226,7 +226,7 @@ function add_ca_crt_2_clnt_kdb () {
   mylog "info" "listing    : certificates in keydb : $lf_clnt_keydb"
   runmqakm -cert -list -db $lf_clnt_keydb -stashed #> /dev/null 2>&1  
 
-  trace_out $lf_tracelevel add_ca_crt_2_clnt_kdb
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -234,7 +234,7 @@ function add_ca_crt_2_clnt_kdb () {
 ################################################
 function create_ccdt () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_ccdt
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   # Generate ccdt file
   mylog "info" "Creating   : ccdt file to use with MQCCDTURL env variabe. Located here : $MQCCDTURL"
@@ -243,14 +243,14 @@ function create_ccdt () {
 
   adapt_file "${sc_mq_kafka_demo_json_dir}" "${sc_mq_kafka_demo_workingdir}" ccdt.json
 
-  trace_out $lf_tracelevel create_ccdt
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 # Demo : MQ, Kafka
 function mq_kafka_demo_generate_certs() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel mq_kafka_demo_generate_certs
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   # Create Issuer, CA Certificate, MQ Server cert, JMS client cert, kafka client cert
   #create_oc_resource "Issuer" "${VAR_QMGR}-issuer" "${sc_mq_kafka_demo_tls_dir}" "${sc_mq_kafka_demo_workingdir}" "issuer.yaml" "$VAR_MQ_NAMESPACE"
@@ -295,14 +295,14 @@ function mq_kafka_demo_generate_certs() {
   #save_certificate kafka-client-cert-secret key.crt ${sc_mq_kafka_demo_workingdir} $VAR_MQ_NAMESPACE
   #save_certificate kafka-client-cert-secret ca.crt ${sc_mq_kafka_demo_workingdir} $VAR_MQ_NAMESPACE
 
-  trace_out $lf_tracelevel mq_kafka_demo_generate_certs
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 # Create Kafka topic
 function create_kafka_topic() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_kafka_topic
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   export VAR_ES_TOPIC_NAME="commands.topic"
   export VAR_ES_SPEC_TOPIC_NAME="MQ.COMMANDS"
@@ -312,37 +312,37 @@ function create_kafka_topic() {
   # CRD described at https://ibm.github.io/event-automation/es/reference/api-reference-es/
   create_oc_resource "KafkaTopic" "${VAR_ES_TOPIC_NAME}" "${sc_mq_kafka_demo_yaml_dir}" "${sc_mq_kafka_demo_workingdir}" "topic.yaml" "$VAR_MQ_NAMESPACE"
 
-  trace_out $lf_tracelevel create_kafka_topic
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 # Create Kafka user
 function create_kafka_user() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_kafka_user
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   # CRD described at https://ibm.github.io/event-automation/es/reference/api-reference-es/
   create_operand_instance "KafkaUser" "kafka-connect-credentials" "${sc_mq_kafka_demo_yaml_dir}" "${sc_mq_kafka_demo_workingdir}" "kafka_creds.yaml" "$VAR_MQ_NAMESPACE" "'{.status.conditions[?(@.type=="Ready")].status}'" "True"
   
-  trace_out $lf_tracelevel create_kafka_user
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 # Create mq secret to be used by the connector
 function create_mq_creds() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_mq_creds
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
   
   create_oc_resource "Secret" "mq-credentials" "${sc_mq_kafka_demo_yaml_dir}" "${sc_mq_kafka_demo_workingdir}" "mq_creds.yaml" "$VAR_MQ_NAMESPACE"
 
-  trace_out $lf_tracelevel create_mq_creds
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 # Function to process calls
 function process_calls() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel process_calls
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_calls="$1"  # Get the full string of calls and parameters
 
@@ -369,7 +369,7 @@ function process_calls() {
       if declare -f "$lf_func" > /dev/null; then
         if [ "$lf_func" = "main" ] || [ "$lf_func" = "process_calls" ]; then
           mylog error "Functions 'main', 'process_calls' cannot be called."
-          trace_out $lf_tracelevel process_calls
+          trace_out $lf_tracelevel ${FUNCNAME[0]}
           return 1
         fi
         #provision_cluster_init
@@ -381,12 +381,12 @@ function process_calls() {
         mylog info "Available functions are:" 0
         mylog info "$lf_list" 0
 
-        trace_out $lf_tracelevel process_calls
+        trace_out $lf_tracelevel ${FUNCNAME[0]}
         return 1
       fi
     done
 
-  trace_out $lf_tracelevel process_calls
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -394,7 +394,7 @@ function process_calls() {
 ################################################
 function mq_kafka_demo_run_all () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel mq_kafka_demo_run_all
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   SECONDS=0
   local lf_starting_date=$(date);
@@ -448,14 +448,14 @@ function mq_kafka_demo_run_all () {
   local lf_ending_date=$(date)
    mylog info "==== Creation of the Queue Manager [ended : $lf_ending_date and took : $SECONDS seconds]." 0  
 
-  trace_out $lf_tracelevel mq_kafka_demo_run_all
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 # initialisation
 function mq_kafka_demo_init() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel mq_kafka_demo_init
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   # Directories
   sc_mq_kafka_demo_tls_dir="${sc_component_script_dir}tls/"
@@ -471,7 +471,7 @@ function mq_kafka_demo_init() {
   sc_ccdt_tmpl_file="${MY_MQ_SIMPLE_DEMODIR}/tmpl/json/ccdt.json";
   MQCCDTURL="${sc_mq_kafka_demo_workingdir}ccdt.json"
 
-  trace_out $lf_tracelevel mq_kafka_demo_init
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -479,7 +479,7 @@ function mq_kafka_demo_init() {
 # Main logic
 function main() {
   local lf_tracelevel=1
-  trace_in $lf_tracelevel main
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   if [[ $# -eq 0 ]]; then
     mylog error "No arguments provided. Use --all or --call function_name parameters, function_name parameters, ...."
@@ -505,7 +505,7 @@ function main() {
         ;;
       *)
         mylog error "Invalid option '$1'. Use --all or --call function_name parameters, function_name parameters, ...."
-        trace_out $lf_tracelevel main
+        trace_out $lf_tracelevel ${FUNCNAME[0]}
         return 1
         ;;
       esac
@@ -519,12 +519,12 @@ function main() {
               process_calls "$lf_calls"
             else
               mylog error "No function to call. Use --call function_name parameters, function_name parameters, ...."
-              trace_out $lf_tracelevel main
+              trace_out $lf_tracelevel ${FUNCNAME[0]}
               return 1
             fi;;
     esac
 
-  trace_out $lf_tracelevel main
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
   exit 0
 }
 

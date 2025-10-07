@@ -5,7 +5,7 @@
 ################################################
 function prepare_internal_registry() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel prepare_internal_registry
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   # Expose service using default route
   $MY_CLUSTER_COMMAND patch configs.imageregistry.operator.openshift.io/cluster --patch '{"spec":{"defaultRoute":true}}' --type=merge
@@ -20,7 +20,7 @@ function prepare_internal_registry() {
   # For Ubuntu:  update-ca-certificates / For Mac: / For RH: update-ca-trust / For Windows: 
   # sudo update-ca-trust enable
 
-  trace_out $lf_tracelevel prepare_internal_registry
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -28,7 +28,7 @@ function prepare_internal_registry() {
 ################################################
 function create_application() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_application
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   mylog info "Application:version ${MY_OPENLIBERTY_APP_NAME_VERSION}" 0
 
@@ -36,7 +36,7 @@ function create_application() {
 
   create_operand_instance "WebSphereLibertyApplication" "$MY_OPENLIBERTY_APP_NAME" "$MY_OPERANDSDIR" "$MY_OPENLIBERTY_WORKINGDIR" "WAS-WLApp.yaml" "$VAR_OPENLIBERTY_NAMESPACE" "{.status.conditions[-1].type}" "ResourcesReady"
   
-  trace_out $lf_tracelevel create_application
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -44,14 +44,14 @@ function create_application() {
 ################################################
 function push_image_to_registry() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel push_image_to_registry
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
   
   #	tag the local image with details of image registry
   decho $lf_tracelevel "$MY_CONTAINER_ENGINE tag ${MY_OPENLIBERTY_APP_NAME_VERSION} ${IMAGE_REGISTRY_HOST}/${VAR_OPENLIBERTY_NAMESPACE}/${MY_OPENLIBERTY_APP_NAME_VERSION}"
   $MY_CONTAINER_ENGINE tag ${MY_OPENLIBERTY_APP_NAME_VERSION} ${IMAGE_REGISTRY_HOST}/${VAR_OPENLIBERTY_NAMESPACE}/${MY_OPENLIBERTY_APP_NAME_VERSION}
   $MY_CONTAINER_ENGINE push ${IMAGE_REGISTRY_HOST}/${VAR_OPENLIBERTY_NAMESPACE}/${MY_OPENLIBERTY_APP_NAME_VERSION}
     
-  trace_out $lf_tracelevel push_image_to_registry
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -59,7 +59,7 @@ function push_image_to_registry() {
 ################################################
 function login_to_registry() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel login_to_registry
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Internal image registry host: $IMAGE_REGISTRY_HOST"
   local lf_cluster_server=$($MY_CLUSTER_COMMAND whoami --show-server)
@@ -70,7 +70,7 @@ function login_to_registry() {
   #docker login -u kubeadmin -p $lf_token $IMAGE_REGISTRY_HOST
   echo "$lf_token" | docker login -u kubeadmin --password-stdin "$IMAGE_REGISTRY_HOST"
   
-  trace_out $lf_tracelevel login_to_registry
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -78,12 +78,12 @@ function login_to_registry() {
 ################################################
 function compile_code() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel compile_code
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   mvn clean install
   # $MY_CONTAINER_ENGINE build -t basicjaxrs:1.0 .
 
-  trace_out $lf_tracelevel compile_code
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -91,11 +91,11 @@ function compile_code() {
 ################################################
 function olp_build_image() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel olp_build_image
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   $MY_CONTAINER_ENGINE build -t ${MY_OPENLIBERTY_APP_NAME_VERSION} .
 
-  trace_out $lf_tracelevel olp_build_image
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -103,7 +103,7 @@ function olp_build_image() {
 ################################################
 function olp_run_all () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel olp_run_all
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   SECONDS=0
   local lf_starting_date=$(date);
@@ -132,7 +132,7 @@ function olp_run_all () {
   local lf_ending_date=$(date)
     
   mylog info "==== Creation back end applications (OLP) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
-  trace_out $lf_tracelevel olp_run_all
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -141,7 +141,7 @@ function olp_init() {
   local lf_tracelevel=2
   trace_in $lf_tracelevel olp_init
 
-  trace_out $lf_tracelevel olp_init
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -175,7 +175,7 @@ function main() {
         ;;
       *)
         mylog error "Invalid option '$1'. Use --all or --call function_name parameters, function_name parameters, ...."
-        trace_out $lf_tracelevel main
+        trace_out $lf_tracelevel ${FUNCNAME[0]}
         return 1
         ;;
       esac
@@ -190,12 +190,12 @@ function main() {
               process_calls "$lf_calls"
             else
               mylog error "No function to call. Use --call function_name parameters, function_name parameters, ...."
-              trace_out $lf_tracelevel main
+              trace_out $lf_tracelevel ${FUNCNAME[0]}
               return 1
             fi;;
     esac
 
-  trace_out $lf_tracelevel main
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
   exit 0
 }
 

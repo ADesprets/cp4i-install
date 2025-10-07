@@ -3,7 +3,7 @@
 ################################################
 function login_to_registry() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel login_to_registry
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Internal image registry host: $VAR_IMAGE_REGISTRY_HOST"
   local lf_cluster_server=$($MY_CLUSTER_COMMAND whoami --show-server)
@@ -25,7 +25,7 @@ function login_to_registry() {
   #local lf_token=$($MY_CLUSTER_COMMAND -n openshift create token saad)
   #echo "$lf_token" | docker login -u saad --password-stdin "$VAR_IMAGE_REGISTRY_HOST"
   
-  trace_out $lf_tracelevel login_to_registry
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -33,7 +33,7 @@ function login_to_registry() {
 ################################################
 function push_image_to_registry() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel push_image_to_registry
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   # Add roles to the user
   $MY_CLUSTER_COMMAND -n openshift policy add-role-to-user system:image-builder ${MY_USER}
@@ -44,7 +44,7 @@ function push_image_to_registry() {
   $MY_CONTAINER_ENGINE tag ${MY_LDAP_APP_NAME_VERSION} ${VAR_IMAGE_REGISTRY_HOST}/${VAR_LDAP_NAMESPACE}/${MY_LDAP_APP_NAME_VERSION}
   $MY_CONTAINER_ENGINE push ${VAR_IMAGE_REGISTRY_HOST}/${VAR_LDAP_NAMESPACE}/${MY_LDAP_APP_NAME_VERSION}
     
-  trace_out $lf_tracelevel push_image_to_registry
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -52,11 +52,11 @@ function push_image_to_registry() {
 ################################################
 function ldap_build_image() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel ldap_build_image
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   $MY_CONTAINER_ENGINE build -t ${MY_LDAP_APP_NAME_VERSION} .
 
-  trace_out $lf_tracelevel ldap_build_image
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -64,7 +64,7 @@ function ldap_build_image() {
 ################################################
 function ldap_run_all () {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel ldap_run_all
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   # Build the image
   if $MY_LDAP_CUSTOM_BUILD; then
@@ -84,7 +84,7 @@ function ldap_run_all () {
   # load users and groups into LDAP
   load_users_2_ldap_server "${VAR_LDAP_TMPL_DIRECTORY}" "${MY_LDAP_WORKINGDIR}" "${VAR_LDAP_LDIF_FILE}"
   
-  trace_out $lf_tracelevel ldap_run_all
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -92,19 +92,19 @@ function ldap_run_all () {
 ################################################
 function ldap_run_all_k8s () {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel ldap_run_all_k8s
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   # load users and groups into LDAP
   load_users_2_ldap_server "${VAR_LDAP_TMPL_DIRECTORY}" "${MY_LDAP_WORKINGDIR}" "${VAR_LDAP_LDIF_FILE}"
   
-  trace_out $lf_tracelevel ldap_run_all_k8s
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 # initialisation
 function ldap_init() {
   local lf_tracelevel=1
-  trace_in $lf_tracelevel ldap_init
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   # save the current cluster config context
   sc_current_context=$($MY_CLUSTER_COMMAND config current-context)
@@ -124,7 +124,7 @@ function ldap_init() {
       ;;
   esac
 
-  trace_out $lf_tracelevel ldap_init
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -132,11 +132,11 @@ function ldap_init() {
 # Main logic
 function main() {
   local lf_tracelevel=1
-  trace_in $lf_tracelevel main
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   if [[ $# -eq 0 ]]; then
     mylog error "No arguments provided. Use --all or --call function_name parameters, function_name parameters, ...."
-    trace_out $lf_tracelevel main
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit 1
   fi
 
@@ -159,7 +159,7 @@ function main() {
         ;;
       *)
         mylog error "Invalid option '$1'. Use --all or --call function_name parameters, function_name parameters, ...."
-        trace_out $lf_tracelevel main
+        trace_out $lf_tracelevel ${FUNCNAME[0]}
         return 1
         ;;
       esac
@@ -177,12 +177,12 @@ function main() {
               process_calls "$lf_calls"
             else
               mylog error "No function to call. Use --call function_name parameters, function_name parameters, ...."
-              trace_out $lf_tracelevel main
+              trace_out $lf_tracelevel ${FUNCNAME[0]}
               return 1
             fi;;
     esac
 
-  trace_out $lf_tracelevel main
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
   exit 0
 }
 

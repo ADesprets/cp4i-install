@@ -3,7 +3,7 @@
 # https://www.ibm.com/docs/en/ibm-mq/9.4.x?topic=kubernetes-example-configuring-simple-queue-manager-in
 function install_mq_k8s() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_mq_k8s
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -28,14 +28,14 @@ function install_mq_k8s() {
     check_pod_status "app.kubernetes.io/instance=${VAR_QMGR}" "$VAR_MQ_NAMESPACE"
   fi
 
-  trace_out $lf_tracelevel install_mq_k8s
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 # Install MQ
 function install_mq_oc() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_mq_oc
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -60,7 +60,7 @@ function install_mq_oc() {
     create_operator_instance "${MY_MQ_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_MQ_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
   fi
 
-  trace_out $lf_tracelevel install_mq_oc
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -69,7 +69,7 @@ function install_mq_oc() {
 #
 function install_flink_k8s() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_flink_k8s
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -104,7 +104,7 @@ function install_flink_k8s() {
     create_operand_instance "FlinkDeployment" "${VAR_FLINK_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_FLINK_WORKINGDIR}" "EA-Flink-Capability.yaml" "$VAR_FLINK_NAMESPACE" "{.status.lifecycleState}-{.status.jobManagerDeploymentStatus}" "STABLE-READY"
   fi
 
-  trace_out $lf_tracelevel install_flink_k8s
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -113,7 +113,7 @@ function install_flink_k8s() {
 #
 function install_flink_oc() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_flink_oc
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -159,7 +159,7 @@ function install_flink_oc() {
     create_operand_instance "FlinkDeployment" "${VAR_FLINK_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_FLINK_WORKINGDIR}" "EA-Flink-Capability.yaml" "$VAR_FLINK_NAMESPACE" "{.status.lifecycleState}-{.status.jobManagerDeploymentStatus}" "STABLE-READY"
   fi
 
-  trace_out $lf_tracelevel install_flink_oc
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -168,7 +168,7 @@ function install_flink_oc() {
 #
 function install_ep_keycloak_k8s() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_ep_keycloak_k8s
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -236,7 +236,7 @@ function install_ep_keycloak_k8s() {
     fi
   fi
 
-  trace_out $lf_tracelevel install_ep_keycloak_k8s
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -245,7 +245,7 @@ function install_ep_keycloak_k8s() {
 #
 function install_ep_local_k8s() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_ep_local_k8s
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -293,7 +293,7 @@ function install_ep_local_k8s() {
     fi
   fi
 
-  trace_out $lf_tracelevel install_ep_local_k8s
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -302,7 +302,7 @@ function install_ep_local_k8s() {
 #
 function install_ep_keycloak_oc() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_ep_keycloak_oc
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -376,7 +376,7 @@ function install_ep_keycloak_oc() {
     fi
   fi
 
-  trace_out $lf_tracelevel install_ep_keycloak_oc
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -385,7 +385,7 @@ function install_ep_keycloak_oc() {
 #
 function install_ep_local_oc() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_ep_local_oc
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -439,7 +439,7 @@ function install_ep_local_oc() {
     fi
   fi
 
-  trace_out $lf_tracelevel install_ep_local_oc
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -447,7 +447,7 @@ function install_ep_local_oc() {
 #
 function install_ep_k8s() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_ep_k8s
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -457,14 +457,14 @@ function install_ep_k8s() {
     install_ep_local_k8s
   fi
   
-  trace_out $lf_tracelevel install_ep_k8s
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 # Install EGW
 function install_ep_oc() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_ep_oc
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -474,14 +474,14 @@ function install_ep_oc() {
     install_ep_local_oc
   fi
   
-  trace_out $lf_tracelevel install_ep_oc
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 # Install EGW
 function install_egw_local_oc() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_egw_local_oc
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -513,14 +513,14 @@ function install_egw_local_oc() {
     create_operand_instance "EventGateway" "${VAR_EGW_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_EGW_WORKINGDIR}" "EG-Capability.yaml" "${VAR_EGW_NAMESPACE}" "{.status.phase}" "Running"
   fi
 
-  trace_out $lf_tracelevel install_egw_local_oc
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 # Install EGW
 function install_local_egw_k8s() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_egw_k8s
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -552,7 +552,7 @@ function install_local_egw_k8s() {
     create_operand_instance "EventGateway" "${VAR_EGW_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_EGW_WORKINGDIR}" "EG-Capability.yaml" "${VAR_EGW_NAMESPACE}" "{.status.phase}" "Running"
   fi
 
-  trace_out $lf_tracelevel install_egw_k8s
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -560,7 +560,7 @@ function install_local_egw_k8s() {
 #
 function install_egw_k8s() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_egw_k8s
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -570,14 +570,14 @@ function install_egw_k8s() {
     install_egw_local_k8s
   fi
   
-  trace_out $lf_tracelevel install_egw_k8s
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 # Install EGW
 function install_egw_oc() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_egw_oc
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -587,14 +587,14 @@ function install_egw_oc() {
     install_egw_local_oc
   fi
   
-  trace_out $lf_tracelevel install_egw_oc
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 # Install EEM
 function install_eem_local_oc() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_eem_local_oc
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -656,14 +656,14 @@ function install_eem_local_oc() {
     fi
   fi
   
-  trace_out $lf_tracelevel install_eem_local_oc
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 # Install EEM
 function install_eem_keycloak_oc() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_eem_keycloak_oc
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -706,7 +706,7 @@ function install_eem_keycloak_oc() {
     $MY_CLUSTER_COMMAND -n $VAR_EEM_NAMESPACE patch secret "${VAR_EEM_INSTANCE_NAME}-ibm-eem-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$lf_varb64\"}]"
   fi
   
-  trace_out $lf_tracelevel install_eem_keycloak_oc
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -714,7 +714,7 @@ function install_eem_keycloak_oc() {
 # https://ibm.github.io/event-automation/eem/installing/installing-on-kubernetes/
 function install_eem_local_k8s() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_eem_local_k8s
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -760,7 +760,7 @@ function install_eem_local_k8s() {
     $MY_CLUSTER_COMMAND -n $VAR_EEM_NAMESPACE patch secret "${VAR_EEM_INSTANCE_NAME}-ibm-eem-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$lf_varb64\"}]"
   fi
   
-  trace_out $lf_tracelevel install_eem_local_k8s
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -768,7 +768,7 @@ function install_eem_local_k8s() {
 # https://ibm.github.io/event-automation/eem/installing/installing-on-kubernetes/
 function install_eem_keycloak_k8s() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_eem_keycloak_k8s
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -806,7 +806,7 @@ function install_eem_keycloak_k8s() {
     $MY_CLUSTER_COMMAND -n $VAR_EEM_NAMESPACE patch secret "${VAR_EEM_INSTANCE_NAME}-ibm-eem-user-roles" --type='json' -p "[{\"op\" : \"replace\" ,\"path\" : \"/data/user-mapping.json\" ,\"value\" : \"$lf_varb64\"}]"
   fi
   
-  trace_out $lf_tracelevel install_eem_keycloak_k8s
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -814,7 +814,7 @@ function install_eem_keycloak_k8s() {
 # https://ibm.github.io/event-automation/eem/installing/installing-on-kubernetes/
 function install_eem_k8s() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_eem_k8s
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -824,14 +824,14 @@ function install_eem_k8s() {
     install_eem_local_k8s
   fi
   
-  trace_out $lf_tracelevel install_eem_k8s
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 # Install EEM
 function install_eem_oc() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_eem_oc
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -841,7 +841,7 @@ function install_eem_oc() {
     install_eem_local_oc
   fi
   
-  trace_out $lf_tracelevel install_eem_oc
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -849,7 +849,7 @@ function install_eem_oc() {
 ################################################
 function install_microk8s_cluster {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_microk8s_cluster
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
   
@@ -884,14 +884,14 @@ function install_microk8s_cluster {
   multipass exec $MY_MASTER -- microk8s config > microk8s-config
   cp microk8s-config ~/.kube/config  
 
-  trace_out $lf_tracelevel install_microk8s_cluster
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
  
 ################################################
 # and wait for availability of the cluster
 function install_minikube_cluster {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_minikube_cluster
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
   
@@ -935,14 +935,14 @@ function install_minikube_cluster {
     $MY_CLUSTER_COMMAND patch storageclass openebs-localpv-block -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
   fi
 
-  trace_out $lf_tracelevel install_minikube_cluster
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 # Get the dns name which will be used for certficate generation and other usages
 function get_dns () {
   local lf_tracelevel=3
-	trace_in $lf_tracelevel get_dns
+	trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   case $MY_CLUSTER_COMMAND in
   kubectl)  case $MY_K8S_FLAVOR in
@@ -960,14 +960,14 @@ function get_dns () {
       ;;
   esac
 
-	trace_out $lf_tracelevel get_dns
+	trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 # Check pod status
 function check_pod_status() {
   local lf_tracelevel=3
-	trace_in $lf_tracelevel check_pod_status
+	trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_label_selector="$1"
   local lf_in_namespace="$2"
@@ -978,7 +978,7 @@ function check_pod_status() {
  
   if [[ $# -ne 2 ]]; then
     mylog error "You have to provide 2 arguments: label selector and namespace"
-    trace_out $lf_tracelevel check_pod_status
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit 1
   fi
 
@@ -997,7 +997,7 @@ function check_pod_status() {
     fi
   done
 
-	trace_out $lf_tracelevel check_pod_status
+	trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   if $lf_all_true ; then 
     return 0
@@ -1011,7 +1011,7 @@ function check_pod_status() {
 # Wait for the catalog source to be ready
 function wait_for_catalogsource_2be_ready() {
   local lf_tracelevel=3
-	trace_in $lf_tracelevel wait_for_catalogsource_2be_ready
+	trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_label_selector="$1"
   local lf_in_max_retries="$2"
@@ -1023,7 +1023,7 @@ function wait_for_catalogsource_2be_ready() {
 
   if [[ $# -ne 4 ]]; then
     mylog error "You have to provide 4 arguments: label selector, max retries, delay in seconds and namespace"
-    trace_out $lf_tracelevel wait_for_catalogsource_2be_ready
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit 1
   fi
   
@@ -1034,7 +1034,7 @@ function wait_for_catalogsource_2be_ready() {
     check_pod_status "${lf_in_label_selector}" "${lf_in_namespace}"
     if [[ $? -eq 0 ]] ; then
       mylog info "All catalog source pods are ready"
-      trace_out $lf_tracelevel wait_for_catalogsource_2be_ready
+      trace_out $lf_tracelevel ${FUNCNAME[0]}
       return 0
     fi
     echo -ne "\rWaiting for catalog source pods to be ready... (attempt $((lf_count+1))/$lf_in_max_retries)"
@@ -1043,7 +1043,7 @@ function wait_for_catalogsource_2be_ready() {
   done
   
   mylog error "Timeout reached while waiting for catalog source pods to be ready"
-	trace_out $lf_tracelevel wait_for_catalogsource_2be_ready
+	trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   return 1
 }
@@ -1052,7 +1052,7 @@ function wait_for_catalogsource_2be_ready() {
 # Display information to access CP4I
 function display_access_info() {
   local lf_tracelevel=5
-  trace_in $lf_tracelevel display_access_info
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   mylog info "==== Displaying Access Info to CP4I." 0
 
@@ -1237,7 +1237,7 @@ function display_access_info() {
 
   echo ${BOOKMARK_EPILOGUE} >> ${MY_WORKINGDIR}/bookmarks.html
 
-  trace_out $lf_tracelevel display_access_info
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 ################################################
 # Function to process array of (object id, yaml file)
@@ -1249,7 +1249,7 @@ function display_access_info() {
 
 function create_oc_objects() {
   local lf_tracelevel=5
-  trace_in $lf_tracelevel create_oc_objects
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
   
   local lf_in_type="$1"
   local lf_in_source_directory="$2"
@@ -1277,7 +1277,7 @@ function create_oc_objects() {
     create_oc_resource "${lf_in_type}" "${lf_obj_id}" "${lf_in_source_directory}" "${lf_in_target_directory}" "$lf_file" "${lf_in_namespace}"
   done
   
-  trace_out $lf_tracelevel create_oc_objects
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -1285,14 +1285,14 @@ function create_oc_objects() {
 # https://www.ibm.com/docs/en/cloud-paks/foundational-services/4.6?topic=service-installing-network-policies-license
 function install_networkpolicies() {
   local lf_tracelevel=5
-  trace_in $lf_tracelevel install_networkpolicies
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_entity="$1"
   decho $lf_tracelevel "Parameters:\"$1\"|"
 
   if [[ $# -ne 1 ]]; then
     mylog error "You have to provide one argument : the entity (lic_svc or lic_reporter)"
-    trace_out $lf_tracelevel install_networkpolicies
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
@@ -1314,7 +1314,7 @@ function install_networkpolicies() {
     ;;
   esac
 
-  trace_out $lf_tracelevel install_networkpolicies
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -1322,7 +1322,7 @@ function install_networkpolicies() {
 # Search for deny-all or allow-same-namespace networkpolicies
 function search_networkpolicies() {  
   local lf_tracelevel=5
-  trace_in $lf_tracelevel search_networkpolicies
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
   
@@ -1345,7 +1345,7 @@ function search_networkpolicies() {
     lf_res=0
   fi
 
-  trace_out $lf_tracelevel search_networkpolicies
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
   return $lf_res
 }
 
@@ -1503,7 +1503,7 @@ function decho () {
 # cmp_versions v1 v2 returns 0 if v1=v2, 1 if v1 is older than v2, 2 if v1 is newer than v2
 function cmp_versions() {
   local lf_tracelevel=5
-  trace_in $lf_tracelevel cmp_versions
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_version1=$1
   local lf_in_version2=$2
@@ -1511,14 +1511,14 @@ function cmp_versions() {
 
   if [[ $# -ne 2 ]]; then
     mylog error "You have to provide 2 arguments : version1 and version2"
-    trace_out $lf_tracelevel cmp_versions
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
   # Just try to compare the versions using string comparison if they are equal
   if [[ "$lf_in_version1" == "$lf_in_version2" ]]; then
     #echo "$lf_in_version1 is equal to $lf_in_version2"
-    trace_out $lf_tracelevel cmp_versions
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     return 0
   fi
 
@@ -1543,7 +1543,7 @@ function cmp_versions() {
     fi
   done
 
-  trace_out $lf_tracelevel cmp_versions
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
   return $lf_res
 }
 
@@ -1555,7 +1555,7 @@ function cmp_versions() {
 # @param 4: namespace where the secret exist
 function save_certificate() {
   local lf_tracelevel=5
-  trace_in $lf_tracelevel save_certificate
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_secret_name=$1
   local lf_in_data_name=$2
@@ -1567,7 +1567,7 @@ function save_certificate() {
 
   if [[ $# -ne 4 ]]; then
     mylog error "You have to provide 4 arguments : secret_name, data_name, destination directory and namespace"
-    trace_out $lf_tracelevel save_certificate
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
@@ -1579,7 +1579,7 @@ function save_certificate() {
 
   echo $lf_cert | base64 --decode >"${lf_in_target_directory}${lf_in_secret_name}.${lf_in_data_name}.pem"
 
-  trace_out $lf_tracelevel save_certificate
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -1591,7 +1591,7 @@ function save_certificate() {
 # @param 2:
 function is_case_downloaded() {
   local lf_tracelevel=5
-  trace_in $lf_tracelevel is_case_downloaded
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_case=$1
   local lf_in_version=$2
@@ -1599,7 +1599,7 @@ function is_case_downloaded() {
 
   if [[ $# -ne 2 ]]; then
     mylog error "You have to provide 2 arguments : case and version"
-    trace_out $lf_tracelevel is_case_downloaded
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
@@ -1637,7 +1637,7 @@ function is_case_downloaded() {
     fi
   fi
 
-  trace_out $lf_tracelevel is_case_downloaded
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
   return $lf_res
 }
 
@@ -1646,14 +1646,14 @@ function is_case_downloaded() {
 # @param 1:
 function check_command_exist() {
   local lf_tracelevel=5
-  trace_in $lf_tracelevel check_command_exist
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_command=$1
   decho $lf_tracelevel "Parameters:\"$1\"|"
 
   if [[ $# -ne 1 ]]; then
     mylog error "You have to provide 1 argument : command name"
-    trace_out $lf_tracelevel check_command_exist
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
@@ -1662,7 +1662,7 @@ function check_command_exist() {
     exit 1
   fi
 
-  trace_out $lf_tracelevel check_command_exist
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -1670,14 +1670,14 @@ function check_command_exist() {
 # @param 1:
 function check_file_exist() {
   local lf_tracelevel=5
-  trace_in $lf_tracelevel check_file_exist
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_file=$1
   decho $lf_tracelevel "Parameters:\"$1\"|"
 
   if [[ $# -ne 1 ]]; then
     mylog error "You have to provide 1 argument : file name"
-    trace_out $lf_tracelevel check_file_exist
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
@@ -1685,7 +1685,7 @@ function check_file_exist() {
     mylog error "No such file: $lf_in_file" 1>&2
     exit 1
   fi
-  trace_out $lf_tracelevel check_file_exist
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -1693,14 +1693,14 @@ function check_file_exist() {
 # @param 1: directory path
 function check_directory_exist() {
   local lf_tracelevel=5
-  trace_in $lf_tracelevel check_directory_exist
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_directory=$1
   decho $lf_tracelevel "Parameters:\"$1\"|"
 
   if [[ $# -ne 1 ]]; then
     mylog error "You have to provide 1 argument : directory name"
-    trace_out $lf_tracelevel check_directory_exist
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
@@ -1709,7 +1709,7 @@ function check_directory_exist() {
     exit 1
   fi
 
-  trace_out $lf_tracelevel check_directory_exist
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -1729,14 +1729,14 @@ function check_directory_contains_files() {
 # @param 1: directory name
 function check_directory_exist_create() {
   local lf_tracelevel=5
-  trace_in $lf_tracelevel check_directory_exist_create
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_directory=$1
   decho $lf_tracelevel "Parameters:\"$1\"|"
 
   if [[ $# -ne 1 ]]; then
     mylog error "You have to provide 1 argument : directory name"
-    trace_out $lf_tracelevel check_directory_exist_create
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
@@ -1744,7 +1744,7 @@ function check_directory_exist_create() {
     mkdir -p $lf_in_directory
   fi
 
-  trace_out $lf_tracelevel check_directory_exist_create
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -1752,14 +1752,14 @@ function check_directory_exist_create() {
 # @param 1:
 function read_config_file() {
   local lf_tracelevel=5
-  trace_in $lf_tracelevel read_config_file
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_config_file=$1
   decho $lf_tracelevel "Parameters:\"$1\"|"
 
   if [[ $# -ne 1 ]]; then
     mylog error "You have to provide 1 argument: file name"
-    trace_out $lf_tracelevel read_config_file
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
@@ -1770,7 +1770,7 @@ function read_config_file() {
   . "${lf_in_config_file}"
   set +a
 
-  trace_out $lf_tracelevel read_config_file
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -1778,7 +1778,7 @@ function read_config_file() {
 # No parameters.
 function check_exec_prereqs() {
   local lf_tracelevel=5
-  trace_in $lf_tracelevel check_exec_prereqs
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   check_command_exist awk
   check_command_exist tr
@@ -1806,7 +1806,7 @@ function check_exec_prereqs() {
     check_command_exist helm
   fi
   
-  trace_out $lf_tracelevel check_exec_prereqs
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -1818,7 +1818,7 @@ function check_exec_prereqs() {
 # @param 4: namespace
 function check_resource_exist() {
   local lf_tracelevel=5
-  trace_in $lf_tracelevel check_resource_exist
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_type=$1
   local lf_in_name=$2
@@ -1829,7 +1829,7 @@ function check_resource_exist() {
   decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|"
   if [[ $# -ne 4 ]]; then
     mylog error "You have to provide 3 arguments: resource type, resource name and boolean exit_on_not_exist"
-    trace_out $lf_tracelevel check_resource_exist
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
@@ -1842,20 +1842,20 @@ function check_resource_exist() {
   true)
     if test -z $lf_res; then
       mylog error "Resource $lf_in_name of type $lf_in_type does not exist, exiting."
-      trace_out $lf_tracelevel check_resource_exist
+      trace_out $lf_tracelevel ${FUNCNAME[0]}
       exit 1
     else
-      trace_out $lf_tracelevel check_resource_exist
+      trace_out $lf_tracelevel ${FUNCNAME[0]}
       return 0
     fi
     ;;
   false)
     if test -z $lf_res; then
-      trace_out $lf_tracelevel check_resource_exist
+      trace_out $lf_tracelevel ${FUNCNAME[0]}
       return 1
     else
       # Resource exists
-      trace_out $lf_tracelevel check_resource_exist
+      trace_out $lf_tracelevel ${FUNCNAME[0]}
       return 0
     fi
     ;;
@@ -1884,7 +1884,7 @@ function waitn() {
 # @param 3: command executed command that returns some state
 function wait_for_state() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel wait_for_state
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 #wait_for_state "$lf_in_type $lf_in_cr_name $lf_in_path is $lf_in_state" "$lf_in_state" "$MY_CLUSTER_COMMAND -n $lf_in_namespace get $lf_in_type $lf_in_cr_name -o jsonpath='$lf_in_path'"
 
   local lf_in_type=$1
@@ -1897,7 +1897,7 @@ function wait_for_state() {
 
   if [[ $# -ne 4 ]] && [[ $# -ne 5 ]]; then
     mylog error "You have to provide 4 or 5 arguments: type, resource, jsonpath, state and eventually namespace"
-    trace_out $lf_tracelevel wait_for_state
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
@@ -1941,7 +1941,7 @@ function wait_for_state() {
     done 
   done
 
-  trace_out $lf_tracelevel wait_for_state
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -1949,14 +1949,14 @@ function wait_for_state() {
 # @param ns namespace where secret is created
 function add_ibm_entitlement() {
   local lf_tracelevel=5
-  trace_in $lf_tracelevel add_ibm_entitlement
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_ns=$1
   decho $lf_tracelevel "Parameters:\"$1\"|"
 
   if [[ $# -ne 1 ]]; then
     mylog error "You have to provide 1 argument: namespace"
-    trace_out $lf_tracelevel add_ibm_entitlement
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
@@ -1967,18 +1967,18 @@ function add_ibm_entitlement() {
     $MY_CONTAINER_ENGINE -h >/dev/null 2>&1
     if test $? -eq 0 && ! echo $MY_ENTITLEMENT_KEY | $MY_CONTAINER_ENGINE login cp.icr.io --username cp --password-stdin; then
       mylog error "Invalid entitlement key" 1>&2
-      trace_out $lf_tracelevel add_ibm_entitlement
+      trace_out $lf_tracelevel ${FUNCNAME[0]}
       exit 1
     fi
 
     mylog info "Adding ibm-entitlement-key to $lf_in_ns"
     if ! $MY_CLUSTER_COMMAND -n $lf_in_ns create secret docker-registry ibm-entitlement-key --docker-username=cp --docker-password=$MY_ENTITLEMENT_KEY --docker-server=cp.icr.io; then
-      trace_out $lf_tracelevel add_ibm_entitlement
+      trace_out $lf_tracelevel ${FUNCNAME[0]}
       exit 1
     fi
   fi
 
-  trace_out $lf_tracelevel add_ibm_entitlement
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -1992,7 +1992,7 @@ function add_ibm_entitlement() {
 # @param 6: namespace
 function check_create_oc_yaml() {
   local lf_tracelevel=4
-  trace_in $lf_tracelevel  check_create_oc_yaml
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_type="$1"
   local lf_in_cr_name="$2"
@@ -2007,7 +2007,7 @@ function check_create_oc_yaml() {
 
   if [[ $# -ne 6 ]]; then
     mylog error "You have to provide 6 arguments: type, resource, source directory, destination directory, yaml file and namespace"
-    trace_out $lf_tracelevel check_create_oc_yaml
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit 1
   fi
   
@@ -2027,7 +2027,7 @@ function check_create_oc_yaml() {
     wait_for_resource $lf_type $lf_in_cr_name $lf_in_namespace
   fi
 
-  trace_out $lf_tracelevel check_create_oc_yaml
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -2035,7 +2035,7 @@ function check_create_oc_yaml() {
 # @param 1: namespace
 function provision_persistence_openldap() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel provision_persistence_openldap
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
   
@@ -2049,7 +2049,7 @@ function provision_persistence_openldap() {
 
   unset VAR_NAMESPACE
 
-  trace_out $lf_tracelevel provision_persistence_openldap
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -2059,7 +2059,7 @@ function provision_persistence_openldap() {
 # See https://github.com/osixia/docker-openldap for more details especialy all the configurations possible
 function deploy_openldap() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel deploy_openldap
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_type="$1"
   local lf_in_name="$2"
@@ -2068,7 +2068,7 @@ function deploy_openldap() {
 
   if [[ $# -ne 3 ]]; then
     mylog error "You have to provide 4 arguments: type, resource, and service account"
-    trace_out $lf_tracelevel deploy_openldap
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
@@ -2088,19 +2088,19 @@ function deploy_openldap() {
   adapt_file "${MY_YAMLDIR}ldap/" "${MY_LDAP_WORKINGDIR}" "ldap_config.json" 
   $MY_CLUSTER_COMMAND -n ${VAR_LDAP_NAMESPACE} patch deployment.apps/openldap --patch-file "${MY_LDAP_WORKINGDIR}ldap_config.json"
 
-  trace_out $lf_tracelevel deploy_openldap
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 # To add a user/password protection to the web UI: https://stackoverflow.com/questions/60162842/how-can-i-add-basic-authentication-to-the-mailhog-service-in-ddev-local
 function deploy_mail() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel deploy_mail
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   create_oc_resource "Deployment" "${MY_MAIL_DEPLOYMENT}" "${MY_YAMLDIR}mail/" "${MY_MAIL_WORKINGDIR}" "mail_deployment.yaml" "$VAR_MAIL_NAMESPACE"
   #$MY_CLUSTER_COMMAND -n ${VAR_MAIL_NAMESPACE} get deployment.apps/${MY_MAIL_DEPLOYMENT} -o json | jq '. | del(."status")' >${MY_MAIL_WORKINGDIR}mailhog.json
 
-  trace_out $lf_tracelevel deploy_mail
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 #===========================================
@@ -2113,7 +2113,7 @@ function deploy_mail() {
 # @param 6: ldif file
 function add_ldap_entry_if_not_exists() {
   local lf_tracelevel=4
-  trace_in $lf_tracelevel add_ldap_entry_if_not_exists
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_ldap_server="$1"
   local lf_in_admin_dn="$2"
@@ -2127,7 +2127,7 @@ function add_ldap_entry_if_not_exists() {
 
   if [[ $# -ne 6 ]]; then
     mylog error "You have to provide 6 arguments: ldap server, admin DN, admin password, entry DN, entry content and ldif file"
-    trace_out $lf_tracelevel add_ldap_entry_if_not_exists
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
@@ -2145,7 +2145,7 @@ function add_ldap_entry_if_not_exists() {
     fi
   fi
 
-  trace_out $lf_tracelevel add_ldap_entry_if_not_exists
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 #========================================================
@@ -2156,7 +2156,7 @@ function add_ldap_entry_if_not_exists() {
 # @param 4:
 function add_ldif_file () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel add_ldif_file
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_ldap_server="$1"
   local lf_in_admin_dn="$2"
@@ -2168,7 +2168,7 @@ function add_ldif_file () {
 
   if [[ $# -ne 4 ]]; then
     mylog error "You have to provide 4 arguments: ldap server, admin DN, admin password and ldif file"
-    trace_out $lf_tracelevel add_ldif_file
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
@@ -2202,7 +2202,7 @@ function add_ldif_file () {
   # Clean up temporary file
   #rm -f $lf_tmp_ldif
 
-  trace_out $lf_tracelevel add_ldif_file
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 #========================================================
@@ -2213,7 +2213,7 @@ function add_ldif_file () {
 # @param 4:
 function add_ldif_file_k8s () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel add_ldif_file_k8s
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_ldap_server="$1"
   local lf_in_admin_dn="$2"
@@ -2225,7 +2225,7 @@ function add_ldif_file_k8s () {
 
   if [[ $# -ne 4 ]]; then
     mylog error "You have to provide 4 arguments: ldap server, admin DN, admin password and ldif file"
-    trace_out $lf_tracelevel add_ldif_file
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
@@ -2270,7 +2270,7 @@ function add_ldif_file_k8s () {
   # Clean up temporary file
   #rm -f $lf_tmp_ldif
 
-  trace_out $lf_tracelevel add_ldif_file_k8s
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -2280,7 +2280,7 @@ function add_ldif_file_k8s () {
 #
 function create_openldap_route() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_openldap_route
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   # expose service externaly and get host and port
   $MY_CLUSTER_COMMAND -n ${VAR_LDAP_NAMESPACE} get service ${VAR_LDAP_SERVICE} -o json | \
@@ -2299,7 +2299,7 @@ function create_openldap_route() {
 
   export VAR_LDAP_HOSTNAME=$($MY_CLUSTER_COMMAND -n ${VAR_LDAP_NAMESPACE} get route ${VAR_LDAP_ROUTE} -o jsonpath='{.spec.host}')
 
-  trace_out $lf_tracelevel create_openldap_route
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -2309,7 +2309,7 @@ function create_openldap_route() {
 #
 function create_openldap_route_k8s() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_openldap_route_k8s
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   # expose service externaly and get host and port
   decho $lf_tracelevel "$MY_CLUSTER_COMMAND -n ${VAR_LDAP_NAMESPACE} get service ${VAR_LDAP_SERVICE} -o json | jq '.spec.ports[] | select(.port == 389) | .nodePort'"
@@ -2318,7 +2318,7 @@ function create_openldap_route_k8s() {
   export VAR_LDAP_HOSTNAME=$VAR_MINIKUBE_IP
   mylog info "ldap server is accessible here hostname:${VAR_LDAP_HOSTNAME} using port ${VAR_LDAP_PORT}"
 
-  trace_out $lf_tracelevel create_openldap_route_k8s
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -2328,7 +2328,7 @@ function create_openldap_route_k8s() {
 #
 function create_qmgr_route_k8s() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_qmgr_route_k8s
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   # expose service externaly and get host and port
   decho $lf_tracelevel "$MY_CLUSTER_COMMAND -n ${VAR_MQ_NAMESPACE} get service "${VAR_QMGR}-ibm-mq" -o json | jq '.spec.ports[] | select(.port == 9443) | .nodePort'"
@@ -2337,7 +2337,7 @@ function create_qmgr_route_k8s() {
   export VAR_MQ_HOSTNAME=$VAR_MINIKUBE_IP
   mylog info "MQ Webconsole is accessible here hostname:https://${VAR_MQ_HOSTNAME}:${VAR_MQ_WEBCONSOLE_PORT}/ibmmq/console"
 
-  trace_out $lf_tracelevel create_qmgr_route_k8s
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -2346,7 +2346,7 @@ function create_qmgr_route_k8s() {
 # @param 3: ldif file
 function load_users_2_ldap_server() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel load_users_2_ldap_server
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_source_directory="$1"
   local lf_in_target_directory="$2"
@@ -2358,13 +2358,13 @@ function load_users_2_ldap_server() {
 
   if [[ $# -ne 3 ]]; then
     mylog error "You have to provide 3 arguments : source directory, target directory and ldif file"
-    trace_out $lf_tracelevel load_users_2_ldap_server
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
   if [[ -z $VAR_LDAP_HOSTNAME ]] || [[ -z $VAR_LDAP_PORT ]]; then
     mylog error "ldap hostname or port are null"
-    trace_out $lf_tracelevel load_users_2_ldap_server
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
@@ -2377,7 +2377,7 @@ function load_users_2_ldap_server() {
   mylog info "You can search entries with the following command: "
   mylog info "ldapsearch -H ldap://${VAR_LDAP_HOSTNAME}:${VAR_LDAP_PORT} -x -D \"$MY_LDAP_ADMIN_DN\" -w \"$MY_LDAP_ADMIN_PASSWORD\" -b \"$MY_LDAP_BASE_DN\" -s sub -a always -z 1000 \"(objectClass=*)\""
 
-  trace_out $lf_tracelevel load_users_2_ldap_server
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -2385,7 +2385,7 @@ function load_users_2_ldap_server() {
 # @param 2: file
 function create_mail_service() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_mail_service
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_source_directory="$1"
   local lf_in_file="$2"
@@ -2395,14 +2395,14 @@ function create_mail_service() {
 
   if [[ $# -ne 2 ]]; then
     mylog error "You have to provide 2 arguments : source directory and file"
-    trace_out $lf_tracelevel create_mail_service
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
   # Create the service to expose the mailhog server
   create_oc_resource "Service" "${VAR_MAIL_SERVICE}" "$lf_in_source_directory" "${MY_MAIL_WORKINGDIR}" "$lf_in_file" "${VAR_MAIL_NAMESPACE}"
 
-  trace_out $lf_tracelevel create_mail_service
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -2410,7 +2410,7 @@ function create_mail_service() {
 # @param 2: file
 function create_mail_route() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_mail_route
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_source_directory="$1"
   local lf_in_file="$2"
@@ -2420,7 +2420,7 @@ function create_mail_route() {
 
   if [[ $# -ne 2 ]]; then
     mylog error "You have to provide 2 arguments : source directory and file"
-    trace_out $lf_tracelevel create_mail_route
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
@@ -2434,7 +2434,7 @@ function create_mail_route() {
 
   export VAR_MAIL_HOSTNAME=$($MY_CLUSTER_COMMAND -n ${VAR_MAIL_NAMESPACE} get route ${VAR_MAIL_ROUTE} -o jsonpath='{.spec.host}')
 
-  trace_out $lf_tracelevel create_mail_route
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -2445,7 +2445,7 @@ function create_mail_route() {
 # @param 4: working directory where the generated yaml file will be stored
 function create_project() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_project
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_name="$1"
   local lf_in_display_name="$2"
@@ -2459,7 +2459,7 @@ function create_project() {
 
   if [[ $# -ne 5 ]]; then
     mylog error "You have to provide 5 arguments: resource name, display name; description, source director and target directory"
-    trace_out $lf_tracelevel create_project
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
@@ -2474,7 +2474,7 @@ function create_project() {
                   $MY_CLUSTER_COMMAND apply -f "${lf_in_target_directory}${lf_yaml_file}"
                   if [[ $? -ne 0 ]]; then 
                     unset VAR_NAMESPACE
-                    trace_out $lf_tracelevel create_project
+                    trace_out $lf_tracelevel ${FUNCNAME[0]}
                     exit 1
                   fi
                 fi
@@ -2495,7 +2495,7 @@ function create_project() {
       $MY_CLUSTER_COMMAND apply -f "${lf_in_target_directory}${lf_yaml_file}"
       if [[ $? -ne 0 ]]; then 
         unset VAR_NAMESPACE VAR_NAMESPACE_DISPLAYNAME VAR_NAMESPACE_DESCRIPTION
-        trace_out $lf_tracelevel create_project
+        trace_out $lf_tracelevel ${FUNCNAME[0]}
        exit 1
       fi
     fi    
@@ -2505,7 +2505,7 @@ function create_project() {
         ;;
   esac
 
-  trace_out $lf_tracelevel create_project
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -2515,7 +2515,7 @@ function create_project() {
 # @param 3: namespace
 function wait_for_resource() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel wait_for_resource
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_type=$1
   local lf_in_cr_name=$2
@@ -2524,7 +2524,7 @@ function wait_for_resource() {
 
   if [[ $# -ne 3 ]] && [[ $# -ne 2 ]]; then
     mylog error "You have to provide 2 or 3 arguments: type, resource name and eventually namespace"
-    trace_out $lf_tracelevel wait_for_resource
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
@@ -2556,7 +2556,7 @@ function wait_for_resource() {
   echo 
   export VAR_RESOURCE=$lf_resource
   
-  trace_out $lf_tracelevel wait_for_resource
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -2569,7 +2569,7 @@ function wait_for_resource() {
 # @param 5: This is the version of the channel. It is an optional parameter, if ommited it is retrieved, else used values from invocation
 function check_add_cs_ibm_pak() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel check_add_cs_ibm_pak
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_case_name="$1"
   local lf_in_operator_name="$2"
@@ -2580,7 +2580,7 @@ function check_add_cs_ibm_pak() {
 
   if [[ $# -ne 4 && $# -ne 5 ]] ; then
     mylog error "You have to provide 4 or 5 arguments: case name, operator name, catalog source label, arch and optional case version"
-    trace_out $lf_tracelevel check_add_cs_ibm_pak
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
@@ -2637,7 +2637,7 @@ function check_add_cs_ibm_pak() {
     wait_for_catalogsource_2be_ready "${lf_in_catalogsource_label}" "${MY_MAX_RETRIES}" "${MY_DELAY_SECONDS}" "${MY_CATALOGSOURCES_NAMESPACE}"
   fi
 
-  trace_out $lf_tracelevel check_add_cs_ibm_pak
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -2649,7 +2649,7 @@ function check_add_cs_ibm_pak() {
 # @param 3: boolean true|false : if true transform the file, else just copy it
 function generate_files() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel generate_files
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_source_directory=$1
   local lf_in_target_directory=$2
@@ -2661,7 +2661,7 @@ function generate_files() {
 
   if [[ $# -ne 3 ]]; then
     mylog error "You have to provide 3 arguments: source directory, destination directory and boolean (true|false)"
-    trace_out $lf_tracelevel generate_files
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
@@ -2714,7 +2714,7 @@ function generate_files() {
     done
   fi
   #set +a
-  trace_out $lf_tracelevel generate_files
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -2725,7 +2725,7 @@ function generate_files() {
 # @param 3: name of the file (as source and for the target).
 function adapt_file() {
   local lf_tracelevel=5
-  trace_in $lf_tracelevel adapt_file
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_source_directory=$1
   local lf_in_target_directory=$2
@@ -2737,7 +2737,7 @@ function adapt_file() {
 
   if [[ $# -ne 3 ]]; then
     mylog error "You have to provide 3 arguments: source directory, destination directory and file"
-    trace_out $lf_tracelevel adapt_file
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
   
@@ -2745,7 +2745,7 @@ function adapt_file() {
   check_file_exist "${lf_in_source_directory}${lf_in_filename}"
   envsubst < "${lf_in_source_directory}${lf_in_filename}" > "${lf_in_target_directory}${lf_in_filename}"
 
-  trace_out $lf_tracelevel adapt_file
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -2755,7 +2755,7 @@ function adapt_file() {
 # @param 3: working directory
 function create_self_signed_issuer () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_self_signed_issuer
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_issuer_name=$1
   local lf_namespace=$2
@@ -2769,7 +2769,7 @@ function create_self_signed_issuer () {
 
   unset VAR_CERT_ISSUER VAR_NAMESPACE
 
-  trace_out $lf_tracelevel create_self_signed_issuer
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -2781,7 +2781,7 @@ function create_self_signed_issuer () {
 # @param 5: working directory where the generated yaml file will be stored
 function create_generic_secret() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_generic_secret
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_secret_name="$1"
   local lf_in_username="$2"
@@ -2794,7 +2794,7 @@ function create_generic_secret() {
   
   if [[ $# -ne 5 ]]; then
     mylog error "You have to provide 4 arguments: secret name, user name, user password, namespace and working directory"
-    trace_out $lf_tracelevel create_generic_secret
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
@@ -2808,7 +2808,7 @@ function create_generic_secret() {
   
   unset VAR_SECRET_NAME VAR_USERNAME VAR_PASSWORD VAR_NAMESPACE
 
-  trace_out $lf_tracelevel create_generic_secret
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -2818,7 +2818,7 @@ function create_generic_secret() {
 # @param 3: namespace
 function helm_install() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel helm_repo_init
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_operator_source="$1"
   local lf_in_watch_any_namespace="$2"
@@ -2833,7 +2833,7 @@ function helm_install() {
     helm install -n  "$lf_in_namespace" --wait --wait-for-jobs "$lf_in_operator_source" --set watchAnyNamespace=false
   fi
 
-  trace_out $lf_tracelevel helm_repo_init
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -2846,7 +2846,7 @@ function helm_install() {
 # @param 6: namespace
 function create_certificate_chain() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_certificate_chain
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_issuername="$1"
   local lf_in_root_cert_name="$2"
@@ -2860,7 +2860,7 @@ function create_certificate_chain() {
   
   if [[ $# -ne 6 ]]; then
     mylog error "You have to provide 6 arguments: issuer name, root cert, label, cert name, working directory and namespace"
-    trace_out $lf_tracelevel create_certificate_chain
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
@@ -2897,7 +2897,7 @@ function create_certificate_chain() {
   create_oc_resource "Certificate" "$lf_tls_cert_name" "${MY_YAMLDIR}tls/" "${lf_in_workingdir}" "server_certificate.yaml" "$lf_in_namespace"
   unset VAR_CERT_COMMON_NAME VAR_CERT_ISSUER VAR_SECRET VAR_CERT_LABEL VAR_INGRESS
 
-  trace_out $lf_tracelevel create_certificate_chain
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -2909,7 +2909,7 @@ function create_certificate_chain() {
 # 20250110 : add two more parameters to the function, to use it also for License Service instance which needs also the same patching
 function accept_license_fs() {
   local lf_tracelevel=5
-  trace_in $lf_tracelevel accept_license_fs
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_type=$1
   local lf_in_cr_name=$2
@@ -2918,7 +2918,7 @@ function accept_license_fs() {
 
   if [[ $# -ne 3 ]]; then
     mylog error "You have to provide 3 arguments: type, resource name and namespace"
-    trace_out $lf_tracelevel accept_license_fs
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
   
@@ -2932,20 +2932,20 @@ function accept_license_fs() {
     $MY_CLUSTER_COMMAND -n ${lf_in_namespace} patch ${lf_in_type} ${lf_in_cr_name} --type merge -p '{"spec": {"license": {"accept": true}}}'
   fi
 
-  trace_out $lf_tracelevel accept_license_fs
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 function generate_password() {
   local lf_tracelevel=5
-  trace_in $lf_tracelevel generate_password
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_length=$1
   decho $lf_tracelevel "Parameters:\"$1\"|"
 
   if [[ $# -ne 1 ]]; then
     mylog error "You have to provide 1 argument: length"
-    trace_out $lf_tracelevel generate_password
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
@@ -2955,7 +2955,7 @@ function generate_password() {
   local lf_password=$(cat /dev/urandom | tr -dc "$lf_pattern" | head -c "$lf_in_length")
   export USER_PASSWORD_GEN=$lf_password
 
-  trace_out $lf_tracelevel generate_password
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -2969,7 +2969,7 @@ function generate_password() {
 # @param 6: namespace: the namespace to use
 function create_oc_resource() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_oc_resource
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_type="$1"
   local lf_in_cr_name="$2"
@@ -2984,7 +2984,7 @@ function create_oc_resource() {
 
   if [[ $# -ne 6 ]]; then
     mylog error "You have to provide 6 arguments: type, resource, namespace, source directory, target directory, file and namespace"
-    trace_out $lf_tracelevel create_oc_resource
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
@@ -3017,7 +3017,7 @@ function create_oc_resource() {
     SharedSecret) unset VAR_SHARED_SECRET;;
   esac
 
-  trace_out $lf_tracelevel create_oc_resource
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 
@@ -3033,7 +3033,7 @@ function create_oc_resource() {
 # @param 8: state: resource state
 function create_operand_instance() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_operand_instance  
+  trace_in $lf_tracelevel ${FUNCNAME[0]}  
 
   local lf_in_type=$1
   local lf_in_cr_name=$2
@@ -3050,7 +3050,7 @@ function create_operand_instance() {
 
   if [[ $# -ne 8 ]]; then
     mylog error "You have to provide 6 arguments: type, resource, source directory, target directory, yaml file, namespace, jsonpath and state"
-    trace_out $lf_tracelevel create_operand_instance
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
@@ -3062,7 +3062,7 @@ function create_operand_instance() {
     mylog error "$lf_in_cr_name of type $lf_in_type in $lf_in_namespace namespace does not exist, will not wait for state"
   fi
 
-  trace_out $lf_tracelevel create_operand_instance  
+  trace_out $lf_tracelevel ${FUNCNAME[0]}  
 }
 
 ################################################
@@ -3074,7 +3074,7 @@ function create_operand_instance() {
 # @param 5: namespace: the namespace to use
 function create_operator_instance() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_operator_instance  
+  trace_in $lf_tracelevel ${FUNCNAME[0]}  
 
   local lf_in_cr_name="$1"
   local lf_in_catalogue_source="$2"
@@ -3088,7 +3088,7 @@ function create_operator_instance() {
 
   if [[ $# -ne 5 ]]; then
     mylog error "You have to provide 5 arguments: operator, catalog source, source directory, target directory and namespace"
-    trace_out $lf_tracelevel create_operator_instance
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
@@ -3184,14 +3184,14 @@ function create_operator_instance() {
   
   unset VAR_OPERATOR_NAME VAR_NAMESPACE VAR_OPERATOR_CHL VAR_STRATEGY VAR_CATALOG_SOURCE_NAME
 
-  trace_out $lf_tracelevel create_operator_instance  
+  trace_out $lf_tracelevel ${FUNCNAME[0]}  
 }
 
 ################################################
 # Function to process calls
 function process_calls() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel process_calls
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_calls="$1"  # Get the full string of calls and parameters
 
@@ -3217,7 +3217,7 @@ function process_calls() {
       if declare -f "$lf_func" > /dev/null; then
         if [ "$lf_func" = "main" ] || [ "$lf_func" = "process_calls" ]; then
           mylog error "Functions 'main', 'process_calls' cannot be called."
-          trace_out $lf_tracelevel process_calls
+          trace_out $lf_tracelevel ${FUNCNAME[0]}
           return 1
         fi
         $lf_func $lf_params
@@ -3226,10 +3226,10 @@ function process_calls() {
         lf_list=$(declare -F | awk '{print $NF}')
         mylog info "Available functions are:" 0
         mylog info "$lf_list" 0
-        trace_out $lf_tracelevel process_calls
+        trace_out $lf_tracelevel ${FUNCNAME[0]}
         return 1
       fi
     done
 
-  trace_out $lf_tracelevel process_calls
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }

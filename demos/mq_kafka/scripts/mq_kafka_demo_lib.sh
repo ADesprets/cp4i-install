@@ -4,7 +4,7 @@
 # @param 2: source directory
 function create_jks_truststore() {
   local lf_tracelevel=5
-  trace_in $lf_tracelevel create_jks_truststore
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_cr=$1
   local lf_in_source_directory=$2
@@ -12,7 +12,7 @@ function create_jks_truststore() {
 
   if [[ $# -ne 2 ]]; then
     mylog error "You have to provide 2 arguments : resource name and source directory"
-    trace_out $lf_tracelevel create_jks_truststore
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
@@ -24,7 +24,7 @@ function create_jks_truststore() {
   keytool -importkeystore -deststorepass $VAR_MQ_KAFKA_DEM0_PASSWORD -destkeypass $VAR_MQ_KAFKA_DEM0_PASSWORD -destkeystore $lf_in_cr \
           -srckeystore "${lf_p12_file}" -srcstoretype PKCS12 -srcstorepass $VAR_MQ_KAFKA_DEM0_PASSWORD -alias "${lf_in_cr}-pkcs12"
 
-  trace_out $lf_tracelevel create_jks_truststore
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
 ${PREFIX}-ca.jks: ${PREFIX}-ca.crt
 	rm -f ${PREFIX}-ca.jks
@@ -44,7 +44,7 @@ ${PREFIX}-ca.jks: ${PREFIX}-ca.crt
 # @param 2: source directory
 function create_jks_keystore() {
   local lf_tracelevel=5
-  trace_in $lf_tracelevel create_jks_keystore
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_cr=$1
   local lf_in_source_directory=$2
@@ -52,7 +52,7 @@ function create_jks_keystore() {
 
   if [[ $# -ne 2 ]]; then
     mylog error "You have to provide 2 arguments : resource name and source directory"
-    trace_out $lf_tracelevel create_jks_keystore
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
@@ -64,7 +64,7 @@ function create_jks_keystore() {
   keytool -importkeystore -deststorepass $VAR_MQ_KAFKA_DEM0_PASSWORD -destkeypass $VAR_MQ_KAFKA_DEM0_PASSWORD -destkeystore $lf_in_cr \
           -srckeystore "${lf_p12_file}" -srcstoretype PKCS12 -srcstorepass $VAR_MQ_KAFKA_DEM0_PASSWORD -alias "${lf_in_cr}-pkcs12"
 
-  trace_out $lf_tracelevel create_jks_keystore
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -74,7 +74,7 @@ function create_jks_keystore() {
 # @param 3: target directory (directory where to save the pkcs p12 certificate
 function create_p12_certificate() {
   local lf_tracelevel=5
-  trace_in $lf_tracelevel create_p12_certificate
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_cr=$1
   local lf_in_source_directory=$2
@@ -83,7 +83,7 @@ function create_p12_certificate() {
 
   if [[ $# -ne 3 ]]; then
     mylog error "You have to provide 2 arguments : resource name, crt file, key file and destination directory"
-    trace_out $lf_tracelevel create_p12_certificate
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
@@ -95,7 +95,7 @@ function create_p12_certificate() {
   #openssl pkcs12 -export $lf_in_crt_file -inkey $lf_in_key_file -out "${lf_p12_file}" -passout pass:$VAR_MQ_KAFKA_DEM0_PASSWORD -name "${lf_in_cr}-pkcs12"
   openssl pkcs12 -export -out "${lf_p12_file}" -inkey $lf_key_file -in $lf_crt_file -password pass:$VAR_MQ_KAFKA_DEM0_PASSWORD
 
-  trace_out $lf_tracelevel create_p12_certificate
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -107,7 +107,7 @@ function create_p12_certificate() {
 ################################################
 function create_jks_keystore_secret() {
   local lf_tracelevel=5
-  trace_in $lf_tracelevel create_jks_keystore_secret
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_ns=$1
   local lf_in_secret_name=$2
@@ -117,7 +117,7 @@ function create_jks_keystore_secret() {
 
   if [[ $# -ne 4 ]]; then
     mylog error "You have to provide 4 arguments : namespace, secret_name, data_name and destination directory path"
-    trace_out $lf_tracelevel create_jks_keystore_secret
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
@@ -129,7 +129,7 @@ function create_jks_keystore_secret() {
 
   echo $lf_cert | base64 --decode >"${lf_in_destination_path}${lf_in_secret_name}.${lf_in_data_name}.pem"
 
-  trace_out $lf_tracelevel create_jks_keystore_secret
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -141,7 +141,7 @@ function create_jks_keystore_secret() {
 ################################################
 function create_jks_keystore_secret() {
   local lf_tracelevel=5
-  trace_in $lf_tracelevel create_jks_keystore_secret
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_ns=$1
   local lf_in_secret_name=$2
@@ -151,7 +151,7 @@ function create_jks_keystore_secret() {
 
   if [[ $# -ne 4 ]]; then
     mylog error "You have to provide 4 arguments : namespace, secret_name, data_name and destination directory path"
-    trace_out $lf_tracelevel create_jks_keystore_secret
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
@@ -163,6 +163,6 @@ function create_jks_keystore_secret() {
 
   echo $lf_cert | base64 --decode >"${lf_in_destination_path}${lf_in_secret_name}.${lf_in_data_name}.pem"
 
-  trace_out $lf_tracelevel create_jks_keystore_secret
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 

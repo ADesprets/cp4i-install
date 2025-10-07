@@ -6,7 +6,7 @@
 ################################################
 function create_root_certificate () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_root_certificate
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   export VAR_CERT_NAME=${VAR_MQ_NAMESPACE}-mq-root
   export VAR_NAMESPACE=${VAR_MQ_NAMESPACE}
@@ -40,13 +40,13 @@ function create_root_certificate () {
 
   unset VAR_CERT_NAME VAR_NAMESPACE VAR_CERT_ISSUER_REF VAR_CERT_COMMON_NAME VAR_CERT_ORGANISATION VAR_CERT_COUNTRY VAR_CERT_LOCALITY VAR_CERT_STATE VAR_CERT_JKS_SECRET_REF
 
-  trace_out $lf_tracelevel create_root_certificate
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 function create_intermediate_issuer () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_intermediate_issuer
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   export VAR_CERT_ISSUER="${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR_LC}-int-issuer"
   export VAR_NAMESPACE=${VAR_MQ_NAMESPACE}
@@ -56,13 +56,13 @@ function create_intermediate_issuer () {
 
   unset VAR_CERT_NAME VAR_NAMESPACE VAR_SECRET_REF
 
-  trace_out $lf_tracelevel create_intermediate_issuer
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 function create_leaf_certificate () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_leaf_certificate
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   # get the dns name of the cluster
   local lf_cluster_domain=$($MY_CLUSTER_COMMAND get dns cluster -o jsonpath='{.spec.baseDomain}')
@@ -83,17 +83,17 @@ function create_leaf_certificate () {
 
   unset VAR_CERT_NAME VAR_NAMESPACE VAR_CERT_COMMON_NAME VAR_CERT_SAN_EXT_DNS VAR_CERT_SAN_LOCAL_DNS VAR_CERT_ISSUER_REF VAR_CERT_ORGANISATION VAR_CERT_COUNTRY VAR_CERT_LOCALITY VAR_CERT_STATE
   
-  trace_out $lf_tracelevel create_leaf_certificate
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 function create_qmgr_route () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_qmgr_route
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   create_oc_resource "Route" "${VAR_QMGR_LC}-route" "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}" "qmgr_route.yaml" "$VAR_MQ_NAMESPACE"
 
-  trace_out $lf_tracelevel create_qmgr_route
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -104,7 +104,7 @@ function create_qmgr_route () {
 function create_qmgr () {
   local lf_tracelevel=3
   
-  trace_in $lf_tracelevel create_qmgr
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
   local lf_qm_defs=("$@")
 
   export VAR_QMGR=${lf_qm_defs[0]}
@@ -164,7 +164,7 @@ function create_qmgr () {
 
   unset VAR_QMGR VAR_QMGR_UC VAR_INI_CM VAR_MQSC_OBJECTS_CM VAR_AUTH_CM VAR_WEBCONFIG_CM
   
-  trace_out $lf_tracelevel create_qmgr
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -173,7 +173,7 @@ function create_qmgr () {
 ################################################
 function create_clnt_kdb () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_clnt_kdb
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_qmgr=$1
 
@@ -189,7 +189,7 @@ function create_clnt_kdb () {
   # Create the empty client1 key database (password is hard coded for now):
   runmqakm -keydb -create -db $lf_clnt_keydb -pw password -type $VAR_KEYDB_TYPE -stash > /dev/null 2>&1  
 
-  trace_out $lf_tracelevel create_clnt_kdb
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -198,7 +198,7 @@ function create_clnt_kdb () {
 ################################################
 function create_pki_cr () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_pki_cr
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_qmgr=$1
 
@@ -214,7 +214,7 @@ function create_pki_cr () {
   mylog "info" "Adding root and leaf certificates to the client key database"
   add_qmgr_crt_2_clnt_kdb $lf_in_qmgr
   
-  trace_out $lf_tracelevel create_pki_cr
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -223,7 +223,7 @@ function create_pki_cr () {
 ################################################
 function add_qmgr_crt_2_clnt_kdb () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel add_qmgr_crt_2_clnt_kdb
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_qmgr=$1
   local lf_in_qmgr_lc=$(echo $lf_in_qmgr | tr '[:upper:]' '[:lower:]')
@@ -241,25 +241,24 @@ function add_qmgr_crt_2_clnt_kdb () {
   # The name is derived from the secret name
   local lf_ca_crt="${lf_clnt_workingdir}${root_cert_secret_name}.ca.crt.pem"
   local lf_server_crt="${lf_clnt_workingdir}${leaf_cert_secret_name}.tls.crt.pem"
-  
+    
   case $VAR_KEYDB_TYPE in
     cms)  local lf_clnt_keydb="${lf_clnt_workingdir}${VAR_CLNT1}-keystore.kdb";;
     pkcs12) local lf_clnt_keydb="${lf_clnt_workingdir}${VAR_CLNT1}-keystore.p12";;
   esac
 
-  # Order is important, root at the end
-  # runmqakm -cert -add -db $lf_clnt_keydb -label mq-root-server -file $lf_server_crt -format ascii -stashed > /dev/null 2>&1
-  decho $lf_tracelevel "runmqakm -cert -add -db $lf_clnt_keydb -label mq-root-ca -file $lf_ca_crt -format ascii -stashed"
-	runmqakm -cert -add -db $lf_clnt_keydb -label mq-root-ca -file $lf_ca_crt -format ascii -stashed > /dev/null 2>&1
+  # Order is important, root at the end (to be checked)
   decho $lf_tracelevel "runmqakm -cert -add -db $lf_clnt_keydb -label mq-leaf-server -file $lf_server_crt -format ascii -stashed"
   runmqakm -cert -add -db $lf_clnt_keydb -label mq-leaf-server -file $lf_server_crt -format ascii -stashed > /dev/null 2>&1
+  decho $lf_tracelevel "runmqakm -cert -add -db $lf_clnt_keydb -label mq-root-ca -file $lf_ca_crt -format ascii -stashed"
+	runmqakm -cert -add -db $lf_clnt_keydb -label mq-root-ca -file $lf_ca_crt -format ascii -stashed > /dev/null 2>&1
 
   # Check. List the database certificates:
   mylog "info" "listing certificates in keydb : $lf_clnt_keydb"
   decho $lf_tracelevel "runmqakm -cert -list -db $lf_clnt_keydb -stashed"
   runmqakm -cert -list -db $lf_clnt_keydb -stashed #> /dev/null 2>&1
 
-  trace_out $lf_tracelevel add_qmgr_crt_2_clnt_kdb
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -268,7 +267,13 @@ function add_qmgr_crt_2_clnt_kdb () {
 ################################################
 function create_ccdt () {
   local lf_tracelevel=5
-  trace_in $lf_tracelevel create_ccdt
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  if [[ $# -ne 1 ]]; then
+    mylog error "You have to provide 1 argument:the queue manager name"
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
+    exit  1
+  fi
 
   local lf_in_qmgr=$1
   local lf_in_qmgr_uc=$(echo $lf_in_qmgr | tr '[:lower:]' '[:upper:]')
@@ -289,9 +294,12 @@ function create_ccdt () {
 
   adapt_file "${MY_MQ_SIMPLE_DEMODIR}tmpl/" "${MY_MQ_WORKINGDIR}${lf_in_qmgr}/" ccdt.json
 
+  mylog "warn" "To use the amqsput client, you need to ensure that the file /var/mqm/mqclient.ini contains entry OutboundSNI=HOSTNAME under SSL. It is required to avoid the TLS handshake to occur with the Ingress server."
+  mylog "info" "To use amqsput use the following command: export MQCCDTURL=${MQCCDTURL}, then export MQSSLKEYR=${MY_MQ_WORKINGDIR}${lf_in_qmgr}/${VAR_CLNT1}-keystore.p12 (or .kdb depending on the type of key database you have created), then run the command: amqsputc PAYMT.REQ Orders"
+
   unset VAR_QMGR_UC VAR_CHL_UC ROOTURL
 
-  trace_out $lf_tracelevel create_ccdt
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -299,7 +307,7 @@ function create_ccdt () {
 ################################################
 function mq_run_all () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel mq_run_all
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
   
   # Create tls artifacts for all QMs in the project
   create_self_signed_issuer "${VAR_MQ_NAMESPACE}-mq-self-signed" "${VAR_MQ_NAMESPACE}" "${MY_MQ_WORKINGDIR}"
@@ -313,14 +321,14 @@ function mq_run_all () {
   create_pki_cr "Sensors"
   create_ccdt "Sensors"
 
-  trace_out $lf_tracelevel mq_run_all
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 # initialisation
 function mq_init() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel mq_init
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   # Create namespace 
   create_project "$VAR_MQ_NAMESPACE" "$VAR_MQ_NAMESPACE project" "For MQ" "${MY_RESOURCESDIR}" "${MY_MQ_WORKINGDIR}"
@@ -328,7 +336,7 @@ function mq_init() {
 
   check_directory_exist_create  "${MY_MQ_WORKINGDIR}"
   
-  trace_out $lf_tracelevel mq_init
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -336,7 +344,7 @@ function mq_init() {
 # Main logic
 function main() {
   local lf_tracelevel=1
-  trace_in $lf_tracelevel main
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   if [[ $# -eq 0 ]]; then
     mylog error "No arguments provided. Use --all or --call function_name parameters, function_name parameters, ...."
@@ -362,7 +370,7 @@ function main() {
         ;;
       *)
         mylog error "Invalid option '$1'. Use --all or --call function_name parameters, function_name parameters, ...."
-        trace_out $lf_tracelevel main
+        trace_out $lf_tracelevel ${FUNCNAME[0]}
         return 1
         ;;
       esac
@@ -376,12 +384,12 @@ function main() {
               process_calls "$lf_calls"
             else
               mylog error "No function to call. Use --call function_name parameters, function_name parameters, ...."
-              trace_out $lf_tracelevel main
+              trace_out $lf_tracelevel ${FUNCNAME[0]}
               return 1
             fi;;
     esac
 
-  trace_out $lf_tracelevel main
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
   exit 0
 }
 

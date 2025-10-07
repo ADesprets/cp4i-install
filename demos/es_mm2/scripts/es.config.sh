@@ -2,7 +2,7 @@
 # Create IBM Event streams instance
 function create_es() {
   local lf_tracelevel=3
-	trace_in $lf_tracelevel create_es
+	trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_cr_name="$1"
   local lf_in_source_directory="$2"
@@ -16,7 +16,7 @@ function create_es() {
 
   if [[ $# -ne 5 ]]; then
     mylog error "You have to provide 5 arguments: resource, source directory, destination directory, yaml file and namespace"
-    trace_out $lf_tracelevel create_es
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit 1
   fi
     
@@ -36,14 +36,14 @@ function create_es() {
     #unset VAR_ES_NAMESPACE
   fi
 
-  trace_out $lf_tracelevel create_es
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 # Create kafka topics
 function create_kafka_topics () {
   local lf_tracelevel=3
-	trace_in $lf_tracelevel create_kafka_topics
+	trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_source_directory="$1"
   local lf_in_target_directory="$2"
@@ -54,7 +54,7 @@ function create_kafka_topics () {
 
   if [[ $# -ne 2 ]]; then
     mylog error "You have to provide 2 arguments: source directory and destination directory"
-    trace_out $lf_tracelevel create_kafka_topics
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit 1
   fi
     
@@ -76,14 +76,14 @@ function create_kafka_topics () {
       create_oc_resource "KafkaTopic" "${VAR_ES_TOPIC_NAME}" "${lf_in_source_directory}" "${lf_in_target_directory}" "topic.yaml" "$VAR_ES_NAMESPACE"
   done
       
-  trace_out $lf_tracelevel create_kafka_topics
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 # Create kafka users
 function create_kafka_users () {
   local lf_tracelevel=3
-	trace_in $lf_tracelevel create_kafka_users
+	trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_source_directory="$1"
   local lf_in_target_directory="$2"
@@ -94,7 +94,7 @@ function create_kafka_users () {
 
   if [[ $# -ne 2 ]]; then
     mylog error "You have to provide 2 arguments: source directory and destination directory"
-    trace_out $lf_tracelevel create_kafka_topics
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit 1
   fi
 
@@ -107,14 +107,14 @@ function create_kafka_users () {
 
   create_oc_resource "KafkaUser" "kafka-user1" "${lf_in_source_directory}" "${lf_in_target_directory}" "kafka-user1.yaml" "$VAR_ES_NAMESPACE"
 
-  trace_out $lf_tracelevel create_kafka_users
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 # Create kafka connector 
 function create_kafka_connector () {
  	local lf_tracelevel=3
-	trace_in $lf_tracelevel create_kafka_connector
+	trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_source_directory="$1"
   local lf_in_target_directory="$2"
@@ -125,7 +125,7 @@ function create_kafka_connector () {
 
   if [[ $# -ne 2 ]]; then
     mylog error "You have to provide 2 arguments: source directory and destination directory"
-    trace_out $lf_tracelevel create_kafka_connector
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit 1
   fi
 
@@ -138,7 +138,7 @@ function create_kafka_connector () {
   mylog info "Create Kafka Connectors for datagen and MQ connectors"
   create_oc_resource "KafkaConnector" "datagen" "${lf_in_source_directory}" "${lf_in_target_directory}" "KConnector_datagen.yaml" "$VAR_ES_NAMESPACE"
 
-  trace_out $lf_tracelevel create_kafka_connector
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -148,7 +148,7 @@ function create_kafka_connector () {
 # @param 3: namespace
 function create_eventstreams_instance () {
   local lf_tracelevel=3
-	trace_in $lf_tracelevel create_eventstreams_instance
+	trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_cr_name="$1"
   local lf_in_source_directory="$2"
@@ -161,7 +161,7 @@ function create_eventstreams_instance () {
 
   if [[ $# -ne 4 ]]; then
     mylog error "You have to provide 4 arguments: resource, source directory, destination directory and namespace"
-    trace_out $lf_tracelevel create_eventstreams_instance
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit 1
   fi
   
@@ -182,14 +182,14 @@ function create_eventstreams_instance () {
 
   create_kafka_connector "${lf_in_source_directory}" "${lf_in_target_directory}"
 
-  trace_out $lf_tracelevel create_eventstreams_instance
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 # run all
 function es_run_all () {
   local lf_tracelevel=3
-	trace_in $lf_tracelevel es_run_all
+	trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   # Create Event Streams instances
   create_eventstreams_instance "${VAR_ES_INSTANCE_NAME1}" "${sc_component_tmpl_dir}" "${VAR_ES_WORKINGDIR1}" "${VAR_ES_NAMESPACE1}"
@@ -199,14 +199,14 @@ function es_run_all () {
 
   es_display_access_info
   
-  trace_out $lf_tracelevel es_run_all
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 # Display information to access Eventstreams
 function es_display_access_info() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel es_display_access_info
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   mylog info "==== Displaying Access Info to ES." 0
 
@@ -245,21 +245,21 @@ function es_display_access_info() {
 
   echo ${BOOKMARK_EPILOGUE} >> ${lf_bookmarks_file}
 
-  trace_out $lf_tracelevel es_display_access_info
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 # initialisation
 function es_init() {
   local lf_tracelevel=2
-	trace_in $lf_tracelevel es_init
+	trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   export VAR_ES_WORKINGDIR="${MY_WORKINGDIR}DEMOS/ES_MM2/"
   check_directory_exist_create "${VAR_ES_WORKINGDIR}"
 
   # tmpl directory
   sc_component_tmpl_dir="${sc_component_script_dir}../tmpl/"
-  trace_out $lf_tracelevel es_init
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -271,7 +271,7 @@ function main() {
   mylog info "==== Start: es_mm2 demo (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
   local lf_tracelevel=3
-	trace_in $lf_tracelevel main
+	trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   if [[ $# -eq 0 ]]; then
     mylog error "No arguments provided. Use --all or --call function_name parameters, function_name parameters, ...."
@@ -297,7 +297,7 @@ function main() {
         ;;
       *)
         mylog error "Invalid option '$1'. Use --all or --call function_name parameters, function_name parameters, ...."
-        trace_out $lf_tracelevel main
+        trace_out $lf_tracelevel ${FUNCNAME[0]}
         return 1
         ;;
       esac
@@ -312,12 +312,12 @@ function main() {
               process_calls "$lf_calls"
             else
               mylog error "No function to call. Use --call function_name parameters, function_name parameters, ...."
-              trace_out $lf_tracelevel main
+              trace_out $lf_tracelevel ${FUNCNAME[0]}
               return 1
             fi;;
   esac
 
-  trace_out $lf_tracelevel main
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_ending_date=$(date)
   local lf_ending_date_in_seconds=$(date +%s)

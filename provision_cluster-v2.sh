@@ -17,7 +17,7 @@ function install_sftp() {
   mylog info "==== Installing SFTP server (${FUNCNAME[0]}) [started : $lf_starting_date]." 0 
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_sftp
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
   
@@ -85,7 +85,7 @@ function install_sftp() {
     create_oc_resource "Route" "${VAR_SFTP_SERVER_NAMESPACE}-sftp-route" "${MY_SFTP_SCRIPTDIR}resources/" "${MY_SFTP_WORKINGDIR}resources/" "sftp_route.yaml" "$VAR_SFTP_SERVER_NAMESPACE"
   fi
 
-  trace_out $lf_tracelevel install_sftp
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
@@ -101,7 +101,7 @@ function install_gitops() {
   mylog info "==== Installing Redhat Openshift GitOps (${FUNCNAME[0]}) [started : $lf_starting_date]." 0 
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_gitops
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -116,7 +116,7 @@ function install_gitops() {
     create_operator_instance "${MY_GITOPS_OPERATOR}" "${MY_RH_OPERATORS_CATALOG}" "${MY_OPERATORSDIR}" "${MY_GITOPS_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
   fi
 
-  trace_out $lf_tracelevel install_gitops
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
@@ -134,7 +134,7 @@ function install_logging_loki() {
   mylog info "==== Installing Cluster Logging : Loki log store (${FUNCNAME[0]}) [started : $lf_starting_date]." 0 
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_logging_loki
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -233,7 +233,7 @@ function install_logging_loki() {
     # ViaQ (General Availability) et OpenTelemetry (Technology Preview)
   fi
   
-  trace_out $lf_tracelevel install_logging_loki
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
@@ -250,7 +250,7 @@ function install_cluster_observability() {
   mylog info "==== Installing Cluster Observability (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_cluster_observability
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -281,7 +281,7 @@ function install_cluster_observability() {
     create_operator_instance "${MY_COO_OPERATOR}" "${MY_RH_OPERATORS_CATALOG}" "${MY_OPERATORSDIR}" "${MY_COO_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
   fi
     
-  trace_out $lf_tracelevel install_cluster_observability
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
     
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
@@ -294,7 +294,7 @@ function install_cluster_observability() {
 # Pre requisite : Install the Red Hat OpenShift Logging Operator, Loki Operator, and Cluster Observability Operator (COO)
 function install_logging_otel() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_logging_otel
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -327,7 +327,7 @@ function install_logging_otel() {
 
   fi
 
-  trace_out $lf_tracelevel install_logging_otel
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 
@@ -342,7 +342,7 @@ function install_cluster_monitoring() {
   mylog info "==== Installing Redhat Cluster Monitoring (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_cluster_monitoring
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -357,7 +357,7 @@ function install_cluster_monitoring() {
     # Granting users permissions for core platform monitoring
   fi
 
-  trace_out $lf_tracelevel install_cluster_monitoring
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
@@ -373,7 +373,7 @@ function install_oadp() {
   mylog info "==== Installing Redhat Openshift OADP (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_oadp
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -388,7 +388,7 @@ function install_oadp() {
     create_operator_instance "${MY_OADP_OPERATOR}" "${MY_RH_OPERATORS_CATALOG}" "${MY_OPERATORSDIR}" "${MY_OADP_WORKINGDIR}" "${MY_OADP_NAMESPACE}"
   fi
 
-  trace_out $lf_tracelevel install_oadp
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
@@ -405,7 +405,7 @@ function install_pipelines() {
   mylog info "==== Installing Redhat Openshift Pipelines (tekton) (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_pipelines
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -416,7 +416,7 @@ function install_pipelines() {
     create_operator_instance "${MY_PIPELINES_OPERATOR}" "${MY_RH_OPERATORS_CATALOG}" "${MY_OPERATORSDIR}" "${MY_PIPELINES_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
   fi
   
-  trace_out $lf_tracelevel install_pipelines
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
@@ -432,7 +432,7 @@ function install_mail() {
   mylog info "==== Installing Mailhog (server and client) (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_mail
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -454,7 +454,7 @@ function install_mail() {
     export VAR_MAIL_HOSTNAME=$($MY_CLUSTER_COMMAND -n ${VAR_MAIL_NAMESPACE} get route ${VAR_MAIL_ROUTE} -o jsonpath='{.spec.host}')
   fi
 
-  trace_out $lf_tracelevel install_mail
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
@@ -469,7 +469,7 @@ function install_openldap() {
   mylog info "==== Installing OpenLdap (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_openldap
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -503,7 +503,7 @@ function install_openldap() {
 
   fi
 
-  trace_out $lf_tracelevel install_openldap
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
@@ -526,7 +526,7 @@ function install_cert_manager() {
   mylog info "==== Installing Redhat Cert Manager (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_cert_manager
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -543,7 +543,7 @@ function install_cert_manager() {
     esac
   fi
 
-  trace_out $lf_tracelevel install_cert_manager
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
@@ -560,7 +560,7 @@ function install_lic_svc() {
   mylog info "==== Installing IBM License Server (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_lic_svc
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -610,7 +610,7 @@ function install_lic_svc() {
     fi
   fi
 
-  trace_out $lf_tracelevel install_lic_svc
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
@@ -628,7 +628,7 @@ function install_lic_reporter_svc() {
   mylog info "==== Installing IBM License Service Reporter (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
   
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_lic_reporter_svc
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -687,7 +687,7 @@ function install_lic_reporter_svc() {
     fi
   fi
 
-  trace_out $lf_tracelevel install_lic_reporter_svc
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
@@ -712,7 +712,7 @@ function install_fs() {
   mylog info "==== Installing IBM Common Services (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_fs
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -743,7 +743,7 @@ function install_fs() {
     create_oc_resource "CommonService" "$MY_COMMONSERVICES_INSTANCE_NAME" "${MY_RESOURCESDIR}" "${MY_COMMONSERVICES_WORKINGDIR}" "foundational-services-cr.yaml" "$MY_OPERATORS_NAMESPACE"
   fi
     
-  trace_out $lf_tracelevel install_fs
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
@@ -758,7 +758,7 @@ function install_openliberty() {
   mylog info "==== Installing OPEN Liberty (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_openliberty
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -795,7 +795,7 @@ function install_openliberty() {
     fi
   fi
 
-  trace_out $lf_tracelevel install_openliberty
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
@@ -810,7 +810,7 @@ function install_wasliberty() {
   mylog info "==== Installing WAS Liberty (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_wasliberty
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
   
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -841,7 +841,7 @@ function install_wasliberty() {
     create_operator_instance "${MY_WASLIBERTY_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_WASLIBERTY_WORKINGDIR}" "${VAR_WASLIBERTY_NAMESPACE}"
   fi
 
-  trace_out $lf_tracelevel install_wasliberty
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
@@ -856,7 +856,7 @@ function install_navigator() {
   mylog info "==== Installing CP4I Navigator (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_navigator
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -894,7 +894,7 @@ function install_navigator() {
     create_operand_instance "PlatformNavigator" "${VAR_NAVIGATOR_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_NAVIGATOR_WORKINGDIR}" "Navigator-Capability.yaml" "$VAR_NAVIGATOR_NAMESPACE" "{.status.conditions[0].type}" "Ready"
   fi
 
-  trace_out $lf_tracelevel install_navigator
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
@@ -909,7 +909,7 @@ function install_assetrepo() {
   mylog info "==== Installing CP4I Asset Repository (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_assetrepo
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -944,7 +944,7 @@ function install_assetrepo() {
     fi
   fi
 
-  trace_out $lf_tracelevel install_assetrepo
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
@@ -959,7 +959,7 @@ function install_intassembly() {
   mylog info "==== Installing CP4I Integration Assembly (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_intassembly
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -970,7 +970,7 @@ function install_intassembly() {
     create_operand_instance "IntegrationAssembly" "${VAR_INTASSEMBLY_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_INTASSEMBLY_WORKINGDIR}" "IntegrationAssembly-Capability.yaml" "$VAR_INTASSEMBLY_NAMESPACE" "{.status.phase}" "Ready"
   fi
 
-  trace_out $lf_tracelevel install_intassembly
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
@@ -985,7 +985,7 @@ function install_ace() {
   mylog info "==== Installing ACE (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
   
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_ace
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -1017,7 +1017,7 @@ function install_ace() {
     create_operand_instance "DesignerAuthoring" "${VAR_ACE_DESIGNER_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_ACE_WORKINGDIR}" "ACE-Designer-Capability.yaml" "$VAR_ACE_NAMESPACE" "{.status.phase}" "Ready"
   fi
 
-  trace_out $lf_tracelevel install_ace
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
@@ -1029,7 +1029,7 @@ function install_ace() {
 # TO BE REVIEWED
 function create_milvus_root_certificate () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_milvus_root_issuer
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   mylog warn "TODO: (${FUNCNAME[0]}) should be refactored with more generic approach." 0
   export VAR_CERT_NAME=${VAR_MILVUS_OPERATOR_NAMESPACE}-milvus-ca
@@ -1047,7 +1047,7 @@ function create_milvus_root_certificate () {
 
   unset VAR_CERT_NAME VAR_NAMESPACE VAR_CERT_ISSUER_REF VAR_CERT_COMMON_NAME VAR_CERT_ORGANISATION VAR_CERT_COUNTRY VAR_CERT_LOCALITY VAR_CERT_STATE
 
-  trace_out $lf_tracelevel create_milvus_root_certificate
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -1065,7 +1065,7 @@ function install_milvus() {
   create_project "${VAR_MILVUS_OPERATOR_NAMESPACE}" "${VAR_MILVUS_OPERATOR_NAMESPACE} project" "For Milvus Vector Database" "${MY_RESOURCESDIR}" "${MY_APIC_WORKINGDIR}"
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_milvus
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
   if $MY_APIC; then
@@ -1092,7 +1092,7 @@ function install_milvus() {
     # $MY_CLUSTER_COMMAND -n "${VAR_MILVUS_NAMESPACE}" apply -f ${MY_YAMLDIR}operands/APIC_MILVUS_DB.yaml
   fi
 
-  trace_out $lf_tracelevel install_milvus
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
@@ -1107,7 +1107,7 @@ function install_apic() {
   mylog info "==== Installing APIC (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_apic
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -1164,7 +1164,7 @@ function install_apic() {
 
   fi
 
-  trace_out $lf_tracelevel install_apic
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
@@ -1181,7 +1181,7 @@ function install_apic_graphql() {
   mylog info "==== Installing APIC Graphql (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_apic_graphql
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -1266,20 +1266,20 @@ function install_apic_graphql() {
     adapt_file ${MY_RESOURCESDIR} ${MY_APIC_GRAPHQL_WORKINGDIR} graphql-route.yaml
     if ! $MY_CLUSTER_COMMAND apply -f "${MY_APIC_GRAPHQL_WORKINGDIR}graphql-route.yaml" ; then
       unset VAR_CLUSTER_DOMAIN
-      trace_out $lf_tracelevel install_apic_graphql
+      trace_out $lf_tracelevel ${FUNCNAME[0]}
       exit 1
     fi
 
     # Install Introspection service
     adapt_file ${MY_APIC_GRAPHQL_DIR} ${MY_APIC_GRAPHQL_WORKINGDIR} introspection.yaml
     if ! $MY_CLUSTER_COMMAND apply -f "${MY_APIC_GRAPHQL_WORKINGDIR}introspection.yaml" ; then
-      trace_out $lf_tracelevel install_apic_graphql
+      trace_out $lf_tracelevel ${FUNCNAME[0]}
       exit 1
     fi
   fi
   unset VAR_CERT_ISSUER 
 
-  trace_out $lf_tracelevel install_apic_graphql
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
@@ -1291,7 +1291,7 @@ function install_apic_graphql() {
 # https://ibm.github.io/event-automation/es/installing/installing-on-kubernetes/
 function install_es_k8s() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_es_k8s
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -1308,7 +1308,7 @@ function install_es_k8s() {
     wait_for_state "Deployment" "eventstreams-cluster-operator" "{.status.conditions[?(@.type=='Available')].status}" "True" "${VAR_ES_NAMESPACE}"
   fi
 
-  trace_out $lf_tracelevel install_es_k8s
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -1316,7 +1316,7 @@ function install_es_k8s() {
 # https://ibm.github.io/event-automation/es/installing/installing/
 function install_es_oc() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_es_oc
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -1346,7 +1346,7 @@ function install_es_oc() {
     create_operator_instance "${MY_ES_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_ES_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
   fi
 
-  trace_out $lf_tracelevel install_es_oc
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -1358,7 +1358,7 @@ function install_es() {
   mylog info "==== Installing  Eventstreams Operator (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_es
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -1368,7 +1368,7 @@ function install_es() {
     oc) install_es_oc;;
   esac
 
-  trace_out $lf_tracelevel install_es
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
@@ -1384,7 +1384,7 @@ function install_eem() {
   mylog info "==== Installing  Event Endpoint Management (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_eem
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -1394,7 +1394,7 @@ function install_eem() {
     oc) install_eem_oc;;
   esac
 
-  trace_out $lf_tracelevel install_eem
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
@@ -1410,7 +1410,7 @@ function install_egw() {
   mylog info "==== Installing  Event Gateway (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_egw
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -1420,7 +1420,7 @@ function install_egw() {
     oc) install_egw_oc;;
   esac
 
-  trace_out $lf_tracelevel install_egw
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
@@ -1437,7 +1437,7 @@ function install_ep() {
   mylog info "==== Installing  Event Processing (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_ep
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -1447,7 +1447,7 @@ function install_ep() {
     oc) install_ep_oc;;
   esac
 
-  trace_out $lf_tracelevel install_ep
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
@@ -1464,7 +1464,7 @@ function install_flink() {
   mylog info "==== Installing Flink (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_flink
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -1474,7 +1474,7 @@ function install_flink() {
     oc) install_flink_oc;;
   esac
 
-  trace_out $lf_tracelevel install_flink
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
@@ -1485,13 +1485,13 @@ function install_flink() {
 # Install both flink and Event processing in this order
 function install_flink_ep() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_flink_ep
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   install_flink
 
   install_ep
 
-  trace_out $lf_tracelevel install_flink_ep
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -1502,7 +1502,7 @@ function install_hsts() {
   mylog info "==== Installing  HSTS (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_hsts
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -1532,7 +1532,7 @@ function install_hsts() {
     
   fi
 
-  trace_out $lf_tracelevel install_hsts
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
@@ -1547,7 +1547,7 @@ function install_mq() {
   mylog info "==== Installing  MQ operator (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_mq
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -1556,7 +1556,7 @@ function install_mq() {
     oc) install_mq_oc;;
   esac
 
-  trace_out $lf_tracelevel install_mq
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
@@ -1573,7 +1573,7 @@ function install_instana() {
   mylog info "==== Installing Instana (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
     
   local lf_tracelevel=2
-  trace_in $lf_tracelevel install_instana
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -1601,7 +1601,7 @@ function install_instana() {
     
   fi
 
-  trace_out $lf_tracelevel install_instana
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
@@ -1616,7 +1616,7 @@ function customise_openldap() {
   mylog info "==== Customise ldap (ldap.config.sh)." 0
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel customise_openldap
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -1629,7 +1629,7 @@ function customise_openldap() {
     ${MY_LDAP_SIMPLE_DEMODIR}scripts/ldap.config.sh --all
   fi
 
-  trace_out $lf_tracelevel customise_openldap
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_ending_date=$(date)
   mylog info "==== Customisation of ldap (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
@@ -1643,7 +1643,7 @@ function customise_openliberty() {
   mylog info "==== Customise Open Liberty (olp.config.sh)." 0
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel customise_openliberty
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -1654,7 +1654,7 @@ function customise_openliberty() {
     ${MY_OPENLIBERTY_SCRIPTDIR}scripts/olp.config.sh --call olp_run_all
   fi
 
-  trace_out $lf_tracelevel customise_openliberty
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_ending_date=$(date)    
   mylog info "==== Customisation of Open Liberty (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
@@ -1668,7 +1668,7 @@ function customise_wasliberty() {
   mylog info "==== Customise WAS Liberty (was.config.sh)." 0
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel customise_wasliberty
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
   
@@ -1678,7 +1678,7 @@ function customise_wasliberty() {
     ${MY_WASLIBERTY_DEMODIR}scripts/was.config.sh --call was_run_all
   fi
 
-  trace_out $lf_tracelevel customise_wasliberty
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_ending_date=$(date)    
   mylog info "==== Customisation of WAS Liberty (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
@@ -1692,7 +1692,7 @@ function customise_ace() {
   mylog info "==== Customise ACE (ace.config.sh)." 0
   
   local lf_tracelevel=2
-  trace_in $lf_tracelevel customise_ace
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -1705,7 +1705,7 @@ function customise_ace() {
     ${MY_ACE_SIMPLE_DEMODIR}scripts/ace.config.sh --call ace_run_all
   fi
 
-  trace_out $lf_tracelevel customise_ace
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_ending_date=$(date)
   mylog info "==== Customisation of ace (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
@@ -1719,7 +1719,7 @@ function customise_apic() {
   mylog info "==== Customise APIC (apic.config.sh)." 0
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel customise_apic
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -1732,7 +1732,7 @@ function customise_apic() {
     ${MY_APIC_SIMPLE_DEMODIR}scripts/apic.config.sh --call apic_run_all
   fi
 
-  trace_out $lf_tracelevel customise_apic
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_ending_date=$(date)
   mylog info "==== Customisation of apic (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
@@ -1746,7 +1746,7 @@ function customise_es() {
   mylog info "==== Customise ES (es.config.sh)." 0
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel customise_es
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -1776,7 +1776,7 @@ function customise_es() {
     # ${MY_ES_MM2_DEMODIR}scripts/es.config.sh --call es_run_all
   fi
 
-  trace_out $lf_tracelevel customise_es
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_ending_date=$(date)
   mylog info "==== Customisation of es (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
@@ -1790,7 +1790,7 @@ function customise_eem() {
   mylog info "==== Customise EEM (eem.config.sh)." 0
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel customise_eem
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -1800,7 +1800,7 @@ function customise_eem() {
     ${MY_EEM_SIMPLE_DEMODIR}scripts/eem.config.sh --call eem_run_all
   fi
 
-  trace_out $lf_tracelevel customise_eem
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_ending_date=$(date)
   mylog info "==== Customisation of eem (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
@@ -1814,7 +1814,7 @@ function customise_egw() {
   mylog info "==== Customise EGW (egw.config.sh)." 0
   
   local lf_tracelevel=2
-  trace_in $lf_tracelevel customise_egw
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -1822,7 +1822,7 @@ function customise_egw() {
     mylog info "==== Place Holder."
   fi
 
-  trace_out $lf_tracelevel customise_egw
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_ending_date=$(date)
   mylog info "==== Customisation of egw (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
@@ -1832,13 +1832,13 @@ function customise_egw() {
 # Customise both flink and Event processing in this order
 function customise_flink_ep() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel customise_flink_ep
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   customise_flink
 
   customise_ep
 
-  trace_out $lf_tracelevel customise_flink_ep
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -1849,7 +1849,7 @@ function customise_ep() {
   mylog info "==== Customise EP (ep.config.sh)." 0
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel customise_ep
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -1860,7 +1860,7 @@ function customise_ep() {
     mylog info "==== Place Holder."
   fi
 
-  trace_out $lf_tracelevel customise_ep
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_ending_date=$(date)
   mylog info "==== Customisation of ep (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0  
@@ -1874,7 +1874,7 @@ function customise_flink() {
   mylog info "==== Customise FLINK (flink.config.sh)." 0
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel customise_flink
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -1882,7 +1882,7 @@ function customise_flink() {
     mylog info "==== Place Holder."
   fi
 
-  trace_out $lf_tracelevel customise_flink
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_ending_date=$(date)
   mylog info "==== Customisation of flink (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
@@ -1896,7 +1896,7 @@ function customise_hsts() {
   mylog info "==== Customise HSTS (flink.config.sh)." 0
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel customise_hsts
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -1905,7 +1905,7 @@ function customise_hsts() {
     mylog info "==== Place Holder."
   fi
 
-  trace_out $lf_tracelevel customise_hsts
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_ending_date=$(date)
   mylog info "==== Customisation of hsts (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
@@ -1919,7 +1919,7 @@ function customise_mq() {
   mylog info "==== Customise MQ (mq.config.sh)." 0
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel customise_mq
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -1936,7 +1936,7 @@ function customise_mq() {
     ${MY_MQ_SIMPLE_DEMODIR}scripts/mq.config.sh --call mq_run_all
   fi
 
-  trace_out $lf_tracelevel customise_mq
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_ending_date=$(date)
   mylog info "==== Customisation of mq (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
@@ -1950,7 +1950,7 @@ function customise_instana() {
   mylog info "==== Customise INSTANA (instana.config.sh)." 0
 
   local lf_tracelevel=2
-  trace_in $lf_tracelevel customise_instana
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -1961,7 +1961,7 @@ function customise_instana() {
     mylog info "==== Place Holder."
   fi
 
-  trace_out $lf_tracelevel customise_instana
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_ending_date=$(date)
   mylog info "==== Customisation of instana (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
@@ -1980,7 +1980,7 @@ function customise_instana() {
 # 
 function create_edb_postgres_db() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel create_edb_postgres_db
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_cluster_name="$1"
   local lf_in_db_name="$2"
@@ -2032,7 +2032,7 @@ function create_edb_postgres_db() {
   # psql -h <postgresql_svc> -U <postgres_user> -d <database_name> // password is asked
   # \q to quit
 
-  trace_out $lf_tracelevel create_edb_postgres_db
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -2040,7 +2040,7 @@ function create_edb_postgres_db() {
 #
 function start_podman_machine () {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel start_podman_machine
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   # check if environment variable MINIKUBE_HOME is set
   # https://ioflood.com/blog/bash-check-if-environment-variable-is-set/
@@ -2056,7 +2056,7 @@ function start_podman_machine () {
     podman machine start
   fi
 
-  trace_out $lf_tracelevel start_podman_machine
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -2065,7 +2065,7 @@ function start_podman_machine () {
 ################################################
 function provision_cluster_init() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel provision_cluster_init
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
@@ -2138,7 +2138,7 @@ function provision_cluster_init() {
   # Get the default registry route:
   export VAR_IMAGE_REGISTRY_HOST=$($MY_CLUSTER_COMMAND get route default-route -n openshift-image-registry --template='{{ .spec.host }}')
   
-  trace_out $lf_tracelevel provision_cluster_init
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -2146,7 +2146,7 @@ function provision_cluster_init() {
 ################################################
 function install_part() {
   local lf_tracelevel=1
-  trace_in $lf_tracelevel install_part
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   # needed by other components
   install_cert_manager
@@ -2195,7 +2195,7 @@ function install_part() {
 
   # test_keycloak
 
-  trace_out $lf_tracelevel install_part
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -2203,7 +2203,7 @@ function install_part() {
 ################################################
 function customise_part() {
   local lf_tracelevel=1
-  trace_in $lf_tracelevel customise_part
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   customise_openldap
   
@@ -2222,14 +2222,14 @@ function customise_part() {
   
   customise_instana
 
-  trace_out $lf_tracelevel customise_part
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 # function to run the whole script
 function run_all() {
   local lf_tracelevel=1
-  trace_in $lf_tracelevel run_all
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   # Start installation capabilities
   install_part
@@ -2238,7 +2238,7 @@ function run_all() {
   # No need to customise navigator, intassembly, assetrepo
   customise_part
 
-  trace_out $lf_tracelevel run_all
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -2250,7 +2250,7 @@ function main() {
   mylog info "==== Installing CP4I Components (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
   local lf_tracelevel=1
-  trace_in $lf_tracelevel main
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   if [[ $# -eq 0 ]]; then
     mylog error "No arguments provided. Use --all or --call function_name parameters, function_name parameters, ...."
@@ -2279,7 +2279,7 @@ function main() {
         ;;
       *)
         mylog error "Invalid option '$1'. Use --all or --call function_name parameters, function_name parameters, ...."
-        trace_out $lf_tracelevel main
+        trace_out $lf_tracelevel ${FUNCNAME[0]}
         return 1
         ;;
       esac
@@ -2294,12 +2294,12 @@ function main() {
       process_calls "$lf_calls"
     else
       mylog error "No function to call. Use --call function_name parameters, function_name parameters, ...."
-      trace_out $lf_tracelevel main
+      trace_out $lf_tracelevel ${FUNCNAME[0]}
       return 1
     fi
   fi
 
-  trace_out $lf_tracelevel main
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_ending_date=$(date)
   local lf_ending_date_in_seconds=$(date +%s)

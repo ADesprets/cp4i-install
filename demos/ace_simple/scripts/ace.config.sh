@@ -3,7 +3,7 @@
 # Display information to access CP4I
 function ace_display_access_info() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel ace_display_access_info
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   mylog info "==== Displaying Access Info to CP4I." 0
 
@@ -28,7 +28,7 @@ function ace_display_access_info() {
 
   echo ${BOOKMARK_EPILOGUE} >> ${lf_bookmarks_file}
 
-  trace_out $lf_tracelevel ace_display_access_info
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -37,14 +37,14 @@ function ace_display_access_info() {
 ################################################
 function create_secret_for_barauth () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_secret_for_barauth
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
  
   local lf_in_json_file=$1
   decho $lf_tracelevel "Parameters:\"$1\"|"
 
   if [[ $# -ne 1 ]]; then
     mylog error "You have to provide one argument: the file"
-    trace_out $lf_tracelevel create_secret_for_barauth
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
@@ -61,7 +61,7 @@ function create_secret_for_barauth () {
     $MY_CLUSTER_COMMAND -n=${VAR_ACE_NAMESPACE} create secret generic ${VAR_ACE_BARAUTH_SECRET_NAME} --from-file=configuration=${lf_in_json_file} 
   fi
 
-  trace_out $lf_tracelevel create_secret_for_barauth
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -69,14 +69,14 @@ function create_secret_for_barauth () {
 ################################################
 function create_ace_config_barauth () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_ace_config_barauth
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
  
   local lf_in_file=$1
   decho $lf_tracelevel "Parameters:\"$1\"|"
 
   if [[ $# -ne 1 ]]; then
     mylog error "You have to provide one argument: the file"
-    trace_out $lf_tracelevel create_ace_config_barauth
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
@@ -99,7 +99,7 @@ function create_ace_config_barauth () {
     $MY_CLUSTER_COMMAND -n ${VAR_ACE_NAMESPACE} apply -f ${lf_gen_file}
   fi
 
-  trace_out $lf_tracelevel create_ace_config_barauth
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -107,14 +107,14 @@ function create_ace_config_barauth () {
 ################################################
 function create_ace_config_serverconf () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_ace_config_serverconf
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
  
   local lf_in_file=$1
   decho $lf_tracelevel "Parameters:\"$1\"|"
 
   if [[ $# -ne 1 ]]; then
     mylog error "You have to provide one argument: the file"
-    trace_out $lf_tracelevel create_ace_config_serverconf
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
@@ -144,7 +144,7 @@ function create_ace_config_serverconf () {
     $MY_CLUSTER_COMMAND -n ${VAR_ACE_NAMESPACE} apply -f ${lf_gen_file}
   fi
 
-  trace_out $lf_tracelevel create_ace_config_serverconf
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -152,7 +152,7 @@ function create_ace_config_serverconf () {
 ################################################
 function ace_run_all () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel ace_run_all
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   # Loop through files in the barfiles directory
   for sc_barfiledir in ${sc_ace_barfiles_dir}*; do
@@ -234,14 +234,14 @@ function ace_run_all () {
     
   done
 
-  trace_out $lf_tracelevel ace_run_all
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 # initialisation
 function ace_init() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel ace_init
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   export VAR_ACE_WORKINGDIR="${MY_WORKINGDIR}demos/ace_simple/working/"
   check_directory_exist_create "${VAR_ACE_WORKINGDIR}"
@@ -253,7 +253,7 @@ function ace_init() {
   
   # Data directory (in this case bar files directory)
   sc_ace_barfiles_dir="${sc_component_script_dir}/BarFiles/"
-  trace_out $lf_tracelevel ace_init
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -268,11 +268,11 @@ function main() {
   local lf_starting_date=$(date);
   
   local lf_tracelevel=1
-  trace_in $lf_tracelevel main
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   if [[ $# -eq 0 ]]; then
     mylog error "No arguments provided. Use --all or --call function_name parameters, function_name parameters, ...."
-    trace_out $lf_tracelevel main
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit 1
   fi
 
@@ -295,7 +295,7 @@ function main() {
         ;;
       *)
         mylog error "Invalid option '$1'. Use --all or --call function_name parameters, function_name parameters, ...."
-        trace_out $lf_tracelevel main
+        trace_out $lf_tracelevel ${FUNCNAME[0]}
         return 1
         ;;
       esac
@@ -310,12 +310,12 @@ function main() {
               process_calls "$lf_calls"
             else
               mylog error "No function to call. Use --call function_name parameters, function_name parameters, ...."
-              trace_out $lf_tracelevel main
+              trace_out $lf_tracelevel ${FUNCNAME[0]}
               return 1
             fi;;
     esac
 
-  trace_out $lf_tracelevel main
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 
   ace_display_access_info
 

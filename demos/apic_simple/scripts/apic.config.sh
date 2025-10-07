@@ -6,7 +6,7 @@
 # @param mail_server_ip: Port of the mail server, example: 2525
 function create_mail_server() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_mail_server  
+  trace_in $lf_tracelevel ${FUNCNAME[0]}  
   local mail_server_ip=$1
   local mail_server_port=$2
 
@@ -41,7 +41,7 @@ function create_mail_server() {
   -H "content-type: application/json"\
   --data "{\"mail_server_url\":$mailServerUrl,\"email_sender\":{\"name\":\"APIC Administrator\",\"address\":\"$APIC_ADMIN_EMAIL\"}}");
 
-  trace_out $lf_tracelevel create_mail_server  
+  trace_out $lf_tracelevel ${FUNCNAME[0]}  
 }
 
 ################################################
@@ -52,7 +52,7 @@ function create_mail_server() {
 # @param org_owner_email: The email of the owner of the organisation
 function create_org() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_org  
+  trace_in $lf_tracelevel ${FUNCNAME[0]}  
 
   local org_name=$1
   local org_owner_id=$2
@@ -109,14 +109,14 @@ function create_org() {
     mylog info "$org_name already exists, use it."
   fi
 
-  trace_out $lf_tracelevel create_org
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 # Create the topology (check if needed for cp4i installation)
 function create_topology() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_topology
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_integration_url=$1
 
@@ -198,7 +198,7 @@ function create_topology() {
 
   decho $lf_tracelevel "createPortal: $createPortal"
 
-  trace_out $lf_tracelevel create_topology 
+  trace_out $lf_tracelevel ${FUNCNAME[0]} 
 }
 
 ################################################
@@ -207,7 +207,7 @@ function create_topology() {
 # @param org_name: The name of the organisation.
 function create_catalog() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_catalog
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local org_name=$(echo "$1" | awk '{print tolower($0)}')
 
@@ -259,7 +259,7 @@ for index in ${!catalog_name[@]}
        --data-binary "{\"portal\": {\"endpoint\": \"https://$EP_PORTAL/$org_name/${catalog_name[$index]}\",\"portal_service_url\": \"$portalServiceURL\", \"type\": \"drupal\"},\"application_lifecycle\": {} }" | jq .portal.endpoint);
       # mylog info "Portal endpoint for: "${catalog_summary[$index]}": $res"
     done
-  trace_out $lf_tracelevel create_catalog
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -267,7 +267,7 @@ for index in ${!catalog_name[@]}
 # @param lf_integration_url
 function create_apic_resources() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_apic_resources
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_cm_token=$1
   local lf_am_token=$2
@@ -380,7 +380,7 @@ function create_apic_resources() {
       --data-binary "@${MY_APIC_WORKINGDIR}resources/ConfiguredOAuthProvider_res.json"
   fi
 
-  trace_out $lf_tracelevel create_apic_resources
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 
@@ -390,13 +390,13 @@ function create_apic_resources() {
 # @param .
 function configureAIAgent() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel configureAIAgent
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   # Configure the AI Agent for VS Code extension with watsonx.ai settings
   # host, credential (token) and project
 
 
-  trace_out $lf_tracelevel configureAIAgent
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 
@@ -405,7 +405,7 @@ function configureAIAgent() {
 # @param org_name: The name of the organisation.
 function load_apis () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel load_apis
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local platform_api_url=$1
   local apic_provider_org=$2
@@ -437,7 +437,7 @@ for index in ${!api_names[@]}
       mylog info "${api_names[$index]} API already exists, do not load it."
     fi
   done
-  trace_out $lf_tracelevel load_apis
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 
@@ -445,7 +445,7 @@ for index in ${!api_names[@]}
 # Init APIC variables
 function init_apic_variables() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel init_apic_variables
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   # Retrieve the various routes for APIC components
   # API Manager URL
@@ -488,7 +488,7 @@ function init_apic_variables() {
   
   PLATFORM_API_URL=$($MY_CLUSTER_COMMAND -n "${apic_project}" get apiconnectcluster "${APIC_INSTANCE_NAME}" -o=jsonpath='{.status.endpoints[?(@.name=="platformApi")].uri}')
 
-  trace_out $lf_tracelevel init_apic_variables
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
  
 }
 
@@ -497,7 +497,7 @@ function init_apic_variables() {
 # @param
 function download_tools () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel download_tools
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
   # APIC_NAMESPACE=$($MY_CLUSTER_COMMAND get apiconnectcluster -A -o jsonpath='{..namespace}')
   local apic_instance=$($MY_CLUSTER_COMMAND -n "${apic_project}" get apiconnectcluster -o=jsonpath='{.items[0].metadata.name}')
   local lf_file2download
@@ -534,14 +534,14 @@ function download_tools () {
   toolkit_creds_url="${PLATFORM_API_URL}api/cloud/settings/toolkit-credentials"
   mylog info "To set the credential run the cmd apic client-creds:set <creds.json file>" 1>&2
 
-  trace_out $lf_tracelevel download_tools
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 # Create Cloud Manager token (its name is access_token)
 function create_cm_token(){
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_cm_token
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   APIC_CRED=$($MY_CLUSTER_COMMAND -n "${apic_project}" get secret ${APIC_INSTANCE_NAME}-mgmt-cli-cred -o jsonpath='{.data.credential\.json}' | base64 --decode)
   APIC_APIKEY=$(curl -ks --fail -X POST "${PLATFORM_API_URL}"cloud/api-keys -H "Authorization: Bearer ${ZEN_TOKEN}" -H "Accept: application/json" -H "Content-Type: application/json" -d '{"client_type":"toolkit","description":"Tookit API key"}' | jq -r .api_key)
@@ -576,7 +576,7 @@ function create_cm_token(){
   
   decho $lf_tracelevel "access_token: ${access_token}"
 
-  trace_out $lf_tracelevel create_cm_token
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -584,7 +584,7 @@ function create_cm_token(){
 # todo : think about params
 function create_am_token(){
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_am_token
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   # get token for the API Manager for 
   amToken=$(curl -sk --fail -X POST "${PLATFORM_API_URL}api/token" \
@@ -600,14 +600,14 @@ function create_am_token(){
     exit 1
   fi
 
-  trace_out $lf_tracelevel create_am_token
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
 # run all
 function apic_run_all () {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel apic_run_all
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   SECONDS=0
   local lf_starting_date=$(date);
@@ -667,15 +667,15 @@ function apic_run_all () {
   local lf_ending_date=$(date)
     
   mylog info "==== Customisation of apic (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
-  trace_out $lf_tracelevel apic_run_all
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 ################################################
 # initialisation
 function apic_init() {
   local lf_tracelevel=2
-  trace_in $lf_tracelevel apic_init
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
-  trace_out $lf_tracelevel apic_init
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
@@ -683,7 +683,7 @@ function apic_init() {
 # Main logic
 function main() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel main
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   if [[ $# -eq 0 ]]; then
     mylog error "No arguments provided. Use --all or --call function_name parameters, function_name parameters, ...."
@@ -709,7 +709,7 @@ function main() {
         ;;
       *)
         mylog error "Invalid option '$1'. Use --all or --call function_name parameters, function_name parameters, ...."
-        trace_out $lf_tracelevel main
+        trace_out $lf_tracelevel ${FUNCNAME[0]}
         return 1
         ;;
       esac
@@ -724,12 +724,12 @@ function main() {
               process_calls "$lf_calls"
             else
               mylog error "No function to call. Use --call function_name parameters, function_name parameters, ...."
-              trace_out $lf_tracelevel main
+              trace_out $lf_tracelevel ${FUNCNAME[0]}
               return 1
             fi;;
     esac
 
-  trace_out $lf_tracelevel main
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
   exit 0
 }
 
