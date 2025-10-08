@@ -2,7 +2,7 @@
 # Create IBM Event streams instance
 function create_es() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel create_es
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   # ibm-eventstreams
   if $MY_ES; then

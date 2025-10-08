@@ -135,14 +135,14 @@ function create_qmgr () {
     if [[ "${lf_qm_defs[$i]}" == *CPY ]]; then
       mylog info "Adding Queue ${lf_qm_defs[$i]} and streaming queue definitions."
       lf_qn=${lf_qm_defs[$i]%".CPY"}
-      addLineToFileAtEnd 4 "DEFINE QLOCAL('${lf_qm_defs[$i]}')" "${MY_MQ_WORKINGDIR}${VAR_QMGR}/tmp/qmgr_cm_mqsc.yaml"
-      addLineToFileAtEnd 4 "DEFINE QLOCAL('${lf_qn}') STREAMQ('${lf_qm_defs[$i]}') REPLACE DEFPSIST(YES)" "${MY_MQ_WORKINGDIR}${VAR_QMGR}/tmp/qmgr_cm_mqsc.yaml"
-      addLineToFileAtEnd 4 "SET AUTHREC PROFILE('${lf_qn}') PRINCIPAL('${VAR_MQ_USER}') OBJTYPE(QUEUE) AUTHADD(BROWSE,GET,INQ,PUT,DSP)" "${MY_MQ_WORKINGDIR}${VAR_QMGR}/tmp/qmgr_cm_mqsc_auth.yaml"
-      addLineToFileAtEnd 4 "SET AUTHREC PROFILE('${lf_qm_defs[$i]}') PRINCIPAL('${VAR_MQ_USER}') OBJTYPE(QUEUE) AUTHADD(BROWSE,GET,INQ,PUT,DSP)" "${MY_MQ_WORKINGDIR}${VAR_QMGR}/tmp/qmgr_cm_mqsc_auth.yaml"
+      appendToFile 4 "DEFINE QLOCAL('${lf_qm_defs[$i]}')" "${MY_MQ_WORKINGDIR}${VAR_QMGR}/tmp/qmgr_cm_mqsc.yaml"
+      appendToFile 4 "DEFINE QLOCAL('${lf_qn}') STREAMQ('${lf_qm_defs[$i]}') REPLACE DEFPSIST(YES)" "${MY_MQ_WORKINGDIR}${VAR_QMGR}/tmp/qmgr_cm_mqsc.yaml"
+      appendToFile 4 "SET AUTHREC PROFILE('${lf_qn}') PRINCIPAL('${VAR_MQ_USER}') OBJTYPE(QUEUE) AUTHADD(BROWSE,GET,INQ,PUT,DSP)" "${MY_MQ_WORKINGDIR}${VAR_QMGR}/tmp/qmgr_cm_mqsc_auth.yaml"
+      appendToFile 4 "SET AUTHREC PROFILE('${lf_qm_defs[$i]}') PRINCIPAL('${VAR_MQ_USER}') OBJTYPE(QUEUE) AUTHADD(BROWSE,GET,INQ,PUT,DSP)" "${MY_MQ_WORKINGDIR}${VAR_QMGR}/tmp/qmgr_cm_mqsc_auth.yaml"
     else
       mylog info "Adding Queue ${lf_qm_defs[$i]} definitions."
-      addLineToFileAtEnd 4 "DEFINE QLOCAL('${lf_qm_defs[$i]}') REPLACE DEFPSIST(YES)" "${MY_MQ_WORKINGDIR}${VAR_QMGR}/tmp/qmgr_cm_mqsc.yaml"
-      addLineToFileAtEnd 4 "SET AUTHREC PROFILE('${lf_qm_defs[$i]}') PRINCIPAL('${VAR_MQ_USER}') OBJTYPE(QUEUE) AUTHADD(BROWSE,GET,INQ,PUT,DSP)" "${MY_MQ_WORKINGDIR}${VAR_QMGR}/tmp/qmgr_cm_mqsc_auth.yaml"
+      appendToFile 4 "DEFINE QLOCAL('${lf_qm_defs[$i]}') REPLACE DEFPSIST(YES)" "${MY_MQ_WORKINGDIR}${VAR_QMGR}/tmp/qmgr_cm_mqsc.yaml"
+      appendToFile 4 "SET AUTHREC PROFILE('${lf_qm_defs[$i]}') PRINCIPAL('${VAR_MQ_USER}') OBJTYPE(QUEUE) AUTHADD(BROWSE,GET,INQ,PUT,DSP)" "${MY_MQ_WORKINGDIR}${VAR_QMGR}/tmp/qmgr_cm_mqsc_auth.yaml"
     fi
   done
   # Create QM config maps

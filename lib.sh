@@ -1404,7 +1404,7 @@ function encode_b64_file() {
 # @param 2: line to be added
 # @param 3: file where the line is added
 #
-function addLineToFileAtEnd() {
+function appendToFile() {
   local lf_indent="$1"
   local lf_line="$2"
   local lf_file="$3"
