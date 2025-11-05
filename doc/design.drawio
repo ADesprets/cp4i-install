@@ -1,4 +1,4 @@
-<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/28.0.4 Chrome/138.0.7204.97 Electron/37.2.1 Safari/537.36" version="28.0.4" pages="14">
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/28.0.4 Chrome/138.0.7204.97 Electron/37.2.1 Safari/537.36" version="28.0.4" pages="15">
   <diagram id="tJqLn7msZHwJoY5_B4Vj" name="Capabilities">
     <mxGraphModel dx="1840" dy="1089" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
       <root>
@@ -1250,6 +1250,50 @@
         </mxCell>
         <mxCell id="8oeQGiEkz8o-O9_RUU4d-2" value="PostGre DB" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
           <mxGeometry x="180" y="464" width="180" height="30" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="fCxjYTh5JdAl_5jet19H" name="Milvus">
+    <mxGraphModel dx="1030" dy="701" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <UserObject label="&lt;div&gt;Custom Resource Definition&lt;/div&gt;&lt;div&gt;&lt;b&gt;MilvusCluster (deprecated)&lt;/b&gt;&lt;/div&gt;milvusclusters.milvus.io" link="milvusclusters.milvus.io                                          2025-10-17T05:39:09Z&#xa;milvuses.milvus.io                                                2025-10-17T05:39:09Z&#xa;milvusupgrades.milvus.io                                          2025-10-17T05:39:09Z" id="IKz0mDSzxoKnMTM2MeHQ-1">
+          <mxCell style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+            <mxGeometry x="525" y="111" width="180" height="50" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="&lt;div&gt;Custom Resource Definition&lt;/div&gt;&lt;div&gt;&lt;b&gt;Milvus&lt;/b&gt;&lt;/div&gt;milvuses.milvus.io" link="milvusclusters.milvus.io                                          2025-10-17T05:39:09Z&#xa;milvuses.milvus.io                                                2025-10-17T05:39:09Z&#xa;milvusupgrades.milvus.io                                          2025-10-17T05:39:09Z" id="IKz0mDSzxoKnMTM2MeHQ-2">
+          <mxCell style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+            <mxGeometry x="320" y="110" width="180" height="50" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="&lt;div&gt;Custom Resource Definition&lt;/div&gt;&lt;div&gt;&lt;b&gt;MilvusUpgrade&lt;/b&gt;&lt;/div&gt;milvusupgrades.milvus.io" link="milvusclusters.milvus.io                                          2025-10-17T05:39:09Z&#xa;milvuses.milvus.io                                                2025-10-17T05:39:09Z&#xa;milvusupgrades.milvus.io                                          2025-10-17T05:39:09Z" id="IKz0mDSzxoKnMTM2MeHQ-3">
+          <mxCell style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+            <mxGeometry x="730" y="111" width="180" height="50" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <mxCell id="IKz0mDSzxoKnMTM2MeHQ-7" value="2 modes:&amp;nbsp;&lt;div&gt;&lt;div&gt;&lt;ul&gt;&lt;li&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Standalone&lt;/span&gt;&lt;/li&gt;&lt;li&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Cluster&lt;/span&gt;&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;&lt;/div&gt;" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
+          <mxGeometry x="150" y="105.5" width="120" height="61" as="geometry" />
+        </mxCell>
+        <mxCell id="IKz0mDSzxoKnMTM2MeHQ-8" value="Several choices for deployment&lt;div&gt;&lt;font style=&quot;color: rgb(255, 0, 0);&quot;&gt;(dependencies)&lt;/font&gt;&lt;/div&gt;" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
+          <mxGeometry x="110" y="240" width="170" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="IKz0mDSzxoKnMTM2MeHQ-9" value="&lt;pre&gt;&lt;ul&gt;&lt;li&gt;proxy&lt;/li&gt;&lt;li&gt;rootCoord&lt;/li&gt;&lt;li&gt;indexCoord&lt;/li&gt;&lt;li&gt;dataCoord&lt;/li&gt;&lt;li&gt;queryCoord&lt;/li&gt;&lt;li&gt;indexNode&lt;/li&gt;&lt;li&gt;dataNode&lt;/li&gt;&lt;li&gt;queryNode&lt;/li&gt;&lt;/ul&gt;&lt;/pre&gt;" style="text;whiteSpace=wrap;html=1;align=left;verticalAlign=top;" parent="1" vertex="1">
+          <mxGeometry x="110" y="360" width="120" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="IKz0mDSzxoKnMTM2MeHQ-12" value="&lt;b&gt;MinIO &lt;font style=&quot;color: rgb(255, 0, 0);&quot;&gt;or&lt;/font&gt; other S3-compatible&lt;/b&gt;&lt;br&gt;store&amp;nbsp; for persisting large-scale files, such as insert log files, index files, and&amp;nbsp;binary logs.&lt;br&gt;stores the actual vector and scalar data, as well as collection-specific&amp;nbsp;schema and index data" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="700" y="215" width="290" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="IKz0mDSzxoKnMTM2MeHQ-13" value="&lt;b&gt;Kafka &lt;font style=&quot;color: rgb(255, 0, 0);&quot;&gt;or&lt;/font&gt; Pulsar&lt;/b&gt;&amp;nbsp;&lt;div&gt;message queue system&lt;/div&gt;&lt;div&gt;the write-ahead log (WAL) and message streams for insert and&amp;nbsp;delete operations&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="430" y="215" width="260" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="IKz0mDSzxoKnMTM2MeHQ-14" value="&lt;b&gt;etcd&lt;/b&gt;&lt;br&gt;stores only system metadata" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="300" y="215" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="uv45F4MUPQTouGDiHAHA-1" value="Milvus Installation" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=21;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="410" y="50" width="270" height="30" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

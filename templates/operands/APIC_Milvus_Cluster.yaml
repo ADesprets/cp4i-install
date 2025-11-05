@@ -1,0 +1,66 @@
+apiVersion: milvus.io/v1alpha1
+kind: MilvusCluster
+metadata:
+  name: milvus-cluster
+  namespace: ${VAR_MILVUS_NAMESPACE}
+spec:
+  version: "2.6.3"  # specify the version of Milvus you want
+  mode: cluster
+  components:
+    etcd:
+      count: 3
+      podSecurityContext:
+        enabled: false
+      containerSecurityContext:
+        enabled: false
+      persistence:
+        enabled: true
+        size: 10Gi
+        storageClassName: "${MY_BLOCK_STORAGE_CLASS}"
+    minio:
+      count: 1
+      podSecurityContext:
+        enabled: false
+      containerSecurityContext:
+        enabled: false
+      persistence:
+        enabled: true
+        size: 20Gi
+        storageClassName: "${MY_BLOCK_STORAGE_CLASS}"
+    master:
+      replicas: 1
+      podSecurityContext:
+        enabled: false
+      containerSecurityContext:
+        enabled: false
+    proxy:
+      replicas: 1
+      podSecurityContext:
+        enabled: false
+      containerSecurityContext:
+        enabled: false
+    queryNode:
+      replicas: 1
+      podSecurityContext:
+        enabled: false
+      containerSecurityContext:
+        enabled: false
+    dataNode:
+      replicas: 1
+      podSecurityContext:
+        enabled: false
+      containerSecurityContext:
+        enabled: false
+  persistence:
+    enabled: true
+    storageClassName: "${MY_BLOCK_STORAGE_CLASS}"
+    size: 20Gi
+  common:
+    security:
+        authorizationEnabled: true
+    milvus:
+      log:
+        level: info
+    component:
+      proxy:
+        timeTickInterval: 150

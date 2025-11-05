@@ -18091,7 +18091,17 @@ rules:
   - patch
   - update
   - watch
----
+- verbs:
+  - create
+  - delete
+  - get
+  - list
+  - watch
+  - use  
+  resources:
+  - securitycontextconstraints
+  apiGroups:
+  - security.openshift.io
 # Source: milvus-operator/templates/clusterrolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -18216,8 +18226,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
   name: "milvus-operator"
   namespace: "milvus-operator"
-annotations: 
-  openshift.io/required-scc: anyuid
 spec:
   selector:
     matchLabels:

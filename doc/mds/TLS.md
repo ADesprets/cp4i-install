@@ -24,7 +24,7 @@ spec:
   selfSigned: {}
 ```
 
-Then you create the Certificate which contains the specification for this self-signed Certificate (2).
+Then you create the Certificate which contains the specifications for this self-signed Certificate (2).
 
 ```yaml
 apiVersion: cert-manager.io/v1
@@ -101,3 +101,8 @@ spec:
 Below a screen capture of the resources created.
 
 ![Resources created (secret, issuers, certificates)](../images/tls_resources_created_cert_manager.png "Resources created (secret, issuers, certificates)")
+
+## Using let's encrypt certificate
+
+We need to create a Letsencrypt ClusterIssuer resource, we use the definition [LETS Encrypt Cluster Issuer](../../templates/resources/letsencrypt-issuer.yaml)
+

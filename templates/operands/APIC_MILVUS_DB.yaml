@@ -3,15 +3,18 @@ apiVersion: milvus.io/v1beta1
 kind: Milvus
 metadata:
   name: apic-ai-agent-milvus-db
-  namespace: milvus
+  namespace: ${VAR_MILVUS_NAMESPACE}
   labels:
     app: milvus
 spec:
   mode: standalone
+  image: milvusdb/milvus:latest
+  imagePullPolicy: IfNotPresent
   dependencies:
     etcd:
       inCluster:
         values:
+          replicaCount: 1
           persistence:
             enabled: true
             storageClass: "${MY_BLOCK_STORAGE_CLASS}"
@@ -25,14 +28,16 @@ spec:
             storageClass: "${MY_BLOCK_STORAGE_CLASS}"
             size: 10Gi
     storage:
+      type: MinIO
       inCluster:
         values:
           mode: standalone
+          replicaCount: 1
           resources:
             requests:
               memory: 1Gi
           deletionPolicy: Delete # or Retain
-          pvcDeletion: true
+          pvcDeletion: true 
   components:
     serviceAccountName: "apic-ai-agent-milvus-db-kafka"
     standalone:
@@ -52,5 +57,8 @@ spec:
         storageClass: "${MY_BLOCK_STORAGE_CLASS}"
         size: 100Gi
   config:
+    common:
+      security:
+        authorizationEnabled: true
     log:
       level: "info"
