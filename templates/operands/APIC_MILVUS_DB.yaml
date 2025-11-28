@@ -61,4 +61,4 @@ spec:
       security:
         authorizationEnabled: true
     log:
-      level: "info"
+      level: "debug"

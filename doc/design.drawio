@@ -1255,7 +1255,7 @@
     </mxGraphModel>
   </diagram>
   <diagram id="fCxjYTh5JdAl_5jet19H" name="Milvus">
-    <mxGraphModel dx="1030" dy="701" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+    <mxGraphModel dx="1472" dy="718" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -1281,7 +1281,7 @@
           <mxGeometry x="110" y="240" width="170" height="30" as="geometry" />
         </mxCell>
         <mxCell id="IKz0mDSzxoKnMTM2MeHQ-9" value="&lt;pre&gt;&lt;ul&gt;&lt;li&gt;proxy&lt;/li&gt;&lt;li&gt;rootCoord&lt;/li&gt;&lt;li&gt;indexCoord&lt;/li&gt;&lt;li&gt;dataCoord&lt;/li&gt;&lt;li&gt;queryCoord&lt;/li&gt;&lt;li&gt;indexNode&lt;/li&gt;&lt;li&gt;dataNode&lt;/li&gt;&lt;li&gt;queryNode&lt;/li&gt;&lt;/ul&gt;&lt;/pre&gt;" style="text;whiteSpace=wrap;html=1;align=left;verticalAlign=top;" parent="1" vertex="1">
-          <mxGeometry x="110" y="360" width="120" height="150" as="geometry" />
+          <mxGeometry x="110" y="320" width="120" height="150" as="geometry" />
         </mxCell>
         <mxCell id="IKz0mDSzxoKnMTM2MeHQ-12" value="&lt;b&gt;MinIO &lt;font style=&quot;color: rgb(255, 0, 0);&quot;&gt;or&lt;/font&gt; other S3-compatible&lt;/b&gt;&lt;br&gt;store&amp;nbsp; for persisting large-scale files, such as insert log files, index files, and&amp;nbsp;binary logs.&lt;br&gt;stores the actual vector and scalar data, as well as collection-specific&amp;nbsp;schema and index data" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="700" y="215" width="290" height="80" as="geometry" />
@@ -1292,7 +1292,7 @@
         <mxCell id="IKz0mDSzxoKnMTM2MeHQ-14" value="&lt;b&gt;etcd&lt;/b&gt;&lt;br&gt;stores only system metadata" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="300" y="215" width="120" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="uv45F4MUPQTouGDiHAHA-1" value="Milvus Installation" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=21;fontStyle=1" vertex="1" parent="1">
+        <mxCell id="uv45F4MUPQTouGDiHAHA-1" value="Milvus Installation" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=21;fontStyle=1" parent="1" vertex="1">
           <mxGeometry x="410" y="50" width="270" height="30" as="geometry" />
         </mxCell>
       </root>

@@ -1062,7 +1062,8 @@ function install_milvus() {
   local lf_starting_date=$(date)
   mylog info "==== Installing MILVUS vector database for AI Agent (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
-  create_project "${VAR_MILVUS_OPERATOR_NAMESPACE}" "${VAR_MILVUS_OPERATOR_NAMESPACE} project" "For Milvus Vector Database" "${MY_RESOURCESDIR}" "${MY_APIC_WORKINGDIR}"
+  create_project "${VAR_MILVUS_OPERATOR_NAMESPACE}" "${VAR_MILVUS_OPERATOR_NAMESPACE} project" "For Milvus Vector Database Operator" "${MY_RESOURCESDIR}" "${MY_APIC_WORKINGDIR}"
+  create_project "${VAR_MILVUS_NAMESPACE}" "${VAR_MILVUS_NAMESPACE} project" "For Milvus Vector Database instances" "${MY_RESOURCESDIR}" "${MY_APIC_WORKINGDIR}"
 
   local lf_tracelevel=2
   trace_in $lf_tracelevel ${FUNCNAME[0]}
@@ -1080,23 +1081,32 @@ function install_milvus() {
     # Create secret
     create_generic_secret "milvus-db-cred" "milvus-admin" "milvusPassw0rd!" "${VAR_MILVUS_OPERATOR_NAMESPACE}" "${MY_MILVUS_WORKINGDIR}"
 
-    # Add the Milvus Operator Helm repository (https://milvus.io/docs/v2.4.x/install_cluster-milvusoperator.md)
-    decho $lf_tracelevel "helm install milvus-operator -n milvus-operator --create-namespace https://github.com/zilliztech/milvus-operator/releases/download/v1.3.2/milvus-operator-1.3.2.tgz -f values.yaml" 1>&2
-    mylog info "Need to add the values.yaml"  1>&2
-    # helm install milvus-operator -n milvus-operator --create-namespace https://github.com/zilliztech/milvus-operator/releases/download/v1.3.2/milvus-operator-1.3.2.tgz
-    # oc adm policy add-scc-to-group anyuid system:serviceaccounts:milvus-operator -n milvus-operator
-    oc adm policy add-scc-to-group anyuid system:serviceaccounts:milvus-cluster-minio -n milvus-operator
+    # Add Milvus Operator
+    mylog info "Add various service accounts to the correct SCC"  1>&2
+    # helm install milvus-operator -n "${VAR_MILVUS_OPERATOR_NAMESPACE}" --create-namespace https://github.com/zilliztech/milvus-operator/releases/download/v1.3.2/milvus-operator-1.3.2.tgz
     # helm_install "https://github.com/zilliztech/milvus-operator/releases/download/v1.1.9/milvus-operator-1.1.9.tgz" false "$VAR_MILVUS_OPERATOR_NAMESPACE"
-    oc adm policy add-scc-to-user anyuid -z milvus-operator -n milvus-operator
-    # oc adm policy add-scc-to-user apic-ai-agent-milvus-db-minio -z milvus-operator -n milvus-operator
-    # oc adm policy add-scc-to-user apic-ai-agent-milvus-db-minio -z default -n milvus-operator
-    # oc adm policy add-scc-to-user apic-ai-agent-milvus-db-minio -z apic-ai-agent-milvus-db-kafka -n milvus-operator
+
+    decho $lf_tracelevel "oc adm policy add-cluster-role-to-user cluster-admin milvus-operator -n ${VAR_MILVUS_OPERATOR_NAMESPACE}"
+    oc adm policy add-cluster-role-to-user cluster-admin milvus-operator -n "${VAR_MILVUS_OPERATOR_NAMESPACE}"
+    
+    decho $lf_tracelevel "oc adm policy add-scc-to-user anyuid -z milvus-operator -n ${VAR_MILVUS_OPERATOR_NAMESPACE}"
+    oc adm policy add-scc-to-user anyuid -z milvus-operator -n "${VAR_MILVUS_OPERATOR_NAMESPACE}"
+    decho $lf_tracelevel "oc adm policy add-scc-to-user anyuid -z apic-ai-agent-milvus-db-minio -n ${VAR_MILVUS_OPERATOR_NAMESPACE}"
+    oc adm policy add-scc-to-user anyuid -z apic-ai-agent-milvus-db-minio -n "${VAR_MILVUS_OPERATOR_NAMESPACE}"
+    
+    decho $lf_tracelevel "oc adm policy add-scc-to-group anyuid system:serviceaccounts:milvus-cluster-minio -n ${VAR_MILVUS_NAMESPACE}"
+    oc adm policy add-scc-to-group anyuid system:serviceaccounts:milvus-cluster-minio -n "${VAR_MILVUS_NAMESPACE}"
+    decho $lf_tracelevel "oc adm policy add-scc-to-user anyuid -z apic-ai-agent-milvus-db-kafka -n ${VAR_MILVUS_NAMESPACE}"
+    oc adm policy add-scc-to-user anyuid -z apic-ai-agent-milvus-db-kafka -n "${VAR_MILVUS_NAMESPACE}"
+    decho $lf_tracelevel "oc adm policy add-scc-to-user anyuid -z default -n ${VAR_MILVUS_NAMESPACE}"
+    oc adm policy add-scc-to-user anyuid -z default -n "${VAR_MILVUS_NAMESPACE}"
+    
+    mylog info "Install Milvus operator in ${VAR_MILVUS_OPERATOR_NAMESPACE} namespace"  1>&2
+    decho $lf_tracelevel " $MY_CLUSTER_COMMAND -n "${VAR_MILVUS_OPERATOR_NAMESPACE}" apply -f ${MY_YAMLDIR}operators/milvus-operator.yaml"
     $MY_CLUSTER_COMMAND -n "${VAR_MILVUS_OPERATOR_NAMESPACE}" apply -f ${MY_YAMLDIR}operators/milvus-operator.yaml
 
     # Deploy Milvus Cluster (Operand creation) inspired by https://raw.githubusercontent.com/milvus-io/milvus-operator/main/config/samples/demo.yaml
     create_operand_instance "Milvus" "apic-ai-agent-milvus-db" "${MY_OPERANDSDIR}" "${MY_MILVUS_WORKINGDIR}" "APIC_MILVUS_DB.yaml" "$VAR_MILVUS_NAMESPACE" "{.status.status}" "Healthy"
-    # create_operand_instance "MilvusCluster" "milvus-cluster" "${MY_OPERANDSDIR}" "${MY_MILVUS_WORKINGDIR}" "APIC_Milvus_Cluster.yaml" "$VAR_MILVUS_NAMESPACE" "{.status.status}" "Healthy"
-    # $MY_CLUSTER_COMMAND -n "${VAR_MILVUS_NAMESPACE}" apply -f ${MY_YAMLDIR}operands/APIC_MILVUS_DB.yaml
   fi
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}
@@ -1972,6 +1982,32 @@ function customise_instana() {
 
   local lf_ending_date=$(date)
   mylog info "==== Customisation of instana (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+}
+
+################################################
+# Tool to debug infrastructure issues
+function customise_debug_tool() {
+  SECONDS=0
+  local lf_starting_date=$(date);
+  mylog info "==== Install debug tool (debug.tool.sh)." 0
+
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  create_project "${VAR_DEBUG_NAMESPACE}" "${VAR_DEBUG_NAMESPACE} project" "For debug tool" "${MY_RESOURCESDIR}" "${MY_DEBUG_WORKINGDIR}"
+  
+  # launch custom script
+  if $MY_DEBUG_TOOL; then
+    chmod a+x ${MY_DEBUG_TOOL_DEMODIR}scripts/debug.tool.sh
+    ${MY_DEBUG_TOOL_DEMODIR}scripts/debug.tool.sh --call debug_run_all
+  fi
+
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+
+  local lf_ending_date=$(date)    
+  mylog info "==== Installation of the debug tool (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################

@@ -1147,6 +1147,8 @@ function display_access_info() {
   local lf_eem_ui_url lf_eem_lf_gtw_url
   if $MY_EEM; then
     lf_eem_ui_url=$($MY_CLUSTER_COMMAND -n $VAR_EEM_NAMESPACE get EventEndpointManagement -o=jsonpath='{.items[?(@.kind=="EventEndpointManagement")].status.endpoints[?(@.name=="ui")].uri}')
+    # Need to remove the trailing /
+    lf_eem_ui_url=${lf_eem_ui_url%/}
     mylog info "Event Endpoint Management UI endpoint: ${lf_eem_ui_url}" 0
     echo  "<TR><TD><A HREF=${lf_eem_ui_url}>Event Endpoint Management UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
     lf_eem_lf_gtw_url=$($MY_CLUSTER_COMMAND -n $VAR_EEM_NAMESPACE get EventEndpointManagement -o=jsonpath='{.items[?(@.kind=="EventEndpointManagement")].status.endpoints[?(@.name=="gateway")].uri}')
@@ -1158,6 +1160,7 @@ function display_access_info() {
   local lf_ep_ui_url
   if $MY_EP; then
     lf_ep_ui_url=$($MY_CLUSTER_COMMAND -n $VAR_EP_NAMESPACE get EventProcessing -o=jsonpath='{.items[?(@.kind=="EventProcessing")].status.endpoints[?(@.name=="ui")].uri}')
+    lf_ep_ui_url=${lf_ep_ui_url%/}
     mylog info "Event Processing UI endpoint: ${lf_ep_ui_url}" 0
     echo "<TR><TD><A HREF=${lf_ep_ui_url}>Event Processing UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
     mylog info "The credentials are defined in the file ./working/EP/resources/user-credentials.yaml" 0
@@ -1784,7 +1787,7 @@ function check_exec_prereqs() {
   check_command_exist tr
   check_command_exist curl
   check_command_exist $MY_CONTAINER_ENGINE
-  check_command_exist ibmcloud
+  # check_command_exist ibmcloud
   check_command_exist jq
   check_command_exist yq
   check_command_exist keytool
