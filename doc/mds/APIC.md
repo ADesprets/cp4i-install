@@ -250,7 +250,6 @@ Configure host to API Manager and login
 
 ![API Agent login step 5](../images/apic_ai_agent_login5.png "API Agent login step 5")
 
-
 ### Testing API Connect Agent
 
 #### List API
