@@ -252,6 +252,20 @@ Configure host to API Manager and login
 
 ### Testing API Connect Agent
 
+![Test API Agent](../images/test-apiagent-1.png "Test API Agent")
+
+![Test API Agent](../images/test-apiagent-2.png "Test API Agent")
+
+![Test API Agent](../images/test-apiagent-3.png "Test API Agent")
+
+![Test API Agent](../images/test-apiagent-4.png "Test API Agent")
+
+![Test API Agent](../images/test-apiagent-5.png "Test API Agent")
+
+![Test API Agent](../images/test-apiagent-6.png "Test API Agent")
+
+![Test API Agent](../images/test-apiagent-7.png "Test API Agent")
+
 #### List API
 
 #### Create test
