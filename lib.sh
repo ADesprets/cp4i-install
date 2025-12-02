@@ -2592,8 +2592,10 @@ function check_add_cs_ibm_pak() {
 
   #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
   if [[ -z $lf_in_case_version ]]; then
+    mylog info "Retrieving latest version for case ${lf_in_case_name} provided by ibm-pak plugin"
     read lf_case_version lf_app_version < <($MY_CLUSTER_COMMAND ibm-pak list -o json | jq -r --arg case "$lf_in_case_name" '.[] | select(.name == $case) | "\(.latestVersion) \(.latestAppVersion)"')
   else
+    mylog info "Using provided version $lf_in_case_version for case ${lf_in_case_name}"
     lf_case_version=$lf_in_case_version
     lf_app_version=$($MY_CLUSTER_COMMAND ibm-pak list --case-name $lf_in_case_name -o json | jq --arg v "$lf_in_case_version" '.versions[$v].appVersion')
   fi
