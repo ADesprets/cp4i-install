@@ -101,7 +101,7 @@ function deploy_image() {
   mylog info "Application:version ${MY_DEBUG_APP_NAME_VERSION}" 0
 
   check_directory_exist_create "${MY_DEBUG_WORKINGDIR}"
-  create_oc_resource "Deployment" "${VAR_DEBUG_APP_NAME}" "${MY_DEBUG_TOOL_DEMODIR}resources" "${MY_DEBUG_WORKINGDIR}" "debug_deployment.yaml" "$VAR_DEBUG_NAMESPACE"
+  create_oc_resource "Deployment" "${VAR_DEBUG_APP_NAME}" "${MY_DEBUG_TOOL_DEMODIR}resources/" "${MY_DEBUG_WORKINGDIR}" "debug_deployment.yaml" "$VAR_DEBUG_NAMESPACE"
   
   trace_out $lf_tracelevel ${FUNCNAME[0]}
 }

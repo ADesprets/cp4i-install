@@ -120,15 +120,14 @@
     },
     "servers": [
       {
-        "url": "https://cp4i-apic-gw-gateway-cp4i.cp4iad22023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/${APIC_PROVIDER_ORG}/sandbox/fakeauth/v1",
+        "url": "https://cp4i-apic-gw-gateway-cp4i.cp4iad22023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud/${APIC_PROVIDER_ORG_LC}/sandbox/fakeauth/v1",
         "description": "",
         "type": [
           "production",
           "development"
         ]
       }
-    ],
-    "oauth-servers": []
+    ]
   },
   "basePath": "/fakeauth/v1",
   "paths": {

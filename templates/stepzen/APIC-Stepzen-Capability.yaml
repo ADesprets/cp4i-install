@@ -8,7 +8,7 @@ spec:
     accept: true
   controlDatabaseSecret: ${MY_APIC_GRAPHQL_DSN_SECRET}
 #  imagePullSecrets:
-#    - ibm-entitlement-key  
+#    - ${DEFAULT_IMAGE_PULL_SECRET}  
   graphServer:
     hpa:
       minReplicas: 1

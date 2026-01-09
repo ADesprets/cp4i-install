@@ -181,3 +181,30 @@ location: https://cp4i-eem-ibm-eem-manager-cp4i.apps.672291044cc643ed9e9ca3ba.oc
 - code=39edd922-70e0-4ad3-a1d0-e688d8e2d2ad.db6c1809-010a-4d41-8d66-446955f3a022.dcf257cf-e3d5-4bbf-bf65-82d758f6ad76
 ---------------------------------------------------------------------------
 curl "https://cp4i-eem-ibm-eem-manager-cp4i.apps.672291044cc643ed9e9ca3ba.ocp.techzone.ibm.com/callback?state=RzxNa-id&session_state=db6c1809-010a-4d41-8d66-446955f3a022&iss=https^%^3A^%^2F^%^2Fkeycloak-ibm-common-services.apps.672291044cc643ed9e9ca3ba.ocp.techzone.ibm.com^%^2Frealms^%^2Fcloudpak&code=39edd922-70e0-4ad3-a1d0-e688d8e2d2ad.db6c1809-010a-4d41-8d66-446955f3a022.dcf257cf-e3d5-4bbf-bf65-82d758f6ad76"  -H "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"  -H "Cookie: ibm-ei-session=433ab4d75b493e6e59667ded80e77cb6440d03d14694e2ea0f0223ba3ad0c3f1; 7ba94db727003fa5cd31777137881dec=58a7b6f7888e210141c72c108da755c5"  
+
+
+## Adding a Keycloak OAuth Provider
+
+### Ensure realm exist
+
+First I assume I already have a realm, if you do not have one you will need to create one. In my case, I have the "IBM Cloud Pak" realm already defined.
+
+![OAuth provider realm](../images/keycloak-add-oauth-provider-step1.png "OAuth provider realm")
+
+### Add a user in the realm
+
+In the Keycloak Admin Console, click Users > Add User.
+
+![Keycloak Add user](../images/keycloak-add-user-step1.png "Keycloak Add user")
+
+Specify a Username, First Name, and Last Name, and then click Save.
+
+![Keycloak Add user](../images/keycloak-add-user-step2.png "Keycloak Add user")
+
+To set an initial password for the user, click the Credentials tab.
+
+![Keycloak Add user](../images/keycloak-add-user-step3.png "Keycloak Add user")
+
+Specify a password and click Set Password.
+
+![Keycloak Add user](../images/keycloak-add-user-step4.png "Keycloak Add user")

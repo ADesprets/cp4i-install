@@ -1964,7 +1964,7 @@ function add_ibm_entitlement() {
   fi
 
   mylog check "Checking ibm-entitlement-key in $lf_in_ns"
-  if ! $MY_CLUSTER_COMMAND -n $lf_in_ns get secret ibm-entitlement-key >/dev/null 2>&1; then
+  if ! $MY_CLUSTER_COMMAND -n $lf_in_ns get secret ${DEFAULT_IMAGE_PULL_SECRET} >/dev/null 2>&1; then
     var_fail MY_ENTITLEMENT_KEY "Missing entitlement key"
     mylog info "Checking ibm-entitlement-key validity"
     $MY_CONTAINER_ENGINE -h >/dev/null 2>&1
@@ -1974,8 +1974,8 @@ function add_ibm_entitlement() {
       exit 1
     fi
 
-    mylog info "Adding ibm-entitlement-key to $lf_in_ns"
-    if ! $MY_CLUSTER_COMMAND -n $lf_in_ns create secret docker-registry ibm-entitlement-key --docker-username=cp --docker-password=$MY_ENTITLEMENT_KEY --docker-server=cp.icr.io; then
+    mylog info "Adding ${DEFAULT_IMAGE_PULL_SECRET} (secret) to $lf_in_ns"
+    if ! $MY_CLUSTER_COMMAND -n $lf_in_ns create secret docker-registry ${DEFAULT_IMAGE_PULL_SECRET}--docker-username=cp --docker-password=$MY_ENTITLEMENT_KEY --docker-server=cp.icr.io; then
       trace_out $lf_tracelevel ${FUNCNAME[0]}
       exit 1
     fi
@@ -2022,7 +2022,7 @@ function check_create_oc_yaml() {
     mylog info "Creating/Updating ${lf_in_type}/${lf_in_cr_name} using ${lf_in_target_directory}${lf_in_yaml_file} in namespace ${lf_in_namespace}"
     $MY_CLUSTER_COMMAND apply -f "${lf_in_target_directory}${lf_in_yaml_file}" || exit 1
     if [[ $lf_in_type == "Subscription" ]]; then
-      # use the fully qualified API Group ($MY_CLUSTER_COMMAND get subscription -A  returns nothing and $MY_CLUSTER_COMMAND get sub -A returns a full list of subscriptions !!!)
+      # use the fully qualified API Group ($MY_CLUSTER_COMMAND get subscription -A returns nothing and $MY_CLUSTER_COMMAND get sub -A returns a full list of subscriptions !!!)
       lf_type="sub"
     else 
       lf_type=$lf_in_type
@@ -2613,6 +2613,7 @@ function check_add_cs_ibm_pak() {
     $MY_CLUSTER_COMMAND ibm-pak generate mirror-manifests ${lf_in_case_name} icr.io --version ${lf_case_version}
   fi
 
+  decho $lf_tracelevel "Looking for catalog source file ${MY_IBMPAK_MIRRORDIR}${lf_in_case_name}/${lf_case_version}/catalog-sources.yaml"
   lf_file_tmp1=${MY_IBMPAK_MIRRORDIR}${lf_in_case_name}/${lf_case_version}/catalog-sources.yaml
   lf_file_tmp2=${MY_IBMPAK_MIRRORDIR}${lf_in_case_name}/${lf_case_version}/catalog-sources-linux-${lf_in_arch}.yaml
 
@@ -2626,7 +2627,7 @@ function check_add_cs_ibm_pak() {
     mylog error "No catalog source file found for case ${lf_in_case_name} ${lf_case_version}"
     exit 1
   fi
-
+ 
   # Getting the id of the catalogsource, using head -n 1 to get only one value in case of many
   lf_type="CatalogSource"
   decho $lf_tracelevel "lf_file=$lf_file|lf_display_name=$lf_display_name"
@@ -2778,6 +2779,72 @@ function create_self_signed_issuer () {
 }
 
 ################################################
+# Create intermediate issuer
+# param 1: issuer reference, to issue the certificate
+# param 2: secret reference, containing the key to sign the certificate
+# param 3: working directory
+# param 4: namespace
+################################################
+function create_intermediate_issuer () {
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  local lf_in_issuer_ref=$1
+  local lf_in_secret_ref=$2
+  local lf_in_workingdir=$3
+  local lf_in_namespace=$4
+
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\""
+
+  if [[ $# -ne 4 ]]; then
+    mylog error "You have to provide 4 arguments: issuer reference, secret reference, working directory and namespace"
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
+    exit  1
+  fi
+
+  export VAR_CERT_ISSUER="${lf_in_issuer_ref}"
+  export VAR_SECRET_REF="${lf_in_secret_ref}"
+  export VAR_NAMESPACE="${lf_in_namespace}"
+
+  create_oc_resource "Issuer" "${lf_in_issuer_ref}" "${MY_YAMLDIR}tls/" "${lf_in_workingdir}" "Issuer_non_ca.yaml" "${lf_in_namespace}"
+
+  unset VAR_CERT_ISSUER VAR_NAMESPACE VAR_SECRET_REF
+
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+}
+
+################################################
+# Create a root certificate using the Cert manager
+# Since a certificate has a lof of variables it is recommanded to export those variables and then unset them after the creation
+# @param 1: namespace
+# @param 2: working directory where the generated yaml file will be stored
+# @param 3: certificate definition file (template)
+function create_certificate () {
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  local lf_in_namespace="$1"
+  local lf_in_workingdir="$2"
+  local lf_in_certificate_def="$3"
+
+
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|"
+
+  if [[ $# -ne 3 ]]; then
+    mylog error "You have to provide 3 arguments: namespace, working directory and certificate definition file"
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
+    exit  1
+  fi
+
+  create_oc_resource "Certificate" "${VAR_CERT_NAME}" "${MY_YAMLDIR}tls/" "${lf_in_workingdir}" "${lf_in_certificate_def}" "${lf_in_namespace}"
+  wait_for_resource "Secret" "${VAR_CERT_SECRET_NAME}" "${lf_in_namespace}"
+
+  unset VAR_CERT_NAME VAR_NAMESPACE VAR_CERT_ISSUER_REF VAR_CERT_COMMON_NAME VAR_CERT_ORGANISATION VAR_CERT_COUNTRY VAR_CERT_LOCALITY VAR_CERT_STATE VAR_CERT_SAN_DNS_1 VAR_CERT_SAN_DNS_2
+
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+}
+
+################################################
 # Create a generic secret, username or password can be empty, in those case only one entry (username or password) will be created
 # @param 1: secret name
 # @param 2: user name
@@ -2798,7 +2865,7 @@ function create_generic_secret() {
   decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"********\"|\"$4\"|\"$5\"|"
   
   if [[ $# -ne 5 ]]; then
-    mylog error "You have to provide 4 arguments: secret name, user name, user password, namespace and working directory"
+    mylog error "You have to provide 5 arguments: secret name, user name, user password, namespace and working directory"
     trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
@@ -3025,6 +3092,48 @@ function create_oc_resource() {
   trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
+################################################
+# Simple create CustomResourceDefinition (CRD) from file only
+# @param 1: name: the of the CustomResourceDefinition example: ""
+# @param 2: dir: the source directory example: ""
+# @param 3: dir: the target directory example: ""
+# @param 4: yaml: the file with the definition of the resource, example: "Navigator-Sub.yaml"
+# create: imperative, fast, does not handle existing updates. Avoids last-applied-configuration annotations (useful for oversized CRDs).
+# apply: declarative, computes diffs via 3-way merge (file + server state + last applied config), stores the full manifest annotation.[conversation_history]
+# TODO check if we need this function or if we can use the option --server-side for oc apply
+
+function create_crd() {
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  local lf_in_name="$1"
+  local lf_in_source_directory="$2"
+  local lf_in_target_directory="$3"
+  local lf_in_yaml_file="$4"
+
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|"
+
+  if [[ $# -ne 4 ]]; then
+    mylog error "You have to provide 4 arguments: name, source directory, target directory, yaml file"
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
+    exit  1
+  fi
+  
+  adapt_file $lf_in_source_directory $lf_in_target_directory $lf_in_yaml_file
+
+  # Check if it already exists
+  # TODO Should we keep the oc apply in most case and only keep specific behavior for specific resources such as CRDs?
+  decho $lf_tracelevel "$MY_CLUSTER_COMMAND get CustomResourceDefinition $lf_in_name"
+  if $MY_CLUSTER_COMMAND  get CustomResourceDefinition $lf_in_name >/dev/null 2>&1; then
+    mylog info "Updating resource using ${lf_in_target_directory}${lf_in_yaml_file}"
+    $MY_CLUSTER_COMMAND replace -f "${lf_in_target_directory}${lf_in_yaml_file}" || exit 1
+  else
+    mylog info "Creating resource using ${lf_in_target_directory}${lf_in_yaml_file}"
+    $MY_CLUSTER_COMMAND create -f "${lf_in_target_directory}${lf_in_yaml_file}" || exit 1
+  fi
+
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+}
 
 ################################################
 # create operand instance
@@ -3035,7 +3144,7 @@ function create_oc_resource() {
 # @param 5: yaml: the file with the definition of the resource, example: "Navigator-Sub.yaml"
 # @param 6: namespace: the namespace to use
 # @param 7: path: json path to check resource state
-# @param 8: state: resource state
+# @param 8: state: resource state (Tere is a special value NOWAIT to by pass wating for a state because some operands like valkey in standalone do not publish their status correctly)
 function create_operand_instance() {
   local lf_tracelevel=3
   trace_in $lf_tracelevel ${FUNCNAME[0]}  
@@ -3062,7 +3171,11 @@ function create_operand_instance() {
   create_oc_resource "${lf_in_type}" "${lf_in_cr_name}" "${lf_in_source_directory}" "${lf_in_target_directory}" "${lf_in_yaml_file}" "$lf_in_namespace"
   
   if $MY_CLUSTER_COMMAND -n $lf_in_namespace get $lf_in_type $lf_in_cr_name >/dev/null 2>&1; then
-    wait_for_state  "$lf_in_type" "$lf_in_cr_name" "$lf_in_path" "$lf_in_state" "$lf_in_namespace"
+    if [[ "$lf_in_state" == "NOWAIT" ]]; then
+      mylog info "Skipping wait for state for $lf_in_cr_name of type $lf_in_type in $lf_in_namespace namespace as state is NOWAIT"
+    else
+      wait_for_state  "$lf_in_type" "$lf_in_cr_name" "$lf_in_path" "$lf_in_state" "$lf_in_namespace"
+    fi
   else
     mylog error "$lf_in_cr_name of type $lf_in_type in $lf_in_namespace namespace does not exist, will not wait for state"
   fi

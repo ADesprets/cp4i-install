@@ -32,7 +32,7 @@ spec:
     type: tls      
   template:
     buildConfig:
-      pullSecret: ibm-entitlement-key
+      pullSecret: ${DEFAULT_IMAGE_PULL_SECRET}
     connectContainer:
       volumeMounts:
         - mountPath: /mnt/mqca

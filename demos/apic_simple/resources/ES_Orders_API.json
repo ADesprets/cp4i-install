@@ -1,0 +1,312 @@
+{
+    "openapi": "3.0.1",
+    "info": {
+        "title": "ES_Orders_API",
+        "description": "API for the creation, reading, update and delete of an order in the Sheet system",
+        "version": "1.0"
+    },
+    "servers": [
+        {
+            "url": "http://prod870246.a-fra-s1.apigw.ipaas.automation.ibm.com/gateway/ES_Orders_API/1.0"
+        }
+    ],
+    "paths": {
+        "/orders": {
+            "summary": "/orders",
+            "get": {
+                "description": "This method retrieves ALL the orders from the Orders System that is handled by using the IBM webMethods Hybrid Integration platform. It retrieves the information of only one order that is specified by the query parameter OrderID.",
+                "operationId": "orders_GET_1",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "headers": {},
+                        "content": {},
+                        "links": {}
+                    },
+                    "401": {
+                        "description": "Access Denied",
+                        "headers": {},
+                        "content": {},
+                        "links": {}
+                    }
+                }
+            },
+            "parameters": []
+        },
+        "/order": {
+            "summary": "/order",
+            "get": {
+                "description": "This method retrieves one specific order from the Orders System that is handled by using the IBM webMethods Hybrid Integration platform. It retrieves the information of only one order that is specified by the query parameter OrderID. ",
+                "operationId": "order_GET_2",
+                "parameters": [
+                    {
+                        "name": "orderID",
+                        "in": "query",
+                        "required": true,
+                        "allowEmptyValue": false,
+                        "schema": {
+                            "type": "string",
+                            "readOnly": false
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "headers": {},
+                        "content": {},
+                        "links": {}
+                    },
+                    "401": {
+                        "description": "Access Denied",
+                        "headers": {},
+                        "content": {},
+                        "links": {}
+                    }
+                }
+            },
+            "put": {
+                "description": "This method updates one specific order from the Orders System that is handled by using the IBM webMethods Hybrid Integration platform. It first of all request the multiple parameters that are required to the user (\"Comment\", \"Product_code\",\"Customer\",\"Calendar\",\"Product\",\"Quantity\",\"Mail_pref\" and \"Name\") and then updates the information of the order that is specified by the query parameter OrderID. ",
+                "operationId": "order_PUT_2",
+                "parameters": [
+                    {
+                        "name": "orderID",
+                        "in": "query",
+                        "required": true,
+                        "allowEmptyValue": false,
+                        "schema": {
+                            "type": "string",
+                            "readOnly": false
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/body_2"
+                            },
+                            "examples": {}
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "headers": {},
+                        "content": {},
+                        "links": {}
+                    },
+                    "401": {
+                        "description": "Access Denied",
+                        "headers": {},
+                        "content": {},
+                        "links": {}
+                    }
+                }
+            },
+            "post": {
+                "description": "This method creates a new order in the Orders System that is handled by using the IBM webMethods Hybrid Integration platform. It first of all request the multiple parameters that are required to the user (\"Comment\", \"Product_code\",\"Customer\",\"Calendar\",\"Product\",\"Quantity\",\"Mail_pref\" and \"Name\") and then returns the orderID that has been created.",
+                "operationId": "order_POST_2",
+                "parameters": [],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/body_1"
+                            },
+                            "example": "{\n\"Name\": \"Jose Miguel\",\n\"Calendar\": \"2025-04-24\",\n\"Customer\": \"Presales\",\n\"Product\": \"Portable Power Bank\",\n\"Product_code\": \"PB1000\",\n\"Quantity\": \"2\",\n\"Comment\": \"test\",\n\"Mail_pref\": \"true\"\n}"
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "headers": {},
+                        "content": {},
+                        "links": {}
+                    },
+                    "401": {
+                        "description": "Access Denied",
+                        "headers": {},
+                        "content": {},
+                        "links": {}
+                    }
+                }
+            },
+            "delete": {
+                "description": "This method deletes one specific order from the Orders System that is handled by using the IBM webMethods Hybrid Integration platform. It first of all request the OrderID to the user and ask a second time to ensure the user wants to delete the API. After that the API is deleted by using the body parameter orderID with the value provided.",
+                "operationId": "order_DELETE",
+                "parameters": [],
+				"requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/delete_1"
+                            },
+                            "example": "{\n\"orderID\": \"65423\"}"
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "headers": {},
+                        "content": {},
+                        "links": {}
+                    },
+                    "401": {
+                        "description": "Access Denied",
+                        "headers": {},
+                        "content": {},
+                        "links": {}
+                    }
+                }
+            },
+            "parameters": []
+        }
+    },
+    "components": {
+        "schemas": {
+            "body_3": {
+                "required": [
+                    "raw"
+                ],
+                "type": "object",
+                "properties": {
+                    "raw": {
+                        "$ref": "#/components/schemas/raw_1"
+                    }
+                }
+            },
+            "body_4": {
+                "required": [
+                    "raw"
+                ],
+                "type": "object",
+                "properties": {
+                    "raw": {
+                        "$ref": "#/components/schemas/raw_2"
+                    }
+                }
+            },
+            "body_1": {
+                "required": [
+                    "Calendar",
+                    "Comment",
+                    "Customer",
+                    "Mail_pref",
+                    "Name",
+                    "Product",
+                    "Product_code",
+                    "Quantity"
+                ],
+                "type": "object",
+                "properties": {
+                    "Calendar": {
+                        "type": "string"
+                    },
+                    "Comment": {
+                        "type": "string"
+                    },
+                    "Customer": {
+                        "type": "string"
+                    },
+                    "Mail_pref": {
+                        "type": "string"
+                    },
+                    "Name": {
+                        "type": "string"
+                    },
+                    "Product": {
+                        "type": "string"
+                    },
+                    "Product_code": {
+                        "type": "string"
+                    },
+                    "Quantity": {
+                        "type": "string"
+                    }
+                }
+            },
+            "body_2": {
+                "required": [
+                    "Calendar",
+                    "Comment",
+                    "Customer",
+                    "Mail_pref",
+                    "Name",
+                    "Product",
+                    "Product_code",
+                    "Quantity"
+                ],
+                "type": "object",
+                "properties": {
+                    "Calendar": {
+                        "type": "string"
+                    },
+                    "Comment": {
+                        "type": "string"
+                    },
+                    "Customer": {
+                        "type": "string"
+                    },
+                    "Mail_pref": {
+                        "type": "string"
+                    },
+                    "Name": {
+                        "type": "string"
+                    },
+                    "Product": {
+                        "type": "string"
+                    },
+                    "Product_code": {
+                        "type": "string"
+                    },
+                    "Quantity": {
+                        "type": "string"
+                    }
+                }
+            },
+            "delete_1": {
+                "required": [
+                    "orderID"
+                ],
+                "type": "object",
+                "properties": {
+                    "orderID": {
+                        "type": "string"
+                    }
+                }
+            },
+            "raw": {
+                "type": "object"
+            },
+            "body": {
+                "required": [
+                    "raw"
+                ],
+                "type": "object",
+                "properties": {
+                    "raw": {
+                        "$ref": "#/components/schemas/raw"
+                    }
+                }
+            },
+            "raw_1": {
+                "type": "object"
+            },
+            "raw_2": {
+                "type": "object"
+            }
+        },
+        "responses": {},
+        "parameters": {},
+        "examples": {},
+        "requestBodies": {},
+        "headers": {},
+        "links": {},
+        "callbacks": {}
+    }
+}

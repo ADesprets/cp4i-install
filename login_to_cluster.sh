@@ -89,7 +89,8 @@ my_cluster_name=cp4iad22023
 if (($# == 1)); then
   my_cluster_name=$1
 elif (($# > 1)); then
-  echo "the number of arguments should be 0 or 1"
+  echo "You have to provide 0 or 1 arguments: cluster name"
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
   exit 1
 fi
 

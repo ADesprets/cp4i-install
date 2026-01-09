@@ -19,7 +19,7 @@ spec:
       kind: DockerImage
       name: cp.icr.io/cp/ibm-eventstreams-kafka@sha256:cb5da87bb8341a3134c36ac43ed686a7a724d20dcbc9d3f15b4e322550af3801
     pullSecret:
-      name: ibm-entitlement-key
+      name: ${DEFAULT_IMAGE_PULL_SECRET}
   output:
     to:
       kind: ImageStreamTag

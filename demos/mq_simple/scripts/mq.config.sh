@@ -4,7 +4,7 @@
 ################################################
 
 ################################################
-function create_root_certificate () {
+function create_mq_root_certificate () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel ${FUNCNAME[0]}
 
@@ -21,7 +21,7 @@ function create_root_certificate () {
   # export VAR_CERT_SERIAL=$(uuidgen)
 
   # We are using a secure QM, we want to expose the jks in the secret asociated to the root certificate. Since this is secured we are going to create a secret for the password with the TLS certificate of the queue manager
-  # TODO Need to check what is happening hen the certificate is regenerated maybe automatically by Cert Manager
+  # TODO Need to check what is happening when the certificate is regenerated maybe automatically by Cert Manager
   local lf_jks_secret_name="${VAR_MQ_NAMESPACE}-mq-store-root-secret"
 
   if check_resource_exist secret $lf_jks_secret_name $VAR_ES_NAMESPACE false; then
@@ -44,22 +44,6 @@ function create_root_certificate () {
 }
 
 ################################################
-function create_intermediate_issuer () {
-  local lf_tracelevel=3
-  trace_in $lf_tracelevel ${FUNCNAME[0]}
-
-  export VAR_CERT_ISSUER="${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR_LC}-int-issuer"
-  export VAR_NAMESPACE=${VAR_MQ_NAMESPACE}
-  export VAR_SECRET_REF=${VAR_MQ_NAMESPACE}-mq-root-secret
-
-  create_oc_resource "Issuer" "${VAR_CERT_ISSUER}" "${MY_YAMLDIR}tls/" "${MY_MQ_WORKINGDIR}" "Issuer_non_ca.yaml" "${VAR_MQ_NAMESPACE}"
-
-  unset VAR_CERT_NAME VAR_NAMESPACE VAR_SECRET_REF
-
-  trace_out $lf_tracelevel ${FUNCNAME[0]}
-}
-
-################################################
 function create_leaf_certificate () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel ${FUNCNAME[0]}
@@ -70,8 +54,8 @@ function create_leaf_certificate () {
   export VAR_CERT_NAME=${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR_LC}-server
   export VAR_NAMESPACE=${VAR_MQ_NAMESPACE}
   export VAR_CERT_COMMON_NAME=${VAR_CERT_NAME}
-  export VAR_CERT_SAN_EXT_DNS="*.${lf_cluster_domain}"
-  export VAR_CERT_SAN_LOCAL_DNS="${VAR_QMGR_LC}-ibm-mq.${VAR_MQ_NAMESPACE}.svc.cluster.local"
+  export VAR_CERT_SAN_DNS_1="*.${lf_cluster_domain}"
+  export VAR_CERT_SAN_DNS_2="${VAR_QMGR_LC}-ibm-mq.${VAR_MQ_NAMESPACE}.svc.cluster.local"
   export VAR_CERT_ISSUER_REF=${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR_LC}-int-issuer
   export VAR_CERT_ORGANISATION=${MY_CERT_ORGANISATION}
   export VAR_CERT_COUNTRY=${MY_CERT_COUNTRY}
@@ -81,7 +65,7 @@ function create_leaf_certificate () {
 
   create_oc_resource "Certificate" "${VAR_CERT_NAME}" "${MY_YAMLDIR}tls/" "${MY_MQ_WORKINGDIR}" "server_certificate.yaml" "${VAR_MQ_NAMESPACE}"
 
-  unset VAR_CERT_NAME VAR_NAMESPACE VAR_CERT_COMMON_NAME VAR_CERT_SAN_EXT_DNS VAR_CERT_SAN_LOCAL_DNS VAR_CERT_ISSUER_REF VAR_CERT_ORGANISATION VAR_CERT_COUNTRY VAR_CERT_LOCALITY VAR_CERT_STATE
+  unset VAR_CERT_NAME VAR_NAMESPACE VAR_CERT_COMMON_NAME VAR_CERT_SAN_DNS_1 VAR_CERT_SAN_DNS_2 VAR_CERT_ISSUER_REF VAR_CERT_ORGANISATION VAR_CERT_COUNTRY VAR_CERT_LOCALITY VAR_CERT_STATE
   
   trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
@@ -120,7 +104,7 @@ function create_qmgr () {
   
   mylog info "Creating Queue Manager: ${VAR_QMGR} in namespace: ${VAR_MQ_NAMESPACE}"
 
-  create_intermediate_issuer
+  create_intermediate_issuer "${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR_LC}-int-issuer" "${VAR_MQ_NAMESPACE}-mq-root-secret" "${MY_MQ_WORKINGDIR}" "${VAR_MQ_NAMESPACE}"
   create_leaf_certificate
 
   # Copy the template to add the missing lines
@@ -311,7 +295,8 @@ function mq_run_all () {
   
   # Create tls artifacts for all QMs in the project
   create_self_signed_issuer "${VAR_MQ_NAMESPACE}-mq-self-signed" "${VAR_MQ_NAMESPACE}" "${MY_MQ_WORKINGDIR}"
-  create_root_certificate
+
+  create_mq_root_certificate
 
   create_qmgr "Orders" "PAYMT.RESP" "PAYMT.REQ.CPY"
   create_pki_cr "Orders"

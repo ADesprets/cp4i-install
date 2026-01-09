@@ -1,0 +1,51 @@
+---
+# Source: valkey-cluster/templates/valkey-cluster.yaml
+apiVersion: valkey.datapower.ibm.com/v1beta2
+kind: ValkeyCluster
+metadata:
+  name: valkey-cluster
+  namespace: ${VAR_NANO_GATEWAY_NAMESPACE}
+  labels:
+    app.kubernetes.io/name: valkey-cluster
+    helm.sh/chart: valkey-cluster-1.0.0
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/instance: valkey-cluster
+    app.kubernetes.io/version: 1.0.0
+    app.kubernetes.io/component: middleware
+  annotations:
+spec:
+  clusterSize: 3
+  persistenceEnabled: false
+  clusterVersion: v7
+  valkeyLeader:
+    replicas: 3
+  valkeyFollower:
+    replicas: 3
+  kubernetesConfig:
+    image: "${MY_CP_IO_IMAGE_REGISTRY}/datapower/valkey:8.1.4@sha256:228954da8acaa22736279c477c4e5780284e306431eb2bf7bbb61710cfc5ec47"
+    imagePullPolicy: "Always"
+    imagePullSecrets: 
+    - name: ${DEFAULT_IMAGE_PULL_SECRET}
+    valkeySecret:
+      name: ${VAR_VALKEY_AUTHENTICATION_SECRET}
+      key: "password"
+    persistentVolumeClaimRetentionPolicy: 
+      whenDeleted: Delete
+      whenScaled: Retain
+  storage: 
+    nodeConfVolume: true
+    nodeConfVolumeClaimTemplate:
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+        storageClassName: ${MY_BLOCK_STORAGE_CLASS}
+  TLS:
+    ca: "ca.crt"
+    cert: "tls.crt"
+    key: "tls.key"
+    secret:
+      secretName: "valkey-tls-2"
+    authClients: yes

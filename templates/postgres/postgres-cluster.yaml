@@ -11,7 +11,7 @@ spec:
     size: 1Gi
     storageClass: $MY_BLOCK_STORAGE_CLASS
   imagePullSecrets:
-    - name: ibm-entitlement-key
+    - name: ${DEFAULT_IMAGE_PULL_SECRET}
   imageName: $VAR_POSTGRES_IMAGE_NAME
 #  imageName: 'icr.io/cpopen/edb/postgresql:15.8-1.22.5@sha256:63c1bfc431fba3eba7a2e803d5d24c48425dbe7d1e9b1dec9832b30717ce8753'
   enableSuperuserAccess: true

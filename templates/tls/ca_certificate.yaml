@@ -28,6 +28,5 @@ spec:
     provinces:
       - "${VAR_CERT_STATE}"
   usages:
-    - key encipherment
-    - digital signature
     - cert sign
+    - crl sign

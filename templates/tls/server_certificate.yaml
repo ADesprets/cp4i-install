@@ -6,8 +6,8 @@ metadata:
 spec:
   commonName: "${VAR_CERT_COMMON_NAME}"
   dnsNames:
-    - "${VAR_CERT_SAN_EXT_DNS}"
-    - "${VAR_CERT_SAN_LOCAL_DNS}"
+    - "${VAR_CERT_SAN_DNS_1}"
+    - "${VAR_CERT_SAN_DNS_2}"
   duration: 8760h
   isCA: false
   issuerRef:
@@ -33,3 +33,5 @@ spec:
   usages:
     - server auth
     - client auth
+    - digital signature
+    - key encipherment

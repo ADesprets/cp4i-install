@@ -1117,6 +1117,143 @@ function install_milvus() {
 }
 
 ################################################
+# Install Valkey
+function install_valkey() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing Valkey (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  if $MY_APIC; then
+    check_directory_exist_create "${MY_VALKEY_WORKINGDIR}"
+
+    create_project "${VAR_VALKEY_NAMESPACE}" "${VAR_VALKEY_NAMESPACE} project" "For Valkey" "${MY_RESOURCESDIR}" "${MY_VALKEY_WORKINGDIR}"
+    add_ibm_entitlement "$VAR_VALKEY_NAMESPACE"
+
+    # Create the valkey  CRDs
+    mylog info "Create valkey CRDs" 1>&2
+    create_crd "valkey.valkey.datapower.ibm.com" "${MY_YAMLDIR}operators/valkey/" "${MY_VALKEY_WORKINGDIR}" "valkey.valkey.datapower.ibm.com.yaml"
+    create_crd "valkeyreplications.valkey.datapower.ibm.com" "${MY_YAMLDIR}operators/valkey/" "${MY_VALKEY_WORKINGDIR}" "valkeyreplications.valkey.datapower.ibm.com.yaml"
+    create_crd "valkeysentinels.valkey.datapower.ibm.com" "${MY_YAMLDIR}operators/valkey/" "${MY_VALKEY_WORKINGDIR}" "valkeysentinels.valkey.datapower.ibm.com.yaml"
+    create_crd "valkeyclusters.valkey.datapower.ibm.com" "${MY_YAMLDIR}operators/valkey/" "${MY_VALKEY_WORKINGDIR}" "valkeyclusters.valkey.datapower.ibm.com.yaml"
+
+    # Installation of the valkey operator
+    mylog info "Install valkey operator in ${VAR_VALKEY_NAMESPACE} namespace" 1>&2
+
+    check_create_oc_yaml "Deployment" "valkey-operator" "${MY_YAMLDIR}operators/" "${MY_VALKEY_WORKINGDIR}" "valkey-operator.yaml" "${VAR_VALKEY_NAMESPACE}"
+
+    # Create the chain of certificates for the valkey database
+    # create self-signed issuer
+    create_self_signed_issuer "${VAR_VALKEY_ISSUER}-root" "${VAR_VALKEY_NAMESPACE}" "${MY_VALKEY_WORKINGDIR}"
+    
+    # Create root valkey certificate
+    export VAR_CERT_NAME=${VAR_VALKEY_NAMESPACE}-valkey-root
+    export VAR_NAMESPACE=${VAR_VALKEY_NAMESPACE}
+    export VAR_CERT_ISSUER_REF="${VAR_VALKEY_ISSUER}-root"
+    export VAR_CERT_SECRET_NAME=${VAR_CERT_NAME}-secret
+    export VAR_CERT_COMMON_NAME="ValkeyCA"
+    export VAR_CERT_ORGANISATION=${MY_CERT_ORGANISATION}
+    export VAR_CERT_COUNTRY=${MY_CERT_COUNTRY}
+    export VAR_CERT_LOCALITY=${MY_CERT_LOCALITY}
+    export VAR_CERT_STATE=${MY_CERT_STATE}
+    create_certificate "${VAR_VALKEY_NAMESPACE}" "${MY_VALKEY_WORKINGDIR}" "ca_certificate.yaml"
+
+    # Create intermediate/leaf issuer
+    create_intermediate_issuer "${VAR_VALKEY_ISSUER}-int" "${VAR_VALKEY_NAMESPACE}-valkey-root-secret" "${MY_VALKEY_WORKINGDIR}" "${VAR_VALKEY_NAMESPACE}"
+
+    # Create leaf certificate (server certificate)
+    export VAR_CERT_NAME=${VAR_VALKEY_NAMESPACE}-valkey-server
+    export VAR_NAMESPACE=${VAR_VALKEY_NAMESPACE}
+    export VAR_CERT_ISSUER_REF="${VAR_VALKEY_ISSUER}-int"
+    export VAR_CERT_SECRET_NAME=${VAR_CERT_NAME}-secret
+    export VAR_CERT_COMMON_NAME="valkey.${VAR_VALKEY_NAMESPACE}.svc.cluster.local"
+    export VAR_CERT_ORGANISATION=${MY_CERT_ORGANISATION}
+    export VAR_CERT_COUNTRY=${MY_CERT_COUNTRY}
+    export VAR_CERT_LOCALITY=${MY_CERT_LOCALITY}
+    export VAR_CERT_STATE=${MY_CERT_STATE}
+    export VAR_CERT_SAN_DNS_1="valkey.${VAR_VALKEY_NAMESPACE}.svc.cluster.local"
+    export VAR_CERT_SAN_DNS_2="valkey.${VAR_VALKEY_NAMESPACE}.svc"
+    create_certificate "${VAR_VALKEY_NAMESPACE}" "${MY_VALKEY_WORKINGDIR}" "server_certificate.yaml"
+
+    # Create generic secret for valkey authentication
+    export VAR_VALKEY_AUTHENTICATION_SECRET="valkey-${VAR_VALKEY_NAMESPACE}-secret"
+    # TODO if the password starts with special charater it can fails
+    local lf_store_password=$(tr -dc 'A-Za-z0-9!@#$%^&*()_+-=' < /dev/urandom | fold -w 20 | head -n 1)
+    create_generic_secret "${VAR_VALKEY_AUTHENTICATION_SECRET}" "valkey-access" "${lf_store_password}" "${VAR_VALKEY_NAMESPACE}" "${MY_VALKEY_WORKINGDIR}"
+
+    # For OpenShift add the service accounts to the restricted SCC
+    decho $lf_tracelevel "oc adm policy add-scc-to-user restricted -z default -n ${VAR_VALKEY_NAMESPACE}"
+    oc adm policy add-scc-to-user restricted -z default -n ${VAR_VALKEY_NAMESPACE}
+    
+    export VAR_VALKEY_SERVER_TLS_SECRET_NAME="${VAR_VALKEY_NAMESPACE}-valkey-server-secret"
+
+    # Create valkey operand
+    if [ "$MY_NANO_DB_MODE" == "standalone" ]; then
+      mylog info "Installing Valkey in standalone mode in ${VAR_VALKEY_NAMESPACE} namespace" 1>&2
+      create_operand_instance "Valkey" "valkey" "${MY_OPERANDSDIR}" "${MY_VALKEY_WORKINGDIR}" "valkey_standalone_cr.yaml" "$VAR_VALKEY_NAMESPACE" "{.status.phase}" "NOWAIT"
+    else
+      mylog info "Installing Valkey in cluster mode in ${VAR_VALKEY_NAMESPACE} namespace" 1>&2
+      create_operand_instance "ValkeyCluster" "valkey-cluster" "${MY_OPERANDSDIR}" "${MY_VALKEY_WORKINGDIR}" "valkey_cluster_cr.yaml" "$VAR_VALKEY_NAMESPACE" "{.status.phase}" "Ready"
+    fi
+  fi
+
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of Valkey (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+
+}
+
+################################################
+# Install Redis
+function install_redis() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing Redis (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  if $MY_APIC; then
+    check_directory_exist_create "${MY_REDIS_WORKINGDIR}"
+    mylog error "this function has ot Installing Redis in standalone mode in ${VAR_REDIS_NAMESPACE} namespace" 1>&2
+
+    create_project "${VAR_REDIS_NAMESPACE}" "${VAR_REDIS_NAMESPACE} project" "For Redis" "${MY_RESOURCESDIR}" "${MY_REDIS_WORKINGDIR}"
+    add_ibm_entitlement "$VAR_REDIS_NAMESPACE"
+
+    # Create the redis CRDs
+    mylog info "Create redis CRDs" 1>&2
+    # create_crd "redis.redis.datapower.ibm.com" "${MY_YAMLDIR}operators/redis/" "${MY_REDIS_WORKINGDIR}" "redis.redis.datapower.ibm.com.yaml"
+
+    # Installation of the redis operator
+    mylog info "Install redis operator in ${VAR_REDIS_NAMESPACE} namespace" 1>&2
+    # check_create_oc_yaml "Deployment" "redis-operator" "${MY_YAMLDIR}operators/" "${MY_REDIS_WORKINGDIR}" "redis-operator.yaml" "${VAR_REDIS_NAMESPACE}"
+
+    # Create redis operand
+    if [ "$MY_NANO_DB_MODE" == "standalone" ]; then
+      mylog info "Installing Redis in standalone mode in ${VAR_REDIS_NAMESPACE} namespace" 1>&2
+      # create_operand_instance "Redis" "redis" "${MY_OPERANDSDIR}" "${MY_REDIS_WORKINGDIR}" "redis_standalone_cr.yaml" "$VAR_REDIS_NAMESPACE" "{.status.phase}" "NOWAIT"
+    else
+      mylog info "Installing Redis in cluster mode in ${VAR_REDIS_NAMESPACE} namespace" 1>&2
+      # create_operand_instance "RedisCluster" "redis-cluster" "${MY_OPERANDSDIR}" "${MY_REDIS_WORKINGDIR}" "redis_cluster_cr.yaml" "$VAR_REDIS_NAMESPACE" "{.status.phase}" "Ready"
+    fi
+  fi
+
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of Valkey (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+
+}
+################################################
 # Install APIC
 function install_apic() {
   SECONDS=0
@@ -1130,41 +1267,73 @@ function install_apic() {
 
   # ibm-apiconnect
   if $MY_APIC; then
-
     check_directory_exist_create "${MY_APIC_WORKINGDIR}"
 
-    create_project "${VAR_APIC_NAMESPACE}" "${VAR_APIC_NAMESPACE} project" "For API ConnectC" "${MY_RESOURCESDIR}" "${MY_APIC_WORKINGDIR}"
-    
-    # add catalog DataPower sources using ibm_pak plugin
-    check_add_cs_ibm_pak $MY_DPGW_CASE $MY_DPGW_OPERATOR $MY_DPGW_CATALOGSOURCE_LABEL amd64
-    if [[ -z $MY_DPGW_VERSION ]]; then
-      export MY_DPGW_VERSION=$VAR_APP_VERSION
-      unset VAR_APP_VERSION
+    # Create projects for APIC and nano gateway
+    create_project "${VAR_APIC_NAMESPACE}" "${VAR_APIC_NAMESPACE} project" "For API Connect" "${MY_RESOURCESDIR}" "${MY_APIC_WORKINGDIR}"
+    add_ibm_entitlement "$VAR_APIC_NAMESPACE"
+
+    if [ "$VAR_APIC_NAMESPACE" != "$VAR_NANO_GATEWAY_NAMESPACE" ]; then
+      create_project "${VAR_NANO_GATEWAY_NAMESPACE}" "${VAR_NANO_GATEWAY_NAMESPACE} project" "For nano gateway" "${MY_RESOURCESDIR}" "${MY_APIC_WORKINGDIR}"
+      add_ibm_entitlement "$VAR_NANO_GATEWAY_NAMESPACE"
     fi
 
-    # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
-    local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
-    unset VAR_CATALOG_SOURCE
+    # Installation of the database required for the nano gateway (valkey or redis)
+    if [ "$MY_NANO_DB_TYPE" == "valkey" ]; then
+      mylog info "Install Valkey database required for APIC nano gateway" 1>&2
+      install_valkey
+    elif [ "$MY_NANO_DB_TYPE" == "redis" ]; then
+      mylog info "Install Redis database required for APIC nano gateway" 1>&2
+      install_redis
+    else
+      mylog error "Unsupported nano gateway database type: $MY_NANO_DB_TYPE" 1>&2
+      exit 1
+    fi  
 
-    # Creating DataPower operator subscription
-    create_operator_instance "${MY_DPGW_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_APIC_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
-    # add catalog sources using ibm_pak plugin
+    # Installation of the OpenShift Gateway API CRD (it does exist in OpenShift V4.19 and above)
+    mylog info "Create OpenShift API Gateway CRD for OpenShift < 4.19 or for Kubernetes" 1>&2
+    create_crd "gatewayclasses.gateway.networking.k8s.io" "${MY_YAMLDIR}resources/" "${MY_APIC_WORKINGDIR}" "API_Gateway_CRD.yaml" 
 
+    # Installation of the nano gateway CRDs
+    mylog info "Create nano gateway CRDs" 1>&2
+    create_crd "apis.nano.datapower.ibm.com" "${MY_YAMLDIR}operators/" "${MY_APIC_WORKINGDIR}" "ibm-nanogw-crds.yaml"
+
+    # Installation of the nano gateway operator (deployment)
+    mylog info "Install nano gateway operator (deployment) in ${VAR_NANO_GATEWAY_NAMESPACE} namespace" 1>&2
+    check_create_oc_yaml "Deployment" "datapower-nano-operator" "${MY_YAMLDIR}operators/" "${MY_APIC_WORKINGDIR}" "ibm-nanogw.yaml" "${VAR_NANO_GATEWAY_NAMESPACE}"
+  
+    # Add the API Connect catalog sources to your cluster using ibm_pak plugin
     check_add_cs_ibm_pak $MY_APIC_CASE $MY_APIC_OPERATOR $MY_APIC_CATALOGSOURCE_LABEL amd64
     if [[ -z $MY_APIC_VERSION ]]; then
       export MY_APIC_VERSION=$VAR_APP_VERSION
+      decho $lf_tracelevel "MY_APIC_VERSION=$MY_APIC_VERSION"
       unset VAR_APP_VERSION
     fi
 
-    # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
-    local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
-    unset VAR_CATALOG_SOURCE
+    # Add the DataPower operator sources to your cluster using ibm_pak plugin
+    check_add_cs_ibm_pak $MY_DPGW_CASE $MY_DPGW_OPERATOR $MY_DPGW_CATALOGSOURCE_LABEL amd64
+    if [[ -z $MY_DPGW_VERSION ]]; then
+      export MY_DPGW_VERSION=$VAR_APP_VERSION
+      decho $lf_tracelevel "MY_DPGW_VERSION=$MY_DPGW_VERSION"
+      unset VAR_APP_VERSION
+    fi
 
-    # Creating APIC operator subscription
-    create_operator_instance "${MY_APIC_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_APIC_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
+    # Create the apiconnect subscription
+    create_operator_instance "${MY_APIC_OPERATOR}" "${MY_APIC_CATALOGSOURCE_LABEL}" "${MY_OPERATORSDIR}" "${MY_APIC_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
+    
+    # Create the ibm-datapower-operator subscription
+    create_operator_instance "${MY_DPGW_OPERATOR}" "${MY_DPGW_CATALOGSOURCE_LABEL}" "${MY_OPERATORSDIR}" "${MY_APIC_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
 
+    exit 1
+    
     if $MY_APIC_BY_COMPONENT; then
-      mylog info "HOLD PLACE"
+      mylog info "Creating APIC components individually, it is better for APIC V12 and the multiple gateways" 1>&2
+
+      mylog info "Creating APIC ManagementCluster" 1>&2
+      mylog info "Creating APIC PortalCluster" 1>&2
+      mylog info "Creating APIC AnalyticsCluster" 1>&2
+      mylog info "Creating APIC GatewayCluster" 1>&2
+
     else
       create_operand_instance "APIConnectCluster" "${VAR_APIC_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-Capability.yaml" "$VAR_APIC_NAMESPACE" "{.status.phase}" "Ready"
     fi

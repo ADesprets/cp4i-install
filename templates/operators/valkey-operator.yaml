@@ -1,0 +1,237 @@
+---
+# Source: valkey-operator/templates/service-account.yaml
+apiVersion: v1
+kind: ServiceAccount
+automountServiceAccountToken: true
+metadata:
+  name: valkey-operator
+  namespace: ${VAR_NANO_GATEWAY_NAMESPACE}
+  labels:
+    app.kubernetes.io/name : valkey-operator
+    helm.sh/chart : valkey-operator-1.0.0
+    app.kubernetes.io/managed-by : Helm
+    app.kubernetes.io/instance : valkey-operator
+    app.kubernetes.io/version : 1.0.0
+    app.kubernetes.io/component: service-account
+    app.kubernetes.io/part-of : valkey-operator
+---
+# Source: valkey-operator/templates/role.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: valkey-operator
+  labels:
+    app.kubernetes.io/name : valkey-operator
+    helm.sh/chart : valkey-operator-1.0.0
+    app.kubernetes.io/managed-by : Helm
+    app.kubernetes.io/instance : valkey-operator
+    app.kubernetes.io/version : 1.0.0
+    app.kubernetes.io/component: role
+    app.kubernetes.io/part-of : valkey-operator
+rules:
+- apiGroups:
+  - valkey.datapower.ibm.com
+  resources:
+  - valkeys
+  - valkeyclusters
+  - valkeyreplications
+  - valkey
+  - valkeycluster
+  - valkeysentinel
+  - valkeysentinels
+  - valkeyreplication
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- nonResourceURLs:
+  - '*'
+  verbs:
+  - get
+- apiGroups:
+  - "apiextensions.k8s.io"
+  resources:
+  - "customresourcedefinitions"
+  verbs:
+  - "get"
+  - "list"
+  - "watch"
+- apiGroups:
+  - valkey.datapower.ibm.com
+  resources:
+  - valkey/status
+  - valkeycluster/status
+  - valkeyclusters/status
+  - valkeysentinel/status
+  - valkeysentinels/status
+  - valkeyreplication/status
+  - valkeyreplications/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  - pods/exec
+  - pods
+  - services
+  - configmaps
+  - events
+  - persistentvolumeclaims
+  - namespace
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - "coordination.k8s.io"
+  resources:
+  - leases
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+    - "policy"
+  resources:
+  - poddisruptionbudgets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+---
+# Source: valkey-operator/templates/role-binding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: valkey-operator
+  labels:
+    app.kubernetes.io/name : valkey-operator
+    helm.sh/chart : valkey-operator-1.0.0
+    app.kubernetes.io/managed-by : Helm
+    app.kubernetes.io/instance : valkey-operator
+    app.kubernetes.io/version : 1.0.0
+    app.kubernetes.io/component: role-binding
+    app.kubernetes.io/part-of : valkey-operator
+subjects:
+- kind: ServiceAccount
+  name: valkey-operator
+  namespace: ${VAR_NANO_GATEWAY_NAMESPACE}
+roleRef:
+  kind: ClusterRole
+  name: valkey-operator
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: valkey-operator/templates/operator-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: valkey-operator
+  namespace: ${VAR_NANO_GATEWAY_NAMESPACE}
+  labels:
+    app.kubernetes.io/name: valkey-operator
+    helm.sh/chart: valkey-operator-1.0.0
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/instance: valkey-operator
+    app.kubernetes.io/version: 1.0.0
+    app.kubernetes.io/component: operator
+    app.kubernetes.io/part-of: valkey-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: valkey-operator
+  template:
+    metadata:
+      annotations:
+        cert-manager.io/inject-ca-from: default/serving-cert
+      labels:
+        name: valkey-operator
+    spec:
+      automountServiceAccountToken: true
+      imagePullSecrets:
+        - name: ${DEFAULT_IMAGE_PULL_SECRET}
+      securityContext:
+        {}
+      containers:
+      - name: "valkey-operator"
+        securityContext:
+          {}
+        image: "${MY_CP_IO_IMAGE_REGISTRY}/datapower/valkey-operator:1.0.0@sha256:a2c97f301189aabc8a1dbaff2357d794af747305fea8e5d36e62ee4c9d8f058b"
+        imagePullPolicy: Always
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: probe
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: probe
+        command:
+        - /operator
+        - manager
+        args:
+        - --leader-elect
+        - --metrics-bind-address=:8080
+        - --kube-client-timeout=60s
+        ports:
+        - containerPort: 8081
+          name: probe
+          protocol: TCP
+        - containerPort: 8080
+          name: metrics
+          protocol: TCP
+        env:
+        - name: OPERATOR_IMAGE
+          value: ${MY_CP_IO_IMAGE_REGISTRY}/datapower/valkey-operator:1.0.0@sha256:a2c97f301189aabc8a1dbaff2357d794af747305fea8e5d36e62ee4c9d8f058b
+        - name: ENABLE_WEBHOOKS
+          value: "false"
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: FEATURE_GATES
+          value: "GenerateConfigInInitContainer=true"
+        resources: 
+          limits:
+            cpu: 500m
+            memory: 500Mi
+          requests:
+            cpu: 500m
+            memory: 500Mi
+      serviceAccountName: "valkey-operator"
+      serviceAccount: "valkey-operator"

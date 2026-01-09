@@ -1,0 +1,34 @@
+---
+# Source: valkey/templates/valkey-standalone.yaml
+apiVersion: valkey.datapower.ibm.com/v1beta2
+kind: Valkey
+metadata:
+  name:  valkey
+  namespace: ${VAR_NANO_GATEWAY_NAMESPACE}
+  labels:
+    app.kubernetes.io/name: valkey
+    helm.sh/chart: valkey-1.0.0
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/instance: valkey
+    app.kubernetes.io/version: 1.0.0
+    app.kubernetes.io/component: middleware
+  annotations:
+    
+spec:
+  kubernetesConfig:
+    image: "${MY_CP_IO_IMAGE_REGISTRY}/datapower/valkey:8.1.4@sha256:228954da8acaa22736279c477c4e5780284e306431eb2bf7bbb61710cfc5ec47"
+    imagePullPolicy: "Always"
+    imagePullSecrets: 
+    - name: ${DEFAULT_IMAGE_PULL_SECRET}
+    valkeySecret:
+      name: ${VAR_VALKEY_AUTHENTICATION_SECRET}
+      key: "password"
+    persistentVolumeClaimRetentionPolicy: 
+      whenDeleted: Delete
+      whenScaled: Retain
+  TLS:
+    ca: "ca.crt"
+    cert: "tls.crt"
+    key: "tls.key"
+    secret:
+      secretName: "${VAR_NANO_GATEWAY_NAMESPACE}-valkey-server-secret"

@@ -12,7 +12,7 @@ spec:
       enabled: true
       type: shared
   imagePullSecrets:
-    - ibm-entitlement-key
+    - ${DEFAULT_IMAGE_PULL_SECRET}
   imageRegistry: cp.icr.io/cp/apic
   management:
     testAndMonitor:
