@@ -1,0 +1,86 @@
+apiVersion: management.apiconnect.ibm.com/v1beta1
+kind: ManagementCluster
+metadata:
+  name: ${VAR_APIC_INSTANCE_NAME}-mgmt
+  namespace: ${VAR_APIC_NAMESPACE}
+spec:
+  version: ${MY_APIC_VERSION}
+  imagePullSecrets:
+  - ${DEFAULT_IMAGE_PULL_SECRET}
+  imageRegistry: ${MY_APIC_IMAGE_REGISTRY}
+  profile: ${MY_APIC_PROFILE_MGMT}
+  portal:
+    admin:
+      secretName: portal-admin-client
+  analytics:
+    ingestion:
+      secretName: analytics-ingestion-client
+  gateway:
+    client:
+      secretName: gateway-client-client
+  devPortal:
+    admin:
+      secretName: devportal-admin-client
+  wmAPIGateway:
+    mgmt:
+      secretName: wmapigateway-mgmt-client
+  nanoGateway:
+    mgmt:
+      secretName: nano-gateway-mgmt-client
+  federatedAPIManagement:
+    admin:
+      secretName: federatedapimanagement-admin-client
+  cloudManagerEndpoint:
+    #ingressClassName: $INGRESS_CLASS
+    annotations:
+      cert-manager.io/issuer: ingress-issuer
+      haproxy.router.openshift.io/timeout: 240s
+    hosts:
+    - name: admin.$STACK_HOST
+      secretName: cm-endpoint
+  apiManagerEndpoint:
+    #ingressClassName: $INGRESS_CLASS
+    annotations:
+      cert-manager.io/issuer: ingress-issuer
+      haproxy.router.openshift.io/timeout: 240s
+    hosts:
+    - name: manager.$STACK_HOST
+      secretName: apim-endpoint
+  consumerCatalogEndpoint:
+    #ingressClassName: $INGRESS_CLASS
+    annotations:
+      cert-manager.io/issuer: ingress-issuer
+    hosts:
+    - name: consumer-catalog.$STACK_HOST
+      secretName: consumer-catalog-endpoint
+  platformAPIEndpoint:
+    #ingressClassName: $INGRESS_CLASS
+    annotations:
+      cert-manager.io/issuer: ingress-issuer
+      haproxy.router.openshift.io/timeout: 240s
+    hosts:
+    - name: api.$STACK_HOST
+      secretName: api-endpoint
+  consumerAPIEndpoint:
+    #ingressClassName: $INGRESS_CLASS
+    annotations:
+      cert-manager.io/issuer: ingress-issuer
+      haproxy.router.openshift.io/timeout: 240s
+    hosts:
+    - name: consumer.$STACK_HOST
+      secretName: consumer-endpoint
+  databaseVolumeClaimTemplate:
+    storageClassName: ${MY_BLOCK_STORAGE_CLASS}
+  microServiceSecurity: certManager
+  #platformEndpointCASecret:
+  #  secretName:
+  #consumerEndpointCASecret:
+  #  secretName:
+  certManagerIssuer:
+    name: selfsigning-issuer
+    kind: Issuer
+  license:
+    accept: true
+    use: nonproduction
+    license: ${MY_APIC_LIC}
+    metric: ${MY_APIC_METRIC}

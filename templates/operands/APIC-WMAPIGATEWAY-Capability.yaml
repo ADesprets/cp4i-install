@@ -1,0 +1,76 @@
+
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+apiVersion: wmapigateway.apiconnect.ibm.com/v1beta1
+kind: WMAPIGatewayCluster
+metadata:
+  name: wmapigateway
+  namespace: ${VAR_APIC_NAMESPACE}
+  labels:
+    app.kubernetes.io/name: ibm-apiconnect
+#  annotations:
+#    apiconnect-operator/devportal-client-secret: wmapigateway-devportal-client
+spec:
+  certManagerIssuer:
+    kind: Issuer
+    name: selfsigning-issuer
+  gatewayEndpoint:
+    annotations:
+      cert-manager.io/issuer: ingress-issuer
+    hosts:
+      # web methods integration server
+    - name: wmapigateway-gw.$STACK_HOST
+      secretName: wmapigateway-gw-tls-secret
+    # ingressClassName: nginx
+  uiEndpoint:
+    annotations:
+      cert-manager.io/issuer: ingress-issuer
+    hosts:
+      # web methods ui
+    - name: wmapigateway-ui.$STACK_HOST
+      secretName: wmapigateway-ui-tls-secret
+    # ingressClassName: nginx
+  mgmtEndpoint:
+    annotations:
+      cert-manager.io/issuer: ingress-issuer
+    hosts:
+      - name: wmapigateway-mgmt.$STACK_HOST
+        secretName: wmapigateway-mgmt-tls-secret
+  mgmtClientSubjectDN: |
+    CN=wmapigateway-mgmt-client,O=cert-manager
+    CN=devportal-wmapigateway-client,O=cert-manager
+  profile: ${MY_APIC_PROFILE_WMGW}
+  version: ${MY_APIC_VERSION}
+  license:
+    accept: true
+    use: nonproduction
+    license: ${MY_APIC_LIC}
+    metric: ${MY_APIC_METRIC}
+  imagePullSecrets:
+  - ${DEFAULT_IMAGE_PULL_SECRET}
+  imageRegistry: ${MY_APIC_IMAGE_REGISTRY}
+  microServiceSecurity: certManager
+  # encryptionSecret:
+  #   secretName: wmapigateway-enc-key
+  storage:
+    volumeClaimTemplate:
+      storageClassName: ${MY_BLOCK_STORAGE_CLASS}
+      volumeSize: $DATA_VOLUME_SIZE
+  # integrationServerPackages:
+  #   packages:
+  #   - NativeService
+  #   volumeClaimTemplate:
+  #     storageClassName: ${MY_BLOCK_STORAGE_CLASS}
+  #     volumeSize: $DATA_VOLUME_SIZE

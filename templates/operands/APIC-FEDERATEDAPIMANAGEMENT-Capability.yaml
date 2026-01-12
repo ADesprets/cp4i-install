@@ -1,0 +1,50 @@
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+apiVersion: federatedapimanagement.apiconnect.ibm.com/v1beta1
+kind: FederatedAPIManagementCluster
+metadata:
+  name: fam
+  namespace: ${VAR_APIC_NAMESPACE}  
+spec:
+  version: ${MY_APIC_VERSION}
+  profile: ${MY_APIC_PROFILE_FAM}
+  imagePullSecrets:
+    - ${DEFAULT_IMAGE_PULL_SECRET}
+  imageRegistry: ${MY_APIC_IMAGE_REGISTRY}
+  analyticsRef: 
+    name: $ANALYTICS_REF_NAME
+    namespace: $ANALYTICS_REF_NAMESPACE
+  uiEndpoint:
+    annotations:
+      cert-manager.io/issuer: ingress-issuer
+    hosts:
+      - name: fam.$STACK_HOST
+        secretName: fam-ui-endpoint
+  adminEndpoint:
+    annotations:
+      cert-manager.io/issuer: ingress-issuer
+    hosts:
+      - name: api.fam.$STACK_HOST
+        secretName: fam-admin-endpoint
+  adminClientSubjectDN: CN=federatedapimanagement-admin-client,O=cert-manager
+  microServiceSecurity: certManager
+  certManagerIssuer:
+    name: selfsigning-issuer
+    kind: Issuer
+  license:
+    accept: true
+    use: nonproduction
+    license: ${MY_APIC_LIC}
+    metric: ${MY_APIC_METRIC}

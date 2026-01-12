@@ -1,0 +1,43 @@
+apiVersion: analytics.apiconnect.ibm.com/v1beta1
+kind: AnalyticsCluster
+metadata:
+  name: ${VAR_APIC_INSTANCE_NAME}-a7s
+  namespace: ${VAR_APIC_NAMESPACE}
+spec:
+  version: ${MY_APIC_VERSION}
+  license:
+    accept: true
+    use: nonproduction
+    license: ${MY_APIC_LIC}
+    metric: ${MY_APIC_METRIC}
+  profile: ${MY_APIC_PROFILE_A7S}
+  imagePullSecrets:
+  - ${DEFAULT_IMAGE_PULL_SECRET}
+  imageRegistry: ${MY_APIC_IMAGE_REGISTRY}
+  mgmtPlatformEndpointCASecret:
+    secretName: $PLATFORM_CA_SECRET # Usually ingress-ca
+  #mgmtPlatformEndpointSvcCASecret:
+  #  secretName:  # Usually management-ca
+  microServiceSecurity: certManager
+  certManagerIssuer:
+    name: selfsigning-issuer
+    kind: Issuer
+  ingestion:
+    endpoint:
+      #ingressClassName: $INGRESS_CLASS
+      annotations:
+        cert-manager.io/issuer: ingress-issuer
+      hosts: 
+      - name: ai.$STACK_HOST
+        secretName: analytics-ai-endpoint
+    clientSubjectDN: CN=analytics-ingestion-client,O=cert-manager
+  mtlsValidateClient: true
+  analyticsMode: true
+  federatedAPIManagementMode: false
+  devPortalMode: false
+  storage:
+    type: $STORAGE_TYPE
+    shared:
+      volumeClaimTemplate:
+        storageClassName: ${MY_BLOCK_STORAGE_CLASS}
+        volumeSize: $DATA_VOLUME_SIZE

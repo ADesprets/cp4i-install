@@ -4,7 +4,7 @@ metadata:
   annotations: 
     apiconnect-operator/backups-not-configured: "true"  
   name: ${VAR_APIC_INSTANCE_NAME}
-  namespace: $VAR_APIC_NAMESPACE
+  namespace: ${VAR_APIC_NAMESPACE}
 spec:
   analytics:
     mtlsValidateClient: true
@@ -13,7 +13,7 @@ spec:
       type: shared
   imagePullSecrets:
     - ${DEFAULT_IMAGE_PULL_SECRET}
-  imageRegistry: cp.icr.io/cp/apic
+  imageRegistry: ${MY_APIC_IMAGE_REGISTR}
   management:
     testAndMonitor:
       enabled: true
@@ -27,10 +27,10 @@ spec:
     webGUIManagementEnabled: true
   license:
     accept: true
-    license: $MY_APIC_LIC
-    metric: VIRTUAL_PROCESSOR_CORE
+    license: ${MY_APIC_LIC}
+    metric: ${MY_APIC_METRIC}
     use: nonproduction
-  profile: $MY_APIC_PROFILE
+  profile: ${MY_APIC_PROFILE}
   ai:
     enabled: true
     apiAgent:
@@ -43,5 +43,5 @@ spec:
         databaseName: default
         collectionName: apic_agent
         credentials: milvus-creds
-  storageClassName: $MY_BLOCK_STORAGE_CLASS
-  version: $MY_APIC_VERSION
+  storageClassName: ${MY_BLOCK_STORAGE_CLASS}
+  version: ${MY_APIC_VERSION}

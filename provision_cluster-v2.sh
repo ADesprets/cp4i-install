@@ -1330,10 +1330,13 @@ function install_apic() {
       mylog info "Creating APIC components individually, it is better for APIC V12 and the multiple gateways" 1>&2
 
       mylog info "Creating APIC ManagementCluster" 1>&2
+      create_operand_instance "ManagementCluster" "${VAR_APIC_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-MANAGEMENT-Capability.yaml" "$VAR_APIC_NAMESPACE" "{.status.phase}" "Ready"
       mylog info "Creating APIC PortalCluster" 1>&2
+      create_operand_instance "PortalCluster" "${VAR_APIC_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-PORTAL-Capability.yaml" "$VAR_APIC_NAMESPACE" "{.status.phase}" "Ready"
       mylog info "Creating APIC AnalyticsCluster" 1>&2
+      create_operand_instance "AnalyticsCluster" "${VAR_APIC_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-ANALYTICS-Capability.yaml" "$VAR_APIC_NAMESPACE" "{.status.phase}" "Ready"
       mylog info "Creating APIC GatewayCluster" 1>&2
-
+      create_operand_instance "GatewayCluster" "${VAR_APIC_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-GATEWAY-Capability.yaml" "$VAR_APIC_NAMESPACE" "{.status.phase}" "Ready"
     else
       create_operand_instance "APIConnectCluster" "${VAR_APIC_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-Capability.yaml" "$VAR_APIC_NAMESPACE" "{.status.phase}" "Ready"
     fi

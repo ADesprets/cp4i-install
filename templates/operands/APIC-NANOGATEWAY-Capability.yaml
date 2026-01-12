@@ -1,0 +1,37 @@
+apiVersion: nanogateway.apiconnect.ibm.com/v1beta1
+kind: NanoGatewayCluster
+metadata:
+  name: ngw
+  namespace: ${VAR_APIC_NAMESPACE}
+spec:
+  profile: ${MY_APIC_PROFILE_NGW}
+  version: ${MY_APIC_VERSION}
+  license:
+    accept: true
+    use: nonproduction
+    license: ${MY_APIC_LIC}
+    metric: ${MY_APIC_METRIC}
+  imagePullSecrets:
+  - ${DEFAULT_IMAGE_PULL_SECRET}
+  imageRegistry: ${MY_APIC_IMAGE_REGISTRY}
+  certManagerIssuer:
+    kind: Issuer
+    name: selfsigning-issuer
+  microServiceSecurity: certManager
+  mgmtClientSubjectDN: CN=nano-gateway-mgmt-client,O=cert-manager
+  mgmtEndpoint:
+    annotations:
+      cert-manager.io/issuer: ingress-issuer
+    hosts:
+      - name: apic-gateway-proxy.$STACK_HOST
+        secretName: gateway-proxy-endpoint
+  redis:
+    hosts:
+    - $REDIS_HOST
+    port: 6379
+    mode: standalone
+    credential:
+      secretName: valkey-secret
+    tls:
+      secretName: valkey-tls
+  gatewayDomain: nanogw.$STACK_HOST

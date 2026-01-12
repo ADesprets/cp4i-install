@@ -1,0 +1,62 @@
+apiVersion: portal.apiconnect.ibm.com/v1beta1
+kind: PortalCluster
+metadata:
+  name: ${VAR_APIC_INSTANCE_NAME}-ptl
+  namespace: ${VAR_APIC_NAMESPACE}  
+spec:
+  version: ${MY_APIC_VERSION
+  profile: ${MY_APIC_PROFILE_PTL}
+  imagePullSecrets:
+    - ${DEFAULT_IMAGE_PULL_SECRET}
+  imageRegistry: ${MY_APIC_IMAGE_REGISTRY}
+  mgmtPlatformEndpointCASecret:
+    secretName: $PLATFORM_CA_SECRET # Usually ingress-ca
+  mgmtConsumerEndpointCASecret:
+    secretName: $CONSUMER_CA_SECRET # Usually ingress-ca
+  #mgmtPlatformEndpointSvcCASecret:
+  #  secretName:  # Usually management-ca
+  #mgmtConsumerEndpointSvcCASecret:
+  #  secretName:  # Usually management-ca  
+  portalAdminEndpoint:
+    #ingressClassName: $INGRESS_CLASS
+    annotations:
+      cert-manager.io/issuer: ingress-issuer
+    hosts:
+    - name: api.portal.$STACK_HOST
+      secretName: portal-admin
+  portalUIEndpoint:
+    #ingressClassName: $INGRESS_CLASS
+    annotations:
+      cert-manager.io/issuer: ingress-issuer
+    hosts:
+    - name: portal.$STACK_HOST
+      secretName: portal-web
+  databaseVolumeClaimTemplate:
+    storageClassName: $MY_BLOCK_STORAGE_CLASS
+    volumeSize: 64Gi
+  databaseLogsVolumeClaimTemplate:
+    storageClassName: ${MY_BLOCK_STORAGE_CLASS}
+    volumeSize: 12Gi
+  webVolumeClaimTemplate:
+    storageClassName: ${MY_BLOCK_STORAGE_CLASS}
+    volumeSize: 64Gi
+  backupVolumeClaimTemplate:
+    storageClassName: ${MY_BLOCK_STORAGE_CLASS}
+    volumeSize: 15Gi
+  adminVolumeClaimTemplate:
+    storageClassName: ${MY_BLOCK_STORAGE_CLASS}
+    volumeSize: 6Gi
+  certVolumeClaimTemplate:
+    storageClassName: ${MY_BLOCK_STORAGE_CLASS}
+    volumeSize: 4Gi
+  adminClientSubjectDN: CN=portal-admin-client,O=cert-manager
+  microServiceSecurity: certManager
+  certManagerIssuer:
+    name: selfsigning-issuer
+    kind: Issuer
+  license:
+    accept: true
+    use: nonproduction
+    license: ${MY_APIC_LIC}
+    metric: ${MY_APIC_METRIC}
+  mtlsValidateClient: true

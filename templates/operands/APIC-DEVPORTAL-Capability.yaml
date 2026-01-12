@@ -1,0 +1,61 @@
+
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+
+apiVersion: devportal.apiconnect.ibm.com/v1beta1
+kind: DevPortalCluster
+metadata:
+  name: devportal
+  namespace: ${VAR_APIC_NAMESPACE}  
+#  annotations:
+#    apiconnect-operator/wmapigateway-client-secret: devportal-wmapigateway-client
+spec:
+  version: ${MY_APIC_VERSION}
+  profile: ${MY_APIC_PROFILE_DEVPTL}
+  imagePullSecrets:
+    - ${DEFAULT_IMAGE_PULL_SECRET}
+  imageRegistry: ${MY_APIC_IMAGE_REGISTRY}
+  devportalAdminEndpoint:
+    #ingressClassName: $INGRESS_CLASS
+    annotations:
+      cert-manager.io/issuer: ingress-issuer
+    hosts:
+    - name: api.devportal.$STACK_HOST
+      secretName: devportal-admin
+  devportalUIEndpoint:
+    #ingressClassName: $INGRESS_CLASS
+    annotations:
+      cert-manager.io/issuer: ingress-issuer
+    hosts:
+    - name: devportal.$STACK_HOST
+      secretName: devportal-web
+  adminClientSubjectDN: |
+    CN=devportal-admin-client,O=cert-manager
+    CN=wmapigateway-devportal-client,O=cert-manager
+  microServiceSecurity: certManager
+  certManagerIssuer:
+    name: selfsigning-issuer
+    kind: Issuer
+  license:
+    accept: true
+    use: nonproduction
+    license: ${MY_APIC_LIC}
+    metric: ${MY_APIC_METRIC}
+# encryptionSecret:
+#   secretName: devportal-enc-key
+  analyticsRef:
+    name: $ANALYTICS_REF_NAME
+    namespace: $ANALYTICS_REF_NAMESPACE
+  isStandalone: false

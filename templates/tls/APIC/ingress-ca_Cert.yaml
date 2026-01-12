@@ -1,0 +1,30 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ingress-ca
+  namespace: ${VAR_APIC_NAMESPACE}
+  labels: {
+    app.kubernetes.io/instance: "management",
+    app.kubernetes.io/managed-by: "ibm-apiconnect",
+    app.kubernetes.io/name: "ingress-ca"
+  }
+spec:
+  duration: 87600h # 10 years
+  renewBefore: 720h # 30 days
+  privateKey:
+    rotationPolicy: Always
+  secretName: ingress-ca
+  commonName: "ingress-ca"
+  usages:
+  - digital signature
+  - key encipherment
+  - cert sign
+  isCA: true
+  issuerRef:
+    name: selfsigning-issuer
+    kind: Issuer
+  secretTemplate:
+    labels:
+      app.kubernetes.io/instance: "management"
+      app.kubernetes.io/managed-by: "ibm-apiconnect"
+      app.kubernetes.io/name: "ingress-ca"
