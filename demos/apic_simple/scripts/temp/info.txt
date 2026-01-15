@@ -2,7 +2,7 @@ cmd /c %APIC_EXE_Full_PATH% login -s %APIC_SRV% -u %APIC_LOGIN% -p %APIC_PASSWOR
 
 apic login -s cp4i-apic-mgmt-platform-api-cp4i.cp4iad2023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud -u org1owner -p Passw0rd! -r provider/default-idp-2 --debug
 
-set ep=cp4i-apic-mgmt-platform-api-cp4i.cp4iad2023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud
+set ep=iwhi-apic-mgmt-platform-api-cp4i.cp4iad2023-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud
 set amtok=<token>
 echo %ep%
 

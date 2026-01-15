@@ -100,8 +100,8 @@ echo " "
 echo " -----------------------"
 
 echo "--------------- Endpoint ---------------------"
-echo " Cloud manager : https://$MGMT_ADMIN_EP.$STACK_HOST"
-echo " Api manager : https://$MGMT_API_EP.$STACK_HOST"
+echo " Cloud manager : https://$MGMT_ADMIN_EP.${STACK_HOST}"
+echo " Api manager : https://$MGMT_API_EP.${STACK_HOST}"
 echo "----------------------------------------------"
 
 

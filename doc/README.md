@@ -1,8 +1,8 @@
-# Scenario driven CP4I Installation using scripts
+# Scenario driven IWHI Installation using scripts
 
 ## Introduction
 
-The goal is to install a CP4I platform (including Openshift cluster) to demonstrate various scenarios around integration. The installation is started with one command.
+The goal is to install an IWHI platform (including Openshift cluster) to demonstrate various scenarios around integration. The installation is started with one command.
 
 The principles followed to implement this asset are the following:
 

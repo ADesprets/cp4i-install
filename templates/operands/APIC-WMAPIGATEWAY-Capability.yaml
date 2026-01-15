@@ -31,7 +31,7 @@ spec:
       cert-manager.io/issuer: ingress-issuer
     hosts:
       # web methods integration server
-    - name: wmapigateway-gw.$STACK_HOST
+    - name: wmapigateway-gw.${STACK_HOST}
       secretName: wmapigateway-gw-tls-secret
     # ingressClassName: nginx
   uiEndpoint:
@@ -39,14 +39,14 @@ spec:
       cert-manager.io/issuer: ingress-issuer
     hosts:
       # web methods ui
-    - name: wmapigateway-ui.$STACK_HOST
+    - name: wmapigateway-ui.${STACK_HOST}
       secretName: wmapigateway-ui-tls-secret
     # ingressClassName: nginx
   mgmtEndpoint:
     annotations:
       cert-manager.io/issuer: ingress-issuer
     hosts:
-      - name: wmapigateway-mgmt.$STACK_HOST
+      - name: wmapigateway-mgmt.${STACK_HOST}
         secretName: wmapigateway-mgmt-tls-secret
   mgmtClientSubjectDN: |
     CN=wmapigateway-mgmt-client,O=cert-manager

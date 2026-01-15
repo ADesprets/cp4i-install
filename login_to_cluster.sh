@@ -84,7 +84,7 @@ function Login2OpenshiftCluster () {
 # Start of the script main entry
 ################################################
 # This is the default value for the cluster if no argument is passed, change it to your favorite cluster
-my_cluster_name=cp4iad22023
+my_cluster_name=iwhi
 
 if (($# == 1)); then
   my_cluster_name=$1

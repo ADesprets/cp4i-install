@@ -15,14 +15,14 @@ spec:
     annotations:
       cert-manager.io/issuer: ingress-issuer
     hosts:
-    - name: rgw.$STACK_HOST
+    - name: rgw.${STACK_HOST}
       secretName: gwv6-endpoint
   gatewayManagerEndpoint:
     #ingressClassName: $INGRESS_CLASS
     annotations:
       cert-manager.io/issuer: ingress-issuer
     hosts:
-    - name: rgwd.$STACK_HOST
+    - name: rgwd.${STACK_HOST}
       secretName: gwv6-manager-endpoint
   apicGatewayServiceTLS:
     secretName: gateway-service

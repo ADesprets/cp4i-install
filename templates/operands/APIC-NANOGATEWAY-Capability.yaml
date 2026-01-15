@@ -23,7 +23,7 @@ spec:
     annotations:
       cert-manager.io/issuer: ingress-issuer
     hosts:
-      - name: apic-gateway-proxy.$STACK_HOST
+      - name: apic-gateway-proxy.${STACK_HOST}
         secretName: gateway-proxy-endpoint
   redis:
     hosts:
@@ -34,4 +34,4 @@ spec:
       secretName: valkey-secret
     tls:
       secretName: valkey-tls
-  gatewayDomain: nanogw.$STACK_HOST
+  gatewayDomain: nanogw.${STACK_HOST}

@@ -31,7 +31,7 @@ function install_sftp() {
     if ! $MY_CLUSTER_COMMAND -n ${VAR_SFTP_SERVER_NAMESPACE} get secret "${VAR_SFTP_SERVER_NAMESPACE}-sftp-creds-secret" >/dev/null 2>&1; then
       generate_password 32
       adapt_file ${MY_SFTP_SCRIPTDIR}resources/ ${MY_SFTP_WORKINGDIR}resources/ users.conf
-      unset USER_PASSWORD_GEN
+      unset VAR_USER_PASSWORD_GEN
       $MY_CLUSTER_COMMAND -n $VAR_SFTP_SERVER_NAMESPACE create secret generic "${VAR_SFTP_SERVER_NAMESPACE}-sftp-creds-secret" --from-file=${MY_SFTP_WORKINGDIR}resources/users.conf
     fi
   
@@ -1079,7 +1079,7 @@ function install_milvus() {
     create_milvus_root_certificate
     
     # Create secret
-    create_generic_secret "milvus-db-cred" "milvus-admin" "milvusPassw0rd!" "${VAR_MILVUS_OPERATOR_NAMESPACE}" "${MY_MILVUS_WORKINGDIR}"
+    create_generic_secret "milvus-db-cred" "username" "milvus-admin" "milvusPassw0rd!" "${VAR_MILVUS_OPERATOR_NAMESPACE}" "${MY_MILVUS_WORKINGDIR}" "false"
 
     # Add Milvus Operator
     mylog info "Add various service accounts to the correct SCC"  1>&2
@@ -1131,8 +1131,10 @@ function install_valkey() {
   if $MY_APIC; then
     check_directory_exist_create "${MY_VALKEY_WORKINGDIR}"
 
-    create_project "${VAR_VALKEY_NAMESPACE}" "${VAR_VALKEY_NAMESPACE} project" "For Valkey" "${MY_RESOURCESDIR}" "${MY_VALKEY_WORKINGDIR}"
-    add_ibm_entitlement "$VAR_VALKEY_NAMESPACE"
+    if [ "$VAR_APIC_NAMESPACE" != "$VAR_VALKEY_NAMESPACE" ]; then
+      create_project "${VAR_VALKEY_NAMESPACE}" "${VAR_VALKEY_NAMESPACE} project" "For Valkey" "${MY_RESOURCESDIR}" "${MY_VALKEY_WORKINGDIR}"
+      add_ibm_entitlement "$VAR_NANO_GATEWAY_NAMESPACE"
+    fi
 
     # Create the valkey  CRDs
     mylog info "Create valkey CRDs" 1>&2
@@ -1183,7 +1185,7 @@ function install_valkey() {
     export VAR_VALKEY_AUTHENTICATION_SECRET="valkey-${VAR_VALKEY_NAMESPACE}-secret"
     # TODO if the password starts with special charater it can fails
     local lf_store_password=$(tr -dc 'A-Za-z0-9!@#$%^&*()_+-=' < /dev/urandom | fold -w 20 | head -n 1)
-    create_generic_secret "${VAR_VALKEY_AUTHENTICATION_SECRET}" "valkey-access" "${lf_store_password}" "${VAR_VALKEY_NAMESPACE}" "${MY_VALKEY_WORKINGDIR}"
+    create_generic_secret "${VAR_VALKEY_AUTHENTICATION_SECRET}"  "username" "valkey-access" "${lf_store_password}" "${VAR_VALKEY_NAMESPACE}" "${MY_VALKEY_WORKINGDIR}" "false"
 
     # For OpenShift add the service accounts to the restricted SCC
     decho $lf_tracelevel "oc adm policy add-scc-to-user restricted -z default -n ${VAR_VALKEY_NAMESPACE}"
@@ -1223,10 +1225,12 @@ function install_redis() {
 
   if $MY_APIC; then
     check_directory_exist_create "${MY_REDIS_WORKINGDIR}"
-    mylog error "this function has ot Installing Redis in standalone mode in ${VAR_REDIS_NAMESPACE} namespace" 1>&2
+    mylog error "Installing Redis in standalone mode in ${VAR_REDIS_NAMESPACE} namespace" 1>&2
 
-    create_project "${VAR_REDIS_NAMESPACE}" "${VAR_REDIS_NAMESPACE} project" "For Redis" "${MY_RESOURCESDIR}" "${MY_REDIS_WORKINGDIR}"
-    add_ibm_entitlement "$VAR_REDIS_NAMESPACE"
+    if [ "$VAR_APIC_NAMESPACE" != "$VAR_REDIS_NAMESPACE" ]; then
+      create_project "${VAR_REDIS_NAMESPACE}" "${VAR_REDIS_NAMESPACE} project" "For Redis" "${MY_RESOURCESDIR}" "${MY_REDIS_WORKINGDIR}"
+      add_ibm_entitlement "$VAR_REDIS_NAMESPACE"
+    fi
 
     # Create the redis CRDs
     mylog info "Create redis CRDs" 1>&2
@@ -1254,24 +1258,18 @@ function install_redis() {
 
 }
 ################################################
-# Install APIC
-function install_apic() {
+# Install nano gateway
+function install_nano_gateway() {
   SECONDS=0
   local lf_starting_date=$(date)
-  mylog info "==== Installing APIC (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
-
+  mylog info "==== Installing nano gateway (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
   local lf_tracelevel=2
   trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
-  # ibm-apiconnect
   if $MY_APIC; then
     check_directory_exist_create "${MY_APIC_WORKINGDIR}"
-
-    # Create projects for APIC and nano gateway
-    create_project "${VAR_APIC_NAMESPACE}" "${VAR_APIC_NAMESPACE} project" "For API Connect" "${MY_RESOURCESDIR}" "${MY_APIC_WORKINGDIR}"
-    add_ibm_entitlement "$VAR_APIC_NAMESPACE"
 
     if [ "$VAR_APIC_NAMESPACE" != "$VAR_NANO_GATEWAY_NAMESPACE" ]; then
       create_project "${VAR_NANO_GATEWAY_NAMESPACE}" "${VAR_NANO_GATEWAY_NAMESPACE} project" "For nano gateway" "${MY_RESOURCESDIR}" "${MY_APIC_WORKINGDIR}"
@@ -1288,7 +1286,7 @@ function install_apic() {
     else
       mylog error "Unsupported nano gateway database type: $MY_NANO_DB_TYPE" 1>&2
       exit 1
-    fi  
+    fi
 
     # Installation of the OpenShift Gateway API CRD (it does exist in OpenShift V4.19 and above)
     mylog info "Create OpenShift API Gateway CRD for OpenShift < 4.19 or for Kubernetes" 1>&2
@@ -1301,8 +1299,39 @@ function install_apic() {
     # Installation of the nano gateway operator (deployment)
     mylog info "Install nano gateway operator (deployment) in ${VAR_NANO_GATEWAY_NAMESPACE} namespace" 1>&2
     check_create_oc_yaml "Deployment" "datapower-nano-operator" "${MY_YAMLDIR}operators/" "${MY_APIC_WORKINGDIR}" "ibm-nanogw.yaml" "${VAR_NANO_GATEWAY_NAMESPACE}"
+
+  fi
+
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of the nano gateway (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+
+}
+
+################################################
+# Install APIC
+function install_apic() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing APIC (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  # ibm-apiconnect
+  if $MY_APIC; then
+    check_directory_exist_create "${MY_APIC_WORKINGDIR}"
+
+    # Create projects for APIC
+    create_project "${VAR_APIC_NAMESPACE}" "${VAR_APIC_NAMESPACE} project" "For API Connect" "${MY_RESOURCESDIR}" "${MY_APIC_WORKINGDIR}"
+    add_ibm_entitlement "$VAR_APIC_NAMESPACE"
   
     # Add the API Connect catalog sources to your cluster using ibm_pak plugin
+    mylog info "Add API Connect catalog sources using ibm_pak plugin" 1>&2
     check_add_cs_ibm_pak $MY_APIC_CASE $MY_APIC_OPERATOR $MY_APIC_CATALOGSOURCE_LABEL amd64
     if [[ -z $MY_APIC_VERSION ]]; then
       export MY_APIC_VERSION=$VAR_APP_VERSION
@@ -1310,7 +1339,12 @@ function install_apic() {
       unset VAR_APP_VERSION
     fi
 
-    # Add the DataPower operator sources to your cluster using ibm_pak plugin
+    # install_nano_gateway toto
+    # install_datapower_gateway toto
+    # install_wms_gateway toto
+
+    # Add the DataPower catalog sources to your cluster using ibm_pak plugin
+    mylog info "Add DataPower catalog sources using ibm_pak plugin" 1>&2
     check_add_cs_ibm_pak $MY_DPGW_CASE $MY_DPGW_OPERATOR $MY_DPGW_CATALOGSOURCE_LABEL amd64
     if [[ -z $MY_DPGW_VERSION ]]; then
       export MY_DPGW_VERSION=$VAR_APP_VERSION
@@ -1319,37 +1353,48 @@ function install_apic() {
     fi
 
     # Create the apiconnect subscription
+    mylog info "Creating APIC operator subscription" 1>&2
     create_operator_instance "${MY_APIC_OPERATOR}" "${MY_APIC_CATALOGSOURCE_LABEL}" "${MY_OPERATORSDIR}" "${MY_APIC_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
     
     # Create the ibm-datapower-operator subscription
+    mylog info "Creating DataPower operator subscription" 1>&2
     create_operator_instance "${MY_DPGW_OPERATOR}" "${MY_DPGW_CATALOGSOURCE_LABEL}" "${MY_OPERATORSDIR}" "${MY_APIC_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
 
-    exit 1
-    
+    mylog info "Setting up issuers and certificates for API Connect in ${VAR_APIC_NAMESPACE} namespace" 1>&2
+    oc -n "${VAR_APIC_NAMESPACE}" apply -f ${MY_TLSDIR}APIC/custom-certs-external.yaml
+   
+    local lf_ingress=$($MY_CLUSTER_COMMAND get ingresses.config/cluster -o jsonpath='{.spec.domain}')
+    export STACK_HOST="$lf_ingress"
+
     if $MY_APIC_BY_COMPONENT; then
-      mylog info "Creating APIC components individually, it is better for APIC V12 and the multiple gateways" 1>&2
+      mylog info "Creating APIC components individually, adding more control for APIC V12 and the multiple gateways" 1>&2
+
+      generate_password 10
+      local lf_admin_password=${VAR_USER_PASSWORD_GEN}
+      unset VAR_USER_PASSWORD_GEN
+      create_generic_secret "apic-mgmt-admin-pass" "email" "admin@apiconnect.net" "${lf_admin_password}" "${VAR_APIC_NAMESPACE}" "${MY_APIC_WORKINGDIR}" "false"
 
       mylog info "Creating APIC ManagementCluster" 1>&2
-      create_operand_instance "ManagementCluster" "${VAR_APIC_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-MANAGEMENT-Capability.yaml" "$VAR_APIC_NAMESPACE" "{.status.phase}" "Ready"
+      create_operand_instance "ManagementCluster" "${VAR_APIC_INSTANCE_NAME}-mgmt" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-MANAGEMENT-Capability.yaml" "$VAR_APIC_NAMESPACE" "{.status.phase}" "Running"
       mylog info "Creating APIC PortalCluster" 1>&2
-      create_operand_instance "PortalCluster" "${VAR_APIC_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-PORTAL-Capability.yaml" "$VAR_APIC_NAMESPACE" "{.status.phase}" "Ready"
+      create_operand_instance "PortalCluster" "${VAR_APIC_INSTANCE_NAME}-ptl" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-PORTAL-Capability.yaml" "$VAR_APIC_NAMESPACE" "{.status.phase}" "Running"
       mylog info "Creating APIC AnalyticsCluster" 1>&2
-      create_operand_instance "AnalyticsCluster" "${VAR_APIC_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-ANALYTICS-Capability.yaml" "$VAR_APIC_NAMESPACE" "{.status.phase}" "Ready"
+      create_operand_instance "AnalyticsCluster" "${VAR_APIC_INSTANCE_NAME}-a7s" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-ANALYTICS-Capability.yaml" "$VAR_APIC_NAMESPACE" "{.status.phase}" "Running"
+      exit 1 # toto
       mylog info "Creating APIC GatewayCluster" 1>&2
-      create_operand_instance "GatewayCluster" "${VAR_APIC_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-GATEWAY-Capability.yaml" "$VAR_APIC_NAMESPACE" "{.status.phase}" "Ready"
+      create_operand_instance "GatewayCluster" "${VAR_APIC_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-GATEWAY-Capability.yaml" "$VAR_APIC_NAMESPACE" "{.status.phase}" "Running"
     else
       create_operand_instance "APIConnectCluster" "${VAR_APIC_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-Capability.yaml" "$VAR_APIC_NAMESPACE" "{.status.phase}" "Ready"
     fi
-
-    local lf_ingress=$($MY_CLUSTER_COMMAND get ingresses.config/cluster -o jsonpath='{.spec.domain}')
+    
     export VAR_NAMESPACE="${VAR_APIC_NAMESPACE}"
     export VAR_APIC_GW_ROUTE_HOST="${VAR_APIC_GW_ROUTE_NAME}.${lf_ingress}"
 
     create_oc_resource "Route" "${VAR_APIC_GW_ROUTE_NAME}" "${MY_RESOURCESDIR}" "${MY_APIC_WORKINGDIR}" "route.yaml" "$VAR_APIC_NAMESPACE"
     unset VAR_NAMESPACE VAR_APIC_GW_ROUTE_HOST
 
-    save_certificate ${VAR_APIC_INSTANCE_NAME}-ingress-ca ca.crt ${MY_APIC_WORKINGDIR} ${VAR_APIC_NAMESPACE}
-    save_certificate ${VAR_APIC_INSTANCE_NAME}-gw-gateway ca.crt ${MY_APIC_WORKINGDIR} ${VAR_APIC_NAMESPACE}
+    save_certificate ingress-ca ca.crt ${MY_APIC_WORKINGDIR} ${VAR_APIC_NAMESPACE}
+    save_certificate gwv6-endpoint ca.crt ${MY_APIC_WORKINGDIR} ${VAR_APIC_NAMESPACE}
 
   fi
 

@@ -31,7 +31,7 @@ function create_mq_root_certificate () {
   else
     mylog info "Secret $lf_jks_secret_name in ${VAR_ES_NAMESPACE} namespace does not exist." 1>&2
     local lf_store_password=$(tr -dc 'A-Za-z0-9!@#$%^&*()_+-=' < /dev/urandom | fold -w 20 | head -n 1)
-    create_generic_secret "$lf_jks_secret_name" "" "$lf_store_password" "${VAR_ES_NAMESPACE}" "${MY_ES_WORKINGDIR}"
+    create_generic_secret "$lf_jks_secret_name"  "username" "" "$lf_store_password" "${VAR_ES_NAMESPACE}" "${MY_ES_WORKINGDIR}" "false"
     export VAR_ES_MQ_SOURCE_STORE_PASSWORD=${lf_store_password}
   fi
 

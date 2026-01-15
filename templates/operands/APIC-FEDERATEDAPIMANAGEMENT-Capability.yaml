@@ -30,13 +30,13 @@ spec:
     annotations:
       cert-manager.io/issuer: ingress-issuer
     hosts:
-      - name: fam.$STACK_HOST
+      - name: fam.${STACK_HOST}
         secretName: fam-ui-endpoint
   adminEndpoint:
     annotations:
       cert-manager.io/issuer: ingress-issuer
     hosts:
-      - name: api.fam.$STACK_HOST
+      - name: api.fam.${STACK_HOST}
         secretName: fam-admin-endpoint
   adminClientSubjectDN: CN=federatedapimanagement-admin-client,O=cert-manager
   microServiceSecurity: certManager

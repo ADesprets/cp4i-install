@@ -27,9 +27,9 @@ echo '-- Set local properties'
 echo --------
 # Platform REST API endpoint for admin and provider APIs
 # API Manager URL
-EP_API=$MGMT_API_EP.$STACK_HOST
+EP_API=$MGMT_API_EP.${STACK_HOST}
 # portal-portal-web
-EP_PORTAL=$PORTAL_UI_EP.$STACK_HOST
+EP_PORTAL=$PORTAL_UI_EP.${STACK_HOST}
 
 echo $EP_API
 

@@ -106,8 +106,8 @@ echo "Install APIC -- End: `date`"
 kubectl get ingress -n $NAMESPACE
 
 echo "--------------- Endpoint ---------------------"
-echo " Cloud manager : https://$MGMT_ADMIN_EP.$STACK_HOST"
-echo " API manager : https://$MGMT_API_EP.$STACK_HOST"
+echo " Cloud manager : https://$MGMT_ADMIN_EP.${STACK_HOST}"
+echo " API manager : https://$MGMT_API_EP.${STACK_HOST}"
 echo "----------------------------------------------"
 
 duration=$SECONDS

@@ -28,6 +28,7 @@ function prepare_internal_registry() {
   trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   # Expose service using default route
+  decho $lf_tracelevel "$MY_CLUSTER_COMMAND patch configs.imageregistry.operator.openshift.io/cluster --patch '{\"spec\":{\"defaultRoute\":true}}' --type=merge"
   $MY_CLUSTER_COMMAND patch configs.imageregistry.operator.openshift.io/cluster --patch '{"spec":{"defaultRoute":true}}' --type=merge
   wait_for_resource Route default-route openshift-image-registry
 

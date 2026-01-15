@@ -9,6 +9,17 @@ spec:
   - ${DEFAULT_IMAGE_PULL_SECRET}
   imageRegistry: ${MY_APIC_IMAGE_REGISTRY}
   profile: ${MY_APIC_PROFILE_MGMT}
+  governance:
+    enabled: true
+  testAndMonitor:
+    autoTestEnabled: true
+    hubEndpoint: {}
+    turnstileEndpoint: {}
+  discovery:
+    enabled: true
+    tablespaceDbVolumeClaimTemplate:
+      storageClassName: ocs-external-storagecluster-ceph-rbd
+      volumeSize: 25Gi
   portal:
     admin:
       secretName: portal-admin-client
@@ -36,7 +47,7 @@ spec:
       cert-manager.io/issuer: ingress-issuer
       haproxy.router.openshift.io/timeout: 240s
     hosts:
-    - name: admin.$STACK_HOST
+    - name: admin.${STACK_HOST}
       secretName: cm-endpoint
   apiManagerEndpoint:
     #ingressClassName: $INGRESS_CLASS
@@ -44,14 +55,14 @@ spec:
       cert-manager.io/issuer: ingress-issuer
       haproxy.router.openshift.io/timeout: 240s
     hosts:
-    - name: manager.$STACK_HOST
+    - name: manager.${STACK_HOST}
       secretName: apim-endpoint
   consumerCatalogEndpoint:
     #ingressClassName: $INGRESS_CLASS
     annotations:
       cert-manager.io/issuer: ingress-issuer
     hosts:
-    - name: consumer-catalog.$STACK_HOST
+    - name: consumer-catalog.${STACK_HOST}
       secretName: consumer-catalog-endpoint
   platformAPIEndpoint:
     #ingressClassName: $INGRESS_CLASS
@@ -59,7 +70,7 @@ spec:
       cert-manager.io/issuer: ingress-issuer
       haproxy.router.openshift.io/timeout: 240s
     hosts:
-    - name: api.$STACK_HOST
+    - name: api.${STACK_HOST}
       secretName: api-endpoint
   consumerAPIEndpoint:
     #ingressClassName: $INGRESS_CLASS
@@ -67,8 +78,10 @@ spec:
       cert-manager.io/issuer: ingress-issuer
       haproxy.router.openshift.io/timeout: 240s
     hosts:
-    - name: consumer.$STACK_HOST
+    - name: consumer.${STACK_HOST}
       secretName: consumer-endpoint
+  # adminUser:
+    # secretName: apic-mgmt-admin-pass
   databaseVolumeClaimTemplate:
     storageClassName: ${MY_BLOCK_STORAGE_CLASS}
   microServiceSecurity: certManager

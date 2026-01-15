@@ -1,4 +1,4 @@
-GATEWAY_ADDRESS=cp4i-apic-egw-event-gw-client-cp4i.cp4i-cluster-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud
+GATEWAY_ADDRESS=iwhi-apic-egw-event-gw-client-cp4i.cp4i-cluster-b34dfa42ccf328c7da72e2882c1627b1-0000.eu-de.containers.appdomain.cloud
 YOUR-CLIENT-ID=0b98380a91984c3a321906deef1bb408
 16718298-7850-4921-bd2c-0ac5a320d91d
 

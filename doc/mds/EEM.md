@@ -1,7 +1,7 @@
 # EEM Usage
 
 Check everything is ok
-`oc exec $(kubectl get pod -l app.kubernetes.io/instance=cp4i-eem -n cp4i -o name) -n cp4i curl http://localhost:8081/ready`
+`oc exec $(kubectl get pod -l app.kubernetes.io/instance=iwhi-eem -n cp4i -o name) -n cp4i curl http://localhost:8081/ready`
 where cp4i-eem is the instance name and cp4i is the namespave where EEM is installed.
 
 ``` json

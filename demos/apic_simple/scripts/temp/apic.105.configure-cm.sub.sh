@@ -638,8 +638,8 @@ fi
 # Removed analytics-client-default not used anymore
 
 # echo "--------------- Endpoint ---------------------"
-# echo " Cloud manager : https://$MGMT_ADMIN_EP.$STACK_HOST (admin/$apic_admin_password)"
-# echo " API manager : https://$MGMT_API_EP.$STACK_HOST ($ORG_USERNAME/$ORG_PASSWORD)"
+# echo " Cloud manager : https://$MGMT_ADMIN_EP.${STACK_HOST} (admin/$apic_admin_password)"
+# echo " API manager : https://$MGMT_API_EP.${STACK_HOST} ($ORG_USERNAME/$ORG_PASSWORD)"
 # echo "----------------------------------------------"
 
 duration=$SECONDS

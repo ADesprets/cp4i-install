@@ -30,19 +30,19 @@ echo --------
 # Platform REST API endpoint for admin and provider APIs
 #export EP_API=api.iks-553468-103ddb1cc6249867b4ed037d4a50c9fb-0000.eu-de.containers.appdomain.cloud
 # API Manager URL
-EP_API=$MGMT_API_EP.$STACK_HOST
+EP_API=$MGMT_API_EP.${STACK_HOST}
 # gwv6-gateway-manager
-EP_GWD=$GWY_ADMIN_EP.$STACK_HOST
+EP_GWD=$GWY_ADMIN_EP.${STACK_HOST}
 # gwv6-gateway
-EP_GW=$GWY_EP.$STACK_HOST
+EP_GW=$GWY_EP.${STACK_HOST}
 # analytics-ai-endpoint
-EP_AI=$A7S_INGESTION_EP.$STACK_HOST
+EP_AI=$A7S_INGESTION_EP.${STACK_HOST}
 # analytics-ac-endpoint
-EP_AC=$A7S_CLIENT_EP.$STACK_HOST
+EP_AC=$A7S_CLIENT_EP.${STACK_HOST}
 # portal-portal-director
-EP_PADMIN=$PORTAL_ADMIN_EP.$STACK_HOST
+EP_PADMIN=$PORTAL_ADMIN_EP.${STACK_HOST}
 # portal-portal-web
-EP_PORTAL=$PORTAL_UI_EP.$STACK_HOST
+EP_PORTAL=$PORTAL_UI_EP.${STACK_HOST}
 
 # admin ORG
 ADMIN_ORG_NAME='admin'

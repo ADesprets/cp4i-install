@@ -32,14 +32,14 @@ spec:
     annotations:
       cert-manager.io/issuer: ingress-issuer
     hosts:
-    - name: api.devportal.$STACK_HOST
+    - name: api.devportal.${STACK_HOST}
       secretName: devportal-admin
   devportalUIEndpoint:
     #ingressClassName: $INGRESS_CLASS
     annotations:
       cert-manager.io/issuer: ingress-issuer
     hosts:
-    - name: devportal.$STACK_HOST
+    - name: devportal.${STACK_HOST}
       secretName: devportal-web
   adminClientSubjectDN: |
     CN=devportal-admin-client,O=cert-manager

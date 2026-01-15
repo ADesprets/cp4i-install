@@ -4,35 +4,35 @@ metadata:
   name: ${VAR_APIC_INSTANCE_NAME}-ptl
   namespace: ${VAR_APIC_NAMESPACE}  
 spec:
-  version: ${MY_APIC_VERSION
+  version: ${MY_APIC_VERSION}
   profile: ${MY_APIC_PROFILE_PTL}
   imagePullSecrets:
     - ${DEFAULT_IMAGE_PULL_SECRET}
   imageRegistry: ${MY_APIC_IMAGE_REGISTRY}
   mgmtPlatformEndpointCASecret:
-    secretName: $PLATFORM_CA_SECRET # Usually ingress-ca
+    secretName: ${MY_APIC_TLS_INGRESS_CERT_NAME} # Usually ingress-ca
   mgmtConsumerEndpointCASecret:
-    secretName: $CONSUMER_CA_SECRET # Usually ingress-ca
+    secretName: ${MY_APIC_TLS_INGRESS_CERT_NAME} # Usually ingress-ca
   #mgmtPlatformEndpointSvcCASecret:
-  #  secretName:  # Usually management-ca
+  #  secretName:  # Usually management-ca ${MY_APIC_TLS_APIM_CERT_NAME}
   #mgmtConsumerEndpointSvcCASecret:
-  #  secretName:  # Usually management-ca  
+  #  secretName:  # Usually management-ca  ${MY_APIC_TLS_APIM_CERT_NAME}
   portalAdminEndpoint:
     #ingressClassName: $INGRESS_CLASS
     annotations:
       cert-manager.io/issuer: ingress-issuer
     hosts:
-    - name: api.portal.$STACK_HOST
+    - name: api.portal.${STACK_HOST}
       secretName: portal-admin
   portalUIEndpoint:
     #ingressClassName: $INGRESS_CLASS
     annotations:
       cert-manager.io/issuer: ingress-issuer
     hosts:
-    - name: portal.$STACK_HOST
+    - name: portal.${STACK_HOST}
       secretName: portal-web
   databaseVolumeClaimTemplate:
-    storageClassName: $MY_BLOCK_STORAGE_CLASS
+    storageClassName: ${MY_BLOCK_STORAGE_CLASS}
     volumeSize: 64Gi
   databaseLogsVolumeClaimTemplate:
     storageClassName: ${MY_BLOCK_STORAGE_CLASS}

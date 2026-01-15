@@ -15,7 +15,7 @@ spec:
   - ${DEFAULT_IMAGE_PULL_SECRET}
   imageRegistry: ${MY_APIC_IMAGE_REGISTRY}
   mgmtPlatformEndpointCASecret:
-    secretName: $PLATFORM_CA_SECRET # Usually ingress-ca
+    secretName: ${MY_APIC_TLS_INGRESS_CERT_NAME} # Usually ingress-ca
   #mgmtPlatformEndpointSvcCASecret:
   #  secretName:  # Usually management-ca
   microServiceSecurity: certManager
@@ -28,7 +28,7 @@ spec:
       annotations:
         cert-manager.io/issuer: ingress-issuer
       hosts: 
-      - name: ai.$STACK_HOST
+      - name: ai.${STACK_HOST}
         secretName: analytics-ai-endpoint
     clientSubjectDN: CN=analytics-ingestion-client,O=cert-manager
   mtlsValidateClient: true
@@ -36,8 +36,8 @@ spec:
   federatedAPIManagementMode: false
   devPortalMode: false
   storage:
-    type: $STORAGE_TYPE
+    type: ${MY_APIC_A7S_STORAGE_TYPE}
     shared:
       volumeClaimTemplate:
         storageClassName: ${MY_BLOCK_STORAGE_CLASS}
-        volumeSize: $DATA_VOLUME_SIZE
+        volumeSize: ${MY_APIC_A7S_STORAGE_SIZE}

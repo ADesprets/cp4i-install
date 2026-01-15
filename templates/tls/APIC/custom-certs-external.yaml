@@ -1,0 +1,845 @@
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: selfsigning-issuer
+  labels: {
+    app.kubernetes.io/instance: "management",
+    app.kubernetes.io/managed-by: "ibm-apiconnect",
+    app.kubernetes.io/name: "selfsigning-issuer"
+  }
+spec:
+  selfSigned: {}
+---
+#ingress-ca CA and Issuer using this CA
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ingress-ca
+  labels: {
+    app.kubernetes.io/instance: "management",
+    app.kubernetes.io/managed-by: "ibm-apiconnect",
+    app.kubernetes.io/name: "ingress-ca"
+  }
+spec:
+  secretName: ingress-ca
+  commonName: "ingress-ca"
+  usages:
+  - digital signature
+  - key encipherment
+  - cert sign
+  isCA: true
+  duration: 87600h # 10 years
+  renewBefore: 720h # 30 days
+  privateKey:
+    rotationPolicy: Always
+  issuerRef:
+    name: selfsigning-issuer
+    kind: Issuer
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: ingress-issuer
+  labels: {
+    app.kubernetes.io/instance: "management",
+    app.kubernetes.io/managed-by: "ibm-apiconnect",
+    app.kubernetes.io/name: "ingress-issuer"
+  }
+spec:
+  ca:
+    secretName: ingress-ca
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: analytics-ingestion-client
+  labels: {
+    app.kubernetes.io/instance: "management",
+    app.kubernetes.io/managed-by: "ibm-apiconnect",
+    app.kubernetes.io/name: "analytics-ingestion-client"
+  }
+spec:
+  subject:
+    organizations:
+    - cert-manager
+  commonName: analytics-ingestion-client
+  secretName: analytics-ingestion-client
+  issuerRef:
+    name: ingress-issuer
+  usages:
+  - "client auth"
+  - "signing"
+  - "key encipherment"
+  duration: 17520h # 2 years
+  renewBefore: 720h # 30 days
+  privateKey:
+    rotationPolicy: Always
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: portal-admin-client
+  labels: {
+    app.kubernetes.io/instance: "management",
+    app.kubernetes.io/managed-by: "ibm-apiconnect",
+    app.kubernetes.io/name: "portal-admin-client"
+  }
+spec:
+  subject:
+    organizations:
+    - cert-manager
+  commonName: portal-admin-client
+  secretName: portal-admin-client
+  issuerRef:
+    name: ingress-issuer
+  usages:
+  - "client auth"
+  - "signing"
+  - "key encipherment"
+  duration: 17520h # 2 years
+  renewBefore: 720h # 30 days
+  privateKey:
+    rotationPolicy: Always
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: gateway-client-client
+  labels: {
+    app.kubernetes.io/instance: "management",
+    app.kubernetes.io/managed-by: "ibm-apiconnect",
+    app.kubernetes.io/name: "gateway-client-client"
+  }
+spec:
+  subject:
+    organizations:
+    - cert-manager
+  commonName: gateway-client-client
+  secretName: gateway-client-client
+  issuerRef:
+    name: ingress-issuer
+  usages:
+  - "client auth"
+  - "signing"
+  - "key encipherment"
+  duration: 17520h # 2 years
+  renewBefore: 720h # 30 days
+  privateKey:
+    rotationPolicy: Always
+---
+#Gateway Subsystem Internal Certificates
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: gateway-service
+  labels: {
+    app.kubernetes.io/instance: "gatewaycluster",
+    app.kubernetes.io/managed-by: "ibm-apiconnect",
+    app.kubernetes.io/name: "gateway-service"
+  }
+spec:
+  subject:
+    organizations:
+    - cert-manager
+  commonName: gateway-service
+  secretName: gateway-service
+  issuerRef:
+    name: ingress-issuer
+  usages:
+  - "client auth"
+  - "signing"
+  - "key encipherment"
+  duration: 17520h # 2 years
+  renewBefore: 720h # 30 days
+  privateKey:
+    rotationPolicy: Always
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: gateway-peering
+  labels: {
+    app.kubernetes.io/instance: "gatewaycluster",
+    app.kubernetes.io/managed-by: "ibm-apiconnect",
+    app.kubernetes.io/name: "gateway-peering"
+  }
+spec:
+  subject:
+    organizations:
+    - cert-manager
+  commonName: gateway-peering
+  secretName: gateway-peering
+  issuerRef:
+    name: ingress-issuer
+  usages:
+  - "server auth"
+  - "client auth"
+  - "signing"
+  - "key encipherment"
+  duration: 17520h # 2 years
+  renewBefore: 720h # 30 days
+  privateKey:
+    rotationPolicy: Always
+---
+#Management External Frontend/Ingress Certificates
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: cm-endpoint
+  labels: {
+    app.kubernetes.io/instance: "management",
+    app.kubernetes.io/managed-by: "ibm-apiconnect",
+    app.kubernetes.io/name: "cm-endpoint"
+  }
+spec:
+  commonName: cm-endpoint
+  secretName: cm-endpoint
+  dnsNames:
+  - admin.example.com
+  issuerRef:
+    name: ingress-issuer
+  usages:
+  - "server auth"
+  - "signing"
+  - "key encipherment"
+  duration: 17520h # 2 years
+  renewBefore: 720h # 30 days
+  privateKey:
+    rotationPolicy: Always
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: apim-endpoint
+  labels: {
+    app.kubernetes.io/instance: "management",
+    app.kubernetes.io/managed-by: "ibm-apiconnect",
+    app.kubernetes.io/name: "apim-endpoint"
+  }
+spec:
+  commonName: apim-endpoint
+  secretName: apim-endpoint
+  dnsNames:
+  - manager.example.com
+  issuerRef:
+    name: ingress-issuer
+  usages:
+  - "server auth"
+  - "signing"
+  - "key encipherment"
+  duration: 17520h # 2 years
+  renewBefore: 720h # 30 days
+  privateKey:
+    rotationPolicy: Always
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: consumer-catalog-endpoint
+  labels: {
+    app.kubernetes.io/instance: "management",
+    app.kubernetes.io/managed-by: "ibm-apiconnect",
+    app.kubernetes.io/name: "consumer-catalog-endpoint"
+  }
+spec:
+  commonName: consumer-catalog-endpoint
+  secretName: consumer-catalog-endpoint
+  dnsNames:
+  - consumer-catalog.example.com
+  issuerRef:
+    name: ingress-issuer
+  usages:
+  - "server auth"
+  - "signing"
+  - "key encipherment"
+  duration: 17520h # 2 years
+  renewBefore: 720h # 30 days
+  privateKey:
+    rotationPolicy: Always
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: api-endpoint
+  labels: {
+    app.kubernetes.io/instance: "management",
+    app.kubernetes.io/managed-by: "ibm-apiconnect",
+    app.kubernetes.io/name: "api-endpoint"
+  }
+spec:
+  commonName: api-endpoint
+  secretName: api-endpoint
+  dnsNames:
+  - api.example.com
+  issuerRef:
+    name: ingress-issuer
+  usages:
+  - "server auth"
+  - "signing"
+  - "key encipherment"
+  duration: 17520h # 2 years
+  renewBefore: 720h # 30 days
+  privateKey:
+    rotationPolicy: Always
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: consumer-endpoint
+  labels: {
+    app.kubernetes.io/instance: "management",
+    app.kubernetes.io/managed-by: "ibm-apiconnect",
+    app.kubernetes.io/name: "consumer-endpoint"
+  }
+spec:
+  commonName: consumer-endpoint
+  secretName: consumer-endpoint
+  dnsNames:
+  - consumer.example.com
+  issuerRef:
+    name: ingress-issuer
+  usages:
+  - "server auth"
+  - "signing"
+  - "key encipherment"
+  duration: 17520h # 2 years
+  renewBefore: 720h # 30 days
+  privateKey:
+    rotationPolicy: Always
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: analytics-ai-endpoint
+  labels: {
+    app.kubernetes.io/instance: "analytics",
+    app.kubernetes.io/managed-by: "ibm-apiconnect",
+    app.kubernetes.io/name: "analytics-ai-endpoint"
+  }
+spec:
+  commonName: analytics-ai-endpoint
+  secretName: analytics-ai-endpoint
+  dnsNames:
+  - ai.example.com
+  issuerRef:
+    name: ingress-issuer
+  usages:
+  - "server auth"
+  - "signing"
+  - "key encipherment"
+  duration: 17520h # 2 years
+  renewBefore: 720h # 30 days
+  privateKey:
+    rotationPolicy: Always
+---
+#Gateway External Frontend/Ingress Certificates
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: gwv6-endpoint
+  labels: {
+    app.kubernetes.io/instance: "gwv6",
+    app.kubernetes.io/managed-by: "ibm-apiconnect",
+    app.kubernetes.io/name: "gwv6-endpoint"
+  }
+spec:
+  commonName: gwv6-endpoint
+  secretName: gwv6-endpoint
+  dnsNames:
+  - rgw.example.com
+  issuerRef:
+    name: ingress-issuer
+  usages:
+  - "server auth"
+  - "signing"
+  - "key encipherment"
+  duration: 17520h # 2 years
+  renewBefore: 720h # 30 days
+  privateKey:
+    rotationPolicy: Always
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: gwv6-manager-endpoint
+  labels: {
+    app.kubernetes.io/instance: "gwv6",
+    app.kubernetes.io/managed-by: "ibm-apiconnect",
+    app.kubernetes.io/name: "gwv6-manager-endpoint"
+  }
+spec:
+  commonName: gwv6-manager-endpoint
+  secretName: gwv6-manager-endpoint
+  dnsNames:
+  - rgwd.example.com
+  issuerRef:
+    name: ingress-issuer
+  usages:
+  - "server auth"
+  - "signing"
+  - "key encipherment"
+  duration: 17520h # 2 years
+  renewBefore: 720h # 30 days
+  privateKey:
+    rotationPolicy: Always
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: gwv5-endpoint
+  labels: {
+    app.kubernetes.io/instance: "gwv5",
+    app.kubernetes.io/managed-by: "ibm-apiconnect",
+    app.kubernetes.io/name: "gwv5-endpoint"
+  }
+spec:
+  commonName: gwv5-endpoint
+  secretName: gwv5-endpoint
+  dnsNames:
+  - gw.example.com
+  issuerRef:
+    name: ingress-issuer
+  usages:
+  - "server auth"
+  - "signing"
+  - "key encipherment"
+  duration: 17520h # 2 years
+  renewBefore: 720h # 30 days
+  privateKey:
+    rotationPolicy: Always
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: gwv5-manager-endpoint
+  labels: {
+    app.kubernetes.io/instance: "gwv5",
+    app.kubernetes.io/managed-by: "ibm-apiconnect",
+    app.kubernetes.io/name: "gwv5-manager-endpoint"
+  }
+spec:
+  commonName: gwv5-manager-endpoint
+  secretName: gwv5-manager-endpoint
+  dnsNames:
+  - gwd.example.com
+  issuerRef:
+    name: ingress-issuer
+  usages:
+  - "server auth"
+  - "signing"
+  - "key encipherment"
+  duration: 17520h # 2 years
+  renewBefore: 720h # 30 days
+  privateKey:
+    rotationPolicy: Always
+---
+#Portal External Frontend/Ingress Certificates
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: portal-admin
+  labels: {
+    app.kubernetes.io/instance: "portal",
+    app.kubernetes.io/managed-by: "ibm-apiconnect",
+    app.kubernetes.io/name: "portal-admin"
+  }
+spec:
+  commonName: portal-admin
+  secretName: portal-admin
+  dnsNames:
+  - api.portal.example.com
+  issuerRef:
+    name: ingress-issuer
+  usages:
+  - "server auth"
+  - "signing"
+  - "key encipherment"
+  duration: 17520h # 2 years
+  renewBefore: 720h # 30 days
+  privateKey:
+    rotationPolicy: Always
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: portal-web
+  labels: {
+    app.kubernetes.io/instance: "portal",
+    app.kubernetes.io/managed-by: "ibm-apiconnect",
+    app.kubernetes.io/name: "portal-web"
+  }
+spec:
+  commonName: portal-web
+  secretName: portal-web
+  dnsNames:
+  - portal.example.com
+  issuerRef:
+    name: ingress-issuer
+  usages:
+  - "server auth"
+  - "signing"
+  - "key encipherment"
+  duration: 17520h # 2 years
+  renewBefore: 720h # 30 days
+  privateKey:
+    rotationPolicy: Always
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: devportal-admin-client
+  labels: {
+    app.kubernetes.io/instance: "management",
+    app.kubernetes.io/managed-by: "ibm-apiconnect",
+    app.kubernetes.io/name: "devportal-admin-client"
+  }
+spec:
+  subject:
+    organizations:
+      - cert-manager
+  commonName: devportal-admin-client
+  secretName: devportal-admin-client
+  issuerRef:
+    name: ingress-issuer
+  usages:
+    - "client auth"
+    - "signing"
+    - "key encipherment"
+  duration: 17520h # 2 years
+  renewBefore: 720h # 30 days
+  privateKey:
+    rotationPolicy: Always
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: devportal-wmapigateway-client
+  labels: {
+    app.kubernetes.io/managed-by: "ibm-apiconnect",
+    app.kubernetes.io/name: "devportal-wmapigateway-client"
+  }
+spec:
+  subject:
+    organizations:
+      - cert-manager
+  commonName: devportal-wmapigateway-client
+  secretName: devportal-wmapigateway-client
+  issuerRef:
+    name: ingress-issuer
+  usages:
+    - "client auth"
+    - "signing"
+    - "key encipherment"
+  duration: 17520h # 2 years
+  renewBefore: 720h # 30 days
+  privateKey:
+    rotationPolicy: Always
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wmapigateway-mgmt-client
+  labels: {
+    app.kubernetes.io/instance: "management",
+    app.kubernetes.io/managed-by: "ibm-apiconnect",
+    app.kubernetes.io/name: "wmapigateway-mgmt-client"
+  }
+spec:
+  subject:
+    organizations:
+      - cert-manager
+  commonName: wmapigateway-mgmt-client
+  secretName: wmapigateway-mgmt-client
+  issuerRef:
+    name: ingress-issuer
+  usages:
+    - "client auth"
+    - "signing"
+    - "key encipherment"
+  duration: 17520h # 2 years
+  renewBefore: 720h # 30 days
+  privateKey:
+    rotationPolicy: Always
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wmapigateway-devportal-client
+  labels: {
+    app.kubernetes.io/managed-by: "ibm-apiconnect",
+    app.kubernetes.io/name: "wmapigateway-devportal-client"
+  }
+spec:
+  subject:
+    organizations:
+      - cert-manager
+  commonName: wmapigateway-devportal-client
+  secretName: wmapigateway-devportal-client
+  issuerRef:
+    name: ingress-issuer
+  usages:
+    - "client auth"
+    - "signing"
+    - "key encipherment"
+  duration: 17520h # 2 years
+  renewBefore: 720h # 30 days
+  privateKey:
+    rotationPolicy: Always
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: nano-gateway-mgmt-client
+  labels: {
+    app.kubernetes.io/instance: "management",
+    app.kubernetes.io/managed-by: "ibm-apiconnect",
+    app.kubernetes.io/name: "nano-gateway-mgmt-client"
+  }
+spec:
+  subject:
+    organizations:
+      - cert-manager
+  commonName: nano-gateway-mgmt-client
+  secretName: nano-gateway-mgmt-client
+  issuerRef:
+    name: ingress-issuer
+  usages:
+    - "client auth"
+    - "signing"
+    - "key encipherment"
+  duration: 17520h # 2 years
+  renewBefore: 720h # 30 days
+  privateKey:
+    rotationPolicy: Always
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: federatedapimanagement-admin-client
+  labels: {
+    app.kubernetes.io/instance: "management",
+    app.kubernetes.io/managed-by: "ibm-apiconnect",
+    app.kubernetes.io/name: "federatedapimanagement-admin-client"
+  }
+spec:
+  subject:
+    organizations:
+      - cert-manager
+  commonName: federatedapimanagement-admin-client
+  secretName: federatedapimanagement-admin-client
+  issuerRef:
+    name: ingress-issuer
+  usages:
+    - "client auth"
+    - "signing"
+    - "key encipherment"
+  duration: 17520h # 2 years
+  renewBefore: 720h # 30 days
+  privateKey:
+    rotationPolicy: Always
+---
+# devportal-admin endpoint
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    app.kubernetes.io/instance: devportal
+    app.kubernetes.io/managed-by: ibm-apiconnect
+    app.kubernetes.io/name: devportal-admin-endpoint
+  name: devportal-admin
+spec:
+  commonName: devportal-admin
+  secretName: devportal-admin
+  dnsNames:
+  - api.devportal.example.com
+  issuerRef:
+    name: ingress-issuer
+  usages:
+  - digital signature
+  - key encipherment
+  duration: 17520h # 2 years
+  renewBefore: 720h # 30 days
+  privateKey:
+    rotationPolicy: Always
+---
+# devportal-web endpoint
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    app.kubernetes.io/instance: devportal
+    app.kubernetes.io/managed-by: ibm-apiconnect
+    app.kubernetes.io/name: devportal-web-endpoint
+  name: devportal-web
+spec:
+  commonName: devportal-web
+  secretName: devportal-web
+  dnsNames:
+  - devportal.example.com
+  issuerRef:
+    name: ingress-issuer
+  usages:
+  - digital signature
+  - key encipherment
+  duration: 17520h # 2 years
+  renewBefore: 720h # 30 days
+  privateKey:
+    rotationPolicy: Always
+---
+# fam-admin-endpoint
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    app.kubernetes.io/instance: federatedapimanagement
+    app.kubernetes.io/managed-by: ibm-apiconnect
+    app.kubernetes.io/name: admin-endpoint
+  name: fam-admin-endpoint
+spec:
+  commonName: fam-admin-endpoint
+  secretName: fam-admin-endpoint
+  dnsNames:
+  - api.fam.example.com
+  issuerRef:
+    name: ingress-issuer
+  usages:
+  - digital signature
+  - key encipherment
+  duration: 17520h # 2 years
+  renewBefore: 720h # 30 days
+  privateKey:
+    rotationPolicy: Always
+---
+# fam-ui-endpoint
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    app.kubernetes.io/instance: federatedapimanagement
+    app.kubernetes.io/managed-by: ibm-apiconnect
+    app.kubernetes.io/name: ui-endpoint
+  name: fam-ui-endpoint
+spec:
+  commonName: fam-ui-endpoint
+  secretName: fam-ui-endpoint
+  dnsNames:
+  - fam.example.com
+  issuerRef:
+    name: ingress-issuer
+  usages:
+  - digital signature
+  - key encipherment
+  duration: 17520h # 2 years
+  renewBefore: 720h # 30 days
+  privateKey:
+    rotationPolicy: Always
+---
+# wmapigateway-gw-tls-secret for wmapigateway-gateway-endpoint
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    app.kubernetes.io/instance: wmapigateway
+    app.kubernetes.io/managed-by: ibm-apiconnect
+    app.kubernetes.io/name: api-endpoint
+  name: wmapigateway-gw-tls-secret
+spec:
+  commonName: wmapigateway-gw-tls-secret
+  secretName: wmapigateway-gw-tls-secret
+  dnsNames:
+  - wmapigw-admin.example.com
+  issuerRef:
+    name: ingress-issuer
+  usages:
+  - digital signature
+  - key encipherment
+  duration: 17520h # 2 years
+  renewBefore: 720h # 30 days
+  privateKey:
+    rotationPolicy: Always
+---
+# wmapigateway-mgmt-tls-secret for wmapigateway-mgmt-endpoint
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    app.kubernetes.io/instance: wmapigateway
+    app.kubernetes.io/managed-by: ibm-apiconnect
+    app.kubernetes.io/name: api-endpoint
+  name: wmapigateway-mgmt-tls-secret
+spec:
+  commonName: wmapigateway-mgmt-tls-secret
+  secretName: wmapigateway-mgmt-tls-secret
+  dnsNames:
+  - wmapigateway-mgmt.example.com
+  issuerRef:
+    name: ingress-issuer
+  usages:
+  - digital signature
+  - key encipherment
+  duration: 17520h # 2 years
+  renewBefore: 720h # 30 days
+  privateKey:
+    rotationPolicy: Always
+---
+# wmapigateway-ui-tls-secret for wmapigateway-ui-endpoint
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    app.kubernetes.io/instance: wmapigateway
+    app.kubernetes.io/managed-by: ibm-apiconnect
+    app.kubernetes.io/name: api-endpoint
+  name: wmapigateway-ui-tls-secret
+spec:
+  commonName: wmapigateway-ui-tls-secret
+  secretName: wmapigateway-ui-tls-secret
+  dnsNames:
+  - wmapigw-ui.example.com
+  issuerRef:
+    name: ingress-issuer
+  usages:
+  - digital signature
+  - key encipherment
+  duration: 17520h # 2 years
+  renewBefore: 720h # 30 days
+  privateKey:
+    rotationPolicy: Always
+---
+# gateway-proxy-endpoint certificate for ngw-mgmt-endpoint
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    app.kubernetes.io/instance: ngw
+    app.kubernetes.io/managed-by: ibm-apiconnect
+    app.kubernetes.io/name: nanogw
+  name: gateway-proxy-endpoint
+spec:
+  commonName: gateway-proxy-endpoint
+  secretName: gateway-proxy-endpoint
+  dnsNames:
+  - apic-gateway-proxy.example.com
+  issuerRef:
+    name: ingress-issuer
+  usages:
+  - digital signature
+  - key encipherment
+  duration: 17520h # 2 years
+  renewBefore: 720h # 30 days
+  privateKey:
+    rotationPolicy: Always

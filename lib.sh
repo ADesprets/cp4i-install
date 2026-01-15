@@ -930,8 +930,10 @@ function install_minikube_cluster {
     mylog "info" "Installing OpenEBS StorageClass"
     check_directory_exist_create "${MY_OPENEBS_WORKINGDIR}"
     create_project "${MY_OPENEBS_NAMESPACE}" "${MY_OPENEBS_NAMESPACE} project" "For OpenEBS Storage provider" "${MY_YAMLDIR}openebs/" "${MY_OPENEBS_WORKINGDIR}"
+    decho $lf_tracelevel "$MY_CLUSTER_COMMAND apply -f https://openebs.github.io/charts/openebs-operator.yaml"
     $MY_CLUSTER_COMMAND apply -f https://openebs.github.io/charts/openebs-operator.yaml
     check_create_oc_yaml "StorageClass" "openebs-localpv-block" "${MY_YAMLDIR}openebs/" "${MY_OPENEBS_WORKINGDIR}" "openebs-block.yaml" "${MY_OPENEBS_WORKINGDIR}"
+    decho $lf_tracelevel "$MY_CLUSTER_COMMAND patch storageclass openebs-localpv-block -p '{\"metadata\": {\"annotations\":{\"storageclass.kubernetes.io/is-default-class\":\"true\"}}}'"
     $MY_CLUSTER_COMMAND patch storageclass openebs-localpv-block -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
   fi
 
@@ -1083,9 +1085,9 @@ function display_access_info() {
   if $MY_NAVIGATOR_INSTANCE; then
     lf_temp_integration_admin_pwd=$($MY_CLUSTER_COMMAND -n $MY_COMMONSERVICES_NAMESPACE get secret integration-admin-initial-temporary-credentials -o jsonpath={.data.password} | base64 -d)
     mylog info "Integration admin, user: integration-admin, password: ${lf_temp_integration_admin_pwd}" 0
-    cp4i_url=$($MY_CLUSTER_COMMAND -n $VAR_NAVIGATOR_NAMESPACE get platformnavigator cp4i-navigator -o jsonpath='{range .status.endpoints[?(@.name=="navigator")]}{.uri}{end}')
-    mylog info "CP4I Platform UI URL: $cp4i_url" 0
-    echo "<TR><TD><A HREF=${cp4i_url}>CP4I Platform UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html 
+    iwhi_url=$($MY_CLUSTER_COMMAND -n $VAR_NAVIGATOR_NAMESPACE get platformnavigator iwhi-navigator -o jsonpath='{range .status.endpoints[?(@.name=="navigator")]}{.uri}{end}')
+    mylog info "CP4I Platform UI URL: $iwhi_url" 0
+    echo "<TR><TD><A HREF=${iwhi_url}>CP4I Platform UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html 
   fi
 
   # App Connect Entreprise
@@ -1110,18 +1112,18 @@ function display_access_info() {
     lf_apic_gtw_admin_pwd_secret_name=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get GatewayCluster -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].spec.adminUser.secretName}')
     lf_cm_admin_pwd=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get secret ${lf_apic_gtw_admin_pwd_secret_name} -o jsonpath={.data.password} | base64 -d)
     mylog info "APIC Gateway admin password: ${lf_cm_admin_pwd}" 0
-    lf_cm_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get APIConnectCluster -o=jsonpath='{.items[?(@.kind=="APIConnectCluster")].status.endpoints[?(@.name=="admin")].uri}')
+    lf_cm_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get ManagementCluster -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].status.endpoints[?(@.name=="admin")].uri}')
     mylog info "APIC Cloud Manager endpoint: ${lf_cm_url}" 0
     echo "<TR><TD><A HREF=${lf_cm_url}>APIC Cloud Manager UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
     lf_cm_admin_pwd_secret_name=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get ManagementCluster -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].spec.adminUser.secretName}')
     lf_cm_admin_pwd=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get secret ${lf_cm_admin_pwd_secret_name} -o jsonpath='{.data.password}' | base64 -d)
     mylog info "APIC Cloud Manager admin password: ${lf_cm_admin_pwd}" 0
-    lf_mgr_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get APIConnectCluster -o=jsonpath='{.items[?(@.kind=="APIConnectCluster")].status.endpoints[?(@.name=="ui")].uri}')
+    lf_mgr_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get ManagementCluster -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].status.endpoints[?(@.name=="apiManager")].uri}')
     echo "<TR><TD><A HREF=${lf_mgr_url}>APIC API Manager UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
     mylog info "APIC API Manager endpoint: ${lf_mgr_url}" 0
     lf_ptl_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get PortalCluster -o=jsonpath='{.items[?(@.kind=="PortalCluster")].status.endpoints[?(@.name=="portalWeb")].uri}')
     mylog info "APIC Web Portal root endpoint: ${lf_ptl_url}" 0
-    lf_jwks_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get APIConnectCluster -o=jsonpath='{.items[?(@.kind=="APIConnectCluster")].status.endpoints[?(@.name=="jwksUrl")].uri}')
+    lf_jwks_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get ManagementCluster -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].status.endpoints[?(@.name=="jwksUrl")].uri}')
     mylog info "APIC jwksUrl endpoint for EEM: ${lf_jwks_url}" 0
   fi
 
@@ -1334,11 +1336,13 @@ function search_networkpolicies() {
 
   # Search for deny-all networkpolicies
   mylog info "Searching for deny-all networkpolicies..." 1>&2
+  decho $lf_tracelevel "$MY_CLUSTER_COMMAND get networkpolicy --all-namespaces -o json | jq '.items[] | select(.spec.ingress == null and .spec.egress == null) | {namespace: .metadata.namespace, name: .metadata.name}'"
   lf_deny_all=$($MY_CLUSTER_COMMAND get networkpolicy --all-namespaces -o json | jq '.items[] | select(.spec.ingress == null and .spec.egress == null) | {namespace: .metadata.namespace, name: .metadata.name}')
   decho $lf_tracelevel "Deny-all networkpolicies found: $lf_deny_all"
 
   # Search for allow-same-namespace networkpolicies
   mylog info "Searching for allow-same-namespace networkpolicies..." 1>&2
+  decho $lf_tracelevel "$MY_CLUSTER_COMMAND get networkpolicy --all-namespaces -o json | jq '.items[] | select(.spec.ingress != null and .spec.ingress[].from[]?.namespaceSelector.matchLabels.\"project\" == .metadata.namespace) | {namespace: .metadata.namespace, name: .metadata.name}'"
   lf_allow_same_namespace=$($MY_CLUSTER_COMMAND get networkpolicy --all-namespaces -o json | jq '.items[] | select(.spec.ingress != null and .spec.ingress[].from[]?.namespaceSelector.matchLabels."project" == .metadata.namespace) | {namespace: .metadata.namespace, name: .metadata.name}')
   decho $lf_tracelevel "Allow-same-namespace networkpolicies found: $lf_allow_same_namespace"
 
@@ -1793,6 +1797,8 @@ function check_exec_prereqs() {
   check_command_exist keytool
   check_command_exist $MY_CLUSTER_COMMAND
   check_command_exist "$MY_CLUSTER_COMMAND ibm-pak"
+  lf_ibm_pak_version=$($MY_CLUSTER_COMMAND ibm-pak --version)
+  decho $lf_tracelevel "ibm-pak version: $lf_ibm_pak_version"
   check_command_exist openssl
   check_command_exist mvn
 
@@ -1838,6 +1844,7 @@ function check_resource_exist() {
 
   # check resource exist
   local lf_res
+  decho $lf_tracelevel "$MY_CLUSTER_COMMAND -n $lf_in_namespace get $lf_in_type $lf_in_name --ignore-not-found=true -o jsonpath='{.metadata.name}'"
   lf_res=$($MY_CLUSTER_COMMAND -n $lf_in_namespace get $lf_in_type $lf_in_name --ignore-not-found=true -o jsonpath='{.metadata.name}')
   decho $lf_tracelevel "Resource found : $lf_res"
 
@@ -1975,7 +1982,7 @@ function add_ibm_entitlement() {
     fi
 
     mylog info "Adding ${DEFAULT_IMAGE_PULL_SECRET} (secret) to $lf_in_ns"
-    if ! $MY_CLUSTER_COMMAND -n $lf_in_ns create secret docker-registry ${DEFAULT_IMAGE_PULL_SECRET}--docker-username=cp --docker-password=$MY_ENTITLEMENT_KEY --docker-server=cp.icr.io; then
+    if ! $MY_CLUSTER_COMMAND -n $lf_in_ns create secret docker-registry ${DEFAULT_IMAGE_PULL_SECRET} --docker-username=cp --docker-password=$MY_ENTITLEMENT_KEY --docker-server=cp.icr.io; then
       trace_out $lf_tracelevel ${FUNCNAME[0]}
       exit 1
     fi
@@ -2020,6 +2027,7 @@ function check_create_oc_yaml() {
 
   if $MY_APPLY_FLAG; then
     mylog info "Creating/Updating ${lf_in_type}/${lf_in_cr_name} using ${lf_in_target_directory}${lf_in_yaml_file} in namespace ${lf_in_namespace}"
+    decho $lf_tracelevel "$MY_CLUSTER_COMMAND apply -f \"${lf_in_target_directory}${lf_in_yaml_file}\""
     $MY_CLUSTER_COMMAND apply -f "${lf_in_target_directory}${lf_in_yaml_file}" || exit 1
     if [[ $lf_in_type == "Subscription" ]]; then
       # use the fully qualified API Group ($MY_CLUSTER_COMMAND get subscription -A returns nothing and $MY_CLUSTER_COMMAND get sub -A returns a full list of subscriptions !!!)
@@ -2101,7 +2109,6 @@ function deploy_mail() {
   trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   create_oc_resource "Deployment" "${MY_MAIL_DEPLOYMENT}" "${MY_YAMLDIR}mail/" "${MY_MAIL_WORKINGDIR}" "mail_deployment.yaml" "$VAR_MAIL_NAMESPACE"
-  #$MY_CLUSTER_COMMAND -n ${VAR_MAIL_NAMESPACE} get deployment.apps/${MY_MAIL_DEPLOYMENT} -o json | jq '. | del(."status")' >${MY_MAIL_WORKINGDIR}mailhog.json
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
@@ -2589,7 +2596,6 @@ function check_add_cs_ibm_pak() {
 
   local lf_type lf_file lf_file_tmp1 lf_file_tmp2 lf_downloaded lf_display_name
 
-
   #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
   if [[ -z $lf_in_case_version ]]; then
     mylog info "Retrieving latest version for case ${lf_in_case_name} provided by ibm-pak plugin"
@@ -2609,8 +2615,11 @@ function check_add_cs_ibm_pak() {
   if [[ $lf_downloaded -eq 1 ]]; then
     mylog info "case ${lf_in_case_name} ${lf_case_version} already downloaded"
   else
+    decho $lf_tracelevel "$MY_CLUSTER_COMMAND ibm-pak get ${lf_in_case_name} --version ${lf_case_version}"
     $MY_CLUSTER_COMMAND ibm-pak get ${lf_in_case_name} --version ${lf_case_version}
+    decho $lf_tracelevel "$MY_CLUSTER_COMMAND ibm-pak generate mirror-manifests ${lf_in_case_name} icr.io --version ${lf_case_version}"
     $MY_CLUSTER_COMMAND ibm-pak generate mirror-manifests ${lf_in_case_name} icr.io --version ${lf_case_version}
+    # To check all the catalog source $MY_CLUSTER_COMMAND get catalogsource -n openshift-marketplace
   fi
 
   decho $lf_tracelevel "Looking for catalog source file ${MY_IBMPAK_MIRRORDIR}${lf_in_case_name}/${lf_case_version}/catalog-sources.yaml"
@@ -2636,6 +2645,7 @@ function check_add_cs_ibm_pak() {
   mylog info "Creating/Updating catalog source ${lf_catalogsource}"
   export VAR_CATALOG_SOURCE=$lf_catalogsource
   if $MY_APPLY_FLAG; then 
+    decho $lf_tracelevel "$MY_CLUSTER_COMMAND apply -f $lf_file"
     $MY_CLUSTER_COMMAND apply -f $lf_file || exit 1
 
     # wait for the availability of the catalogsource
@@ -2847,38 +2857,54 @@ function create_certificate () {
 ################################################
 # Create a generic secret, username or password can be empty, in those case only one entry (username or password) will be created
 # @param 1: secret name
-# @param 2: user name
-# @param 3: password
-# @param 4: namespace
-# @param 5: working directory where the generated yaml file will be stored
+# @param 2: id (username or email)
+# @param 3: user name
+# @param 4: password
+# @param 5: namespace
+# @param 6: working directory where the generated yaml file will be stored
+# @param 7: overide boolean true|false if true true the generate every time a new password even if the secret already exists
+# Should not start with a special character, should not contains more than 2 repeated character 
 function create_generic_secret() {
   local lf_tracelevel=3
   trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_secret_name="$1"
-  local lf_in_username="$2"
-  local lf_in_password="$3"
-  local lf_in_namespace="$4"
-  local lf_in_workingdir="$5"
+  local lf_in_generic_secret_id="$2"
+  local lf_in_username="$3"
+  local lf_in_password="$4"
+  local lf_in_namespace="$5"
+  local lf_in_workingdir="$6"
+  local lf_in_overide="$7"
+
+  export VAR_GENERIC_SECRET_ID=$2
 
   # local lf_working_relative_path=$(echo "${lf_in_workingdir#"$MY_WORKINGDIR"}")
-  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"********\"|\"$4\"|\"$5\"|"
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"********\"|\"$5\"|\"$6\"|\"$7\"|"
   
-  if [[ $# -ne 5 ]]; then
-    mylog error "You have to provide 5 arguments: secret name, user name, user password, namespace and working directory"
+  if [[ $# -ne 7 ]]; then
+    mylog error "You have to provide 7 arguments: secret name, generic secret id (username or email), user name, user password, namespace, working directory and overide boolean" >/dev/null 2>&1;
     trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
 
-  mylog info "Create generic secret in ${lf_in_namespace} namespace"
   export VAR_SECRET_NAME=$lf_in_secret_name
-  export VAR_USERNAME=$lf_in_username
-  export VAR_PASSWORD=$lf_in_password
+  export VAR_SECRET_USERNAME=$lf_in_username
+  export VAR_SECRET_PASSWORD=$lf_in_password
   export VAR_NAMESPACE=$lf_in_namespace
 
-  create_oc_resource "Secret" "$lf_in_secret_name" "${MY_YAMLDIR}resources/" "${lf_in_workingdir}" "secret.yaml" "$lf_in_namespace"
+  if ! $MY_CLUSTER_COMMAND -n $lf_in_ns get secret ${lf_in_secret_name} >/dev/null 2>&1; then
+    mylog info "Secret ${lf_in_secret_name} does not exist in namespace ${lf_in_namespace}, creating it" >/dev/null 2>&1;
+    create_oc_resource "Secret" "$lf_in_secret_name" "${MY_YAMLDIR}resources/" "${lf_in_workingdir}" "secret.yaml" "$lf_in_namespace"
+  else
+    if [[ "$lf_in_overide" == "true" ]]; then
+      mylog info "Overide is set to true, recreating secret ${lf_in_secret_name} in namespace ${lf_in_namespace}" >/dev/null 2>&1;
+      create_oc_resource "Secret" "$lf_in_secret_name" "${MY_YAMLDIR}resources/" "${lf_in_workingdir}" "secret.yaml" "$lf_in_namespace"
+    else
+      mylog info "Secret ${lf_in_secret_name} already exists in namespace ${lf_in_namespace}, skipping creation" >/dev/null 2>&1;
+    fi
+  fi
   
-  unset VAR_SECRET_NAME VAR_USERNAME VAR_PASSWORD VAR_NAMESPACE
+  unset VAR_GENERIC_SECRET_ID VAR_SECRET_NAME VAR_SECRET_USERNAME VAR_SECRET_PASSWORD VAR_NAMESPACE
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
@@ -3001,6 +3027,7 @@ function accept_license_fs() {
   if [[ $lf_accept == "true" ]]; then
     mylog info "license already accepted." 1>&2
   else
+    decho $lf_tracelevel "$MY_CLUSTER_COMMAND -n ${lf_in_namespace} patch ${lf_in_type} ${lf_in_cr_name} --type merge -p '{\"spec\": {\"license\": {\"accept\": true}}}'"
     $MY_CLUSTER_COMMAND -n ${lf_in_namespace} patch ${lf_in_type} ${lf_in_cr_name} --type merge -p '{"spec": {"license": {"accept": true}}}'
   fi
 
@@ -3008,6 +3035,10 @@ function accept_license_fs() {
 }
 
 ################################################
+# Generate a random password of length {param 1} characters
+# Without starting with a special character
+# TODO Without more than 2 consecutive identical characters 
+# @param 1: password length
 function generate_password() {
   local lf_tracelevel=5
   trace_in $lf_tracelevel ${FUNCNAME[0]}
@@ -3025,7 +3056,15 @@ function generate_password() {
 
   # Generate a password based on the pattern
   local lf_password=$(cat /dev/urandom | tr -dc "$lf_pattern" | head -c "$lf_in_length")
-  export USER_PASSWORD_GEN=$lf_password
+
+  first_char="${lf_password:0:1}"
+  if [[ ! "$first_char" =~ ^[a-zA-Z0-9]$ ]]; then
+    # Replace with random letter [a-zA-Z]
+    replacement=$(shuf -n1 -e {a..z} {A..Z})
+    lf_password="${replacement}${lf_password:1}"
+  fi
+
+  export VAR_USER_PASSWORD_GEN=$lf_password
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
@@ -3223,6 +3262,8 @@ function create_operator_instance() {
   #              '.items[] | select(.metadata.name==$op and .status.catalogSource==$cs) | .status | .defaultChannel as $dc | .channels[] | select(.name == $dc) | .currentCSV' $MY_RAM_MANIFEST_FILE)
 
   # Wait for operator to appear in catalog
+  mylog info "Waiting for operator $VAR_OPERATOR_NAME to appear in catalog source $VAR_CATALOG_SOURCE_NAME in namespace $MY_CATALOGSOURCES_NAMESPACE"
+  decho $lf_tracelevel "$MY_CLUSTER_COMMAND -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest -o json | jq -r --arg op $VAR_OPERATOR_NAME --arg cs $VAR_CATALOG_SOURCE_NAME '.items[] | select(.metadata.name==$op and .status.catalogSource==$cs) | .status.defaultChannel'"
   local lf_timeout=$MY_MAX_TIMEOUT
   local lf_interval=$MY_DELAY_SECONDS
   while [[ $lf_timeout -gt 0 ]]; do
@@ -3297,9 +3338,6 @@ function create_operator_instance() {
     mylog error "$lf_resource of type $lf_type in $VAR_NAMESPACE namespace does not exist, will not wait for state"
   fi
 
-  # update the file containing the manifest
-  #$MY_CLUSTER_COMMAND -n $MY_CATALOGSOURCES_NAMESPACE get packagemanifest -o json > $MY_RAM_MANIFEST_FILE
-  
   unset VAR_OPERATOR_NAME VAR_NAMESPACE VAR_OPERATOR_CHL VAR_STRATEGY VAR_CATALOG_SOURCE_NAME
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}  
