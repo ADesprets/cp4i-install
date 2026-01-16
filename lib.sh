@@ -2876,8 +2876,6 @@ function create_generic_secret() {
   local lf_in_workingdir="$6"
   local lf_in_overide="$7"
 
-  export VAR_GENERIC_SECRET_ID=$2
-
   # local lf_working_relative_path=$(echo "${lf_in_workingdir#"$MY_WORKINGDIR"}")
   decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"********\"|\"$5\"|\"$6\"|\"$7\"|"
   
@@ -2887,6 +2885,13 @@ function create_generic_secret() {
     exit  1
   fi
 
+  if [[ "$lf_in_username" == "" ]]; then
+    local lf_secret_file="secret2.yaml"
+  else
+    local lf_secret_file="secret.yaml"
+  fi
+  
+  export VAR_GENERIC_SECRET_ID=$2
   export VAR_SECRET_NAME=$lf_in_secret_name
   export VAR_SECRET_USERNAME=$lf_in_username
   export VAR_SECRET_PASSWORD=$lf_in_password
@@ -2894,11 +2899,11 @@ function create_generic_secret() {
 
   if ! $MY_CLUSTER_COMMAND -n $lf_in_ns get secret ${lf_in_secret_name} >/dev/null 2>&1; then
     mylog info "Secret ${lf_in_secret_name} does not exist in namespace ${lf_in_namespace}, creating it" >/dev/null 2>&1;
-    create_oc_resource "Secret" "$lf_in_secret_name" "${MY_YAMLDIR}resources/" "${lf_in_workingdir}" "secret.yaml" "$lf_in_namespace"
+    create_oc_resource "Secret" "$lf_in_secret_name" "${MY_YAMLDIR}resources/" "${lf_in_workingdir}" "${lf_secret_file}" "$lf_in_namespace"
   else
     if [[ "$lf_in_overide" == "true" ]]; then
       mylog info "Overide is set to true, recreating secret ${lf_in_secret_name} in namespace ${lf_in_namespace}" >/dev/null 2>&1;
-      create_oc_resource "Secret" "$lf_in_secret_name" "${MY_YAMLDIR}resources/" "${lf_in_workingdir}" "secret.yaml" "$lf_in_namespace"
+      create_oc_resource "Secret" "$lf_in_secret_name" "${MY_YAMLDIR}resources/" "${lf_in_workingdir}" "${lf_secret_file}" "$lf_in_namespace"
     else
       mylog info "Secret ${lf_in_secret_name} already exists in namespace ${lf_in_namespace}, skipping creation" >/dev/null 2>&1;
     fi
@@ -3037,7 +3042,9 @@ function accept_license_fs() {
 ################################################
 # Generate a random password of length {param 1} characters
 # Without starting with a special character
-# TODO Without more than 2 consecutive identical characters 
+# TODO Without more than 2 consecutive identical characters
+# TODO needs to URL safe?
+# Needs to have 2 at least two categories
 # @param 1: password length
 function generate_password() {
   local lf_tracelevel=5
@@ -3052,7 +3059,7 @@ function generate_password() {
     exit  1
   fi
 
-  local lf_pattern='A-Za-z0-9!@#$%^&*()_+'
+  local lf_pattern='A-Za-z0-9'
 
   # Generate a password based on the pattern
   local lf_password=$(cat /dev/urandom | tr -dc "$lf_pattern" | head -c "$lf_in_length")

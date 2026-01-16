@@ -450,43 +450,68 @@ function init_apic_variables() {
   # Retrieve the various routes for APIC components
   # API Manager URL
   EP_API=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-mgmt-platform-api" -o jsonpath="{.spec.host}")
+  decho $lf_tracelevel "EP_API: $EP_API"
   # gwv6-gateway-manager
-  EP_GWD=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-gw-gateway-manager" -o jsonpath="{.spec.host}")
+  EP_GWD=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-gwv6-gateway-manager" -o jsonpath="{.spec.host}")
+  decho $lf_tracelevel "EP_GWD: $EP_GWD"
   # gwv6-gateway
-  EP_GW=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-gw-gateway" -o jsonpath="{.spec.host}")
+  EP_GW=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-gwv6-gateway" -o jsonpath="{.spec.host}")
+  decho $lf_tracelevel "EP_GW: $EP_GW"
   # analytics-ai-endpoint
   EP_AI=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-a7s-ai-endpoint" -o jsonpath="{.spec.host}")
+  decho $lf_tracelevel "EP_AI: $EP_AI"
   # portal-portal-director
   EP_PADMIN=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-ptl-portal-director" -o jsonpath="{.spec.host}")
+  decho $lf_tracelevel "EP_PADMIN: $EP_PADMIN"
   # portal-portal-web
   EP_PORTAL=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-ptl-portal-web" -o jsonpath="{.spec.host}")
+  decho $lf_tracelevel "EP_PORTAL: $EP_PORTAL"
   # Zen
   if EP_ZEN=$($MY_CLUSTER_COMMAND -n ${apic_project} get route cpd -o jsonpath="{.spec.host}" 2> /dev/null ); then
     mylog info "EP_PORTAL: $EP_ZEN"
+    decho $lf_tracelevel "EP_ZEN: $EP_ZEN"
   fi
-  # APIC Gateway admin password
+  EP_APIC_MGR=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-mgmt-api-manager" -o jsonpath="{.spec.host}")
+  decho $lf_tracelevel "EP_APIC_MGR: $EP_APIC_MGR"
+  
+  # APIC Gateway admin password - TODO Not used here ?
   if APIC_GTW_PASSWORD_B64=$($MY_CLUSTER_COMMAND -n ${apic_project} get secret ${APIC_INSTANCE_NAME}-gw-admin -o=jsonpath='{.data.password}' 2> /dev/null ); then
     APIC_GTW_PASSWORD=$(echo $APIC_GTW_PASSWORD_B64 | base64 --decode)
   fi
-  
-  EP_APIC_MGR=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-mgmt-api-manager" -o jsonpath="{.spec.host}")
-  
+
   # APIC Cloud Manager admin password
-  if APIC_CM_ADMIN_PASSWORD_B64=$($MY_CLUSTER_COMMAND -n ${apic_project} get secret ${APIC_INSTANCE_NAME}-mgmt-admin-pass -o=jsonpath='{.data.password}' 2> /dev/null ); then
-    APIC_CM_ADMIN_PASSWORD=$(echo $APIC_CM_ADMIN_PASSWORD_B64 | base64 --decode)
-  fi
+  mylog info "With APIC V12 there is a change on the user password the default value is 7iron-hide that need to be changed at first login." 1>&2
+  mylog info "For compatibilty reason, I'm going to use the secret apic-mgmt-admin-pass that needs to be updated when you change the value." 1>&2
   
-  IAM_TOKEN=$(curl -kfs -X POST -H 'Content-Type: application/x-www-form-urlencoded' -H 'Accept: application/json' -d "grant_type=password&username=${CP_ADMIN_UID}&password=${CP_ADMIN_PASSWORD}&scope=openid" "https://${EP_CPADM}"/v1/auth/identitytoken | jq -r .access_token)
-  # mylog warn "IAM_TOKEN: $IAM_TOKEN" 1>&2
+  if CM_ADMIN_UID_B64=$($MY_CLUSTER_COMMAND -n ${apic_project} get secret apic-mgmt-admin-pass -o=jsonpath='{.data.email}' 2> /dev/null ); then
+    CM_ADMIN_UID=$(echo $CM_ADMIN_UID_B64 | base64 --decode)
+    decho $lf_tracelevel "CM_ADMIN_UID: $CM_ADMIN_UID"
+  fi
+
+  if CM_ADMIN_PASSWORD_B64=$($MY_CLUSTER_COMMAND -n ${apic_project} get secret apic-mgmt-admin-pass -o=jsonpath='{.data.password}' 2> /dev/null ); then
+    CM_ADMIN_PASSWORD=$(echo $CM_ADMIN_PASSWORD_B64 | base64 --decode)
+    decho $lf_tracelevel "CM_ADMIN_PASSWORD: $CM_ADMIN_PASSWORD"
+  fi
+  decho $lf_tracelevel "curl -kfs -X POST -H 'Content-Type: application/x-www-form-urlencoded' -H 'Accept: application/json' -d \"grant_type=password&username=${CM_ADMIN_UID}&password=${CM_ADMIN_PASSWORD}&scope=openid\" \"https://${EP_API}/v1/auth/identitytoken\" | jq -r .access_token"
+  IAM_TOKEN=$(curl -kfs -X POST -H 'Content-Type: application/x-www-form-urlencoded' -H 'Accept: application/json' -d "grant_type=password&username=${CM_ADMIN_UID}&password=${CM_ADMIN_PASSWORD}&scope=openid" "https://${EP_API}/v1/auth/identitytoken" | jq -r .access_token)
+  mylog warn "IAM_TOKEN: $IAM_TOKEN" 1>&2
+  # if [ -z "$IAM_TOKEN" ] || [ "$IAM_TOKEN" = "null" ]; then
+    # mylog error "Cannot retrieve IAM_TOKEN"
+    # exit 1
+  # fi
+
   ZEN_TOKEN=$(curl -kfs https://"${EP_ZEN}"/v1/preauth/validateAuth -H "username: ${CP_ADMIN_UID}" -H "iam-token: ${IAM_TOKEN}" | jq -r .accessToken)
-  # mylog warn "ZEN_TOKEN: $ZEN_TOKEN" 1>&2
-  CM_APIC_TOKEN=$(curl -kfs https://"${EP_API}"/v1/preauth/validateAuth -H "username: ${CP_ADMIN_UID}" -H "iam-token: ${IAM_TOKEN}" | jq -r .accessToken)
-  # mylog warn "CM_APIC_TOKEN: $CM_APIC_TOKEN" 1>&2
+  mylog warn "ZEN_TOKEN: $ZEN_TOKEN" 1>&2
+  # CM_APIC_TOKEN=$(curl -kfs https://"${EP_API}"/v1/preauth/validateAuth -H "username: ${CP_ADMIN_UID}" -H "iam-token: ${IAM_TOKEN}" | jq -r .accessToken)
+  CM_APIC_TOKEN="eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImEzMzk1NTc3LTI4NGItNDAwNC04ZGQzLTk2YzJlNDkzODkyMiJ9.eyJqdGkiOiIxMWYxNjFiNy0wZjQzLTQxY2QtOTZhYS1jOTI0NThiODE2OTQiLCJuYW1lc3BhY2UiOiIxNTZhY2VjYy02MDIzLTQzMmUtOWRiMC1lN2Q3YjJlNDc5MGE6YTg2ODAzYjQtMWIyYS00YTMxLTk2NTMtMDE3YzExMGU1MGI1OjVjMGMwOThhLTMzMGEtNGUzOC1hYTRkLTkzZWM5OTQ3OGNmOCIsImF1ZCI6Ii9hcGkvY2xvdWQvcmVnaXN0cmF0aW9ucy9lZGIwZGNhNi02YjdlLTRmYTUtYTBkNy04NzE3YWUxMzgyODkiLCJzdWIiOiIvYXBpL3VzZXItcmVnaXN0cmllcy8xNTZhY2VjYy02MDIzLTQzMmUtOWRiMC1lN2Q3YjJlNDc5MGEvYTg2ODAzYjQtMWIyYS00YTMxLTk2NTMtMDE3YzExMGU1MGI1L3VzZXJzLzVjMGMwOThhLTMzMGEtNGUzOC1hYTRkLTkzZWM5OTQ3OGNmOCIsImlzcyI6IklCTSBBUEkgQ29ubmVjdCIsImV4cCI6MTc2ODU5NzY3OCwiaWF0IjoxNzY4NTY4ODc4LCJncmFudF90eXBlIjoicGFzc3dvcmQiLCJ1c2VyX3JlZ2lzdHJ5X3VybCI6Ii9hcGkvdXNlci1yZWdpc3RyaWVzLzE1NmFjZWNjLTYwMjMtNDMyZS05ZGIwLWU3ZDdiMmU0NzkwYS9hODY4MDNiNC0xYjJhLTRhMzEtOTY1My0wMTdjMTEwZTUwYjUiLCJyZWFsbSI6ImFkbWluL2RlZmF1bHQtaWRwLTEiLCJ1c2VybmFtZSI6ImFkbWluIiwiaWRfdG9rZW4iOiJleUpoYkdjaU9pSlNVekkxTmlJc0luUjVjQ0k2SWtwWFZDSXNJbXRwWkNJNkltTmpZbVF5TkdObUxUaGlNakl0TkRoalpTMWlZVFV6TFdRM05URTBZbU5tWWpFMFppSjkuZXlKbWFYSnpkRjl1WVcxbElqb2lRMnh2ZFdRaUxDSnNZWE4wWDI1aGJXVWlPaUpQZDI1bGNpSXNJblZ6WlhKdVlXMWxJam9pWVdSdGFXNGlMQ0psYldGcGJDSTZJbUZrYldsdVFHRndhV052Ym01bFkzUXVabklpTENKcFlYUWlPakUzTmpnMU5qZzROemg5Lml2SkdfcFpJYW9vY0JIZmtrcEVKTFkzZm9ETUg5Z1QtdFdBZ2NyY0E0dTJGUWtxZU5ueEZVUlRpUE4tdXFHU1RVWGt4THlwOEpDcWFoNlNMUk84eFlLWFV6WXo2NVVZNlI5OTJxUE1LT3FCcm8xeUFMTms1Unc3clUwS1RrMmU1MFVXeUtJRTJtZlBrbmlnS0xQZUZpRmp4RTZka2xfVHEwLWltRE5nUUI0VWhyeWlia1Mwcm1xRE4ybnUzVDd4R25BN2tpTnB3b0VIRTI3M3pabnRNODFnTWxmV0tiX0hxeTRwXzQwNlFSN0dxUGcwLWpFT0xSTHJzOWtFRWhoNEVBOEE1ZTZqMU91c0d2cFJmdnRFcFp0MVNqU3pwMjJ2elJncU5jOENpWEdCX0F3TlNSc3JQazF2UVRWZHdyeTBJTU9Oazh3bHBZWmp6dnlRSnJWWl9GUSIsInNjb3BlcyI6WyJjbG91ZDp2aWV3IiwiY2xvdWQ6bWFuYWdlIiwicHJvdmlkZXItb3JnOnZpZXciLCJwcm92aWRlci1vcmc6bWFuYWdlIiwib3JnOnZpZXciLCJvcmc6bWFuYWdlIiwicHJvZHVjdC1kcmFmdHM6dmlldyIsInByb2R1Y3QtZHJhZnRzOmVkaXQiLCJhcGktZHJhZnRzOnZpZXciLCJhcGktZHJhZnRzOmVkaXQiLCJjaGlsZDp2aWV3IiwiY2hpbGQ6Y3JlYXRlIiwiY2hpbGQ6bWFuYWdlIiwicHJvZHVjdDp2aWV3IiwicHJvZHVjdDpzdGFnZSIsInByb2R1Y3Q6bWFuYWdlIiwicHJvamVjdDp2aWV3IiwicHJvamVjdDptYW5hZ2UiLCJhcHByb3ZhbDp2aWV3IiwiYXBwcm92YWw6bWFuYWdlIiwiYXBpLWFuYWx5dGljczp2aWV3IiwiYXBpLWFuYWx5dGljczptYW5hZ2UiLCJjb25zdW1lci1vcmc6dmlldyIsImNvbnN1bWVyLW9yZzptYW5hZ2UiLCJhcHA6dmlldzphbGwiLCJhcHA6bWFuYWdlOmFsbCIsIm15OnZpZXciLCJteTptYW5hZ2UiLCJhcGk6c3RhZ2UiLCJhcGk6bWFuYWdlIiwid2ViaG9vazp2aWV3Il19.mKVKOzqe1ZcHHGTQig3t_mYr1S8OW1ygwXChykTAiBaLnWRe8dsyt58Y9TymICLP_a69ll9x50TlAQztBiRHQLIECJXSeVLbnU4isYQPFvlpHmN2Rol25JBMT8tHQ9N6m3JRCucqdSoBCkCUl432XowRKK1e4-9BR7nE-F7AFy242zEvBSlC9QUK3f-y_w9fhYfaBpcQ75ZmPtIYfPDD3vVmO46Ap64X6v6sVhjMJ1XhxwQlXep17inO1hc-mHbwNFfXsmQPIxfN6mvkYMKC8113uXrwgoDtV0QaSB87BanajkFmargyePnEmXyVwplyORmikCDZUw7NDt6Auha9GQ"
+  mylog warn "CM_APIC_TOKEN: $CM_APIC_TOKEN" 1>&2
   
   # APIC_NAMESPACE=$($MY_CLUSTER_COMMAND get apiconnectcluster -A -o jsonpath='{..namespace}')
-  APIC_INSTANCE=$($MY_CLUSTER_COMMAND -n "${apic_project}" get apiconnectcluster -o=jsonpath='{.items[0].metadata.name}')
+  APIC_INSTANCE=$($MY_CLUSTER_COMMAND -n "${apic_project}" get managementcluster -o=jsonpath='{.items[0].metadata.name}')
+  decho $lf_tracelevel "APIC_INSTANCE: $APIC_INSTANCE"
   
-  PLATFORM_API_URL=$($MY_CLUSTER_COMMAND -n "${apic_project}" get apiconnectcluster "${APIC_INSTANCE_NAME}" -o=jsonpath='{.status.endpoints[?(@.name=="platformApi")].uri}')
+  PLATFORM_API_URL=$($MY_CLUSTER_COMMAND -n "${apic_project}" get managementcluster "${APIC_INSTANCE}" -o=jsonpath='{.status.endpoints[?(@.name=="platformApi")].uri}')
+  decho $lf_tracelevel "PLATFORM_API_URL: $PLATFORM_API_URL"
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}
  
@@ -573,7 +598,8 @@ function create_cm_token(){
   #        -H 'Accept: application/json' \
   #        --data-binary "{\"current_password\":\"7iron-hide\",\"password\":\"$apic_admin_password\"}" 
   fi
-  
+  # hard coded toto
+  access_token="eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImEzMzk1NTc3LTI4NGItNDAwNC04ZGQzLTk2YzJlNDkzODkyMiJ9.eyJqdGkiOiIxMWYxNjFiNy0wZjQzLTQxY2QtOTZhYS1jOTI0NThiODE2OTQiLCJuYW1lc3BhY2UiOiIxNTZhY2VjYy02MDIzLTQzMmUtOWRiMC1lN2Q3YjJlNDc5MGE6YTg2ODAzYjQtMWIyYS00YTMxLTk2NTMtMDE3YzExMGU1MGI1OjVjMGMwOThhLTMzMGEtNGUzOC1hYTRkLTkzZWM5OTQ3OGNmOCIsImF1ZCI6Ii9hcGkvY2xvdWQvcmVnaXN0cmF0aW9ucy9lZGIwZGNhNi02YjdlLTRmYTUtYTBkNy04NzE3YWUxMzgyODkiLCJzdWIiOiIvYXBpL3VzZXItcmVnaXN0cmllcy8xNTZhY2VjYy02MDIzLTQzMmUtOWRiMC1lN2Q3YjJlNDc5MGEvYTg2ODAzYjQtMWIyYS00YTMxLTk2NTMtMDE3YzExMGU1MGI1L3VzZXJzLzVjMGMwOThhLTMzMGEtNGUzOC1hYTRkLTkzZWM5OTQ3OGNmOCIsImlzcyI6IklCTSBBUEkgQ29ubmVjdCIsImV4cCI6MTc2ODU5NzY3OCwiaWF0IjoxNzY4NTY4ODc4LCJncmFudF90eXBlIjoicGFzc3dvcmQiLCJ1c2VyX3JlZ2lzdHJ5X3VybCI6Ii9hcGkvdXNlci1yZWdpc3RyaWVzLzE1NmFjZWNjLTYwMjMtNDMyZS05ZGIwLWU3ZDdiMmU0NzkwYS9hODY4MDNiNC0xYjJhLTRhMzEtOTY1My0wMTdjMTEwZTUwYjUiLCJyZWFsbSI6ImFkbWluL2RlZmF1bHQtaWRwLTEiLCJ1c2VybmFtZSI6ImFkbWluIiwiaWRfdG9rZW4iOiJleUpoYkdjaU9pSlNVekkxTmlJc0luUjVjQ0k2SWtwWFZDSXNJbXRwWkNJNkltTmpZbVF5TkdObUxUaGlNakl0TkRoalpTMWlZVFV6TFdRM05URTBZbU5tWWpFMFppSjkuZXlKbWFYSnpkRjl1WVcxbElqb2lRMnh2ZFdRaUxDSnNZWE4wWDI1aGJXVWlPaUpQZDI1bGNpSXNJblZ6WlhKdVlXMWxJam9pWVdSdGFXNGlMQ0psYldGcGJDSTZJbUZrYldsdVFHRndhV052Ym01bFkzUXVabklpTENKcFlYUWlPakUzTmpnMU5qZzROemg5Lml2SkdfcFpJYW9vY0JIZmtrcEVKTFkzZm9ETUg5Z1QtdFdBZ2NyY0E0dTJGUWtxZU5ueEZVUlRpUE4tdXFHU1RVWGt4THlwOEpDcWFoNlNMUk84eFlLWFV6WXo2NVVZNlI5OTJxUE1LT3FCcm8xeUFMTms1Unc3clUwS1RrMmU1MFVXeUtJRTJtZlBrbmlnS0xQZUZpRmp4RTZka2xfVHEwLWltRE5nUUI0VWhyeWlia1Mwcm1xRE4ybnUzVDd4R25BN2tpTnB3b0VIRTI3M3pabnRNODFnTWxmV0tiX0hxeTRwXzQwNlFSN0dxUGcwLWpFT0xSTHJzOWtFRWhoNEVBOEE1ZTZqMU91c0d2cFJmdnRFcFp0MVNqU3pwMjJ2elJncU5jOENpWEdCX0F3TlNSc3JQazF2UVRWZHdyeTBJTU9Oazh3bHBZWmp6dnlRSnJWWl9GUSIsInNjb3BlcyI6WyJjbG91ZDp2aWV3IiwiY2xvdWQ6bWFuYWdlIiwicHJvdmlkZXItb3JnOnZpZXciLCJwcm92aWRlci1vcmc6bWFuYWdlIiwib3JnOnZpZXciLCJvcmc6bWFuYWdlIiwicHJvZHVjdC1kcmFmdHM6dmlldyIsInByb2R1Y3QtZHJhZnRzOmVkaXQiLCJhcGktZHJhZnRzOnZpZXciLCJhcGktZHJhZnRzOmVkaXQiLCJjaGlsZDp2aWV3IiwiY2hpbGQ6Y3JlYXRlIiwiY2hpbGQ6bWFuYWdlIiwicHJvZHVjdDp2aWV3IiwicHJvZHVjdDpzdGFnZSIsInByb2R1Y3Q6bWFuYWdlIiwicHJvamVjdDp2aWV3IiwicHJvamVjdDptYW5hZ2UiLCJhcHByb3ZhbDp2aWV3IiwiYXBwcm92YWw6bWFuYWdlIiwiYXBpLWFuYWx5dGljczp2aWV3IiwiYXBpLWFuYWx5dGljczptYW5hZ2UiLCJjb25zdW1lci1vcmc6dmlldyIsImNvbnN1bWVyLW9yZzptYW5hZ2UiLCJhcHA6dmlldzphbGwiLCJhcHA6bWFuYWdlOmFsbCIsIm15OnZpZXciLCJteTptYW5hZ2UiLCJhcGk6c3RhZ2UiLCJhcGk6bWFuYWdlIiwid2ViaG9vazp2aWV3Il19.mKVKOzqe1ZcHHGTQig3t_mYr1S8OW1ygwXChykTAiBaLnWRe8dsyt58Y9TymICLP_a69ll9x50TlAQztBiRHQLIECJXSeVLbnU4isYQPFvlpHmN2Rol25JBMT8tHQ9N6m3JRCucqdSoBCkCUl432XowRKK1e4-9BR7nE-F7AFy242zEvBSlC9QUK3f-y_w9fhYfaBpcQ75ZmPtIYfPDD3vVmO46Ap64X6v6sVhjMJ1XhxwQlXep17inO1hc-mHbwNFfXsmQPIxfN6mvkYMKC8113uXrwgoDtV0QaSB87BanajkFmargyePnEmXyVwplyORmikCDZUw7NDt6Auha9GQ"
   decho $lf_tracelevel "access_token: ${access_token}"
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}
@@ -630,7 +656,7 @@ function apic_run_all () {
   init_apic_variables
   
   # Download toolkit/designer+loopback+toolkit
-  download_tools
+  # download_tools toto
   
   # Create Cloud Manager token
   create_cm_token

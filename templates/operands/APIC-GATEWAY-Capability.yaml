@@ -10,6 +10,8 @@ spec:
   - ${DEFAULT_IMAGE_PULL_SECRET}
   imageRegistry: ${MY_APIC_IMAGE_REGISTRY}
   apicGatewayServiceV5CompatibilityMode: false
+  webGUIManagementPort: 9090
+  webGUIManagementEnabled: true
   gatewayEndpoint:
     #ingressClassName: $INGRESS_CLASS
     annotations:
@@ -29,7 +31,7 @@ spec:
   apicGatewayPeeringTLS:
     secretName: gateway-peering
   mgmtPlatformEndpointCASecret:
-    secretName: $PLATFORM_CA_SECRET # Usually ingress-ca
+    secretName: ${MY_APIC_TLS_INGRESS_CERT_NAME} # Usually ingress-ca
   #mgmtPlatformEndpointSvcCASecret:
   #  secretName:  # Usually management-ca
   datapowerLogLevel: 3
@@ -44,7 +46,7 @@ spec:
       storageClassName: ${MY_BLOCK_STORAGE_CLASS}
       volumeSize: 30Gi
   adminUser:
-    secretName: $ADMIN_USER_SECRET
+    secretName: ${MY_DPGW_ADMIN_USER_SECRET}
   mtlsValidateClient: false
   # syslogConfig:
   #   enabled: false # if true, provide below details

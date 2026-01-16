@@ -1311,6 +1311,48 @@ function install_nano_gateway() {
 }
 
 ################################################
+# Install DataPower gateway
+function install_datapower_gateway() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing DataPower gateway (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  if $MY_APIC; then
+    check_directory_exist_create "${MY_APIC_WORKINGDIR}"
+    if [ "$VAR_APIC_NAMESPACE" != "$VAR_DPGW_NAMESPACE" ]; then
+      create_project "${VAR_DPGW_NAMESPACE}" "${VAR_DPGW_NAMESPACE} project" "For DataPower gateway" "${MY_RESOURCESDIR}" "${MY_DPGW_WORKINGDIR}"
+      add_ibm_entitlement "$VAR_DPGW_NAMESPACE"
+    fi
+
+    # Add the DataPower catalog sources to your cluster using ibm_pak plugin
+    mylog info "Add DataPower catalog sources using ibm_pak plugin" 1>&2
+    check_add_cs_ibm_pak $MY_DPGW_CASE $MY_DPGW_OPERATOR $MY_DPGW_CATALOGSOURCE_LABEL amd64
+    if [[ -z $MY_DPGW_VERSION ]]; then
+      export MY_DPGW_VERSION=$VAR_APP_VERSION
+      decho $lf_tracelevel "MY_DPGW_VERSION=$MY_DPGW_VERSION"
+      unset VAR_APP_VERSION
+    fi
+
+    # Create the ibm-datapower-operator subscription
+    mylog info "Creating DataPower operator subscription" 1>&2
+    create_operator_instance "${MY_DPGW_OPERATOR}" "${MY_DPGW_CATALOGSOURCE_LABEL}" "${MY_OPERATORSDIR}" "${MY_APIC_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
+
+  fi
+
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of the DataPower gateway (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+
+}
+
+
+################################################
 # Install APIC
 function install_apic() {
   SECONDS=0
@@ -1339,27 +1381,14 @@ function install_apic() {
       unset VAR_APP_VERSION
     fi
 
+    install_datapower_gateway
     # install_nano_gateway toto
-    # install_datapower_gateway toto
     # install_wms_gateway toto
-
-    # Add the DataPower catalog sources to your cluster using ibm_pak plugin
-    mylog info "Add DataPower catalog sources using ibm_pak plugin" 1>&2
-    check_add_cs_ibm_pak $MY_DPGW_CASE $MY_DPGW_OPERATOR $MY_DPGW_CATALOGSOURCE_LABEL amd64
-    if [[ -z $MY_DPGW_VERSION ]]; then
-      export MY_DPGW_VERSION=$VAR_APP_VERSION
-      decho $lf_tracelevel "MY_DPGW_VERSION=$MY_DPGW_VERSION"
-      unset VAR_APP_VERSION
-    fi
 
     # Create the apiconnect subscription
     mylog info "Creating APIC operator subscription" 1>&2
     create_operator_instance "${MY_APIC_OPERATOR}" "${MY_APIC_CATALOGSOURCE_LABEL}" "${MY_OPERATORSDIR}" "${MY_APIC_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
     
-    # Create the ibm-datapower-operator subscription
-    mylog info "Creating DataPower operator subscription" 1>&2
-    create_operator_instance "${MY_DPGW_OPERATOR}" "${MY_DPGW_CATALOGSOURCE_LABEL}" "${MY_OPERATORSDIR}" "${MY_APIC_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
-
     mylog info "Setting up issuers and certificates for API Connect in ${VAR_APIC_NAMESPACE} namespace" 1>&2
     oc -n "${VAR_APIC_NAMESPACE}" apply -f ${MY_TLSDIR}APIC/custom-certs-external.yaml
    
@@ -1372,7 +1401,7 @@ function install_apic() {
       generate_password 10
       local lf_admin_password=${VAR_USER_PASSWORD_GEN}
       unset VAR_USER_PASSWORD_GEN
-      create_generic_secret "apic-mgmt-admin-pass" "email" "admin@apiconnect.net" "${lf_admin_password}" "${VAR_APIC_NAMESPACE}" "${MY_APIC_WORKINGDIR}" "false"
+      create_generic_secret "apic-mgmt-admin-pass" "email" "admin@" "${lf_admin_password}" "${VAR_APIC_NAMESPACE}" "${MY_APIC_WORKINGDIR}" "false"
 
       mylog info "Creating APIC ManagementCluster" 1>&2
       create_operand_instance "ManagementCluster" "${VAR_APIC_INSTANCE_NAME}-mgmt" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-MANAGEMENT-Capability.yaml" "$VAR_APIC_NAMESPACE" "{.status.phase}" "Running"
@@ -1380,16 +1409,22 @@ function install_apic() {
       create_operand_instance "PortalCluster" "${VAR_APIC_INSTANCE_NAME}-ptl" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-PORTAL-Capability.yaml" "$VAR_APIC_NAMESPACE" "{.status.phase}" "Running"
       mylog info "Creating APIC AnalyticsCluster" 1>&2
       create_operand_instance "AnalyticsCluster" "${VAR_APIC_INSTANCE_NAME}-a7s" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-ANALYTICS-Capability.yaml" "$VAR_APIC_NAMESPACE" "{.status.phase}" "Running"
-      exit 1 # toto
+
+      generate_password 10
+      lf_admin_password=${VAR_USER_PASSWORD_GEN}
+      unset VAR_USER_PASSWORD_GEN
+      create_generic_secret "$MY_DPGW_ADMIN_USER_SECRET" "" "" "${lf_admin_password}" "${VAR_APIC_NAMESPACE}" "${MY_APIC_WORKINGDIR}" "false"
+
       mylog info "Creating APIC GatewayCluster" 1>&2
-      create_operand_instance "GatewayCluster" "${VAR_APIC_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-GATEWAY-Capability.yaml" "$VAR_APIC_NAMESPACE" "{.status.phase}" "Running"
+      create_operand_instance "GatewayCluster" "${VAR_APIC_INSTANCE_NAME}-gwv6" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-GATEWAY-Capability.yaml" "$VAR_APIC_NAMESPACE" "{.status.phase}" "Running"
+     
     else
       create_operand_instance "APIConnectCluster" "${VAR_APIC_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-Capability.yaml" "$VAR_APIC_NAMESPACE" "{.status.phase}" "Ready"
     fi
-    
+
+    # Create the route for API Connect DataPower Gateway web console
     export VAR_NAMESPACE="${VAR_APIC_NAMESPACE}"
     export VAR_APIC_GW_ROUTE_HOST="${VAR_APIC_GW_ROUTE_NAME}.${lf_ingress}"
-
     create_oc_resource "Route" "${VAR_APIC_GW_ROUTE_NAME}" "${MY_RESOURCESDIR}" "${MY_APIC_WORKINGDIR}" "route.yaml" "$VAR_APIC_NAMESPACE"
     unset VAR_NAMESPACE VAR_APIC_GW_ROUTE_HOST
 
