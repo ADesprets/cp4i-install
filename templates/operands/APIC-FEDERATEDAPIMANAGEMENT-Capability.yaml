@@ -15,7 +15,7 @@
 apiVersion: federatedapimanagement.apiconnect.ibm.com/v1beta1
 kind: FederatedAPIManagementCluster
 metadata:
-  name: fam
+  name: ${VAR_APIC_INSTANCE_NAME}-fam
   namespace: ${VAR_APIC_NAMESPACE}  
 spec:
   version: ${MY_APIC_VERSION}
@@ -24,8 +24,8 @@ spec:
     - ${DEFAULT_IMAGE_PULL_SECRET}
   imageRegistry: ${MY_APIC_IMAGE_REGISTRY}
   analyticsRef: 
-    name: $ANALYTICS_REF_NAME
-    namespace: $ANALYTICS_REF_NAMESPACE
+    name: ${VAR_APIC_INSTANCE_NAME}-a7s
+    namespace: ${VAR_APIC_NAMESPACE}
   uiEndpoint:
     annotations:
       cert-manager.io/issuer: ingress-issuer

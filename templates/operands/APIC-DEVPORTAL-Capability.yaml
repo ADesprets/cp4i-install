@@ -1,5 +1,3 @@
-
-#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -12,12 +10,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
-
 apiVersion: devportal.apiconnect.ibm.com/v1beta1
 kind: DevPortalCluster
 metadata:
-  name: devportal
+  name: ${VAR_APIC_INSTANCE_NAME}-devportal
   namespace: ${VAR_APIC_NAMESPACE}  
 #  annotations:
 #    apiconnect-operator/wmapigateway-client-secret: devportal-wmapigateway-client
@@ -56,6 +52,6 @@ spec:
 # encryptionSecret:
 #   secretName: devportal-enc-key
   analyticsRef:
-    name: $ANALYTICS_REF_NAME
-    namespace: $ANALYTICS_REF_NAMESPACE
+    name: ${VAR_APIC_INSTANCE_NAME}-a7s
+    namespace: ${VAR_APIC_NAMESPACE}
   isStandalone: false

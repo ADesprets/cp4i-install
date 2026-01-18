@@ -16,7 +16,7 @@
 apiVersion: wmapigateway.apiconnect.ibm.com/v1beta1
 kind: WMAPIGatewayCluster
 metadata:
-  name: wmapigateway
+  name: ${VAR_APIC_INSTANCE_NAME}-wmapi
   namespace: ${VAR_APIC_NAMESPACE}
   labels:
     app.kubernetes.io/name: ibm-apiconnect
@@ -67,7 +67,7 @@ spec:
   storage:
     volumeClaimTemplate:
       storageClassName: ${MY_BLOCK_STORAGE_CLASS}
-      volumeSize: $DATA_VOLUME_SIZE
+      volumeSize: ${MY_APIC_WMGTW_STORAGE_SIZE}
   # integrationServerPackages:
   #   packages:
   #   - NativeService

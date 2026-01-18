@@ -1257,8 +1257,10 @@ function install_redis() {
   mylog info "==== Installation of Valkey (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 
 }
+
 ################################################
 # Install nano gateway
+# This function is needed because it is not integrated with API Connect operator
 function install_nano_gateway() {
   SECONDS=0
   local lf_starting_date=$(date)
@@ -1312,6 +1314,7 @@ function install_nano_gateway() {
 
 ################################################
 # Install DataPower gateway
+# This function is needed because DataPower has its own operator
 function install_datapower_gateway() {
   SECONDS=0
   local lf_starting_date=$(date)
@@ -1381,9 +1384,9 @@ function install_apic() {
       unset VAR_APP_VERSION
     fi
 
+    # Install operators for DataPower gateway and nano gateway
     install_datapower_gateway
-    # install_nano_gateway toto
-    # install_wms_gateway toto
+    install_nano_gateway
 
     # Create the apiconnect subscription
     mylog info "Creating APIC operator subscription" 1>&2
@@ -1403,21 +1406,37 @@ function install_apic() {
       unset VAR_USER_PASSWORD_GEN
       create_generic_secret "apic-mgmt-admin-pass" "email" "admin@" "${lf_admin_password}" "${VAR_APIC_NAMESPACE}" "${MY_APIC_WORKINGDIR}" "false"
 
+      # ManagementCluster
       mylog info "Creating APIC ManagementCluster" 1>&2
       create_operand_instance "ManagementCluster" "${VAR_APIC_INSTANCE_NAME}-mgmt" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-MANAGEMENT-Capability.yaml" "$VAR_APIC_NAMESPACE" "{.status.phase}" "Running"
+      # PortalCluster
       mylog info "Creating APIC PortalCluster" 1>&2
       create_operand_instance "PortalCluster" "${VAR_APIC_INSTANCE_NAME}-ptl" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-PORTAL-Capability.yaml" "$VAR_APIC_NAMESPACE" "{.status.phase}" "Running"
+      # AnalyticsCluster
       mylog info "Creating APIC AnalyticsCluster" 1>&2
       create_operand_instance "AnalyticsCluster" "${VAR_APIC_INSTANCE_NAME}-a7s" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-ANALYTICS-Capability.yaml" "$VAR_APIC_NAMESPACE" "{.status.phase}" "Running"
-
+      # GatewayCluster (DataPower)
       generate_password 10
       lf_admin_password=${VAR_USER_PASSWORD_GEN}
       unset VAR_USER_PASSWORD_GEN
       create_generic_secret "$MY_DPGW_ADMIN_USER_SECRET" "" "" "${lf_admin_password}" "${VAR_APIC_NAMESPACE}" "${MY_APIC_WORKINGDIR}" "false"
-
       mylog info "Creating APIC GatewayCluster" 1>&2
       create_operand_instance "GatewayCluster" "${VAR_APIC_INSTANCE_NAME}-gwv6" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-GATEWAY-Capability.yaml" "$VAR_APIC_NAMESPACE" "{.status.phase}" "Running"
-     
+      # WMAPIGatewayCluster
+      mylog info "Creating APIC WMAPIGatewayCluster" 1>&2
+      generate_password 10
+      lf_admin_password=${VAR_USER_PASSWORD_GEN}
+      unset VAR_USER_PASSWORD_GEN
+      create_generic_secret "wmapigateway-admin-secret" "" "" "${lf_admin_password}" "${VAR_APIC_NAMESPACE}" "${MY_APIC_WORKINGDIR}" "false"    
+      # I have commented this because it is optional
+      # generate_password 12
+      # lf_admin_password=${VAR_USER_PASSWORD_GEN}
+      # unset VAR_USER_PASSWORD_GEN
+      create_operand_instance "WMAPIGatewayCluster" "${VAR_APIC_INSTANCE_NAME}-wmapi" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-WMAPIGATEWAY-Capability.yaml" "$VAR_APIC_NAMESPACE" "{.status.phase}" "Running"
+      # FederatedAPIManagementCluster
+      create_operand_instance "FederatedAPIManagementCluster" "${VAR_APIC_INSTANCE_NAME}-fam" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-FEDERATEDAPIMANAGEMENT-Capability.yaml" "$VAR_APIC_NAMESPACE" "{.status.phase}" "Running" 
+     # DevPortalCluster
+      create_operand_instance "DevPortalCluster" "${VAR_APIC_INSTANCE_NAME}-devportal" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-DEVPORTAL-Capability.yaml" "$VAR_APIC_NAMESPACE" "{.status.phase}" "Running"
     else
       create_operand_instance "APIConnectCluster" "${VAR_APIC_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-Capability.yaml" "$VAR_APIC_NAMESPACE" "{.status.phase}" "Ready"
     fi
