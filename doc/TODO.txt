@@ -25,6 +25,8 @@
 - Rationaliser l'utilisation de envsubst versus la fonction adapt_file (lib.sh)
 - tests uniform cluster (clients java ou scripts)
 
+--- TODO n --- Create an Ubuntu image with all the tools
+
 --- TODO 1 --- Manque DP capabilities
 --- TODO 2 --- Improve README  ---
 --- TODO 3 --- Improve code documentation  ---

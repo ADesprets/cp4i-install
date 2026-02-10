@@ -20,10 +20,12 @@ function create_mq_root_certificate () {
   export VAR_CERT_JKS_SECRET_REF=${VAR_MQ_NAMESPACE}-mq-store-root-secret
   # export VAR_CERT_SERIAL=$(uuidgen)
 
-  # We are using a secure QM, we want to expose the jks in the secret asociated to the root certificate. Since this is secured we are going to create a secret for the password with the TLS certificate of the queue manager
+  # We are using a secure QM, we want to expose the jks in the secret asociated to the root certificate.
+  # Since this is secured we are going to create a secret for the password with the TLS certificate of the queue manager
   # TODO Need to check what is happening when the certificate is regenerated maybe automatically by Cert Manager
   local lf_jks_secret_name="${VAR_MQ_NAMESPACE}-mq-store-root-secret"
 
+  # Opaque secret to include a password, we do not want to have it regenerated everytime
   if check_resource_exist secret $lf_jks_secret_name $VAR_ES_NAMESPACE false; then
     mylog info "Secret $lf_jks_secret_name in ${VAR_ES_NAMESPACE} namespace already exists." 1>&2
     local lf_store_password=$(oc -n "${VAR_ES_NAMESPACE}" get secret "$lf_jks_secret_name" -o jsonpath='{.data.password}' | base64 --decode)

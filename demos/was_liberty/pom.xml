@@ -10,8 +10,8 @@
     <packaging>war</packaging>
     <!-- To install a wlp, you can use maven liberty:package and unzip in the directory you want -->
     <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <mywlp.install.directory>D:\CurrentProjects\CP4I\Installation\cp4i-install\tmp\wlp</mywlp.install.directory>
         <jaxws.maven.plugin.version>4.0.2</jaxws.maven.plugin.version>

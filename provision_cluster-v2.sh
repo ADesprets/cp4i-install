@@ -1,12 +1,9 @@
 #!/bin/bash
-# Main program to install CP4I end to end with customisation
+# Main program to install IWHI end to end with customisation
 # Laurent 2021
-# Updated July 2023 Saad / Arnauld
+# Updated July 2023-2026 Saad / Arnauld
 ################################################
-# @param $1 cp4i properties file path (ex : ./cp4.properties)
-# @param $2 cp4i versions file path (ex : ./versions/cp4-16.1.0.properties)
-# @param $3 namespace
-# @param $4 cluster_name
+# @param $1 : --all ou --call <function_name>
 ################################################
 
 ################################################
@@ -665,7 +662,6 @@ function install_lic_reporter_svc() {
     create_operand_instance "IBMLicenseServiceReporter" "$MY_LICENSE_SERVICE_REPORTER_INSTANCE_NAME" "${MY_OPERANDSDIR}" "${MY_LICENSE_SERVICE_REPORTER_WORKINGDIR}" "LIC-Reporter-Capability.yaml" "$MY_LICENSE_SERVICE_REPORTER_NAMESPACE" "{.status.LicenseServiceReporterPods[-1].phase}" "Running"
 
     # Add License Service to the reporter
-    # $MY_CLUSTER_COMMAND get routes -n ibm-licensing | grep ibm-license-service-reporter | awk '{print $2}'
     mylog info "Add License Service to the reporter" 1>&2
     decho $lf_tracelevel "$MY_CLUSTER_COMMAND -n ${MY_LICENSE_SERVICE_REPORTER_NAMESPACE} get Route -o=jsonpath='{.items[?(@.metadata.name==ibm-license-service-reporter)].spec.host}'"
     lf_licensing_service_reporter_url=$($MY_CLUSTER_COMMAND -n ${MY_LICENSE_SERVICE_REPORTER_NAMESPACE} get Route -o=jsonpath='{.items[?(@.metadata.name=="ibm-license-service-reporter")].spec.host}')
@@ -1184,8 +1180,8 @@ function install_valkey() {
     # Create generic secret for valkey authentication
     export VAR_VALKEY_AUTHENTICATION_SECRET="valkey-${VAR_VALKEY_NAMESPACE}-secret"
     # TODO if the password starts with special charater it can fails
-    local lf_store_password=$(tr -dc 'A-Za-z0-9!@#$%^&*()_+-=' < /dev/urandom | fold -w 20 | head -n 1)
-    create_generic_secret "${VAR_VALKEY_AUTHENTICATION_SECRET}"  "username" "valkey-access" "${lf_store_password}" "${VAR_VALKEY_NAMESPACE}" "${MY_VALKEY_WORKINGDIR}" "false"
+    local lf_store_password=$(tr -dc 'A-Za-z0-9' < /dev/urandom | fold -w 20 | head -n 1)
+    create_generic_secret "${VAR_VALKEY_AUTHENTICATION_SECRET}"  "username" "default" "${lf_store_password}" "${VAR_VALKEY_NAMESPACE}" "${MY_VALKEY_WORKINGDIR}" "false"
 
     # For OpenShift add the service accounts to the restricted SCC
     decho $lf_tracelevel "oc adm policy add-scc-to-user restricted -z default -n ${VAR_VALKEY_NAMESPACE}"
@@ -1385,8 +1381,12 @@ function install_apic() {
     fi
 
     # Install operators for DataPower gateway and nano gateway
-    install_datapower_gateway
-    install_nano_gateway
+    if $INSTALL_OVERWRITE; then
+      install_datapower_gateway
+      install_nano_gateway
+    else
+      mylog info "Skipping installation of DataPower gateway and nano gateway operators because INSTALL_OVERWRITE is set to false" 1>&2
+    fi
 
     # Create the apiconnect subscription
     mylog info "Creating APIC operator subscription" 1>&2
@@ -1422,6 +1422,10 @@ function install_apic() {
       create_generic_secret "$MY_DPGW_ADMIN_USER_SECRET" "" "" "${lf_admin_password}" "${VAR_APIC_NAMESPACE}" "${MY_APIC_WORKINGDIR}" "false"
       mylog info "Creating APIC GatewayCluster" 1>&2
       create_operand_instance "GatewayCluster" "${VAR_APIC_INSTANCE_NAME}-gwv6" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-GATEWAY-Capability.yaml" "$VAR_APIC_NAMESPACE" "{.status.phase}" "Running"
+      # Nano Gateway
+      export VAR_REDIS_HOST=valkey.${VAR_VALKEY_NAMESPACE}.svc.cluster.local
+      create_operand_instance "NanoGatewayCluster" "ngw" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-NANOGATEWAY-Capability.yaml" "$VAR_NANO_GATEWAY_NAMESPACE" "{.status.phase}" "Running"
+      unset VAR_REDIS_HOST
       # WMAPIGatewayCluster
       mylog info "Creating APIC WMAPIGatewayCluster" 1>&2
       generate_password 10
@@ -1488,7 +1492,7 @@ function install_apic_graphql() {
     # create a PostgreSQL database for the APIC Graphql
     create_edb_postgres_db "${VAR_POSTGRES_CLUSTER}" "${VAR_POSTGRES_DATABASE}" "${VAR_POSTGRES_USER}" "${MY_POSTGRES_PASSWORD}" "${MY_POSTGRES_DSN_SECRET}" "Postgres DB for APIC Graphql"
 
-    #local lf_postgresql_password=$($MY_CLUSTER_COMMAND -n $VAR_POSTGRES_NAMESPACE get secret "${VAR_POSTGRES_CLUSTER}-superuser" -o jsonpath='{.data.paswword}' | base64 -d)
+    # local lf_postgresql_password=$($MY_CLUSTER_COMMAND -n $VAR_POSTGRES_NAMESPACE get secret "${VAR_POSTGRES_CLUSTER}-superuser" -o jsonpath='{.data.paswword}' | base64 -d)
     # create a generic secret for the PostgreSQL server
     # there are three postgresql services : 
     # - ${VAR_POSTGRES_CLUSTER}-r"  : for read-only workloads across all nodes

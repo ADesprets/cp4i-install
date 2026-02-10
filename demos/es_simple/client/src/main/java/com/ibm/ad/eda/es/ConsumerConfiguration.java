@@ -11,6 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+// Apicurio Registry in Event Streams works with multiple schema registry serdes libraries
+
 package com.ibm.ad.eda.es;
 
 import java.util.Properties;
@@ -49,7 +51,7 @@ public class ConsumerConfiguration {
         File certPemFile = new File(classLoader.getResource("es-cert.p12").getFile());
 
         configs.put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, certPemFile.getAbsolutePath());
-        configs.put(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, "SsmWqwkTMwtB");
+        configs.put(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, "trJ96aGFJwK0");
         configs.put(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PKCS12");
         configs.put(SslConfigs.SSL_PROTOCOL_CONFIG, "TLSv1.2");
         configs.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SASL_SSL");
@@ -59,7 +61,7 @@ public class ConsumerConfiguration {
         // "org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required
         // grant_type=\"urn:ibm:params:oauth:grant-type:apikey\" apikey=\"%s\";",
         // args.apikey));
-        String saslJaasConfig = "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"es-admin\" password=\"QjsGoBIKQIuIOsdYkUj2dRsbH9vEY7m4\";";
+        String saslJaasConfig = "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"es-admin\" password=\"SWqIAEVp4JgnH5SRFRXO6P2zTl7QEAaJ\";";
         configs.put(SaslConfigs.SASL_JAAS_CONFIG, saslJaasConfig);
         // configs.put(SaslConfigs.SASL_JAAS_CONFIG,
         // String.format("org.apache.kafka.common.security.plain.PlainLoginModule

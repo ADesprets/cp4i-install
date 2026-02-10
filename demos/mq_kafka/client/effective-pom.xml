@@ -19,8 +19,8 @@
   <name>mq-dev-patterns</name>
   <url>https://github.com/ibm-messaging/mq-dev-patterns/</url>
   <properties>
-    <maven.compiler.source>17</maven.compiler.source>
-    <maven.compiler.target>17</maven.compiler.target>
+    <maven.compiler.source>21</maven.compiler.source>
+    <maven.compiler.target>21</maven.compiler.target>
     <maven.test.skip>true</maven.test.skip>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>

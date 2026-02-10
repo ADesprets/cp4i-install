@@ -27,11 +27,11 @@ spec:
         secretName: gateway-proxy-endpoint
   redis:
     hosts:
-    - $REDIS_HOST
+    - $VAR_REDIS_HOST
     port: 6379
     mode: standalone
     credential:
-      secretName: valkey-secret
+      secretName: valkey-${VAR_VALKEY_NAMESPACE}-secret
     tls:
-      secretName: valkey-tls
+      secretName: ${VAR_VALKEY_NAMESPACE}-valkey-server-secret
   gatewayDomain: nanogw.${STACK_HOST}

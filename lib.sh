@@ -1056,7 +1056,7 @@ function display_access_info() {
   local lf_tracelevel=5
   trace_in $lf_tracelevel ${FUNCNAME[0]}
 
-  mylog info "==== Displaying Access Info to CP4I." 0
+  mylog info "==== Displaying Access Info to the full stack." 0
 
   # Initialisation of the bookmark
   echo ${BOOKMARK_PROLOGUE} > ${MY_WORKINGDIR}/bookmarks.html
@@ -1064,7 +1064,7 @@ function display_access_info() {
   # OpenShift Console
   local lf_console_url
   lf_console_url=$(oc whoami --show-console)
-  mylog info "OpenShift Console accessible at ${lf_console_url}"
+  mylog info "OpenShift Console accessible at ${lf_console_url}" 0
   echo "<TR><TD><A HREF=${lf_console_url}>OpenShift console</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
 
   # Mailhog
@@ -1074,13 +1074,15 @@ function display_access_info() {
   echo "<TR><TD><A HREF=http://${lf_mailhog_hostname}>MailHog</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
 
   # Keycloak
-  lf_keycloak_admin_ui=$($MY_CLUSTER_COMMAND -n $MY_COMMONSERVICES_NAMESPACE get route keycloak -o jsonpath='{.spec.host}')
-  mylog info "Keycloak admin UI URL: https://${lf_keycloak_admin_ui}" 0
-  echo "<TR><TD><A HREF=https://${lf_keycloak_admin_ui}>Keycloak Admin UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
-  lf_keycloak_admin_pwd=$($MY_CLUSTER_COMMAND -n $MY_COMMONSERVICES_NAMESPACE get secret cs-keycloak-initial-admin -o jsonpath={.data.password} | base64 -d)
-  mylog info "Keycloak admin password: $lf_keycloak_admin_pwd" 0
+  if $MY_KEYCLOAK_EXTERNAL; then
+    lf_keycloak_admin_ui=$($MY_CLUSTER_COMMAND -n $MY_COMMONSERVICES_NAMESPACE get route keycloak -o jsonpath='{.spec.host}')
+    mylog info "Keycloak admin UI URL: https://${lf_keycloak_admin_ui}" 0
+    echo "<TR><TD><A HREF=https://${lf_keycloak_admin_ui}>Keycloak Admin UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
+    lf_keycloak_admin_pwd=$($MY_CLUSTER_COMMAND -n $MY_COMMONSERVICES_NAMESPACE get secret cs-keycloak-initial-admin -o jsonpath={.data.password} | base64 -d)
+    mylog info "Keycloak admin password: $lf_keycloak_admin_pwd" 0
+  fi
   
-  # CP4I Platform Navigator
+  # Platform Navigator
   local lf_temp_integration_admin_pwd cp4i_url
   if $MY_NAVIGATOR_INSTANCE; then
     lf_temp_integration_admin_pwd=$($MY_CLUSTER_COMMAND -n $MY_COMMONSERVICES_NAMESPACE get secret integration-admin-initial-temporary-credentials -o jsonpath={.data.password} | base64 -d)
@@ -1104,14 +1106,6 @@ function display_access_info() {
   # API Connect
   local lf_gtw_url lf_apic_gtw_admin_pwd_secret_name lf_cm_admin_pwd lf_cm_url lf_cm_admin_pwd_secret_name lf_cm_admin_pwd lf_mgr_url lf_ptl_url lf_jwks_url
   if $MY_APIC; then
-    lf_gtw_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get GatewayCluster -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].status.endpoints[?(@.name=="gateway")].uri}')
-    mylog info "APIC Gateway endpoint: ${lf_gtw_url}" 0
-    lf_gtw_webconsole_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get Route ${VAR_APIC_GW_ROUTE_NAME} -o=jsonpath='{.spec.host}')
-    mylog info "APIC Gateway web console endpoint: https://${lf_gtw_webconsole_url}" 0
-    echo "<TR><TD><A HREF=https://${lf_gtw_webconsole_url}>APIC Gateway Web Console</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
-    lf_apic_gtw_admin_pwd_secret_name=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get GatewayCluster -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].spec.adminUser.secretName}')
-    lf_cm_admin_pwd=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get secret ${lf_apic_gtw_admin_pwd_secret_name} -o jsonpath={.data.password} | base64 -d)
-    mylog info "APIC Gateway admin password: ${lf_cm_admin_pwd}" 0
     lf_cm_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get ManagementCluster -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].status.endpoints[?(@.name=="admin")].uri}')
     mylog info "APIC Cloud Manager endpoint: ${lf_cm_url}" 0
     echo "<TR><TD><A HREF=${lf_cm_url}>APIC Cloud Manager UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
@@ -1125,6 +1119,36 @@ function display_access_info() {
     mylog info "APIC Web Portal root endpoint: ${lf_ptl_url}" 0
     lf_jwks_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get ManagementCluster -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].status.endpoints[?(@.name=="jwksUrl")].uri}')
     mylog info "APIC jwksUrl endpoint for EEM: ${lf_jwks_url}" 0
+    # DataPower Gateway
+    lf_gtw_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get GatewayCluster -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].status.endpoints[?(@.name=="gateway")].uri}')
+    mylog info "APIC Gateway endpoint: ${lf_gtw_url}" 0
+    lf_gtw_webconsole_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get Route ${VAR_APIC_GW_ROUTE_NAME} -o=jsonpath='{.spec.host}')
+    mylog info "APIC Gateway web console endpoint: https://${lf_gtw_webconsole_url}" 0
+    echo "<TR><TD><A HREF=https://${lf_gtw_webconsole_url}>APIC Gateway Web Console</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
+    lf_apic_gtw_admin_pwd_secret_name=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get GatewayCluster -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].spec.adminUser.secretName}')
+    lf_cm_admin_pwd=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get secret ${lf_apic_gtw_admin_pwd_secret_name} -o jsonpath={.data.password} | base64 -d)
+    mylog info "APIC Gateway admin password: ${lf_cm_admin_pwd}" 0
+    # WM Dev Portal
+    lf_wmdp_web_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get DevPortalCluster -o=jsonpath='{.items[?(@.kind=="DevPortalCluster")].status.endpoints[?(@.name=="devportalAdmin")].uri}')
+    mylog info "APIC WM Dev Portal admin endpoint: ${lf_wmdp_web_url}" 0
+    lf_wmdp_admin_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get DevPortalCluster -o=jsonpath='{.items[?(@.kind=="DevPortalCluster")].status.endpoints[?(@.name=="devportalWeb")].uri}')
+    mylog info "APIC WM Dev Portal Web UI: ${lf_wmdp_admin_url}" 0
+    echo "<TR><TD><A HREF=https://${lf_wmdp_admin_url}>APIC WM Dev Portal Web UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
+    # FAM
+    lf_fam_web_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get FederatedAPIManagementCluster -o=jsonpath='{.items[?(@.kind=="FederatedAPIManagementCluster")].status.endpoints[?(@.name=="uiEndpoint")].uri}')
+    mylog info "APIC Federated API Mgmt Web UI: ${lf_fam_web_url}" 0
+    echo "<TR><TD><A HREF=https://${lf_fam_web_url}>APIC Federated API Mgmt Web UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
+    lf_fam_admin_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get FederatedAPIManagementCluster -o=jsonpath='{.items[?(@.kind=="FederatedAPIManagementCluster")].status.endpoints[?(@.name=="adminEndpoint")].uri}')
+    mylog info "APIC Federated API Mgmt admin endpoint: ${lf_fam_admin_url}" 0
+    # WM Gateway
+    lf_wmgtw_web_url=$($MY_CLUSTER_COMMAND -n $VAR_WMGW_NAMESPACE get WMAPIGatewayCluster -o=jsonpath='{.items[?(@.kind=="WMAPIGatewayCluster")].status.endpoints[?(@.name=="uiEndpoint")].uri}')
+    mylog info "APIC WM Gateway Web UI: ${lf_wmgtw_web_url}" 0
+    echo "<TR><TD><A HREF=https://${lf_wmgtw_web_url}>APIC WM Gateway Web UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
+    lf_wmgtw_ep_url=$($MY_CLUSTER_COMMAND -n $VAR_WMGW_NAMESPACE get WMAPIGatewayCluster -o=jsonpath='{.items[?(@.kind=="WMAPIGatewayCluster")].status.endpoints[?(@.name=="gatewayEndpoint")].uri}')
+    mylog info "APIC WM Gateway endpoint: ${lf_wmgtw_ep_url}" 0
+    lf_wmgtw_aep_url=$($MY_CLUSTER_COMMAND -n $VAR_WMGW_NAMESPACE get WMAPIGatewayCluster -o=jsonpath='{.items[?(@.kind=="WMAPIGatewayCluster")].status.endpoints[?(@.name=="mgmtEndpoint")].uri}')
+    mylog info "APIC WM Gateway administrative endpoint: ${lf_wmgtw_aep_url}" 0
+
   fi
 
   # Event Streams
@@ -2603,6 +2627,7 @@ function check_add_cs_ibm_pak() {
   else
     mylog info "Using provided version $lf_in_case_version for case ${lf_in_case_name}"
     lf_case_version=$lf_in_case_version
+    decho $lf_tracelevel "$MY_CLUSTER_COMMAND ibm-pak list --case-name $lf_in_case_name -o json | jq --arg v \"$lf_in_case_version\" '.versions[$v].appVersion'"
     lf_app_version=$($MY_CLUSTER_COMMAND ibm-pak list --case-name $lf_in_case_name -o json | jq --arg v "$lf_in_case_version" '.versions[$v].appVersion')
   fi
   decho $lf_tracelevel "lf_case_version=$lf_case_version|lf_app_version=$lf_app_version"

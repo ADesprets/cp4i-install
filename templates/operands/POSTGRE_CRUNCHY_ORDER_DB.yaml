@@ -1,0 +1,28 @@
+apiVersion: postgres-operator.crunchydata.com/v1beta1
+kind: PostgresCluster
+metadata:
+  name: order-app-pg
+  namespace: ordermgmt
+spec:
+  postgresVersion: 16
+  image: registry.developers.crunchydata.com/crunchydata/crunchy-postgres:ubi8-16.5-0  # PostgreSQL 16
+
+  # Instances configuration
+  instances:
+    - name: primary
+      replicas: 1  # 1 primary + 1 replica
+      # Storage configuration
+      dataVolumeClaimSpec:
+        storageClassName: ocs-external-storagecluster-ceph-rbd  # MY_BLOCK_STORAGE_CLASS=ocs-external-storagecluster-ceph-rbd
+        accessModes:
+          - "ReadWriteOnce"
+        resources:
+          requests:
+            storage: 10Gi
+      resources:
+        limits:
+          cpu: 500m
+          memory: 2Gi
+        requests:
+          cpu: 200m
+          memory: 1Gi

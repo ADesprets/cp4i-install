@@ -17,7 +17,7 @@
             "request": "launch",
             "mainClass": "com.ibm.ad.eda.es.ESKafkaConsumer",
             "projectName": "esclient",
-            "args": "-a apikey -b cp4i-es-kafka-bootstrap-cp4i.apps.itz-790npj.infra01-lb.fra02.techzone.ibm.com:443 -t LH.ORDERS -g cg1 -c true -l true -o latest"
+            "args": "-a apikey -b iwhi-es-kafka-bootstrap-iwhi.apps.itz-rtqsu6.infra01-lb.lon04.techzone.ibm.com:443 -t ORDERS.NEW -g cg1 -c true -l true -o latest"
         },
         {
             "type": "java",
@@ -25,7 +25,7 @@
             "request": "launch",
             "mainClass": "com.ibm.ad.eda.es.ESKafkaProducer",
             "projectName": "esclient",
-            "args": "-a apikey -b cp4i-es-kafka-bootstrap-cp4i.apps.itz-790npj.infra01-lb.fra02.techzone.ibm.com:443 -t LH.ORDERS -g cg1 -c true -l true -o latest"
+            "args": "-a apikey -b iwhi-es-kafka-bootstrap-iwhi.apps.itz-rtqsu6.infra01-lb.lon04.techzone.ibm.com:443 -t LH.ORDERS.NEW -g cg1 -c true -l true -o latest"
         }
     ]
 }

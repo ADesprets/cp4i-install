@@ -62,7 +62,7 @@ spec:
       volumes:
         - name: certs
           secret:
-            secretName: cp4i-mq-root-secret
+            secretName: ${VAR_ES_NAMESPACE}-mq-root-secret
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

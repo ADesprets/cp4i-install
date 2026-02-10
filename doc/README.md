@@ -27,7 +27,7 @@ The principles followed to implement this asset are the following:
 	devOps
 	Securité LDAP / Keycloak
 
-	Open Liberty 
+	WAS Liberty 
 		JAX WS
 		JAX RS
 	Licence service
@@ -36,6 +36,31 @@ The principles followed to implement this asset are the following:
 ## Pre-requisites and preliminary tasks
 
 Prerequisites are minimal. There is a method in lib.sh called *check_exec_prereqs* that will ensure at the start of the installation that all utilities are installed.
+
+<details>
+<summary>
+List of the prerequisites validated in the function
+</summary>
+
+* awk
+* tr
+* curl
+* docker or podman
+* jq
+* yq
+* keytool
+* Kubernetes CLI (oc or kubectl)
+* ibm-pak plugin
+* openssl
+* mvn
+* if MQ client demo: runmqakm
+* if LDAP demo: ldapsearch
+* if graphql demo: helm
+
+</details>
+&nbsp;
+
+For the Ubunutu VM (which is the bastion) you can use a distribution with or without UI (we are using version 24.04).
 
 ### Clone repository
 
