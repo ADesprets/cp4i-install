@@ -102,6 +102,10 @@ Below a screen capture of the resources created.
 
 ![Resources created (secret, issuers, certificates)](../images/tls_resources_created_cert_manager.png "Resources created (secret, issuers, certificates)")
 
+## Replacing DataPower gateway Server certificate
+
+
+
 ## Using let's encrypt certificate
 
 We need to create a Letsencrypt ClusterIssuer resource, we use the definition [LETS Encrypt Cluster Issuer](../../templates/resources/letsencrypt-issuer.yaml)

@@ -1106,6 +1106,8 @@ function display_access_info() {
   # API Connect
   local lf_gtw_url lf_apic_gtw_admin_pwd_secret_name lf_cm_admin_pwd lf_cm_url lf_cm_admin_pwd_secret_name lf_cm_admin_pwd lf_mgr_url lf_ptl_url lf_jwks_url
   if $MY_APIC; then
+    lf_platform_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get ManagementCluster -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].status.endpoints[?(@.name=="platformApi")].uri}')
+    mylog info "APIC Platform API endpoint: ${lf_platform_url}" 0
     lf_cm_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get ManagementCluster -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].status.endpoints[?(@.name=="admin")].uri}')
     mylog info "APIC Cloud Manager endpoint: ${lf_cm_url}" 0
     echo "<TR><TD><A HREF=${lf_cm_url}>APIC Cloud Manager UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
@@ -1133,17 +1135,20 @@ function display_access_info() {
     mylog info "APIC WM Dev Portal admin endpoint: ${lf_wmdp_web_url}" 0
     lf_wmdp_admin_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get DevPortalCluster -o=jsonpath='{.items[?(@.kind=="DevPortalCluster")].status.endpoints[?(@.name=="devportalWeb")].uri}')
     mylog info "APIC WM Dev Portal Web UI: ${lf_wmdp_admin_url}" 0
-    echo "<TR><TD><A HREF=https://${lf_wmdp_admin_url}>APIC WM Dev Portal Web UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
+    mylog info "APIC WM Dev Portal default credentials are administrator/manage" 0
+    echo "<TR><TD><A HREF=${lf_wmdp_admin_url}>APIC WM Dev Portal Web UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
     # FAM
     lf_fam_web_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get FederatedAPIManagementCluster -o=jsonpath='{.items[?(@.kind=="FederatedAPIManagementCluster")].status.endpoints[?(@.name=="uiEndpoint")].uri}')
     mylog info "APIC Federated API Mgmt Web UI: ${lf_fam_web_url}" 0
-    echo "<TR><TD><A HREF=https://${lf_fam_web_url}>APIC Federated API Mgmt Web UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
+    echo "<TR><TD><A HREF=${lf_fam_web_url}>APIC Federated API Mgmt Web UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
+    mylog info "Federated API Management default credentials are administrator/manage" 0
     lf_fam_admin_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get FederatedAPIManagementCluster -o=jsonpath='{.items[?(@.kind=="FederatedAPIManagementCluster")].status.endpoints[?(@.name=="adminEndpoint")].uri}')
     mylog info "APIC Federated API Mgmt admin endpoint: ${lf_fam_admin_url}" 0
     # WM Gateway
     lf_wmgtw_web_url=$($MY_CLUSTER_COMMAND -n $VAR_WMGW_NAMESPACE get WMAPIGatewayCluster -o=jsonpath='{.items[?(@.kind=="WMAPIGatewayCluster")].status.endpoints[?(@.name=="uiEndpoint")].uri}')
     mylog info "APIC WM Gateway Web UI: ${lf_wmgtw_web_url}" 0
-    echo "<TR><TD><A HREF=https://${lf_wmgtw_web_url}>APIC WM Gateway Web UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
+    mylog info "APIC WM Gateway Web UI default credentials are Administrator/manage" 0
+    echo "<TR><TD><A HREF=${lf_wmgtw_web_url}>APIC WM Gateway Web UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
     lf_wmgtw_ep_url=$($MY_CLUSTER_COMMAND -n $VAR_WMGW_NAMESPACE get WMAPIGatewayCluster -o=jsonpath='{.items[?(@.kind=="WMAPIGatewayCluster")].status.endpoints[?(@.name=="gatewayEndpoint")].uri}')
     mylog info "APIC WM Gateway endpoint: ${lf_wmgtw_ep_url}" 0
     lf_wmgtw_aep_url=$($MY_CLUSTER_COMMAND -n $VAR_WMGW_NAMESPACE get WMAPIGatewayCluster -o=jsonpath='{.items[?(@.kind=="WMAPIGatewayCluster")].status.endpoints[?(@.name=="mgmtEndpoint")].uri}')

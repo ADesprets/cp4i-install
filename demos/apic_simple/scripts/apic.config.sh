@@ -2,24 +2,29 @@
 
 ################################################
 # Create mail server configuration
-# @param mail_server_ip: IP of the mail server, example: 
-# @param mail_server_ip: Port of the mail server, example: 2525
 function create_mail_server() {
   local lf_tracelevel=3
-  trace_in $lf_tracelevel ${FUNCNAME[0]}  
-  local mail_server_ip=$1
-  local mail_server_port=$2
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
 
-  mailServerUrl=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/mail-servers/generatedemailserver?fields=url" \
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  mylog info "Creating/checking mail server configuration (mymailhog)" 1>&2
+
+  # Get ClusterIP for the mail server if MailHog
+  export MY_MAIL_SERVER_HOST_IP=$($MY_CLUSTER_COMMAND -n ${VAR_MAIL_NAMESPACE} get svc/mail-service -o jsonpath='{.spec.clusterIP}')
+  decho $lf_tracelevel "The mail server clusterIP is ${MY_MAIL_SERVER_HOST_IP} and port is ${APIC_SMTP_SERVER_PORT}"
+
+  decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/mail-servers/mymailhog?fields=url\" -H \"Accept: application/json\" -H \"Authorization: Bearer *****\" -H \"Content-type: application/json\""
+  mailServerUrl=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/mail-servers/mymailhog?fields=url" \
   -H "Accept: application/json" \
   --compressed \
   -H "authorization: Bearer $access_token" \
   -H "content-type: application/json" \
-  -H "Connection: keep-alive")
+  -H "Connection: keep-alive");
+  decho $lf_tracelevel "mailServerUrl: $mailServerUrl"
 
-  # TODO If exist alors change it with properties
-
-  if [ $(echo $mailServerUrl | jq .status ) = "404" ] || [ -z "$mailServerUrl" ] || [ "$mailServerUrl" = "null" ]; then
+  status=$(printf '%s\n' "$mailServerUrl" | jq -r '.status // empty')  
+  if [[ "$status" == "404" ]]; then
     mylog wait "Creating mail server"
     mailServerUrl=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/mail-servers" \
     -H "Accept: application/json" \
@@ -27,23 +32,75 @@ function create_mail_server() {
     -H "authorization: Bearer $access_token" \
     -H "content-type: application/json" \
     -H "Connection: keep-alive" \
-    --data "{\"title\":\"GeneratedEMailServer\",\"name\":\"generatedemailserver\",\"host\":\"$mail_server_ip\",\"port\":$mail_server_port,\"credentials\":{\"username\":\"$APIC_SMTP_USERNAME\",\"password\":\"$APIC_SMTP_PASSWORD\"}}" | jq .url );
-    # mylog info "mailServerUrl: $mailServerUrl"
+    --data "{\"title\":\"MailHog\",\"name\":\"mymailhog\",\"host\":\"$MY_MAIL_SERVER_HOST_IP\",\"port\":${APIC_SMTP_SERVER_PORT},\"credentials\":{\"username\":\"$APIC_SMTP_USERNAME\",\"password\":\"$APIC_SMTP_PASSWORD\"}}" | jq .url );
+    decho $lf_tracelevel "mailServerUrl: ${mailServerUrl}"
   else
-    mylog info "Mail Server generatedemailserver already exists, use it."
+    mylog info "Mail Server mymailhog already exists, use it."
   fi
 
+  # mailServerUrl is the following format: {"url": "value"}, we need to extract the value
+  mailServerUrl=$(echo $mailServerUrl | jq .url)
+  decho $lf_tracelevel "mailServerUrl: ${mailServerUrl}"
+
   # No check needed, it is a modification (PUT)
+  decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/cloud/settings\" -X PUT -H \"Accept: application/json\" -H \"authorization: Bearer *****\" -H \"content-type: application/json\" --data \"{\\\"mail_server_url\\\":${mailServerUrl},\\\"email_sender\\\":{\\\"name\\\":\\\"APIC Administrator\\\",\\\"address\\\":\\\"$APIC_ADMIN_EMAIL\\\"}}\""
   setReplyTo=$(curl -sk "${PLATFORM_API_URL}api/cloud/settings"\
   -X PUT\
   -H "Accept: application/json"\
   -H "authorization: Bearer $access_token" \
   -H "content-type: application/json"\
-  --data "{\"mail_server_url\":$mailServerUrl,\"email_sender\":{\"name\":\"APIC Administrator\",\"address\":\"$APIC_ADMIN_EMAIL\"}}");
+  --data "{\"mail_server_url\":${mailServerUrl},\"email_sender\":{\"name\":\"APIC Administrator\",\"address\":\"$APIC_ADMIN_EMAIL\"}}");
+  decho $lf_tracelevel "setReplyTo: $setReplyTo"
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}  
 }
 
+################################################
+# Replace DataPower gateway endpoint certificate
+function replace_dp_gtw_cert() {
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  mylog info "Replacing DataPower gateway endpoint certificate" 1>&2
+  # Need to get the crypto material, they are all in the secret gwv6-endpoint
+  decho $lf_tracelevel "$MY_CLUSTER_COMMAND -n ${apic_project} get secret ${lf_in_secret_name} -o jsonpath=\"{.data.tls\\.crt}\""
+  local lf_cert=$($MY_CLUSTER_COMMAND -n ${apic_project} get secret gwv6-endpoint -o jsonpath="{.data.tls\\.crt}" | tr -d '\n\r'| base64 -d | tr '\n' '|' | sed 's/|/\\\\n/g')
+  decho $lf_tracelevel "The content of the certificate to create is: $lf_cert"
+  # local lf_cert="${local lf_cert//$'\n'/\\n}"
+  local lf_ca=$($MY_CLUSTER_COMMAND -n ${apic_project} get secret gwv6-endpoint -o jsonpath="{.data.ca\\.crt}" | tr -d '\n\r'| base64 -d | tr '\n' '|' | sed 's/|/\\\\n/g')
+  decho $lf_tracelevel "The content of the CA certificate to create is: $lf_ca"
+  # local lf_ca="${local lf_ca//$'\n'/\\n}"
+  local lf_key=$($MY_CLUSTER_COMMAND -n ${apic_project} get secret gwv6-endpoint -o jsonpath="{.data.tls\\.key}" | tr -d '\n\r'| base64 -d | tr '\n' '|' | sed 's/|/\\\\n/g')
+  decho $lf_tracelevel "The content of the private key to create is: $lf_key"
+  # local lf_key="${local lf_key//$'\n'/\\n}"
+
+  # Then we need to create a Keystore
+  local lf_ks=$(printf "%s" "${lf_cert}${lf_ca}${lf_key}")
+  decho $lf_tracelevel "The content of the keystore to create is: $lf_ks"
+
+  # Need escaping
+  # local lf_ks_es="${lf_ks//\\/\\\\}"
+  # decho $lf_tracelevel "The content of the keystore to create is: $lf_ks"
+  local lf_ks_title="DataPower gateway server keystore 3"
+  local lf_ks_name="datapower-gateway-server-keystore-3"
+  local lf_ks_summary="Keystore containing the certificate and private key for the DataPower gateway endpoint"
+  decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/keystores\" -H \"Accept: application/json\" -H \"authorization: Bearer *****\" -H \"content-type: application/json\" --data-raw \"{\\\"name\\\":\\\"${lf_ks_name}\\\",\\\"title\\\":\\\"${lf_ks_title}\\\",\\\"summary\\\":\\\"${lf_ks_summary}\\\",\\\"keystore\\\":\\\"<value>\\\"}\""
+  keystoreUrl=$(curl -vsk "${PLATFORM_API_URL}api/orgs/admin/keystores" \
+    -X POST \
+    -H "Accept: application/json" \
+    -H "authorization: Bearer $access_token" \
+    -H "content-type: application/json" \
+    --data-raw "{\"name\":\"${lf_ks_name}\",\"title\":\"${lf_ks_title}\",\"summary\":\"${lf_ks_summary}\",\"keystore\":\"${lf_ks}\"}" | jq .url);
+  decho $lf_tracelevel "keystoreUrl: $keystoreUrl"
+
+  # Then we need to update the TLS server profile used for the gateway endpoint to use this new keystore
+  local lf_sp_name="datapower-gateway-endpoint-tls-server-profile"
+  # local lf_tls_server_profile_url=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles?fields=url" \ 
+ 
+  trace_out $lf_tracelevel ${FUNCNAME[0]}  
+}
 ################################################
 # Create an organisation owned by a specific user
 # @param org_name: The name of the organisation. It allows upper cases, the id will be lowered, but the orignal value will be used elsewhere (title, summary)
@@ -120,6 +177,14 @@ function create_topology() {
 
   local lf_integration_url=$1
 
+  decho $lf_tracelevel "Parameters:\"$1\"|"
+
+  if [[ $# -ne 1 ]]; then
+    mylog error "You have to provide 1 argument: integration url"
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
+    exit 1
+  fi
+
   # should increase idempotence
   mylog info "Create gateway Service"
 
@@ -140,6 +205,8 @@ function create_topology() {
    -H 'Accept: application/json' --compressed | jq -r '.results[] | select(.integration_type=="gateway_service" and .name=="datapower-api-gateway")| .url');
   decho $lf_tracelevel "integration_url: $integration_url"
   
+
+  # DataPower API Gateway service creation
   mylog info "{\"name\":\"apigateway-service\",\"title\":\"API Gateway Service\",\"endpoint\":\"https://$EP_GWD\",\"api_endpoint_base\":\"https://$EP_GW\",\"tls_client_profile_url\":\"$tlsClientDefault\",\"gateway_service_type\":\"$ep_gwType\",\"visibility\":{\"type\":\"public\"},\"sni\":[{\"host\":\"*\",\"tls_server_profile_url\":\"$tlsServer\"}],\"integration_url\":\"${integration_url}\"}"
 
   dpUrl=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services" \
@@ -162,8 +229,12 @@ function create_topology() {
     -H 'Connection: keep-alive' \
     --data "{\"gateway_service_default_urls\": [\"$dpUrl\"]}");
 
-  # mylog info $setGWdefault
+  # webMethods API Gateway service creation
 
+
+  # DataPower Nano Gateway service creation
+
+  # CMS Analytics service creation
   mylog info  Create Analytics Service
 
   analytUrl=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/analytics-services" \
@@ -188,6 +259,7 @@ function create_topology() {
 
   decho $lf_tracelevel "analytGwy: $analytGwy"
 
+  # CMS Portal service creation
   mylog info "Create Portal Service"
 
   createPortal=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/portal-services"\
@@ -197,6 +269,18 @@ function create_topology() {
   --data "{\"title\":\"API Portal Service\",\"name\":\"portal-service\",\"endpoint\":\"https://$EP_PADMIN\",\"web_endpoint_base\":\"https://$EP_PORTAL\",\"visibility\":{\"group_urls\":null,\"org_urls\":null,\"type\":\"public\"}}");
 
   decho $lf_tracelevel "createPortal: $createPortal"
+
+  # Developper Portal service creation
+    mylog info "Create Developper Portal Service"
+
+  createDevPortal=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/portal-services"\
+  -H "Accept: application/json"\
+  -H "authorization: Bearer $access_token"\
+  -H "content-type: application/json"\
+  --data "{\"title\":\"API Developer Portal Service\",\"name\":\"developer-portal-service\",\"endpoint\":\"https://$EP_PDEV\",\"web_endpoint_base\":\"https://$EP_DEV_PORTAL\",\"visibility\":{\"group_urls\":null,\"org_urls\":null,\"type\":\"public\"}}");
+
+  decho $lf_tracelevel "createDevPortal: $createDevPortal"
+
 
   trace_out $lf_tracelevel ${FUNCNAME[0]} 
 }
@@ -449,65 +533,51 @@ function init_apic_variables() {
   trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   # Retrieve the various routes for APIC components
-  # API Manager URL
+  # Cloud Management UI
+  EP_CM=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-mgmt-admin" -o jsonpath="{.spec.host}")
+  # Manager UI
+  EP_APIC_MGR=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-mgmt-api-manager" -o jsonpath="{.spec.host}")
+  # Platform API URL
   EP_API=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-mgmt-platform-api" -o jsonpath="{.spec.host}")
-  decho $lf_tracelevel "EP_API: $EP_API"
   # gwv6-gateway-manager
   EP_GWD=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-gwv6-gateway-manager" -o jsonpath="{.spec.host}")
-  decho $lf_tracelevel "EP_GWD: $EP_GWD"
   # gwv6-gateway
   EP_GW=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-gwv6-gateway" -o jsonpath="{.spec.host}")
-  decho $lf_tracelevel "EP_GW: $EP_GW"
   # analytics-ai-endpoint
   EP_AI=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-a7s-ai-endpoint" -o jsonpath="{.spec.host}")
-  decho $lf_tracelevel "EP_AI: $EP_AI"
   # portal-portal-director
   EP_PADMIN=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-ptl-portal-director" -o jsonpath="{.spec.host}")
-  decho $lf_tracelevel "EP_PADMIN: $EP_PADMIN"
   # portal-portal-web
   EP_PORTAL=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-ptl-portal-web" -o jsonpath="{.spec.host}")
-  decho $lf_tracelevel "EP_PORTAL: $EP_PORTAL"
+
+  if $INSTALL_OVERWRITE; then
+    decho $lf_tracelevel "EP_CM: https://$EP_CM"
+    decho $lf_tracelevel "EP_APIC_MGR: $EP_APIC_MGR"
+    decho $lf_tracelevel "EP_API: $EP_API"
+    decho $lf_tracelevel "EP_GWD: $EP_GWD"
+    decho $lf_tracelevel "EP_GW: $EP_GW"
+    decho $lf_tracelevel "EP_AI: $EP_AI"
+    decho $lf_tracelevel "EP_PADMIN: $EP_PADMIN"
+    decho $lf_tracelevel "EP_PORTAL: $EP_PORTAL"
+  fi
   # Zen
   if EP_ZEN=$($MY_CLUSTER_COMMAND -n ${apic_project} get route cpd -o jsonpath="{.spec.host}" 2> /dev/null ); then
     mylog info "EP_PORTAL: $EP_ZEN"
     decho $lf_tracelevel "EP_ZEN: $EP_ZEN"
   fi
-  EP_APIC_MGR=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-mgmt-api-manager" -o jsonpath="{.spec.host}")
-  decho $lf_tracelevel "EP_APIC_MGR: $EP_APIC_MGR"
   
-  # APIC Gateway admin password - TODO Not used here ?
-  if APIC_GTW_PASSWORD_B64=$($MY_CLUSTER_COMMAND -n ${apic_project} get secret ${APIC_INSTANCE_NAME}-gw-admin -o=jsonpath='{.data.password}' 2> /dev/null ); then
-    APIC_GTW_PASSWORD=$(echo $APIC_GTW_PASSWORD_B64 | base64 --decode)
-  fi
-
   # APIC Cloud Manager admin password
   mylog info "With APIC V12 there is a change on the user password the default value is 7iron-hide that need to be changed at first login." 1>&2
   mylog info "For compatibilty reason, I'm going to use the secret apic-mgmt-admin-pass that needs to be updated when you change the value." 1>&2
   
   if CM_ADMIN_UID_B64=$($MY_CLUSTER_COMMAND -n ${apic_project} get secret apic-mgmt-admin-pass -o=jsonpath='{.data.email}' 2> /dev/null ); then
-    CM_ADMIN_UID=$(echo $CM_ADMIN_UID_B64 | base64 --decode)
-    decho $lf_tracelevel "CM_ADMIN_UID: $CM_ADMIN_UID"
+    export CM_ADMIN_UID=$(echo $CM_ADMIN_UID_B64 | base64 --decode)
   fi
 
   if CM_ADMIN_PASSWORD_B64=$($MY_CLUSTER_COMMAND -n ${apic_project} get secret apic-mgmt-admin-pass -o=jsonpath='{.data.password}' 2> /dev/null ); then
-    CM_ADMIN_PASSWORD=$(echo $CM_ADMIN_PASSWORD_B64 | base64 --decode)
-    decho $lf_tracelevel "CM_ADMIN_PASSWORD: $CM_ADMIN_PASSWORD"
+    export CM_ADMIN_PASSWORD=$(echo $CM_ADMIN_PASSWORD_B64 | base64 --decode)
   fi
-  decho $lf_tracelevel "curl -kfs -X POST -H 'Content-Type: application/x-www-form-urlencoded' -H 'Accept: application/json' -d \"grant_type=password&username=${CM_ADMIN_UID}&password=${CM_ADMIN_PASSWORD}&scope=openid\" \"https://${EP_API}/v1/auth/identitytoken\" | jq -r .access_token"
-  IAM_TOKEN=$(curl -kfs -X POST -H 'Content-Type: application/x-www-form-urlencoded' -H 'Accept: application/json' -d "grant_type=password&username=${CM_ADMIN_UID}&password=${CM_ADMIN_PASSWORD}&scope=openid" "https://${EP_API}/v1/auth/identitytoken" | jq -r .access_token)
-  mylog warn "IAM_TOKEN: $IAM_TOKEN" 1>&2
-  # if [ -z "$IAM_TOKEN" ] || [ "$IAM_TOKEN" = "null" ]; then
-    # mylog error "Cannot retrieve IAM_TOKEN"
-    # exit 1
-  # fi
 
-  ZEN_TOKEN=$(curl -kfs https://"${EP_ZEN}"/v1/preauth/validateAuth -H "username: ${CP_ADMIN_UID}" -H "iam-token: ${IAM_TOKEN}" | jq -r .accessToken)
-  mylog warn "ZEN_TOKEN: $ZEN_TOKEN" 1>&2
-  # CM_APIC_TOKEN=$(curl -kfs https://"${EP_API}"/v1/preauth/validateAuth -H "username: ${CP_ADMIN_UID}" -H "iam-token: ${IAM_TOKEN}" | jq -r .accessToken)
-  # toto
-  CM_APIC_TOKEN="yJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImEzMzk1NTc3LTI4NGItNDAwNC04ZGQzLTk2YzJlNDkzODkyMiJ9.eyJqdGkiOiIxMWYxNjFiNy0wZjQzLTQxY2QtOTZhYS1jOTI0NThiODE2OTQiLCJuYW1lc3BhY2UiOiIxNTZhY2VjYy02MDIzLTQzMmUtOWRiMC1lN2Q3YjJlNDc5MGE6YTg2ODAzYjQtMWIyYS00YTMxLTk2NTMtMDE3YzExMGU1MGI1OjVjMGMwOThhLTMzMGEtNGUzOC1hYTRkLTkzZWM5OTQ3OGNmOCIsImF1ZCI6Ii9hcGkvY2xvdWQvcmVnaXN0cmF0aW9ucy9lZGIwZGNhNi02YjdlLTRmYTUtYTBkNy04NzE3YWUxMzgyODkiLCJzdWIiOiIvYXBpL3VzZXItcmVnaXN0cmllcy8xNTZhY2VjYy02MDIzLTQzMmUtOWRiMC1lN2Q3YjJlNDc5MGEvYTg2ODAzYjQtMWIyYS00YTMxLTk2NTMtMDE3YzExMGU1MGI1L3VzZXJzLzVjMGMwOThhLTMzMGEtNGUzOC1hYTRkLTkzZWM5OTQ3OGNmOCIsImlzcyI6IklCTSBBUEkgQ29ubmVjdCIsImV4cCI6MTc2ODU5NzY3OCwiaWF0IjoxNzY4NTY4ODc4LCJncmFudF90eXBlIjoicGFzc3dvcmQiLCJ1c2VyX3JlZ2lzdHJ5X3VybCI6Ii9hcGkvdXNlci1yZWdpc3RyaWVzLzE1NmFjZWNjLTYwMjMtNDMyZS05ZGIwLWU3ZDdiMmU0NzkwYS9hODY4MDNiNC0xYjJhLTRhMzEtOTY1My0wMTdjMTEwZTUwYjUiLCJyZWFsbSI6ImFkbWluL2RlZmF1bHQtaWRwLTEiLCJ1c2VybmFtZSI6ImFkbWluIiwiaWRfdG9rZW4iOiJleUpoYkdjaU9pSlNVekkxTmlJc0luUjVjQ0k2SWtwWFZDSXNJbXRwWkNJNkltTmpZbVF5TkdObUxUaGlNakl0TkRoalpTMWlZVFV6TFdRM05URTBZbU5tWWpFMFppSjkuZXlKbWFYSnpkRjl1WVcxbElqb2lRMnh2ZFdRaUxDSnNZWE4wWDI1aGJXVWlPaUpQZDI1bGNpSXNJblZ6WlhKdVlXMWxJam9pWVdSdGFXNGlMQ0psYldGcGJDSTZJbUZrYldsdVFHRndhV052Ym01bFkzUXVabklpTENKcFlYUWlPakUzTmpnMU5qZzROemg5Lml2SkdfcFpJYW9vY0JIZmtrcEVKTFkzZm9ETUg5Z1QtdFdBZ2NyY0E0dTJGUWtxZU5ueEZVUlRpUE4tdXFHU1RVWGt4THlwOEpDcWFoNlNMUk84eFlLWFV6WXo2NVVZNlI5OTJxUE1LT3FCcm8xeUFMTms1Unc3clUwS1RrMmU1MFVXeUtJRTJtZlBrbmlnS0xQZUZpRmp4RTZka2xfVHEwLWltRE5nUUI0VWhyeWlia1Mwcm1xRE4ybnUzVDd4R25BN2tpTnB3b0VIRTI3M3pabnRNODFnTWxmV0tiX0hxeTRwXzQwNlFSN0dxUGcwLWpFT0xSTHJzOWtFRWhoNEVBOEE1ZTZqMU91c0d2cFJmdnRFcFp0MVNqU3pwMjJ2elJncU5jOENpWEdCX0F3TlNSc3JQazF2UVRWZHdyeTBJTU9Oazh3bHBZWmp6dnlRSnJWWl9GUSIsInNjb3BlcyI6WyJjbG91ZDp2aWV3IiwiY2xvdWQ6bWFuYWdlIiwicHJvdmlkZXItb3JnOnZpZXciLCJwcm92aWRlci1vcmc6bWFuYWdlIiwib3JnOnZpZXciLCJvcmc6bWFuYWdlIiwicHJvZHVjdC1kcmFmdHM6dmlldyIsInByb2R1Y3QtZHJhZnRzOmVkaXQiLCJhcGktZHJhZnRzOnZpZXciLCJhcGktZHJhZnRzOmVkaXQiLCJjaGlsZDp2aWV3IiwiY2hpbGQ6Y3JlYXRlIiwiY2hpbGQ6bWFuYWdlIiwicHJvZHVjdDp2aWV3IiwicHJvZHVjdDpzdGFnZSIsInByb2R1Y3Q6bWFuYWdlIiwicHJvamVjdDp2aWV3IiwicHJvamVjdDptYW5hZ2UiLCJhcHByb3ZhbDp2aWV3IiwiYXBwcm92YWw6bWFuYWdlIiwiYXBpLWFuYWx5dGljczp2aWV3IiwiYXBpLWFuYWx5dGljczptYW5hZ2UiLCJjb25zdW1lci1vcmc6dmlldyIsImNvbnN1bWVyLW9yZzptYW5hZ2UiLCJhcHA6dmlldzphbGwiLCJhcHA6bWFuYWdlOmFsbCIsIm15OnZpZXciLCJteTptYW5hZ2UiLCJhcGk6c3RhZ2UiLCJhcGk6bWFuYWdlIiwid2ViaG9vazp2aWV3Il19.mKVKOzqe1ZcHHGTQig3t_mYr1S8OW1ygwXChykTAiBaLnWRe8dsyt58Y9TymICLP_a69ll9x50TlAQztBiRHQLIECJXSeVLbnU4isYQPFvlpHmN2Rol25JBMT8tHQ9N6m3JRCucqdSoBCkCUl432XowRKK1e4-9BR7nE-F7AFy242zEvBSlC9QUK3f-y_w9fhYfaBpcQ75ZmPtIYfPDD3vVmO46Ap64X6v6sVhjMJ1XhxwQlXep17inO1hc-mHbwNFfXsmQPIxfN6mvkYMKC8113uXrwgoDtV0QaSB87BanajkFmargyePnEmXyVwplyORmikCDZUw7NDt6Auha9GQ"
-  mylog warn "CM_APIC_TOKEN: $CM_APIC_TOKEN" 1>&2
-  
   # APIC_NAMESPACE=$($MY_CLUSTER_COMMAND get apiconnectcluster -A -o jsonpath='{..namespace}')
   APIC_INSTANCE=$($MY_CLUSTER_COMMAND -n "${apic_project}" get managementcluster -o=jsonpath='{.items[0].metadata.name}')
   decho $lf_tracelevel "APIC_INSTANCE: $APIC_INSTANCE"
@@ -571,38 +641,35 @@ function create_cm_token(){
   trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   APIC_CRED=$($MY_CLUSTER_COMMAND -n "${apic_project}" get secret ${APIC_INSTANCE_NAME}-mgmt-cli-cred -o jsonpath='{.data.credential\.json}' | base64 --decode)
-  APIC_APIKEY=$(curl -ks --fail -X POST "${PLATFORM_API_URL}"cloud/api-keys -H "Authorization: Bearer ${ZEN_TOKEN}" -H "Accept: application/json" -H "Content-Type: application/json" -d '{"client_type":"toolkit","description":"Tookit API key"}' | jq -r .api_key)
-  decho $lf_tracelevel "APIC_APIKEY: ${APIC_APIKEY}"
   
-  # The goal is to get the apikey defined in the realm provider/common-services, get the credentials for the toolkit, then use the token endpoint to get an oauth token for Cloud Manager from API Key
+  # We ue the toolkit cli credentials to interact with APIC
   TOOLKIT_CLIENT_ID=$(echo ${APIC_CRED} | jq -r .id)
   TOOLKIT_CLIENT_SECRET=$(echo ${APIC_CRED} | jq -r .secret)
   mylog info "Creating ${MY_APIC_WORKINGDIR}resources/creds.json" 1>&2
-  echo "{\"username\": \"admin\", \"password\": \"$APIC_CM_ADMIN_PASSWORD\", \"realm\": \"admin/default-idp-1\", \"client_id\": \"$TOOLKIT_CLIENT_ID\", \"client_secret\": \"$TOOLKIT_CLIENT_SECRET\", \"grant_type\": \"password\"}" > "${MY_APIC_WORKINGDIR}resources/creds.json"
+  echo "{\"username\": \"admin\", \"password\": \"$CM_ADMIN_PASSWORD\", \"realm\": \"admin/default-idp-1\", \"client_id\": \"$TOOLKIT_CLIENT_ID\", \"client_secret\": \"$TOOLKIT_CLIENT_SECRET\", \"grant_type\": \"password\"}" > "${MY_APIC_WORKINGDIR}resources/creds.json"
   
+  decho $lf_tracelevel "curl -ks -X POST \"${PLATFORM_API_URL}api/token\" -H 'Content-Type: application/json' -H 'Accept: application/json' --data-binary \"@${MY_APIC_WORKINGDIR}resources/creds.json\""
+
   cmToken=$(curl -ks -X POST "${PLATFORM_API_URL}api/token" \
    -H 'Content-Type: application/json' \
    -H 'Accept: application/json' \
    --data-binary "@${MY_APIC_WORKINGDIR}resources/creds.json")
-  
-  # decho $lf_tracelevel "cmToken: $cmToken"
 
-  if [ $(echo $cmToken | jq .status ) = "401" ] ; then
-    mylog error "Error with login -> $cmToken"
-    mylog warning "Probably don't need to change password"
-  elif [ $(echo $cmToken | jq .access_token) != "null" ]
-    then
-      # echo "Try to Change password"
-      access_token=$(echo $cmToken | jq .access_token | sed -e s/\"//g);
-  #      curl -kv "${PLATFORM_API_URL}api/me/change-password" \
-  #        -H "Authorization: Bearer $access_token" \
-  #        -H 'Content-Type: application/json' \
-  #        -H 'Accept: application/json' \
-  #        --data-binary "{\"current_password\":\"7iron-hide\",\"password\":\"$apic_admin_password\"}" 
+  decho $lf_tracelevel "cmToken: $cmToken"
+
+  if [ -z "$cmToken" ]; then
+    mylog error "Could not retrieve token"
+    exit 1
+  else
+    access_token=$(printf '%s\n' "$cmToken" | jq -r '.access_token // empty')
+
+    if [ ! -n "$access_token" ]; then
+      # no access_token (wrong password, empty password, ...), show first message element
+      msg=$(printf '%s\n' "Error when login to the APIC Cloud API" | jq -r '.message[0]')
+      mylog error "$msg"
+      exit 1
+    fi
   fi
-  # hard coded toto
-  access_token="eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImEzMzk1NTc3LTI4NGItNDAwNC04ZGQzLTk2YzJlNDkzODkyMiJ9.eyJqdGkiOiIxMWYxNjFiNy0wZjQzLTQxY2QtOTZhYS1jOTI0NThiODE2OTQiLCJuYW1lc3BhY2UiOiIxNTZhY2VjYy02MDIzLTQzMmUtOWRiMC1lN2Q3YjJlNDc5MGE6YTg2ODAzYjQtMWIyYS00YTMxLTk2NTMtMDE3YzExMGU1MGI1OjVjMGMwOThhLTMzMGEtNGUzOC1hYTRkLTkzZWM5OTQ3OGNmOCIsImF1ZCI6Ii9hcGkvY2xvdWQvcmVnaXN0cmF0aW9ucy9lZGIwZGNhNi02YjdlLTRmYTUtYTBkNy04NzE3YWUxMzgyODkiLCJzdWIiOiIvYXBpL3VzZXItcmVnaXN0cmllcy8xNTZhY2VjYy02MDIzLTQzMmUtOWRiMC1lN2Q3YjJlNDc5MGEvYTg2ODAzYjQtMWIyYS00YTMxLTk2NTMtMDE3YzExMGU1MGI1L3VzZXJzLzVjMGMwOThhLTMzMGEtNGUzOC1hYTRkLTkzZWM5OTQ3OGNmOCIsImlzcyI6IklCTSBBUEkgQ29ubmVjdCIsImV4cCI6MTc2ODU5NzY3OCwiaWF0IjoxNzY4NTY4ODc4LCJncmFudF90eXBlIjoicGFzc3dvcmQiLCJ1c2VyX3JlZ2lzdHJ5X3VybCI6Ii9hcGkvdXNlci1yZWdpc3RyaWVzLzE1NmFjZWNjLTYwMjMtNDMyZS05ZGIwLWU3ZDdiMmU0NzkwYS9hODY4MDNiNC0xYjJhLTRhMzEtOTY1My0wMTdjMTEwZTUwYjUiLCJyZWFsbSI6ImFkbWluL2RlZmF1bHQtaWRwLTEiLCJ1c2VybmFtZSI6ImFkbWluIiwiaWRfdG9rZW4iOiJleUpoYkdjaU9pSlNVekkxTmlJc0luUjVjQ0k2SWtwWFZDSXNJbXRwWkNJNkltTmpZbVF5TkdObUxUaGlNakl0TkRoalpTMWlZVFV6TFdRM05URTBZbU5tWWpFMFppSjkuZXlKbWFYSnpkRjl1WVcxbElqb2lRMnh2ZFdRaUxDSnNZWE4wWDI1aGJXVWlPaUpQZDI1bGNpSXNJblZ6WlhKdVlXMWxJam9pWVdSdGFXNGlMQ0psYldGcGJDSTZJbUZrYldsdVFHRndhV052Ym01bFkzUXVabklpTENKcFlYUWlPakUzTmpnMU5qZzROemg5Lml2SkdfcFpJYW9vY0JIZmtrcEVKTFkzZm9ETUg5Z1QtdFdBZ2NyY0E0dTJGUWtxZU5ueEZVUlRpUE4tdXFHU1RVWGt4THlwOEpDcWFoNlNMUk84eFlLWFV6WXo2NVVZNlI5OTJxUE1LT3FCcm8xeUFMTms1Unc3clUwS1RrMmU1MFVXeUtJRTJtZlBrbmlnS0xQZUZpRmp4RTZka2xfVHEwLWltRE5nUUI0VWhyeWlia1Mwcm1xRE4ybnUzVDd4R25BN2tpTnB3b0VIRTI3M3pabnRNODFnTWxmV0tiX0hxeTRwXzQwNlFSN0dxUGcwLWpFT0xSTHJzOWtFRWhoNEVBOEE1ZTZqMU91c0d2cFJmdnRFcFp0MVNqU3pwMjJ2elJncU5jOENpWEdCX0F3TlNSc3JQazF2UVRWZHdyeTBJTU9Oazh3bHBZWmp6dnlRSnJWWl9GUSIsInNjb3BlcyI6WyJjbG91ZDp2aWV3IiwiY2xvdWQ6bWFuYWdlIiwicHJvdmlkZXItb3JnOnZpZXciLCJwcm92aWRlci1vcmc6bWFuYWdlIiwib3JnOnZpZXciLCJvcmc6bWFuYWdlIiwicHJvZHVjdC1kcmFmdHM6dmlldyIsInByb2R1Y3QtZHJhZnRzOmVkaXQiLCJhcGktZHJhZnRzOnZpZXciLCJhcGktZHJhZnRzOmVkaXQiLCJjaGlsZDp2aWV3IiwiY2hpbGQ6Y3JlYXRlIiwiY2hpbGQ6bWFuYWdlIiwicHJvZHVjdDp2aWV3IiwicHJvZHVjdDpzdGFnZSIsInByb2R1Y3Q6bWFuYWdlIiwicHJvamVjdDp2aWV3IiwicHJvamVjdDptYW5hZ2UiLCJhcHByb3ZhbDp2aWV3IiwiYXBwcm92YWw6bWFuYWdlIiwiYXBpLWFuYWx5dGljczp2aWV3IiwiYXBpLWFuYWx5dGljczptYW5hZ2UiLCJjb25zdW1lci1vcmc6dmlldyIsImNvbnN1bWVyLW9yZzptYW5hZ2UiLCJhcHA6dmlldzphbGwiLCJhcHA6bWFuYWdlOmFsbCIsIm15OnZpZXciLCJteTptYW5hZ2UiLCJhcGk6c3RhZ2UiLCJhcGk6bWFuYWdlIiwid2ViaG9vazp2aWV3Il19.mKVKOzqe1ZcHHGTQig3t_mYr1S8OW1ygwXChykTAiBaLnWRe8dsyt58Y9TymICLP_a69ll9x50TlAQztBiRHQLIECJXSeVLbnU4isYQPFvlpHmN2Rol25JBMT8tHQ9N6m3JRCucqdSoBCkCUl432XowRKK1e4-9BR7nE-F7AFy242zEvBSlC9QUK3f-y_w9fhYfaBpcQ75ZmPtIYfPDD3vVmO46Ap64X6v6sVhjMJ1XhxwQlXep17inO1hc-mHbwNFfXsmQPIxfN6mvkYMKC8113uXrwgoDtV0QaSB87BanajkFmargyePnEmXyVwplyORmikCDZUw7NDt6Auha9GQ"
-  decho $lf_tracelevel "access_token: ${access_token}"
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
@@ -640,39 +707,33 @@ function apic_run_all () {
   SECONDS=0
   local lf_starting_date=$(date);
   
-  # TODO Cannot work the variable for mail ns is not ready at that time, quick fix below
-  VAR_MAIL_NAMESPACE='mail'
-  
-  # Get ClusterIP for the mail server if MailHog
-  # TODO check error, if not there, ...
-  export MY_MAIL_SERVER_HOST_IP=$($MY_CLUSTER_COMMAND -n ${VAR_MAIL_NAMESPACE} get svc/mail-service -o jsonpath='{.spec.clusterIP}')
-  decho $lf_tracelevel "To configure the mail server the clusterIP is ${MY_MAIL_SERVER_HOST_IP}"
-  
   # Will create both directories needed later
   adapt_file ${MY_APIC_SIMPLE_DEMODIR}properties/ ${MY_APIC_WORKINGDIR}properties/ apic.properties
   adapt_file ${MY_APIC_SIMPLE_DEMODIR}resources/ ${MY_APIC_WORKINGDIR}resources/ web-mgmt.cfg
-  
+
   read_config_file "${MY_APIC_WORKINGDIR}properties/apic.properties"
   
   # Init APIC variables
   init_apic_variables
-  
+
   # Download toolkit/designer+loopback+toolkit
-  # download_tools toto
+  # download_tools TODO
   
   # Create Cloud Manager token
   create_cm_token
-  
+
   TOOLKIT_CREDS_URL="${PLATFORM_API_URL}api/cloud/settings/toolkit-credentials"
   
   # always download the credential.json
   # if test ! -e "~/.apiconnect/config-apim";then
-  mylog info "Downloading apic config json file" 1>&2
+  mylog info "Downloading apic config json file (${MY_APIC_WORKINGDIR}resources/fullcreds.json)" 1>&2
   curl -ks "${TOOLKIT_CREDS_URL}" -H "Authorization: Bearer ${access_token}" -H "Accept: application/json" -H "Content-Type: application/json" -o "${MY_APIC_WORKINGDIR}resources/fullcreds.json"
   
-  # Get ClusterIP of the mail service
-  create_mail_server "${APIC_SMTP_SERVER}" "${APIC_SMTP_SERVER_PORT}"
-  
+  replace_dp_gtw_cert
+  exit 0
+
+  create_mail_server "${APIC_SMTP_SERVER_IP}" "${APIC_SMTP_SERVER_PORT}"
+
   # TODO Add idempotence
   create_topology $integration_url
   
@@ -689,7 +750,6 @@ function apic_run_all () {
   apic_provider_org_lower=$(echo "$APIC_PROVIDER_ORG" | awk '{print tolower($0)}')
 
   load_apis $PLATFORM_API_URL $apic_provider_org_lower $amToken
-
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)

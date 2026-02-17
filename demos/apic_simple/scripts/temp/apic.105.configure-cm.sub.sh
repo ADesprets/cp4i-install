@@ -15,7 +15,7 @@ function CreateMailServer() {
   local mail_server_ip=$1
   local mail_server_port=$2
 
-  mailServerUrl=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/mail-servers/generatedemailserver?fields=url" \
+  mailServerUrl=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/mail-servers/mymailhog?fields=url" \
   -H "Accept: application/json" \
   --compressed \
   -H "authorization: Bearer $access_token" \
@@ -30,10 +30,10 @@ function CreateMailServer() {
     -H "authorization: Bearer $access_token" \
     -H "content-type: application/json" \
     -H "Connection: keep-alive" \
-    --data "{\"title\":\"GeneratedEMailServer\",\"name\":\"generatedemailserver\",\"host\":\"$mail_server_ip\",\"port\":$mail_server_port,\"credentials\":{\"username\":\"$APIC_SMTP_USERNAME\",\"password\":\"$APIC_SMTP_PASSWORD\"}}" | jq .url );
+    --data "{\"title\":\"MailHog\",\"name\":\"mymailhog\",\"host\":\"$mail_server_ip\",\"port\":$mail_server_port,\"credentials\":{\"username\":\"$APIC_SMTP_USERNAME\",\"password\":\"$APIC_SMTP_PASSWORD\"}}" | jq .url );
     # mylog info "mailServerUrl: $mailServerUrl"
   else
-    mylog info "Mail Server generatedemailserver already exists, use it."
+    mylog info "Mail Server mymailhog already exists, use it."
   fi
 
   # No check needed, it is a modification (PUT)
