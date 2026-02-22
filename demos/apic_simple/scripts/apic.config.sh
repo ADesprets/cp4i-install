@@ -126,18 +126,35 @@ function replace_dp_gtw_cert() {
       '{ title: $title, name: $name, version:"1.0.0", summary: $summary, protocols: $protocols, mutual_authentication:"none", limit_renegotiation: true, ciphers: $ciphers, keystore_url: $keystore_url }')
 
     decho $lf_tracelevel "curl -skv \"${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles/${lf_sp_name}?fields=url\" -H \"Accept: application/json\" -H \"authorization: Bearer *****\" -H \"content-type: application/json\"  --data-raw \"$jsonpayload\""
-    tlsServerProfilekeystore=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles" \
+    lf_tls_server_profile=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles" \
       -H "Authorization: Bearer $access_token" \
       -H "Content-Type: application/json" \
       -H "Accept: application/json" \
       --data-raw "$jsonpayload");
     
-    decho $lf_tracelevel "tlsServerProfilekeystore: $tlsServerProfilekeystore"
+    decho $lf_tracelevel "lf_tls_server_profile: $lf_tls_server_profile"
   else
     mylog info "TLS Serverprofile $lf_sp_name already exists, use it."
   fi
+
+  local lf_tls_server_profile_url=$(echo $lf_tls_server_profile | jq -r .url)
   
-  # Then we need to update the DataPower Gateway in the topology
+  # Then we need to update the DataPower Gateway service in the topology
+  local lf_dp_name="apigateway-service"
+  local lf_dp_sni_host="*"
+
+  jsonpayload=$(jq -n \
+    --arg host "$lf_dp_sni_host" \
+    --arg tls_server_profile_url "$lf_tls_server_profile_url" \
+	  '{sni:[{host:$host,tls_server_profile_url:$tls_server_profile_url}]}')
+
+  decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services/${lf_dp_name}\" -X PATCH -H \"Accept: application/json\" -H \"authorization: Bearer *****\" -H \"content-type: application/json\"  --data-raw \"$jsonpayload\""
+  lf_dp_gtw_service=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services/${lf_dp_name}?fields=url" \
+	  -X PATCH \
+    -H "Authorization: Bearer $access_token" \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json" \
+    --data-raw "$jsonpayload");
  
   trace_out $lf_tracelevel ${FUNCNAME[0]}  
 }
