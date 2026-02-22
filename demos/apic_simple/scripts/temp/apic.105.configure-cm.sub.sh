@@ -347,7 +347,7 @@ function Get_APIC_Infos() {
   APIC_CRED=$($MY_CLUSTER_COMMAND -n "${apic_project}" get secret ${APIC_INSTANCE_NAME}-mgmt-cli-cred  -o jsonpath='{.data.credential\.json}' | base64 --decode)
   mylog info "APIC Credentials. APIC_CRED: ${APIC_CRED}"
   
-  APIC_APIKEY=$(curl -ks --fail -X POST "${PLATFORM_API_URL}"cloud/api-keys -H "Authorization: Bearer ${ZEN_TOKEN}" -H "Accept: application/json" -H "Content-Type: application/json" -d '{"client_type":"toolkit","description":"Tookit API key"}' | jq -r .api_key)
+  APIC_APIKEY=$(curl -sk --fail -X POST "${PLATFORM_API_URL}"cloud/api-keys -H "Authorization: Bearer ${ZEN_TOKEN}" -H "Accept: application/json" -H "Content-Type: application/json" -d '{"client_type":"toolkit","description":"Tookit API key"}' | jq -r .api_key)
   decho $lf_tracelevel "APIC Key. APIC_APIKEY: ${APIC_APIKEY}"
   
   APIM_ENDPOINT=$($MY_CLUSTER_COMMAND -n "${apic_project}" get mgmt "${APIC_INSTANCE_NAME}-mgmt" -o jsonpath='{.status.zenRoute}')
@@ -361,7 +361,7 @@ function Get_APIC_Infos() {
   TOOLKIT_CLIENT_ID=$(echo ${APIC_CRED} | jq -r .id)
   TOOLKIT_CLIENT_SECRET=$(echo ${APIC_CRED} | jq -r .secret)
   
-  # cmToken=$(curl -ks --fail -X POST "${PLATFORM_API_URL}token" \
+  # cmToken=$(curl -sk --fail -X POST "${PLATFORM_API_URL}token" \
   #  -H 'Content-Type: application/json' \
   #  -H 'Accept: application/json' \
   #  -H "X-Ibm-Client-Id: $TOOLKIT_CLIENT_ID" \
@@ -370,7 +370,7 @@ function Get_APIC_Infos() {
   
   echo "{\"username\": \"admin\", \"password\": \"$APIC_CM_ADMIN_PASSWORD\", \"realm\": \"admin/default-idp-1\", \"client_id\": \"$TOOLKIT_CLIENT_ID\", \"client_secret\": \"$TOOLKIT_CLIENT_SECRET\", \"grant_type\": \"password\"}" > "${MY_WORKINGDIR}creds.json"
   
-  cmToken=$(curl -ks -X POST "${PLATFORM_API_URL}api/token" \
+  cmToken=$(curl -sk -X POST "${PLATFORM_API_URL}api/token" \
    -H 'Content-Type: application/json' \
    -H 'Accept: application/json' \
    --data-binary "@${MY_WORKINGDIR}creds.json")
@@ -385,7 +385,7 @@ function Get_APIC_Infos() {
     then
       # echo "Try to Change password"
       access_token=$(echo $cmToken | jq .access_token | sed -e s/\"//g);
-      apicme=$(curl -ks "${PLATFORM_API_URL}api/me" \
+      apicme=$(curl -sk "${PLATFORM_API_URL}api/me" \
         -X PUT \
         -H "Authorization: Bearer $access_token" \
         -H 'Content-Type: application/json' \
@@ -407,7 +407,7 @@ function Get_APIC_Infos() {
   # always download the credential.json
   # if test ! -e "~/.apiconnect/config-apim";then
    	mylog info "Downloading apic config json file" 1>&2
-   	curl -ks "${TOOLKIT_CREDS_URL}" -H "Authorization: Bearer ${access_token}" -H "Accept: application/json" -H "Content-Type: application/json" -o creds.json
+   	curl -sk "${TOOLKIT_CREDS_URL}" -H "Authorization: Bearer ${access_token}" -H "Accept: application/json" -H "Content-Type: application/json" -o creds.json
   	yes | apic client-creds:set creds.json
   # 	[[ -e creds.json ]] && rm creds.json
   # fi  
@@ -516,7 +516,7 @@ fi
 APIC_CRED=$($MY_CLUSTER_COMMAND -n "${apic_project}" get secret ${APIC_INSTANCE_NAME}-mgmt-cli-cred  -o jsonpath='{.data.credential\.json}' | base64 --decode)
 mylog info "APIC_CRED: ${APIC_CRED}"
 
-APIC_APIKEY=$(curl -ks --fail -X POST "${PLATFORM_API_URL}"cloud/api-keys -H "Authorization: Bearer ${ZEN_TOKEN}" -H "Accept: application/json" -H "Content-Type: application/json" -d '{"client_type":"toolkit","description":"Tookit API key"}' | jq -r .api_key)
+APIC_APIKEY=$(curl -sk --fail -X POST "${PLATFORM_API_URL}"cloud/api-keys -H "Authorization: Bearer ${ZEN_TOKEN}" -H "Accept: application/json" -H "Content-Type: application/json" -d '{"client_type":"toolkit","description":"Tookit API key"}' | jq -r .api_key)
 decho $lf_tracelevel "APIC_APIKEY: ${APIC_APIKEY}"
 
 # The goal is to get the apikey defined in the realm provider/common-services, get the credentials for the toolkit, then use the token endpoint to get an oauth token for Cloud Manager from API Key
@@ -525,7 +525,7 @@ decho $lf_tracelevel "APIC_APIKEY: ${APIC_APIKEY}"
 TOOLKIT_CLIENT_ID=$(echo ${APIC_CRED} | jq -r .id)
 TOOLKIT_CLIENT_SECRET=$(echo ${APIC_CRED} | jq -r .secret)
 
-# cmToken=$(curl -ks --fail -X POST "${PLATFORM_API_URL}token" \
+# cmToken=$(curl -sk --fail -X POST "${PLATFORM_API_URL}token" \
 #  -H 'Content-Type: application/json' \
 #  -H 'Accept: application/json' \
 #  -H "X-Ibm-Client-Id: $TOOLKIT_CLIENT_ID" \
@@ -534,7 +534,7 @@ TOOLKIT_CLIENT_SECRET=$(echo ${APIC_CRED} | jq -r .secret)
 
 echo "{\"username\": \"admin\", \"password\": \"$APIC_CM_ADMIN_PASSWORD\", \"realm\": \"admin/default-idp-1\", \"client_id\": \"$TOOLKIT_CLIENT_ID\", \"client_secret\": \"$TOOLKIT_CLIENT_SECRET\", \"grant_type\": \"password\"}" > "${MY_WORKINGDIR}creds.json"
 
-cmToken=$(curl -ks -X POST "${PLATFORM_API_URL}api/token" \
+cmToken=$(curl -sk -X POST "${PLATFORM_API_URL}api/token" \
  -H 'Content-Type: application/json' \
  -H 'Accept: application/json' \
  --data-binary "@${MY_WORKINGDIR}creds.json")
@@ -564,7 +564,7 @@ TOOLKIT_CREDS_URL="${PLATFORM_API_URL}api/cloud/settings/toolkit-credentials"
 # always download the credential.json
 # if test ! -e "~/.apiconnect/config-apim";then
  	mylog info "Downloading apic config json file" 1>&2
- 	curl -ks "${TOOLKIT_CREDS_URL}" -H "Authorization: Bearer ${access_token}" -H "Accept: application/json" -H "Content-Type: application/json" -o creds.json
+ 	curl -sk "${TOOLKIT_CREDS_URL}" -H "Authorization: Bearer ${access_token}" -H "Accept: application/json" -H "Content-Type: application/json" -o creds.json
 	yes | apic client-creds:set creds.json
 # 	[[ -e creds.json ]] && rm creds.json
 # fi

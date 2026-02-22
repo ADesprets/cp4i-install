@@ -10,14 +10,13 @@ function create_mail_server() {
 
   mylog info "Creating/checking mail server configuration (mymailhog)" 1>&2
 
-  # Get ClusterIP for the mail server if MailHog
+  # Get ClusterIP for the mail server (MailHog)
   export MY_MAIL_SERVER_HOST_IP=$($MY_CLUSTER_COMMAND -n ${VAR_MAIL_NAMESPACE} get svc/mail-service -o jsonpath='{.spec.clusterIP}')
   decho $lf_tracelevel "The mail server clusterIP is ${MY_MAIL_SERVER_HOST_IP} and port is ${APIC_SMTP_SERVER_PORT}"
 
   decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/mail-servers/mymailhog?fields=url\" -H \"Accept: application/json\" -H \"Authorization: Bearer *****\" -H \"Content-type: application/json\""
   mailServerUrl=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/mail-servers/mymailhog?fields=url" \
   -H "Accept: application/json" \
-  --compressed \
   -H "authorization: Bearer $access_token" \
   -H "content-type: application/json" \
   -H "Connection: keep-alive");
@@ -64,40 +63,81 @@ function replace_dp_gtw_cert() {
   decho $lf_tracelevel "Parameters: |no parameters|"
 
   mylog info "Replacing DataPower gateway endpoint certificate" 1>&2
-  # Need to get the crypto material, they are all in the secret gwv6-endpoint
-  decho $lf_tracelevel "$MY_CLUSTER_COMMAND -n ${apic_project} get secret ${lf_in_secret_name} -o jsonpath=\"{.data.tls\\.crt}\""
-  local lf_cert=$($MY_CLUSTER_COMMAND -n ${apic_project} get secret gwv6-endpoint -o jsonpath="{.data.tls\\.crt}" | tr -d '\n\r'| base64 -d | tr '\n' '|' | sed 's/|/\\\\n/g')
-  decho $lf_tracelevel "The content of the certificate to create is: $lf_cert"
-  # local lf_cert="${local lf_cert//$'\n'/\\n}"
-  local lf_ca=$($MY_CLUSTER_COMMAND -n ${apic_project} get secret gwv6-endpoint -o jsonpath="{.data.ca\\.crt}" | tr -d '\n\r'| base64 -d | tr '\n' '|' | sed 's/|/\\\\n/g')
-  decho $lf_tracelevel "The content of the CA certificate to create is: $lf_ca"
-  # local lf_ca="${local lf_ca//$'\n'/\\n}"
-  local lf_key=$($MY_CLUSTER_COMMAND -n ${apic_project} get secret gwv6-endpoint -o jsonpath="{.data.tls\\.key}" | tr -d '\n\r'| base64 -d | tr '\n' '|' | sed 's/|/\\\\n/g')
-  decho $lf_tracelevel "The content of the private key to create is: $lf_key"
-  # local lf_key="${local lf_key//$'\n'/\\n}"
 
-  # Then we need to create a Keystore
-  local lf_ks=$(printf "%s" "${lf_cert}${lf_ca}${lf_key}")
-  decho $lf_tracelevel "The content of the keystore to create is: $lf_ks"
+  local lf_ks_name="datapower-gateway-server-keystore"
 
-  # Need escaping
-  # local lf_ks_es="${lf_ks//\\/\\\\}"
-  # decho $lf_tracelevel "The content of the keystore to create is: $lf_ks"
-  local lf_ks_title="DataPower gateway server keystore 3"
-  local lf_ks_name="datapower-gateway-server-keystore-3"
-  local lf_ks_summary="Keystore containing the certificate and private key for the DataPower gateway endpoint"
-  decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/keystores\" -H \"Accept: application/json\" -H \"authorization: Bearer *****\" -H \"content-type: application/json\" --data-raw \"{\\\"name\\\":\\\"${lf_ks_name}\\\",\\\"title\\\":\\\"${lf_ks_title}\\\",\\\"summary\\\":\\\"${lf_ks_summary}\\\",\\\"keystore\\\":\\\"<value>\\\"}\""
-  keystoreUrl=$(curl -vsk "${PLATFORM_API_URL}api/orgs/admin/keystores" \
-    -X POST \
-    -H "Accept: application/json" \
-    -H "authorization: Bearer $access_token" \
-    -H "content-type: application/json" \
-    --data-raw "{\"name\":\"${lf_ks_name}\",\"title\":\"${lf_ks_title}\",\"summary\":\"${lf_ks_summary}\",\"keystore\":\"${lf_ks}\"}" | jq .url);
-  decho $lf_tracelevel "keystoreUrl: $keystoreUrl"
+  decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/keystores/${lf_ks_name}?fields=url\" -H \"Accept: application/json\" -H \"authorization: Bearer *****\" -H \"content-type: application/json\""
+  keystore=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/keystores/${lf_ks_name}?fields=url" \
+  -H "Accept: application/json" \
+  -H "authorization: Bearer $access_token" \
+  -H "content-type: application/json");
+
+  status=$(printf '%s\n' "$keystoreUrl" | jq -r '.status // empty')  
+  if [[ "$status" == "404" ]]; then
+    mylog info "Creating keystore for DataPower gateway endpoint"
+
+    local lf_ks_title="DataPower gateway server keystore"
+    local lf_ks_summary="Keystore containing the certificate and private key for the DataPower gateway endpoint"
+    
+    # Need to get the crypto material, they are all in the secret gwv6-endpoint
+    decho $lf_tracelevel "$MY_CLUSTER_COMMAND -n ${apic_project} get secret ${lf_in_secret_name} -o jsonpath=\"{.data.tls\\.crt}\""
+    local lf_cert=$($MY_CLUSTER_COMMAND -n ${apic_project} get secret gwv6-endpoint -o jsonpath="{.data.tls\\.crt}" | tr -d '\n\r'| base64 -d | tr '\n' '|' | sed 's/|/\\n/g')
+    local lf_ca=$($MY_CLUSTER_COMMAND -n ${apic_project} get secret gwv6-endpoint -o jsonpath="{.data.ca\\.crt}" | tr -d '\n\r'| base64 -d | tr '\n' '|' | sed 's/|/\\n/g')
+    local lf_key=$($MY_CLUSTER_COMMAND -n ${apic_project} get secret gwv6-endpoint -o jsonpath="{.data.tls\\.key}" | tr -d '\n\r'| base64 -d | tr '\n' '|' | sed 's/|/\\n/g')
+    local lf_ks="${lf_cert}${lf_ca}${lf_key}"
+    # decho $lf_tracelevel "The content of the keystore to create is: $lf_ks"
+
+    decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/keystores\" -H \"Accept: application/json\" -H \"authorization: Bearer *****\" -H \"content-type: application/json\" --data-raw \"{\\\"name\\\":\\\"${lf_ks_name}\\\",\\\"title\\\":\\\"${lf_ks_title}\\\",\\\"summary\\\":\\\"${lf_ks_summary}\\\",\\\"keystore\\\":\\\"<value>\\\"}\""
+    keystore=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/keystores" \
+      -H "content-type: application/json" \
+      -H "authorization: Bearer $access_token" \
+      -H "Accept: application/json" \
+    --data-raw "{\"name\":\"${lf_ks_name}\",\"title\":\"${lf_ks_title}\",\"summary\":\"${lf_ks_summary}\",\"keystore\":\"${lf_ks}\"}");
+  else
+    mylog info "Keystore $lf_ks_name already exists, use it."
+  fi
+
+  local lf_keystore_url=$(echo $keystore | jq -r .url)
+  decho $lf_tracelevel "keystoreUrl: $lf_keystore_url"
 
   # Then we need to update the TLS server profile used for the gateway endpoint to use this new keystore
-  local lf_sp_name="datapower-gateway-endpoint-tls-server-profile"
-  # local lf_tls_server_profile_url=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles?fields=url" \ 
+  local lf_sp_name="datapower-gateway-tls-server-profile"
+
+  decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles/${lf_sp_name}?fields=url\" -H \"Accept: application/json\" -H \"authorization: Bearer *****\" -H \"content-type: application/json\""
+  local lf_tls_server_profile=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles/${lf_sp_name}?fields=url" \
+  -H "Accept: application/json" \
+  -H "authorization: Bearer $access_token" \
+  -H "content-type: application/json");
+
+  status=$(printf '%s\n' "$lf_tls_server_profile" | jq -r '.status // empty')  
+  if [[ "$status" == "404" ]]; then
+    local lf_sp_title="DataPower gateway TLS server profile"
+    local lf_sp_summary="TLS server profile used for the DataPower gateway endpoint"
+    local lf_sp_protocols="[\"tls_v1.2\",\"tls_v1.3\"]"
+    local lf_sp_ciphers="[\"TLS_AES_256_GCM_SHA384\",\"TLS_CHACHA20_POLY1305_SHA256\",\"TLS_AES_128_GCM_SHA256\",\"ECDHE_ECDSA_WITH_AES_256_GCM_SHA384\",\"ECDHE_ECDSA_WITH_AES_256_CBC_SHA384\",\"ECDHE_ECDSA_WITH_AES_128_GCM_SHA256\",\"ECDHE_ECDSA_WITH_AES_128_CBC_SHA256\",\"ECDHE_ECDSA_WITH_AES_256_CBC_SHA\",\"ECDHE_ECDSA_WITH_AES_128_CBC_SHA\",\"ECDHE_RSA_WITH_AES_256_GCM_SHA384\",\"ECDHE_RSA_WITH_AES_256_CBC_SHA384\",\"ECDHE_RSA_WITH_AES_128_GCM_SHA256\",\"ECDHE_RSA_WITH_AES_128_CBC_SHA256\",\"ECDHE_RSA_WITH_AES_256_CBC_SHA\",\"ECDHE_RSA_WITH_AES_128_CBC_SHA\",\"DHE_RSA_WITH_AES_256_GCM_SHA384\",\"DHE_RSA_WITH_AES_256_CBC_SHA256\",\"DHE_RSA_WITH_AES_128_GCM_SHA256\",\"DHE_RSA_WITH_AES_128_CBC_SHA256\",\"DHE_RSA_WITH_AES_256_CBC_SHA\",\"DHE_RSA_WITH_AES_128_CBC_SHA\"]"
+
+    jsonpayload=$(jq -n \
+      --arg title "$lf_sp_title" \
+      --arg name "$lf_sp_name" \
+      --arg summary "$lf_sp_summary" \
+      --arg keystore_url "$lf_keystore_url" \
+      --argjson protocols "$lf_sp_protocols" \
+      --argjson ciphers "$lf_sp_ciphers" \
+      '{ title: $title, name: $name, version:"1.0.0", summary: $summary, protocols: $protocols, mutual_authentication:"none", limit_renegotiation: true, ciphers: $ciphers, keystore_url: $keystore_url }')
+
+    decho $lf_tracelevel "curl -skv \"${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles/${lf_sp_name}?fields=url\" -H \"Accept: application/json\" -H \"authorization: Bearer *****\" -H \"content-type: application/json\"  --data-raw \"$jsonpayload\""
+    tlsServerProfilekeystore=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles" \
+      -H "Authorization: Bearer $access_token" \
+      -H "Content-Type: application/json" \
+      -H "Accept: application/json" \
+      --data-raw "$jsonpayload");
+    
+    decho $lf_tracelevel "tlsServerProfilekeystore: $tlsServerProfilekeystore"
+  else
+    mylog info "TLS Serverprofile $lf_sp_name already exists, use it."
+  fi
+  
+  # Then we need to update the DataPower Gateway in the topology
  
   trace_out $lf_tracelevel ${FUNCNAME[0]}  
 }
@@ -175,15 +215,7 @@ function create_topology() {
   local lf_tracelevel=3
   trace_in $lf_tracelevel ${FUNCNAME[0]}
 
-  local lf_integration_url=$1
-
-  decho $lf_tracelevel "Parameters:\"$1\"|"
-
-  if [[ $# -ne 1 ]]; then
-    mylog error "You have to provide 1 argument: integration url"
-    trace_out $lf_tracelevel ${FUNCNAME[0]}
-    exit 1
-  fi
+  decho $lf_tracelevel "No Parameters|"
 
   # should increase idempotence
   mylog info "Create gateway Service"
@@ -541,8 +573,10 @@ function init_apic_variables() {
   EP_API=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-mgmt-platform-api" -o jsonpath="{.spec.host}")
   # gwv6-gateway-manager
   EP_GWD=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-gwv6-gateway-manager" -o jsonpath="{.spec.host}")
+  # EP_GWD=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-gw-gateway-manager" -o jsonpath="{.spec.host}")
   # gwv6-gateway
   EP_GW=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-gwv6-gateway" -o jsonpath="{.spec.host}")
+  # EP_GW=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-gw-gateway" -o jsonpath="{.spec.host}")
   # analytics-ai-endpoint
   EP_AI=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-a7s-ai-endpoint" -o jsonpath="{.spec.host}")
   # portal-portal-director
@@ -550,16 +584,15 @@ function init_apic_variables() {
   # portal-portal-web
   EP_PORTAL=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-ptl-portal-web" -o jsonpath="{.spec.host}")
 
-  if $INSTALL_OVERWRITE; then
-    decho $lf_tracelevel "EP_CM: https://$EP_CM"
-    decho $lf_tracelevel "EP_APIC_MGR: $EP_APIC_MGR"
-    decho $lf_tracelevel "EP_API: $EP_API"
-    decho $lf_tracelevel "EP_GWD: $EP_GWD"
-    decho $lf_tracelevel "EP_GW: $EP_GW"
-    decho $lf_tracelevel "EP_AI: $EP_AI"
-    decho $lf_tracelevel "EP_PADMIN: $EP_PADMIN"
-    decho $lf_tracelevel "EP_PORTAL: $EP_PORTAL"
-  fi
+  decho $lf_tracelevel "EP_CM: https://$EP_CM"
+  decho $lf_tracelevel "EP_APIC_MGR: $EP_APIC_MGR"
+  decho $lf_tracelevel "EP_API: $EP_API"
+  decho $lf_tracelevel "EP_GWD: $EP_GWD"
+  decho $lf_tracelevel "EP_GW: $EP_GW"
+  decho $lf_tracelevel "EP_AI: $EP_AI"
+  decho $lf_tracelevel "EP_PADMIN: $EP_PADMIN"
+  decho $lf_tracelevel "EP_PORTAL: $EP_PORTAL"
+
   # Zen
   if EP_ZEN=$($MY_CLUSTER_COMMAND -n ${apic_project} get route cpd -o jsonpath="{.spec.host}" 2> /dev/null ); then
     mylog info "EP_PORTAL: $EP_ZEN"
@@ -648,9 +681,9 @@ function create_cm_token(){
   mylog info "Creating ${MY_APIC_WORKINGDIR}resources/creds.json" 1>&2
   echo "{\"username\": \"admin\", \"password\": \"$CM_ADMIN_PASSWORD\", \"realm\": \"admin/default-idp-1\", \"client_id\": \"$TOOLKIT_CLIENT_ID\", \"client_secret\": \"$TOOLKIT_CLIENT_SECRET\", \"grant_type\": \"password\"}" > "${MY_APIC_WORKINGDIR}resources/creds.json"
   
-  decho $lf_tracelevel "curl -ks -X POST \"${PLATFORM_API_URL}api/token\" -H 'Content-Type: application/json' -H 'Accept: application/json' --data-binary \"@${MY_APIC_WORKINGDIR}resources/creds.json\""
+  decho $lf_tracelevel "curl -sk -X POST \"${PLATFORM_API_URL}api/token\" -H 'Content-Type: application/json' -H 'Accept: application/json' --data-binary \"@${MY_APIC_WORKINGDIR}resources/creds.json\""
 
-  cmToken=$(curl -ks -X POST "${PLATFORM_API_URL}api/token" \
+  cmToken=$(curl -sk -X POST "${PLATFORM_API_URL}api/token" \
    -H 'Content-Type: application/json' \
    -H 'Accept: application/json' \
    --data-binary "@${MY_APIC_WORKINGDIR}resources/creds.json")
@@ -727,15 +760,16 @@ function apic_run_all () {
   # always download the credential.json
   # if test ! -e "~/.apiconnect/config-apim";then
   mylog info "Downloading apic config json file (${MY_APIC_WORKINGDIR}resources/fullcreds.json)" 1>&2
-  curl -ks "${TOOLKIT_CREDS_URL}" -H "Authorization: Bearer ${access_token}" -H "Accept: application/json" -H "Content-Type: application/json" -o "${MY_APIC_WORKINGDIR}resources/fullcreds.json"
+  curl -sk "${TOOLKIT_CREDS_URL}" -H "Authorization: Bearer ${access_token}" -H "Accept: application/json" -H "Content-Type: application/json" -o "${MY_APIC_WORKINGDIR}resources/fullcreds.json"
   
   replace_dp_gtw_cert
+
   exit 0
 
   create_mail_server "${APIC_SMTP_SERVER_IP}" "${APIC_SMTP_SERVER_PORT}"
 
-  # TODO Add idempotence
-  create_topology $integration_url
+  # TODO Add idempotence (Remove parameter $integration_url)
+  create_topology 
   
   create_org "${APIC_PROVIDER_ORG}" "${APIC_ORG1_USERNAME}" "${APIC_ORG1_PASSWORD}" "${APIC_ORG1_USER_EMAIL}"
   

@@ -1385,7 +1385,7 @@ function install_apic() {
       install_datapower_gateway
       install_nano_gateway
     else
-      mylog info "Skipping installation of DataPower gateway and nano gateway operators because INSTALL_OVERWRITE is set to false" 1>&2
+      mylog warn "Skipping installation of DataPower gateway and nano gateway operators because INSTALL_OVERWRITE is set to false" 1>&2
     fi
 
     # Create the apiconnect subscription
@@ -1404,7 +1404,7 @@ function install_apic() {
       generate_password 10
       local lf_admin_password=${VAR_USER_PASSWORD_GEN}
       unset VAR_USER_PASSWORD_GEN
-      create_generic_secret "apic-mgmt-admin-pass" "email" "admin@" "${lf_admin_password}" "${VAR_APIC_NAMESPACE}" "${MY_APIC_WORKINGDIR}" "false"
+      create_generic_secret "apic-mgmt-admin-pass" "email" "admin@fr.ibm.com" "${lf_admin_password}" "${VAR_APIC_NAMESPACE}" "${MY_APIC_WORKINGDIR}" "false"
 
       # ManagementCluster
       mylog info "Creating APIC ManagementCluster" 1>&2
