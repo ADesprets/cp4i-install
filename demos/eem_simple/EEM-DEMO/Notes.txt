@@ -2,3 +2,14 @@ Customisation
 Container eem-demo-rest-apis, quay.io/dale-lane/eem-demo-apis
 
 Voir deploy-APIs.sh
+
+Kafka Producer ou Consumer peut prendre le schema et valider avant d'envoyer (producer) ou valider en reception (consumer)
+Serializer/Deserializer
+	ByteStream
+	String
+	JSON
+
+Validation par rapport à un schéma
+	a) En reception
+	b) En emmission
+	c) Dans EEM, police de schema validation

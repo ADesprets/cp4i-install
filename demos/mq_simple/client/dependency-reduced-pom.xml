@@ -21,6 +21,11 @@
         <plugin>
           <artifactId>maven-compiler-plugin</artifactId>
           <version>3.14.0</version>
+          <configuration>
+            <source>21</source>
+            <target>21</target>
+            <release>21</release>
+          </configuration>
         </plugin>
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
@@ -164,11 +169,11 @@
     </dependency>
   </dependencies>
   <properties>
-    <mybuild.install.directory>D:\CurrentProjects\CP4I\Installation\cp4i-install\tmp\mq_simple\target</mybuild.install.directory>
+    <mybuild.install.directory>./tmp/mq_simple/target</mybuild.install.directory>
     <maven.compiler.target>21</maven.compiler.target>
     <maven.test.skip>true</maven.test.skip>
     <maven.compiler.source>21</maven.compiler.source>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <myjar.install.directory>D:\CurrentProjects\CP4I\Installation\cp4i-install\tmp\mq_simple\jar</myjar.install.directory>
+    <myjar.install.directory>./tmp/mq_simple.jar</myjar.install.directory>
   </properties>
 </project>

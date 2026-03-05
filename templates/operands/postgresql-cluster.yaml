@@ -1,0 +1,89 @@
+apiVersion: postgres-operator.crunchydata.com/v1beta1
+kind: PostgresCluster
+metadata:
+  name: $VAR_POSTGRES_CLUSTER
+  namespace: $VAR_NAMESPACE
+spec:
+  port: 5432
+  users:
+    - databases: [$VAR_POSTGRES_DATABASE]
+      name: $VAR_POSTGRES_USER
+      options: SUPERUSER
+      password:
+        type: AlphaNumeric
+    - databases: [$VAR_POSTGRES_DATABASE]
+      name: admin
+      options: SUPERUSER
+      password:
+        type: AlphaNumeric
+  proxy:
+    pgBouncer:
+      port: $VAR_POSTGRES_DB_PORT
+      replicas: 3
+      service:
+        type: ClusterIP
+  monitoring:
+    pgmonitor:
+      exporter:
+        resources:
+          limits:
+            cpu: 100m
+            memory: 128Mi
+          requests:
+            cpu: 50m
+            memory: 64Mi
+  backups:
+    pgbackrest:
+      global:
+        repo1-retention-full: "2"
+        repo1-retention-diff: "3"
+        archive-push-queue-max: 4GiB
+        repo1-retention-archive-type: "diff"
+        repo1-retention-archive: "2"
+      repos:
+        - name: repo1
+          schedules:
+            full: "0 2 * * 0"
+            differential: "0 2 * * 1-6"
+            incremental: "0 */8 * * *"
+          volume:
+            volumeClaimSpec:
+              storageClassName: $MY_FILE_STORAGE_CLASS
+              accessModes: [ReadWriteMany]
+              resources:
+                requests:
+                  storage: 100Gi
+  service:
+    type: ClusterIP
+  patroni:
+    dynamicConfiguration:
+      postgresql:
+        parameters:
+          max_connections: 100
+          shared_buffers: 256MB
+        pg_hba:
+          - "hostssl all all 10.131.0.0/14 md5"
+      synchronous_mode: false
+    leaderLeaseDurationSeconds: 30
+    port: 8008
+    switchover:
+      enabled: true
+      type: Switchover
+    syncPeriodSeconds: 10
+  instances:
+    - name: instance1
+      replicas: 3
+      dataVolumeClaimSpec:
+        storageClassName: $MY_BLOCK_STORAGE_CLASS
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests:
+            storage: 50Gi
+      resources:
+        limits:
+          cpu: "1"
+          memory: 1Gi
+        requests:
+          cpu: 500m
+          memory: 512Mi
+  postgresVersion: $MY_POSTGRES_VERSION

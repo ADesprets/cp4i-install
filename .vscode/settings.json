@@ -1,11 +1,4 @@
 {
-    "java.configuration.updateBuildConfiguration": "interactive",
-    "maven.terminal.favorites": [
-        {
-            "command": "liberty:dev",
-            "debug": false
-        }
-    ]
-    
+    "java.compile.nullAnalysis.mode": "automatic",
+    "java.configuration.updateBuildConfiguration": "interactive"
 }
-

@@ -2,8 +2,8 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.ibm.mq.samples.jms</groupId>
-  <artifactId>mq-dev-patterns</artifactId>
-  <name>mq-dev-patterns</name>
+  <artifactId>mq-kafka</artifactId>
+  <name>mq-kafka</name>
   <version>0.1.0</version>
   <url>https://github.com/ibm-messaging/mq-dev-patterns/</url>
   <build>
@@ -20,6 +20,11 @@
         <plugin>
           <artifactId>maven-compiler-plugin</artifactId>
           <version>3.8.0</version>
+          <configuration>
+            <source>21</source>
+            <target>21</target>
+            <release>21</release>
+          </configuration>
         </plugin>
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
@@ -92,7 +97,7 @@
         <dependency>
           <groupId>com.ibm.mq</groupId>
           <artifactId>com.ibm.mq.allclient</artifactId>
-          <version>9.4.0.0</version>
+          <version>9.4.1.0</version>
           <scope>compile</scope>
         </dependency>
       </dependencies>

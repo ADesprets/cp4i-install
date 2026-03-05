@@ -35,7 +35,7 @@ public class OrderGenerator {
     private final double maxPrice;
     /** helper class to randomly generate the name of a product */
 
-    private final Faker faker = new Faker(new Locale("fr"));
+    private final Faker faker = new Faker(Locale.of("fr"));
 
     public OrderGenerator() {
         this.regions = DataGenConfig.CONFIG_LOCATIONS_REGIONS_VALUE;

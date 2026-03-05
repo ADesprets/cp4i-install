@@ -1,0 +1,24 @@
+apiVersion: postgres-operator.crunchydata.com/v1beta1
+kind: PGAdmin
+metadata:
+  name: $VAR_PG_PGADMIN_NAME
+  namespace: $VAR_NAMESPACE
+spec:
+  dataVolumeClaimSpec:
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: 1Gi
+  serverGroups:
+    - name: Crunchy Postgres for Kubernetes
+      postgresClusterSelector:
+        matchLabels:
+          postgres-operator.crunchydata.com/cluster: $VAR_POSTGRES_CLUSTER
+  serviceName: $MY_PG_PGADMIN_SVC_NAME
+  users:
+    - passwordRef:
+        key: $VAR_PG_PGADMIN_PASSWORD_ID
+        name: $VAR_PG_PGADMIN_SECRET_NAME
+      role: Administrator
+      username: pgadmin@example.com

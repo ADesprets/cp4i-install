@@ -1111,7 +1111,8 @@ function display_access_info() {
     lf_cm_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get ManagementCluster -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].status.endpoints[?(@.name=="admin")].uri}')
     mylog info "APIC Cloud Manager endpoint: ${lf_cm_url}" 0
     echo "<TR><TD><A HREF=${lf_cm_url}>APIC Cloud Manager UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
-    lf_cm_admin_pwd_secret_name=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get ManagementCluster -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].spec.adminUser.secretName}')
+    # lf_cm_admin_pwd_secret_name=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get ManagementCluster -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].spec.adminUser.secretName}')
+    lf_cm_admin_pwd_secret_name=apic-mgmt-admin-pass
     lf_cm_admin_pwd=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get secret ${lf_cm_admin_pwd_secret_name} -o jsonpath='{.data.password}' | base64 -d)
     mylog info "APIC Cloud Manager admin password: ${lf_cm_admin_pwd}" 0
     lf_mgr_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get ManagementCluster -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].status.endpoints[?(@.name=="apiManager")].uri}')
@@ -1230,7 +1231,7 @@ function display_access_info() {
 
     # (range is a control structure in JSONPath that allows you to iterate over a list of items.), the , is the separator
     qms=$(oc -n $VAR_MQ_NAMESPACE get QueueManager -o=jsonpath='{range .items[*]}{.metadata.name},{.status.adminUiUrl}{"\n"}{end}')
-    while IFS=, read -r name console; do
+    while IFS=, read -r qm_name qm_console; do
       mylog info "${qm_name} MQ Management Console : ${qm_console}" 0
       echo  "<TR><TD><A HREF=${qm_console}>${qm_name} MQ Management Console</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
     done <<< "$qms"
@@ -1478,6 +1479,8 @@ function mylog() {
     result)  c=14;;         #light blue
     debug)   c=8            #grey
              p='CMD: ';; 
+    run)     c=27           #blue
+             p='RUN: ';; 
     wait)    c=4            #purple
              p="$(date) ";;
     check)   c=6            #cyan
@@ -1681,7 +1684,7 @@ function is_case_downloaded() {
 # Check that all required executables are installed
 # @param 1:
 function check_command_exist() {
-  local lf_tracelevel=5
+  local lf_tracelevel=6
   trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_command=$1
@@ -2899,18 +2902,19 @@ function create_generic_secret() {
   trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_secret_name="$1"
-  local lf_in_generic_secret_id="$2"
+  local lf_in_secret_id_key="$2"
   local lf_in_username="$3"
-  local lf_in_password="$4"
-  local lf_in_namespace="$5"
-  local lf_in_workingdir="$6"
-  local lf_in_overide="$7"
+  local lf_in_secret_pwd_key="$4"
+  local lf_in_password="$5"
+  local lf_in_namespace="$6"
+  local lf_in_workingdir="$7"
+  local lf_in_overide="$8"
 
   # local lf_working_relative_path=$(echo "${lf_in_workingdir#"$MY_WORKINGDIR"}")
-  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"********\"|\"$5\"|\"$6\"|\"$7\"|"
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"********\"|\"$5\"|\"$6\"|\"$7\"|\"$8\"|"
   
-  if [[ $# -ne 7 ]]; then
-    mylog error "You have to provide 7 arguments: secret name, generic secret id (username or email), user name, user password, namespace, working directory and overide boolean" >/dev/null 2>&1;
+  if [[ $# -ne 8 ]]; then
+    mylog error "You have to provide 8 arguments: secret name, generic secret id (username or email), user name, user password, namespace, working directory and overide boolean" >/dev/null 2>&1;
     trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
@@ -2921,13 +2925,14 @@ function create_generic_secret() {
     local lf_secret_file="secret.yaml"
   fi
   
-  export VAR_GENERIC_SECRET_ID=$2
-  export VAR_SECRET_NAME=$lf_in_secret_name
-  export VAR_SECRET_USERNAME=$lf_in_username
-  export VAR_SECRET_PASSWORD=$lf_in_password
-  export VAR_NAMESPACE=$lf_in_namespace
+  export VAR_SECRET_ID_KEY="${lf_in_secret_id_key}"
+  export VAR_SECRET_NAME="${lf_in_secret_name}"
+  export VAR_SECRET_USERNAME="$lf_in_username"
+  export VAR_SECRET_PWD_KEY="${lf_in_secret_pwd_key}"
+  export VAR_SECRET_PASSWORD="$lf_in_password"
+  export VAR_NAMESPACE="$lf_in_namespace"
 
-  if ! $MY_CLUSTER_COMMAND -n $lf_in_ns get secret ${lf_in_secret_name} >/dev/null 2>&1; then
+  if ! $MY_CLUSTER_COMMAND -n $lf_in_namespace get secret ${lf_in_secret_name} >/dev/null 2>&1; then
     mylog info "Secret ${lf_in_secret_name} does not exist in namespace ${lf_in_namespace}, creating it" >/dev/null 2>&1;
     create_oc_resource "Secret" "$lf_in_secret_name" "${MY_YAMLDIR}resources/" "${lf_in_workingdir}" "${lf_secret_file}" "$lf_in_namespace"
   else
@@ -2939,7 +2944,7 @@ function create_generic_secret() {
     fi
   fi
   
-  unset VAR_GENERIC_SECRET_ID VAR_SECRET_NAME VAR_SECRET_USERNAME VAR_SECRET_PASSWORD VAR_NAMESPACE
+  unset VAR_SECRET_ID_KEY VAR_SECRET_NAME VAR_SECRET_USERNAME VAR_SECRET_PWD_KEYVAR_SECRET_PASSWORD VAR_NAMESPACE
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
@@ -3131,7 +3136,7 @@ function create_oc_resource() {
   decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|\"$5\"|\"$6\"|"
 
   if [[ $# -ne 6 ]]; then
-    mylog error "You have to provide 6 arguments: type, resource, namespace, source directory, target directory, file and namespace"
+    mylog error "You have to provide 6 arguments: type, resource name, source directory, target directory, file and namespace"
     trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi
@@ -3239,7 +3244,7 @@ function create_operand_instance() {
   decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|\"$5\"|\"$6\"|\"$7\"|\"$8\"|"
 
   if [[ $# -ne 8 ]]; then
-    mylog error "You have to provide 6 arguments: type, resource, source directory, target directory, yaml file, namespace, jsonpath and state"
+    mylog error "You have to provide 8 arguments: type, resource, source directory, target directory, yaml file, namespace, jsonpath and state"
     trace_out $lf_tracelevel ${FUNCNAME[0]}
     exit  1
   fi

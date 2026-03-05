@@ -4,6 +4,7 @@ metadata:
   name: ${VAR_ES_KAFKA_CONNECT_INSTANCE_NAME}
   annotations:
     eventstreams.ibm.com/use-connector-resources: 'true'
+    spec.template.pod.metadata.annotations.productVersion=${MY_ES_VERSION_NUM}
   labels:
     backup.eventstreams.ibm.com/component: kafkaconnect
   namespace: ${VAR_ES_NAMESPACE}    

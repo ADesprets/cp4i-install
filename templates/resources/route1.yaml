@@ -1,0 +1,30 @@
+{
+  "apiVersion": "route.openshift.io/v1",
+  "kind": "Route",
+  "metadata": {
+    "annotations": {
+      "haproxy.router.openshift.io/balance": "$MY_APIC_GW_ROUTE_BALANCE"
+    },
+    "labels": {
+      "app.kubernetes.io/instance": "${VAR_APIC_GW_ROUTE_INSTANCE}",
+      "app.kubernetes.io/part-of": "${VAR_APIC_GW_ROUTE_PARTOF}"
+    },
+    "name": "${VAR_APIC_GW_ROUTE_NAME}",
+    "namespace": "$VAR_NAMESPACE"
+  },
+  "spec": {
+    "host": "$VAR_APIC_GW_ROUTE_HOST",
+    "port": {
+      "targetPort": $MY_APIC_GW_ROUTE_PORT
+    },
+    "tls": {
+      "termination": "passthrough"
+    },
+    "to": {
+      "kind": "Service",
+      "name": "${VAR_APIC_GW_ROUTE_INSTANCE}-datapower",
+      "weight": 100
+    },
+    "wildcardPolicy": "None"
+  }
+}

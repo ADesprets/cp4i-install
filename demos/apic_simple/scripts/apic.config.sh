@@ -779,15 +779,13 @@ function apic_run_all () {
   mylog info "Downloading apic config json file (${MY_APIC_WORKINGDIR}resources/fullcreds.json)" 1>&2
   curl -sk "${TOOLKIT_CREDS_URL}" -H "Authorization: Bearer ${access_token}" -H "Accept: application/json" -H "Content-Type: application/json" -o "${MY_APIC_WORKINGDIR}resources/fullcreds.json"
   
-  replace_dp_gtw_cert
-
-  exit 0
-
   create_mail_server "${APIC_SMTP_SERVER_IP}" "${APIC_SMTP_SERVER_PORT}"
 
   # TODO Add idempotence (Remove parameter $integration_url)
   create_topology 
-  
+
+  replace_dp_gtw_cert
+
   create_org "${APIC_PROVIDER_ORG}" "${APIC_ORG1_USERNAME}" "${APIC_ORG1_PASSWORD}" "${APIC_ORG1_USER_EMAIL}"
   
   # Create API Manager token

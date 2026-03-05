@@ -23,7 +23,7 @@ function create_es() {
 ################################################
 # Create kafka topics
 function create_kafka_topics () {
-  local lf_tracelevel=3
+  local lf_tracelevel=4
   trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_source_directory="${MY_ES_SIMPLE_DEMODIR}resources/"
@@ -54,7 +54,7 @@ function create_kafka_topics () {
 ################################################
 # Create kafka users
 function create_kafka_users () {
-  local lf_tracelevel=3
+  local lf_tracelevel=4
   trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_source_directory="${MY_ES_SIMPLE_DEMODIR}resources/"

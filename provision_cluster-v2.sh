@@ -1075,7 +1075,7 @@ function install_milvus() {
     create_milvus_root_certificate
     
     # Create secret
-    create_generic_secret "milvus-db-cred" "username" "milvus-admin" "milvusPassw0rd!" "${VAR_MILVUS_OPERATOR_NAMESPACE}" "${MY_MILVUS_WORKINGDIR}" "false"
+    create_generic_secret "milvus-db-cred" "username" "milvus-admin" "password" "milvusPassw0rd!" "${VAR_MILVUS_OPERATOR_NAMESPACE}" "${MY_MILVUS_WORKINGDIR}" "false"
 
     # Add Milvus Operator
     mylog info "Add various service accounts to the correct SCC"  1>&2
@@ -1181,7 +1181,7 @@ function install_valkey() {
     export VAR_VALKEY_AUTHENTICATION_SECRET="valkey-${VAR_VALKEY_NAMESPACE}-secret"
     # TODO if the password starts with special charater it can fails
     local lf_store_password=$(tr -dc 'A-Za-z0-9' < /dev/urandom | fold -w 20 | head -n 1)
-    create_generic_secret "${VAR_VALKEY_AUTHENTICATION_SECRET}"  "username" "default" "${lf_store_password}" "${VAR_VALKEY_NAMESPACE}" "${MY_VALKEY_WORKINGDIR}" "false"
+    create_generic_secret "${VAR_VALKEY_AUTHENTICATION_SECRET}" "username" "default" "password" "${lf_store_password}" "${VAR_VALKEY_NAMESPACE}" "${MY_VALKEY_WORKINGDIR}" "false"
 
     # For OpenShift add the service accounts to the restricted SCC
     decho $lf_tracelevel "oc adm policy add-scc-to-user restricted -z default -n ${VAR_VALKEY_NAMESPACE}"
@@ -1372,7 +1372,8 @@ function install_apic() {
     add_ibm_entitlement "$VAR_APIC_NAMESPACE"
   
     # Add the API Connect catalog sources to your cluster using ibm_pak plugin
-    mylog info "Add API Connect catalog sources using ibm_pak plugin" 1>&2
+    mylog warn "There is an error with ibm-pak catalog source is incorrect: https://github.com/IBM/cloud-pak/blob/master/repo/case/ibm-apiconnect/7.1.0/OLM/catalog-sources-linux-amd64-all.yaml and
+https://github.com/IBM/cloud-pak/blob/master/repo/case/ibm-apiconnect/7.1.0/OLM/catalog-sources-all.yaml" 1>&2
     check_add_cs_ibm_pak $MY_APIC_CASE $MY_APIC_OPERATOR $MY_APIC_CATALOGSOURCE_LABEL amd64
     if [[ -z $MY_APIC_VERSION ]]; then
       export MY_APIC_VERSION=$VAR_APP_VERSION
@@ -1383,7 +1384,7 @@ function install_apic() {
     # Install operators for DataPower gateway and nano gateway
     if $INSTALL_OVERWRITE; then
       install_datapower_gateway
-      install_nano_gateway
+      # install_nano_gateway
     else
       mylog warn "Skipping installation of DataPower gateway and nano gateway operators because INSTALL_OVERWRITE is set to false" 1>&2
     fi
@@ -1404,7 +1405,7 @@ function install_apic() {
       generate_password 10
       local lf_admin_password=${VAR_USER_PASSWORD_GEN}
       unset VAR_USER_PASSWORD_GEN
-      create_generic_secret "apic-mgmt-admin-pass" "email" "admin@fr.ibm.com" "${lf_admin_password}" "${VAR_APIC_NAMESPACE}" "${MY_APIC_WORKINGDIR}" "false"
+      create_generic_secret "apic-mgmt-admin-pass" "email" "admin@fr.ibm.com" "password" "${lf_admin_password}" "${VAR_APIC_NAMESPACE}" "${MY_APIC_WORKINGDIR}" "false"
 
       # ManagementCluster
       mylog info "Creating APIC ManagementCluster" 1>&2
@@ -1419,7 +1420,7 @@ function install_apic() {
       generate_password 10
       lf_admin_password=${VAR_USER_PASSWORD_GEN}
       unset VAR_USER_PASSWORD_GEN
-      create_generic_secret "$MY_DPGW_ADMIN_USER_SECRET" "" "" "${lf_admin_password}" "${VAR_APIC_NAMESPACE}" "${MY_APIC_WORKINGDIR}" "false"
+      create_generic_secret "$MY_DPGW_ADMIN_USER_SECRET" "" "" "password" "${lf_admin_password}" "${VAR_APIC_NAMESPACE}" "${MY_APIC_WORKINGDIR}" "false"
       mylog info "Creating APIC GatewayCluster" 1>&2
       create_operand_instance "GatewayCluster" "${VAR_APIC_INSTANCE_NAME}-gwv6" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-GATEWAY-Capability.yaml" "$VAR_APIC_NAMESPACE" "{.status.phase}" "Running"
       # Nano Gateway
@@ -1431,7 +1432,7 @@ function install_apic() {
       generate_password 10
       lf_admin_password=${VAR_USER_PASSWORD_GEN}
       unset VAR_USER_PASSWORD_GEN
-      create_generic_secret "wmapigateway-admin-secret" "" "" "${lf_admin_password}" "${VAR_APIC_NAMESPACE}" "${MY_APIC_WORKINGDIR}" "false"    
+      create_generic_secret "wmapigateway-admin-secret" "" "" "password" "${lf_admin_password}" "${VAR_APIC_NAMESPACE}" "${MY_APIC_WORKINGDIR}" "false"    
       # I have commented this because it is optional
       # generate_password 12
       # lf_admin_password=${VAR_USER_PASSWORD_GEN}
@@ -1464,6 +1465,116 @@ function install_apic() {
 }
 
 ################################################
+# Install Postgre Crunchy operator
+# @param 1: lf_in_postgre_namespace: the namespace where the postgre operator and instances will be installed
+# @param 2: lf_in_postgre_op_name: the name of the postgre operator subscription and operator group, for example: pg-operatorgroup
+# @param 3: lf_in_working_dir: the working directory where the logs and generated files will be stored
+function install_postgresql() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  local lf_in_postgre_namespace="$1"
+  mylog info "==== Installing Postgre Crunchy operator in  ${lf_in_postgre_namespace} namespace (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  local lf_in_postgre_op_name="$2"
+  local lf_in_working_dir="$3"
+
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|"
+
+  check_directory_exist_create "${lf_in_working_dir}"
+
+  create_project "${lf_in_postgre_namespace}" "${lf_in_postgre_namespace} project" "postgre crunchy" "${MY_RESOURCESDIR}" "${lf_in_working_dir}"
+  add_ibm_entitlement ${lf_in_postgre_namespace}
+
+  export VAR_OPERATORGROUP=${lf_in_postgre_op_name}
+  export VAR_NAMESPACE=${lf_postgre_namespace}
+
+  # Create an OperatorGroup for postgre Operator
+  # create_oc_resource "OperatorGroup" "${lf_in_postgre_op_name}" "${MY_RESOURCESDIR}" "${lf_in_working_dir}" "operator-group-single.yaml" "${lf_in_postgre_namespace}"
+  unset VAR_OPERATORGROUP VAR_NAMESPACE
+
+  # Create the postgre operator subscription
+  mylog info "Creating PostGre operator subscription" 1>&2
+  create_operator_instance "${MY_POSTGRES_OPERATOR}" "${MY_POSTGRES_CATALOGSOURCE_LABEL}" "${MY_OPERATORSDIR}" "${MY_POSTGRES_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
+
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of Postgre Crunchy (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+}
+
+################################################
+# Create PostGre database
+# @param 1: lf_in_namespace: the namespace where the postgre database is created
+# @param 2: lf_in_postgre_op_name: the name of the postgre operator subscription and operator group, for example: pg-operatorgroup
+# @param 3: lf_in_working_dir: the working directory where the logs and generated files will be stored
+function crt_postgresql_db() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  local lf_in_namespace="$1"
+  mylog info "==== Create PostGre database in ${lf_in_namespace} namespace (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  local lf_in_pg_cluster_name="$2"
+  local lf_in_pg_db_name="$3"
+  local lf_in_secret_name="$4"
+  local lf_in_db_username="$5"
+  local lf_in_db_password="$6"
+  local lf_in_working_dir="$7"
+  local lf_in_db_description="$8"
+
+  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|\"$5\"|\"$6\"|\"$7\"|\"$8\"|"
+
+  check_directory_exist_create "${lf_in_working_dir}"
+
+  # Create a PostGreSQL DB secret
+  create_generic_secret "${lf_in_secret_name}" "username" "${lf_in_db_username}" "password" "${lf_in_db_password}" "${lf_in_namespace}" "${lf_in_working_dir}" "false"
+
+  # PostGreSQL DB (Operand)
+  export VAR_POSTGRES_CLUSTER="${lf_in_pg_cluster_name}"
+  export VAR_POSTGRES_DATABASE="${lf_in_pg_db_name}"
+  export VAR_POSTGRES_DB_PORT=5432
+  export VAR_POSTGRES_USER="${lf_in_db_username}"
+  export VAR_POSTGRES_SECRET="${lf_in_secret_name}"
+  export VAR_POSTGRES_DATABASE_DESCRIPTION="${lf_in_db_description}"
+  export VAR_NAMESPACE="${lf_in_namespace}"
+  # create_operand_instance "PostgresCluster" "${VAR_APIC_GRAPHQL_PG_CLUSTER_NAME}" "${MY_OPERANDSDIR}" "${lf_in_working_dir}" "postgresql-cluster.yaml" "${lf_in_namespace}" "{.status.conditions[?(@.type==\"Ready\")].status}" "True"
+  
+  # Create pgAdmin instance
+  # Create generic secret for PGAdmin
+  local lf_pgadmin_password="Passw0rd!"
+  create_generic_secret "${lf_in_pg_cluster_name}-pgadmin-pwd" "" "" "password" "${lf_pgadmin_password}" "${lf_in_namespace}" "${lf_in_working_dir}" "false"
+
+  export VAR_PG_PGADMIN_NAME="${lf_in_pg_cluster_name}-pgadmin"
+  export VAR_PG_PGADMIN_PASSWORD_ID="password"
+  export VAR_PG_PGADMIN_SECRET_NAME="${lf_in_pg_cluster_name}-pgadmin-pwd"
+  export MY_PG_PGADMIN_SVC_NAME="${lf_in_pg_cluster_name}-pgadmin-svc"
+  export VAR_NAMESPACE="${lf_in_namespace}"
+  # create_operand_instance "PGAdmin" "${VAR_PG_PGADMIN_NAME}" "${MY_OPERANDSDIR}" "${lf_in_working_dir}" "postgresql-pgadmin-instance.yaml" "${lf_in_namespace}" "{.status.conditions[?(@.type==\"Ready\")].status}" "True"
+  
+  export PGADMIN_GW_ROUTE_NAME=pgadmin-rte
+  export VAR_NAMESPACE="${lf_in_namespace}"
+  # Create the route for the pgAdmin database explorer
+  create_oc_resource "Route" "pgadmin-rte" "${MY_RESOURCESDIR}" "${lf_in_working_dir}" "pg-admin-route.yaml" "${lf_in_namespace}"
+
+  exit 0
+
+  # Authorize superuser access
+  $MY_CLUSTER_COMMAND -n $VAR_POSTGRES_NAMESPACE patch "${MY_POSTGRES_CRD_CLUSTER}" $lf_in_cluster_name --type=merge -p '{"spec":{"enableSuperuserAccess":true}}' | awk '{printf "%*s%s\n", NR * $SC_SPACES_COUNTER, "", $0}'
+
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of Postgre Crunchy (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+}
+
+################################################
 # Install APIC Graphql (Ex Stepzen)
 # https://www.ibm.com/docs/en/api-connect/graphql/1.x?topic=installing-maintaining-api-connect-graphql
 # https://www.ibm.com/docs/en/api-connect/graphql/1.x?topic=graphql-installing-api-connect
@@ -1482,15 +1593,18 @@ function install_apic_graphql() {
 
     local lf_postgresql_host lf_dsn lf_type lf_cr_name
     local lf_tgz_file lf_deploy_dir
-    local lf_path lf_state lf_cr_name lf_url
+    local lf_path lf_state lf_url
 
     check_directory_exist_create "${MY_APIC_GRAPHQL_WORKINGDIR}"
   
     create_project "$VAR_APIC_GRAPHQL_NAMESPACE" "$VAR_APIC_GRAPHQL_NAMESPACE project" "For APIC Graphql" "${MY_RESOURCESDIR}" "${MY_APIC_GRAPHQL_WORKINGDIR}"
     add_ibm_entitlement $VAR_APIC_GRAPHQL_NAMESPACE
 
+    # Installation of the postgre database in the stepzen namespace and reusing the stepzen working directory
+    install_postgresql "${VAR_APIC_GRAPHQL_NAMESPACE}" "${MY_POSTGRES_OPERATORGROUP}" "${MY_POSTGRES_WORKINGDIR}" "label"
+
     # create a PostgreSQL database for the APIC Graphql
-    create_edb_postgres_db "${VAR_POSTGRES_CLUSTER}" "${VAR_POSTGRES_DATABASE}" "${VAR_POSTGRES_USER}" "${MY_POSTGRES_PASSWORD}" "${MY_POSTGRES_DSN_SECRET}" "Postgres DB for APIC Graphql"
+    crt_postgresql_db "${VAR_APIC_GRAPHQL_NAMESPACE}" "${VAR_APIC_GRAPHQL_PG_CLUSTER_NAME}" "${VAR_APIC_GRAPHQL_PG_DB_NAME}" "${MY_POSTGRES_CREDS_SECRET}" "${VAR_POSTGRES_USER}" "${MY_POSTGRES_PASSWORD}" "${MY_POSTGRES_WORKINGDIR}" "Postgres DB for APIC Graphql"
 
     # local lf_postgresql_password=$($MY_CLUSTER_COMMAND -n $VAR_POSTGRES_NAMESPACE get secret "${VAR_POSTGRES_CLUSTER}-superuser" -o jsonpath='{.data.paswword}' | base64 -d)
     # create a generic secret for the PostgreSQL server
@@ -2283,74 +2397,6 @@ function customise_debug_tool() {
 
   local lf_ending_date=$(date)    
   mylog info "==== Installation of the debug tool (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
-}
-
-################################################
-# Create a PostGreSQL DB
-# @param 1: postgresql cluster name
-# @param 2: postgresql database name
-# @param 3: postgresql database username
-# @param 4: postgresql database password
-# @param 5: postgresql secret name
-# @param 6: postgresql database description
-# @param 7: namespace
-# @param 8: working directory
-# 
-function create_edb_postgres_db() {
-  local lf_tracelevel=2
-  trace_in $lf_tracelevel ${FUNCNAME[0]}
-
-  local lf_in_cluster_name="$1"
-  local lf_in_db_name="$2"
-  local lf_in_db_username="$3"
-  local lf_in_db_password="$4"
-  local lf_in_secret_name="$5"
-  local lf_in_db_description="$6"
-  decho $lf_tracelevel "Parameters:\"$1\"|\"$2\"|\"$3\"|\"$4\"|\"$5\"|\"$6\"|"
-  
-  check_directory_exist_create "${MY_EDB_POSTGRES_WORKINGDIR}"
-
-  create_project "$VAR_POSTGRES_NAMESPACE" "EDB PostGreSQL project" "For EDB PostGreSQL" "${MY_RESOURCESDIR}" "${MY_EDB_POSTGRES_WORKINGDIR}"
-
-  # Create a PostGreSQL DB secret
-  export VAR_NAMESPACE=$VAR_POSTGRES_NAMESPACE
-  export VAR_CERT_SECRET_NAME=$lf_in_secret_name
-  export VAR_USERNAME=$lf_in_db_username
-  export VAR_PASSWORD=$lf_in_db_password
-  create_oc_resource "Secret" "${lf_in_secret_name}" "${MY_RESOURCESDIR}" "${MY_EDB_POSTGRES_WORKINGDIR}" "secret.yaml" "$VAR_POSTGRES_NAMESPACE"
-  unset VAR_NAMESPACE VAR_CERT_SECRET_NAME VAR_USERNAME VAR_PASSWORD
-
-  # PostGreSQL DB
-  export VAR_POSTGRES_CLUSTER="${lf_in_cluster_name}"
-  export VAR_POSTGRES_DATABASE="${lf_in_db_name}"
-  export VAR_POSTGRES_USER="${lf_in_db_username}"
-  export VAR_POSTGRES_SECRET="${lf_in_secret_name}"
-  export VAR_POSTGRES_DATABASE_DESCRIPTION="${lf_in_db_description}"
-
-  # the following command to be used with ibm postgres
-  # export VAR_POSTGRES_IMAGE_NAME=$($MY_CLUSTER_COMMAND get packagemanifests -n $MY_CATALOGSOURCES_NAMESPACE --selector=$MY_POSTGRES_CATALOGSOURCE_NAME -o json | jq --arg channel "$MY_POSTGRES_CHL" '.items[].status.channels[] | select(.name == $channel)' | jq -r '.currentCSVDesc.relatedImages[]   | select(startswith("icr.io/cpopen/edb/postgresql:"))' | sort -V | tail -n 1)
-
-  # and this with EDB Postgres
-  export VAR_POSTGRES_IMAGE_NAME=$($MY_CLUSTER_COMMAND get packagemanifests -n $MY_CATALOGSOURCES_NAMESPACE --selector=$MY_POSTGRES_CATALOGSOURCE_NAME -o json | jq --arg channel "$MY_POSTGRES_CHL" '.items[].status.channels[] | select(.name == $channel)' | jq -r '.currentCSVDesc.relatedImages[]')
-  create_operand_instance "${MY_POSTGRES_CRD_CLUSTER}" "${lf_in_cluster_name}" "${MY_POSTGRES_DIR}" "${MY_EDB_POSTGRES_WORKINGDIR}" "edb-postgres-cluster.yaml" "$VAR_POSTGRES_NAMESPACE" "{.status.conditions[?(@.type==\"Ready\")].status}" "True"
-  if $MY_CLUSTER_COMMAND -n $VAR_POSTGRES_NAMESPACE wait --for=condition=Ready pod -l k8s.enterprisedb.io/cluster=$lf_in_cluster_name --timeout=300s; then
-    mylog info  "✅ All Pods are Ready!"
-  else
-    mylog info "❌ Timeout or error waiting for Pods to be Ready."
-    exit 1
-  fi
-  #unset VAR_POSTGRES_CLUSTER VAR_POSTGRES_DATABASE VAR_POSTGRES_USER VAR_POSTGRES_SECRET VAR_POSTGRES_DATABASE_DESCRIPTION VAR_POSTGRES_IMAGE_NAME
-  
-  # Authorize superuser access
-  $MY_CLUSTER_COMMAND -n $VAR_POSTGRES_NAMESPACE patch "${MY_POSTGRES_CRD_CLUSTER}" $lf_in_cluster_name --type=merge -p '{"spec":{"enableSuperuserAccess":true}}' | awk '{printf "%*s%s\n", NR * $SC_SPACES_COUNTER, "", $0}'
-
-  # Here after how to check the status of the PostGreSQL DB and connect to it
-  # $MY_CLUSTER_COMMAND run pg-check --image=postgres:15 --restart=Never -- sleep 3600
-  # $MY_CLUSTER_COMMAND exec -it pg-check -- bash
-  # psql -h <postgresql_svc> -U <postgres_user> -d <database_name> // password is asked
-  # \q to quit
-
-  trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################

@@ -1,0 +1,57 @@
+{
+  "namespace": "com.wms.inventory",
+  "type": "record",
+  "name": "InventoryItem",
+  "fields": [
+    {
+      "name": "itemID",
+      "type": "string",
+      "doc": "Item id"
+    },
+    {
+      "name": "label",
+      "type": "string",
+      "doc": "Item name"
+    },
+    {
+      "name": "description",
+      "type": "string",
+      "doc": "Detailed description"
+    },
+    {
+      "name": "category",
+      "type": "string",
+      "doc": "Catégory of the product"
+    },
+    {
+      "name": "quantityAvailable",
+      "type": "string",
+      "doc": "Available quantity"
+    },
+    {
+      "name": "status",
+      "type": "string",
+      "doc": "Stock status (ex: LOW/Medium/HIGH)"
+    },
+    {
+      "name": "format",
+      "type": "string",
+      "doc": "Format Standard/Oversized/Roll "
+    },
+    {
+      "name": "weight",
+      "type": "string",
+      "doc": "Weight in grammes"
+    },
+    {
+      "name": "location",
+      "type": "string",
+      "doc": "Warehouse ID "
+    },
+    {
+      "name": "lastUpdated",
+      "type": "string",
+      "doc": "time that the order was made"
+    }
+  ]
+}

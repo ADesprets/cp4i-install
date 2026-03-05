@@ -42,7 +42,7 @@ function create_es() {
 ################################################
 # Create kafka topics
 function create_kafka_topics () {
-  local lf_tracelevel=3
+  local lf_tracelevel=4
 	trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_source_directory="$1"
@@ -82,7 +82,7 @@ function create_kafka_topics () {
 ################################################
 # Create kafka users
 function create_kafka_users () {
-  local lf_tracelevel=3
+  local lf_tracelevel=4
 	trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   local lf_in_source_directory="$1"
@@ -188,7 +188,7 @@ function create_eventstreams_instance () {
 ################################################
 # run all
 function es_run_all () {
-  local lf_tracelevel=3
+  local lf_tracelevel=5
 	trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   # Create Event Streams instances
