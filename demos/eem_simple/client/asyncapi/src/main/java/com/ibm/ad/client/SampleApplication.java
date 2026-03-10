@@ -40,7 +40,7 @@ public class SampleApplication {
       Decoder decoder = DecoderFactory.get().jsonDecoder(schema, jsonMessage);
       GenericRecord record = reader.read(null, decoder); // Validation happens here!
       
-      // Step 2: Serialize validated record to bytes
+      // Step 2: Serialize validated record to JSON
       ByteArrayOutputStream out = new ByteArrayOutputStream();
       JsonEncoder encoder = EncoderFactory.get().jsonEncoder(schema, out);
       GenericDatumWriter<GenericRecord> writer = new GenericDatumWriter<>(schema);
@@ -99,7 +99,7 @@ public class SampleApplication {
       props.put(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PEM");      
     }
 
-    // Consumer or producer
+    // Consumer or Producer
     boolean isConsumer=false;
     if (isConsumer) {
       KafkaConsumer<String, String> consumer = new KafkaConsumer<String, String>(props);

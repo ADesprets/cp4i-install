@@ -1,0 +1,20 @@
+{
+    "type": "portal_service",
+    "portal_service_type": "devportal",
+    "api_version": "2.0.0",
+    "name": "wm-dev-portal",
+    "runtime_name": "wm-dev-portal",
+    "runtime_id": "wm-dev-portal-001",
+    "title": "wM Dev Portal",
+    "summary": "webMethods Developer Portal",
+    "communication_kind": "external",
+    "endpoint_tls_client_profile_url": "https://api.apps.itz-rtqsu6.infra01-lb.lon04.techzone.ibm.com/api/orgs/85d3c93c-ea63-44b6-ae82-aa59a16b8a9f/tls-client-profiles/dafe974a-0fe0-43c5-8768-33a62d745860",
+    "endpoint": "https://api.devportal.apps.itz-rtqsu6.infra01-lb.lon04.techzone.ibm.com",
+    "web_endpoint_base": "https://devportal.apps.itz-rtqsu6.infra01-lb.lon04.techzone.ibm.com",
+    "integration_url": "https://api.apps.itz-rtqsu6.infra01-lb.lon04.techzone.ibm.com/api/cloud/integrations/portal-service/98fbd2be-735d-47e1-ba95-7b15452119e6",
+    "visibility": {
+        "type": "public"
+    },
+    "availability_zone_url": "https://api.apps.itz-rtqsu6.infra01-lb.lon04.techzone.ibm.com/api/orgs/85d3c93c-ea63-44b6-ae82-aa59a16b8a9f/availability-zones/2b6599c2-5b16-4152-bd97-102009805a63",
+    "org_url": "https://api.apps.itz-rtqsu6.infra01-lb.lon04.techzone.ibm.com/api/orgs/85d3c93c-ea63-44b6-ae82-aa59a16b8a9f",
+}

@@ -1384,7 +1384,7 @@ https://github.com/IBM/cloud-pak/blob/master/repo/case/ibm-apiconnect/7.1.0/OLM/
     # Install operators for DataPower gateway and nano gateway
     if $INSTALL_OVERWRITE; then
       install_datapower_gateway
-      # install_nano_gateway
+      install_nano_gateway
     else
       mylog warn "Skipping installation of DataPower gateway and nano gateway operators because INSTALL_OVERWRITE is set to false" 1>&2
     fi

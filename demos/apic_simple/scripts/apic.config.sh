@@ -32,7 +32,7 @@ function create_mail_server() {
     -H "content-type: application/json" \
     -H "Connection: keep-alive" \
     --data "{\"title\":\"MailHog\",\"name\":\"mymailhog\",\"host\":\"$MY_MAIL_SERVER_HOST_IP\",\"port\":${APIC_SMTP_SERVER_PORT},\"credentials\":{\"username\":\"$APIC_SMTP_USERNAME\",\"password\":\"$APIC_SMTP_PASSWORD\"}}" | jq .url );
-    decho $lf_tracelevel "mailServerUrl: ${mailServerUrl}"
+    # decho $lf_tracelevel "mailServerUrl: ${mailServerUrl}"
   else
     mylog info "Mail Server mymailhog already exists, use it."
   fi
@@ -49,7 +49,8 @@ function create_mail_server() {
   -H "authorization: Bearer $access_token" \
   -H "content-type: application/json"\
   --data "{\"mail_server_url\":${mailServerUrl},\"email_sender\":{\"name\":\"APIC Administrator\",\"address\":\"$APIC_ADMIN_EMAIL\"}}");
-  decho $lf_tracelevel "setReplyTo: $setReplyTo"
+  setReplyToUrl=$(echo $setReplyTo | jq .url)
+  decho $lf_tracelevel "setReplyToUrl: $setReplyToUrl"
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}  
 }
@@ -234,102 +235,278 @@ function create_topology() {
 
   decho $lf_tracelevel "No Parameters|"
 
-  # should increase idempotence
-  mylog info "Create gateway Service"
-
-  decho $lf_tracelevel "Interact with Cloud Manager: curl -sk \"${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles\"  -H \"Authorization: Bearer <access_token>\"  -H 'Accept: application/json'"
-  tlsServer=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles" \
-   -H "Authorization: Bearer $access_token" \
-   -H 'Accept: application/json' --compressed | jq .results[0].url  | sed -e s/\"//g);
-  decho $lf_tracelevel "tlsServer: $tlsServer"
-  
-  tlsClientDefault=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-client-profiles" \
-   -H "Authorization: Bearer $access_token" \
-   -H 'Accept: application/json' --compressed | jq '.results[] | select(.name=="tls-client-profile-default")| .url' | sed -e s/\"//g);
-  decho $lf_tracelevel "tlsClientDefault: $tlsClientDefault"
-  
-  #TODO  : use and in select : select(.integration_type=="gateway_service" --and .name=="datapower-api-gateway")| .url'
-  integration_url=$(curl -sk "${PLATFORM_API_URL}api/cloud/integrations" \
-   -H "Authorization: Bearer $access_token" \
-   -H 'Accept: application/json' --compressed | jq -r '.results[] | select(.integration_type=="gateway_service" and .name=="datapower-api-gateway")| .url');
-  decho $lf_tracelevel "integration_url: $integration_url"
-  
-
   # DataPower API Gateway service creation
-  mylog info "{\"name\":\"apigateway-service\",\"title\":\"API Gateway Service\",\"endpoint\":\"https://$EP_GWD\",\"api_endpoint_base\":\"https://$EP_GW\",\"tls_client_profile_url\":\"$tlsClientDefault\",\"gateway_service_type\":\"$ep_gwType\",\"visibility\":{\"type\":\"public\"},\"sni\":[{\"host\":\"*\",\"tls_server_profile_url\":\"$tlsServer\"}],\"integration_url\":\"${integration_url}\"}"
-
-  dpUrl=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services" \
+  local lf_gw_name="apigateway-service"
+  dpUrl=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services/${lf_gw_name}?fields=url" \
   -H "Authorization: Bearer $access_token" \
   -H 'Content-Type: application/json' \
   -H 'Accept: application/json' \
-  -H 'Connection: keep-alive' \
-  --data-binary "{\"name\":\"apigateway-service\",\"title\":\"API Gateway Service\",\"endpoint\":\"https://$EP_GWD\",\"api_endpoint_base\":\"https://$EP_GW\",\"tls_client_profile_url\":\"$tlsClientDefault\",\"gateway_service_type\":\"$ep_gwType\",\"visibility\":{\"type\":\"public\"},\"sni\":[{\"host\":\"*\",\"tls_server_profile_url\":\"$tlsServer\"}],\"integration_url\":\"${integration_url}\"}" \
-  --compressed | jq .url | sed -e s/\"//g);
+  -H 'Connection: keep-alive');
 
+  dpUrl=$(printf '%s\n' "$dpUrl" | jq -r '.url // empty')
+
+  if [ -z "$dpUrl" ] || [ "$dpUrl" = "null" ]; then
+    mylog info "Create DataPower gateway Service"
+
+    local lf_tls_client_profile_name="tls-client-profile-default"
+    tlsServer=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles" \
+    -H "Authorization: Bearer $access_token" \
+    -H 'Accept: application/json' --compressed | jq .results[0].url  | sed -e s/\"//g);
+    decho $lf_tracelevel "tlsServer: $tlsServer"
+    
+    tlsClientDefault=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-client-profiles/${lf_tls_client_profile_name}" \
+    -H "Authorization: Bearer $access_token" \
+    -H 'Accept: application/json' --compressed | jq '.results[]| .url' | sed -e s/\"//g );
+    decho $lf_tracelevel "tlsClientDefault: $tlsClientDefault"
+    
+    integration_url=$(curl -sk "${PLATFORM_API_URL}api/cloud/integrations" \
+    -H "Authorization: Bearer $access_token" \
+    -H 'Accept: application/json' --compressed | jq -r '.results[] | select(.integration_type=="gateway_service" and .name=="datapower-api-gateway")| .url');
+    decho $lf_tracelevel "integration_url: $integration_url"
+
+    local lf_gw_Type="gateway_service"
+    local lf_gw_svc_Type="datapower-api-gateway"
+    local lf_gw_title="API Gateway Service"
+
+    decho $lf_tracelevel "{\"name\":\"${lf_gw_name}\",\"title\":\"${lf_gw_title}\", \"type\": \"${lf_gw_Type}\", \"gateway_service_type\": \"${lf_gw_svc_Type}\", \"endpoint\":\"https://$EP_GWD\",\"api_endpoint_base\":\"https://$EP_GW\",\"tls_client_profile_url\":\"$tlsClientDefault\",\"gateway_service_type\":\"$lf_gwType\",\"visibility\":{\"type\":\"public\"},\"sni\":[{\"host\":\"*\",\"tls_server_profile_url\":\"$tlsServer\"}],\"integration_url\":\"${integration_url}\", \"ai_gateway_enabled\": true}"
+
+    dpUrl=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services" \
+      --data-raw "{\"name\":\"${lf_gw_name}\",\"title\":\"${lf_gw_title}\", \"type\": \"${lf_gw_Type}\", \"gateway_service_type\": \"${lf_gw_svc_Type}\", \"endpoint\":\"https://$EP_GWD\",\"api_endpoint_base\":\"https://$EP_GW\",\"tls_client_profile_url\":\"$tlsClientDefault\",\"gateway_service_type\":\"$lf_gwType\",\"visibility\":{\"type\":\"public\"},\"sni\":[{\"host\":\"*\",\"tls_server_profile_url\":\"$tlsServer\"}],\"integration_url\":\"${integration_url}\", \"ai_gateway_enabled\": true}" \
+      | jq .url | sed -e s/\"//g);
+
+    decho $lf_tracelevel "dpUrl: $dpUrl"
+    // Make it the default gateway service for catalogs
+
+    mylog info  Set gateway Service as default for catalogs
+    setGWdefault=$(curl -sk --request PUT "${PLATFORM_API_URL}api/cloud/settings" \
+      -H "Authorization: Bearer $access_token" \
+      -H 'Content-Type: application/json' \
+      -H 'Accept: application/json' \
+      -H 'Connection: keep-alive' \
+      --data "{\"gateway_service_default_urls\": [\"$dpUrl\"]}");
+  else 
+    mylog info "Gateway service already exists, use it."
+  fi
   decho $lf_tracelevel "dpUrl: $dpUrl"
 
-  mylog info "Gateway service already exists, use it."
+  # Analytics service creation
+  local lf_a8s_name="analytics-service"
 
-  mylog info  Set gateway Service as default for catalogs
-  setGWdefault=$(curl -sk --request PUT "${PLATFORM_API_URL}api/cloud/settings" \
-    -H "Authorization: Bearer $access_token" \
-    -H 'Content-Type: application/json' \
-    -H 'Accept: application/json' \
-    -H 'Connection: keep-alive' \
-    --data "{\"gateway_service_default_urls\": [\"$dpUrl\"]}");
-
-  # webMethods API Gateway service creation
-
-
-  # DataPower Nano Gateway service creation
-
-  # CMS Analytics service creation
-  mylog info  Create Analytics Service
-
-  analytUrl=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/analytics-services" \
+  local lf_a8s_url=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/analytics-services/${lf_a8s_name}?fields=url" \
   -H "Authorization: Bearer $access_token"\
   -H 'Content-Type: application/json'\
   -H 'Accept: application/json'\
-  -H 'Connection: keep-alive'\
-  --data-binary "{\"title\":\"API Analytics Service\",\"name\":\"analytics-service\",\"endpoint\":\"https://$EP_AI\"}" \
-  --compressed | jq .url | sed -e s/\"//g);
+  -H 'Connection: keep-alive');
 
-  decho $lf_tracelevel "analytUrl: $analytUrl"
+  lf_a8s_url=$(printf '%s\n' "$lf_a8s_url" | jq -r '.url // empty')
 
-  mylog info "Associate Analytics Service with Gateway"
+  if [ -z "$lf_a8s_url" ] || [ "$lf_a8s_url" = "null" ]; then
+    mylog info  Create Analytics Service
 
-  analytGwy=$(curl -sk -X PATCH \
-    "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services/apigateway-service" \
-  -H 'Accept: application/json' \
-  -H "Authorization: Bearer $access_token"\
-  -H 'Cache-Control: no-cache' \
-  -H 'Content-Type: application/json' \
-  --data-binary "{\"analytics_service_url\":	\"$analytUrl\" }");
+    local lf_a8s_ingestion_tls_name="analytics-ingestion-default"
+    a8sClientDefaultTLS=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-client-profiles/${lf_a8s_ingestion_tls_name}" \
+    -H "Authorization: Bearer $access_token" \
+    -H 'Accept: application/json' --compressed | jq '.results[]| .url' | sed -e s/\"//g );
+    decho $lf_tracelevel "a8sClientDefaultTLS: $a8sClientDefaultTLS"
 
-  decho $lf_tracelevel "analytGwy: $analytGwy"
+    lf_a8s_url=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/analytics-services" \
+      -H "Authorization: Bearer $access_token"\
+      -H 'Content-Type: application/json'\
+      -H 'Accept: application/json'\
+      -H 'Connection: keep-alive'\
+      --data-raw "{\"title\":\"API Analytics Service\",\"name\":\"${lf_a8s_name}\",\"type\":\"analytics_service\",\"endpoint\":\"https://$EP_AI\",\"ingestion_endpoint\":\"https://$EP_AI/ingestion\",\"ingestion_endpoint_tls_client_profile_url\":\"${a8sClientDefaultTLS}\",\"client_endpoint\":\"https://$EP_AI\",\"client_endpoint_tls_client_profile_url\":\"${a8sClientDefaultTLS}\"}" \
+      --compressed | jq .url | sed -e s/\"//g);
+
+    mylog info "Associate Analytics Service with DataPower Gateway"
+    analytGwy=$(curl -sk -X PATCH \
+      "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services/${lf_gw_name}" \
+    -H 'Accept: application/json' \
+    -H "Authorization: Bearer $access_token"\
+    -H 'Cache-Control: no-cache' \
+    -H 'Content-Type: application/json' \
+    --data-raw "{\"analytics_service_url\":	\"$lf_a8s_url\" }");
+    decho $lf_tracelevel "analytGwy: $analytGwy"
+  else 
+    mylog info "Analytics service already exists, use it."      
+  fi
+  decho $lf_tracelevel "lf_a8s_url: $lf_a8s_url"
 
   # CMS Portal service creation
-  mylog info "Create Portal Service"
+  local lf_cms_portal_name="portal-service"
 
-  createPortal=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/portal-services"\
-  -H "Accept: application/json"\
-  -H "authorization: Bearer $access_token"\
-  -H "content-type: application/json"\
-  --data "{\"title\":\"API Portal Service\",\"name\":\"portal-service\",\"endpoint\":\"https://$EP_PADMIN\",\"web_endpoint_base\":\"https://$EP_PORTAL\",\"visibility\":{\"group_urls\":null,\"org_urls\":null,\"type\":\"public\"}}");
+  local lf_cms_portal_url=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/portal-services/${lf_cms_portal_name}?fields=url" \
+  -H "Authorization: Bearer $access_token"\
+  -H 'Content-Type: application/json'\
+  -H 'Accept: application/json'\
+  -H 'Connection: keep-alive');
 
-  decho $lf_tracelevel "createPortal: $createPortal"
+  lf_cms_portal_url=$(printf '%s\n' "$lf_cms_portal_url" | jq -r '.url // empty')
+
+  if [ -z "$lf_cms_portal_url" ] || [ "$lf_cms_portal_url" = "null" ]; then
+    mylog info Create CMS Portal Service
+    local lf_cms_portal_Type="portal_service"
+    local lf_lf_cms_portal_svc_Type="cms"
+    local lf_cms_portal_title="CMS API Portal Service"
+
+    local lf_cms_portal_tls_name="portal-api-admin-default"
+    cmsPortalClientDefaultTLS=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-client-profiles/${lf_cms_portal_tls_name}" \
+    -H "Authorization: Bearer $access_token" \
+    -H 'Accept: application/json' --compressed | jq '.results[]| .url' | sed -e s/\"//g );
+    decho $lf_tracelevel "cmsPortalClientDefaultTLS: $cmsPortalClientDefaultTLS"
+
+    lf_cms_portal_url=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/portal-services"\
+      -H "Accept: application/json"\
+      -H "authorization: Bearer $access_token"\
+      -H "content-type: application/json"\
+      --data "{\"type\":\"${lf_cms_portal_Type}\",\"portal_service_type\":\"${lf_lf_cms_portal_svc_Type}\",\"title\":\"${lf_cms_portal_title}\",\"name\":\"${lf_cms_portal_name}\",\"endpoint\":\"https://$EP_PADMIN\",\"web_endpoint_base\":\"https://$EP_PORTAL\",\"endpoint_tls_client_profile_url\": \"${cmsPortalClientDefaultTLS}\",\"visibility\":{\"group_urls\":null,\"org_urls\":null,\"type\":\"public\"}}");
+  else
+    mylog info "CMS Portal service already exists, use it."      
+  fi
+  decho $lf_tracelevel "lf_cms_portal_url: $lf_cms_portal_url"
+
+  # DataPower Nano Gateway service creation
+  local lf_nano_gtw_name="datapower-nano-gateway"
+  local lf_nano_gtw_url=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services/${lf_nano_gtw_name}?fields=url" \
+  -H "Authorization: Bearer $access_token"\
+  -H 'Content-Type: application/json'\
+  -H 'Accept: application/json'\
+  -H 'Connection: keep-alive');
+
+  lf_nano_gtw_url=$(printf '%s\n' "$lf_nano_gtw_url" | jq -r '.url // empty')
+
+  if [ -z "$lf_nano_gtw_url" ] || [ "$lf_nano_gtw_url" = "null" ]; then
+    mylog info "Create DataPower Nano Gateway Service"
+    # local lf_nano_gtw_Type="TBD"
+    local lf_nano_gtw_svc_Type="nano-gateway"
+    local lf_nano_gtw_title="DataPower Nano Gateway"
+    local lf_nano_gtw_summary="DataPower Nano Gateway"
+
+    local lf_nano_gtw_client_tls_name="datapower-nano-gateway-mgmt-client-default"
+    nanoGatewayClientDefaultTLS=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-client-profiles/${lf_nano_gtw_client_tls_name}" \
+    -H "Authorization: Bearer $access_token" \
+    -H 'Accept: application/json' --compressed | jq '.results[]| .url' | sed -e s/\"//g );
+    decho $lf_tracelevel "nanoGatewayClientDefaultTLS: $nanoGatewayClientDefaultTLS"
+	
+	  local lf_nano_gtw_server_tls_name="tls-server-profile-default"
+    nanoGatewayServerDefaultTLS=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles/${lf_nano_gtw_server_tls_name}" \
+    -H "Authorization: Bearer $access_token" \
+    -H 'Accept: application/json' --compressed | jq '.results[]| .url' | sed -e s/\"//g );
+    decho $lf_tracelevel "nanoGatewayServerDefaultTLS: $nanoGatewayServerDefaultTLS"
+
+    mylog info "{\"gateway_service_type\":\"${lf_nano_gtw_svc_Type}\",\"name\":\"${lf_nano_gtw_name}\",\"title\":\"${lf_nano_gtw_title}\",\"runtime_name\":\"${lf_nano_gtw_name}\",\"runtime_id\":\"${lf_nano_gtw_name}-001\",\"summary\":\"${lf_nano_gtw_summary}\",\"endpoint\":\"https://${EP_NANO_MGMT_GW}\",\"api_endpoint_base\":\"https://${EP_NANO_GW}\",\"communication_kind\":\"external\",\"tls_client_profile_url\":\"${nanoGatewayClientDefaultTLS}\",\"visibility\":{\"type\":\"public\"},\"sni\":[{\"host\":\"*\",\"tls_server_profile_url\":\"${nanoGatewayServerDefaultTLS}\"}]}"
+	
+    exit 0
+	
+    lf_nano_gtw_url=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services" \
+    -H "Accept: application/json" \
+    -H "authorization: Bearer $access_token" \
+    -H "content-type: application/json" \
+    --data-raw "{\"gateway_service_type\":\"${lf_nano_gtw_svc_Type}\",\"name\":\"${lf_nano_gtw_name}\",\"title\":\"${lf_nano_gtw_title}\",\"runtime_name\":\"${lf_nano_gtw_name}\",\"runtime_id\":\"${lf_nano_gtw_name}-001\",\"summary\":\"${lf_nano_gtw_summary}\",\"endpoint\":\"https://${EP_NANO_GWD}\",\"api_endpoint_base\":\"https://${EP_NANO_GW}\",\"communication_kind\":\"external\",\"tls_client_profile_url\":\"${wmsGatewayClientDefaultTLS}\",\"visibility\":{\"type\":\"public\"},\"sni\":[{\"host\":\"*\",\"tls_server_profile_url\":\"${wmsGatewayServerDefaultTLS}\"}]}");
+
+    decho $lf_tracelevel "lf_nano_gtw_url: $lf_nano_gtw_url"
+  
+    mylog info "Associate Analytics Service with DataPower Nano gateway"
+    analytGwy=$(curl -sk -X PATCH \
+      "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services/${lf_nano_gtw_name}" \
+    -H 'Accept: application/json' \
+    -H "Authorization: Bearer $access_token"\
+    -H 'Cache-Control: no-cache' \
+    -H 'Content-Type: application/json' \
+    --data-raw "{\"analytics_service_url\":	\"$lf_a8s_url\" }");
+    decho $lf_tracelevel "analytGwy: $analytGwy"
+  else
+    mylog info "DataPower Nano gateway service already exists, use it."      
+  fi
+  decho $lf_tracelevel "lf_nano_gtw_url: $lf_nano_gtw_url"
+
+  # webMethods API Gateway service creation
+  local lf_wms_gtw_name="wms-api-gateway"
+  local lf_wms_gtw_url=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services/${lf_wms_gtw_name}?fields=url" \
+  -H "Authorization: Bearer $access_token"\
+  -H 'Content-Type: application/json'\
+  -H 'Accept: application/json'\
+  -H 'Connection: keep-alive');
+
+  lf_wms_gtw_url=$(printf '%s\n' "$lf_wms_gtw_url" | jq -r '.url // empty')
+
+  if [ -z "$lf_wms_gtw_url" ] || [ "$lf_wms_gtw_url" = "null" ]; then
+    mylog info "Create wMs API Gateway Service"
+    # local lf_wms_gtw_Type="TBD"
+    local lf_wms_gtw_svc_Type="wm-api-gateway"
+    local lf_wms_gtw_title="wMs API Gateway"
+    local lf_wms_gtw_summary="webMethods API Gateway"
+
+    local lf_wms_gtw_client_tls_name="wmapigateway-mgmt-client-default"
+    wmsGatewayClientDefaultTLS=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-client-profiles/${lf_wms_gtw_client_tls_name}" \
+    -H "Authorization: Bearer $access_token" \
+    -H 'Accept: application/json' --compressed | jq '.results[]| .url' | sed -e s/\"//g );
+    decho $lf_tracelevel "wmsGatewayClientDefaultTLS: $wmsGatewayClientDefaultTLS"
+	
+	  local lf_wms_gtw_server_tls_name="tls-server-profile-default"
+    wmsGatewayServerDefaultTLS=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles/${lf_wms_gtw_server_tls_name}" \
+    -H "Authorization: Bearer $access_token" \
+    -H 'Accept: application/json' --compressed | jq '.results[]| .url' | sed -e s/\"//g );
+    decho $lf_tracelevel "wmsGatewayServerDefaultTLS: $wmsGatewayServerDefaultTLS"
+
+    mylog info "{\"gateway_service_type\":\"${lf_wms_gtw_svc_Type}\",\"name\":\"${lf_wms_gtw_name}\",\"title\":\"${lf_wms_gtw_title}\",\"runtime_name\":\"${lf_wms_gtw_name}\",\"runtime_id\":\"${lf_wms_gtw_name}-001\",\"summary\":\"${lf_wms_gtw_summary}\",\"endpoint\":\"https://${EP_WM_API_GWD}\",\"api_endpoint_base\":\"https://${EP_WM_API_GW}\",\"communication_kind\":\"external\",\"tls_client_profile_url\":\"${wmsGatewayClientDefaultTLS}\",\"visibility\":{\"type\":\"public\"},\"sni\":[{\"host\":\"*\",\"tls_server_profile_url\":\"${wmsGatewayServerDefaultTLS}\"}]}"
+    lf_wms_gtw_url=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services" \
+    -H "Accept: application/json" \
+    -H "authorization: Bearer $access_token" \
+    -H "content-type: application/json" \
+    --data-raw "{\"gateway_service_type\":\"${lf_wms_gtw_svc_Type}\",\"name\":\"${lf_wms_gtw_name}\",\"title\":\"${lf_wms_gtw_title}\",\"runtime_name\":\"${lf_wms_gtw_name}\",\"runtime_id\":\"${lf_wms_gtw_name}-001\",\"summary\":\"${lf_wms_gtw_summary}\",\"endpoint\":\"https://${EP_WM_API_GWD}\",\"api_endpoint_base\":\"https://${EP_WM_API_GW}\",\"communication_kind\":\"external\",\"tls_client_profile_url\":\"${wmsGatewayClientDefaultTLS}\",\"visibility\":{\"type\":\"public\"},\"sni\":[{\"host\":\"*\",\"tls_server_profile_url\":\"${wmsGatewayServerDefaultTLS}\"}]}");
+
+    decho $lf_tracelevel "lf_wms_gtw_url: $lf_wms_gtw_url"
+  
+    mylog info "Associate Analytics Service with wMs API Gateway"
+    analytGwy=$(curl -sk -X PATCH \
+      "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services/${lf_wms_gtw_name}" \
+    -H 'Accept: application/json' \
+    -H "Authorization: Bearer $access_token"\
+    -H 'Cache-Control: no-cache' \
+    -H 'Content-Type: application/json' \
+    --data-raw "{\"analytics_service_url\":	\"$lf_a8s_url\" }");
+    decho $lf_tracelevel "analytGwy: $analytGwy"
+  else
+    mylog info "webMethods API Gateway service already exists, use it."      
+  fi
+  decho $lf_tracelevel "lf_wms_gtw_url: $lf_wms_gtw_url"
 
   # Developper Portal service creation
+  local lf_dev_prtl_name="wm-dev-portal"
+  local lf_dev_prtl_url=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/portal-services/${lf_dev_prtl_name}?fields=url" \
+  -H "Authorization: Bearer $access_token"\
+  -H 'Content-Type: application/json'\
+  -H 'Accept: application/json'\
+  -H 'Connection: keep-alive');
+
+  lf_dev_prtl_url=$(printf '%s\n' "$lf_dev_prtl_url" | jq -r '.url // empty')
+
+  if [ -z "$lf_dev_prtl_url" ] || [ "$lf_dev_prtl_url" = "null" ]; then
     mylog info "Create Developper Portal Service"
+    local lf_dev_prtl_Type="portal_service"
+    local lf_dev_prtl_svc_Type="devportal"
+    local lf_dev_prtl_title="wM Dev Portal"
+    local lf_dev_prtl_summary="webMethods Developer Portal"
 
-  createDevPortal=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/portal-services"\
-  -H "Accept: application/json"\
-  -H "authorization: Bearer $access_token"\
-  -H "content-type: application/json"\
-  --data "{\"title\":\"API Developer Portal Service\",\"name\":\"developer-portal-service\",\"endpoint\":\"https://$EP_PDEV\",\"web_endpoint_base\":\"https://$EP_DEV_PORTAL\",\"visibility\":{\"group_urls\":null,\"org_urls\":null,\"type\":\"public\"}}");
+    local lf_dev_prtl_tls_name="devportal-admin-client-default"
+    devPortalClientDefaultTLS=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-client-profiles/${lf_dev_prtl_tls_name}" \
+    -H "Authorization: Bearer $access_token" \
+    -H 'Accept: application/json' --compressed | jq '.results[]| .url' | sed -e s/\"//g );
+    decho $lf_tracelevel "devPortalClientDefaultTLS: $devPortalClientDefaultTLS"
 
-  decho $lf_tracelevel "createDevPortal: $createDevPortal"
-
+    mylog info "{\"portal_service_type\":\"${lf_dev_prtl_svc_Type}\",\"name\":\"${lf_dev_prtl_name}\",\"runtime_name\": \"${lf_dev_prtl_name}\",\"runtime_id\": \"${lf_dev_prtl_name}\",\"title\":\"${lf_dev_prtl_title}\",\"summary\":\"${lf_dev_prtl_summary}\",\"communication_kind\":\"external\",\"endpoint_tls_client_profile_url\":\"${devPortalClientDefaultTLS}\",\"endpoint\":\"https://${EP_PDEV_ADMIN}\",\"web_endpoint_base\":\"https://${EP_PDEV_WEB}\",\"visibility\":{\"type\":\"public\"}}"
+    
+    lf_dev_prtl_url=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/portal-services" \
+    -H "Accept: application/json" \
+    -H "authorization: Bearer $access_token" \
+    -H "content-type: application/json" \
+    --data "{\"portal_service_type\":\"${lf_dev_prtl_svc_Type}\",\"name\":\"${lf_dev_prtl_name}\",\"runtime_name\": \"${lf_dev_prtl_name}\",\"runtime_id\": \"${lf_dev_prtl_name}\",\"title\":\"${lf_dev_prtl_title}\",\"summary\":\"${lf_dev_prtl_summary}\",\"communication_kind\":\"external\",\"endpoint_tls_client_profile_url\":\"${devPortalClientDefaultTLS}\",\"endpoint\":\"https://${EP_PDEV_ADMIN}\",\"web_endpoint_base\":\"https://${EP_PDEV_WEB}\",\"visibility\":{\"type\":\"public\"}}");
+  else
+    mylog info "Dev Portal service already exists, use it."      
+  fi
+  decho $lf_tracelevel "lf_dev_prtl_url: $lf_dev_prtl_url"
+  
+  exit 0
 
   trace_out $lf_tracelevel ${FUNCNAME[0]} 
 }
@@ -375,7 +552,7 @@ for index in ${!catalog_name[@]}
         -H 'accept: application/json' \
         -H 'content-type: application/json' \
         -H 'Connection: keep-alive' \
-        --data-binary "{\"name\":\"${catalog_name[$index]}\",\"title\":\"${catalog_title[$index]}\",\"summary\":\"${catalog_summary[$index]}\"}" \
+        --data-raw "{\"name\":\"${catalog_name[$index]}\",\"title\":\"${catalog_title[$index]}\",\"summary\":\"${catalog_summary[$index]}\"}" \
         --compressed | jq .url | sed -e s/\"//g);
         waitn 1
       else
@@ -389,7 +566,7 @@ for index in ${!catalog_name[@]}
        -H 'accept: application/json' \
        -H 'content-type: application/json' \
        -H 'Connection: keep-alive' \
-       --data-binary "{\"portal\": {\"endpoint\": \"https://$EP_PORTAL/$org_name/${catalog_name[$index]}\",\"portal_service_url\": \"$portalServiceURL\", \"type\": \"drupal\"},\"application_lifecycle\": {} }" | jq .portal.endpoint);
+       --data-raw "{\"portal\": {\"endpoint\": \"https://$EP_PORTAL/$org_name/${catalog_name[$index]}\",\"portal_service_url\": \"$portalServiceURL\", \"type\": \"drupal\"},\"application_lifecycle\": {} }" | jq .portal.endpoint);
       # mylog info "Portal endpoint for: "${catalog_summary[$index]}": $res"
     done
   trace_out $lf_tracelevel ${FUNCNAME[0]}
@@ -423,7 +600,7 @@ function create_apic_resources() {
     export APIC_EP_GTW=${gtw_url}
     adapt_file ${MY_APIC_SIMPLE_DEMODIR}resources/ ${MY_APIC_WORKINGDIR}resources/ AuthenticationURL_Registry_res.json
 
-    decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/user-registries\" -H 'accept: application/json' -H \"authorization: Bearer cm_token\" -H 'content-type: application/json' -H \"Connection: keep-alive\" --compressed --data-binary \"@${MY_APIC_WORKINGDIR}resources/AuthenticationURL_Registry_res.json\""
+    decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/user-registries\" -H 'accept: application/json' -H \"authorization: Bearer cm_token\" -H 'content-type: application/json' -H \"Connection: keep-alive\" --compressed --data-raw \"@${MY_APIC_WORKINGDIR}resources/AuthenticationURL_Registry_res.json\""
     registryURLfakeAPI=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/user-registries" \
       -H 'accept: application/json' \
       -H "authorization: Bearer $lf_cm_token" \
@@ -596,10 +773,26 @@ function init_apic_variables() {
   # EP_GW=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-gw-gateway" -o jsonpath="{.spec.host}")
   # analytics-ai-endpoint
   EP_AI=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-a7s-ai-endpoint" -o jsonpath="{.spec.host}")
-  # portal-portal-director
+  # wmapi-gateway-endpoint
+  EP_WM_API_GW=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-wmapi-gateway-endpoint" -o jsonpath="{.spec.host}")
+  # wmapi-mgmt-endpoint
+  EP_WM_API_GWD=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-wmapi-mgmt-endpoint" -o jsonpath="{.spec.host}")
+  # ngw-mgmt-endpoint
+  EP_NANO_MGMT_GW=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "ngw-mgmt-endpoint" -o jsonpath="{.spec.host}")
+  # ngw-nanogw
+  EP_NANO_GW=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "ngw-nanogw" -o jsonpath="{.spec.host}")
+  # cms portal-portal-director
   EP_PADMIN=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-ptl-portal-director" -o jsonpath="{.spec.host}")
-  # portal-portal-web
+  # cms portal-portal-web
   EP_PORTAL=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-ptl-portal-web" -o jsonpath="{.spec.host}")
+  # dev portal-portal-admin
+  local lf_dev_portal_admin_route_name=$(oc -n ${apic_project} get route -o custom-columns="Name:metadata.name" --no-headers | grep -E "^${APIC_INSTANCE_NAME}-.*-devportal-admin$");
+  decho $lf_tracelevel "lf_dev_portal_admin_route_name: $lf_dev_portal_admin_route_name"
+  EP_PDEV_ADMIN=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${lf_dev_portal_admin_route_name}" -o jsonpath="{.spec.host}" --no-headers )
+  # dev portal-portal-web
+  local lf_dev_portal_web_route_name=$(oc -n ${apic_project} get route -o custom-columns="Name:metadata.name" --no-headers | grep -E "^${APIC_INSTANCE_NAME}-.*-devportal-web$");
+  decho $lf_tracelevel "lf_dev_portal_web_route_name: $lf_dev_portal_web_route_name" 
+  EP_PDEV_WEB=$($MY_CLUSTER_COMMAND -n ${apic_project}  get route "${lf_dev_portal_web_route_name}" -o jsonpath="{.spec.host}" --no-headers)
 
   decho $lf_tracelevel "EP_CM: https://$EP_CM"
   decho $lf_tracelevel "EP_APIC_MGR: $EP_APIC_MGR"
@@ -609,6 +802,10 @@ function init_apic_variables() {
   decho $lf_tracelevel "EP_AI: $EP_AI"
   decho $lf_tracelevel "EP_PADMIN: $EP_PADMIN"
   decho $lf_tracelevel "EP_PORTAL: $EP_PORTAL"
+  decho $lf_tracelevel "EP_PDEV_ADMIN: $EP_PDEV_ADMIN"
+  decho $lf_tracelevel "EP_PDEV_WEB: $EP_PDEV_WEB"
+  decho $lf_tracelevel "EP_WM_API_GWD: $EP_WM_API_GWD"
+  decho $lf_tracelevel "EP_WM_API_GW: $EP_WM_API_GW"
 
   # Zen
   if EP_ZEN=$($MY_CLUSTER_COMMAND -n ${apic_project} get route cpd -o jsonpath="{.spec.host}" 2> /dev/null ); then
@@ -735,7 +932,7 @@ function create_am_token(){
   amToken=$(curl -sk --fail -X POST "${PLATFORM_API_URL}api/token" \
    -H 'Content-Type: application/json' \
    -H 'Accept: application/json' \
-   --data-binary "{\"username\":\"$APIC_ORG1_USERNAME\",\"password\":\"$APIC_ORG1_PASSWORD\",\"realm\":\"provider/default-idp-2\",\"client_id\":\"$TOOLKIT_CLIENT_ID\",\"client_secret\":\"$TOOLKIT_CLIENT_SECRET\",\"grant_type\":\"password\"}" |  jq .access_token | sed -e s/\"//g  )
+   --data-raw "{\"username\":\"$APIC_ORG1_USERNAME\",\"password\":\"$APIC_ORG1_PASSWORD\",\"realm\":\"provider/default-idp-2\",\"client_id\":\"$TOOLKIT_CLIENT_ID\",\"client_secret\":\"$TOOLKIT_CLIENT_SECRET\",\"grant_type\":\"password\"}" |  jq .access_token | sed -e s/\"//g  )
   
   decho $lf_tracelevel "amToken: $amToken"
   # TODO Not sure the use of $? is good, this is the result of the sed command
@@ -779,10 +976,11 @@ function apic_run_all () {
   mylog info "Downloading apic config json file (${MY_APIC_WORKINGDIR}resources/fullcreds.json)" 1>&2
   curl -sk "${TOOLKIT_CREDS_URL}" -H "Authorization: Bearer ${access_token}" -H "Accept: application/json" -H "Content-Type: application/json" -o "${MY_APIC_WORKINGDIR}resources/fullcreds.json"
   
-  create_mail_server "${APIC_SMTP_SERVER_IP}" "${APIC_SMTP_SERVER_PORT}"
+  # toto create_mail_server "${APIC_SMTP_SERVER_IP}" "${APIC_SMTP_SERVER_PORT}"
 
-  # TODO Add idempotence (Remove parameter $integration_url)
   create_topology 
+
+  exit 0
 
   replace_dp_gtw_cert
 
