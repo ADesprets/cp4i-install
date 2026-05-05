@@ -4,7 +4,6 @@ metadata:
   name: ${VAR_ES_KAFKA_CONNECT_INSTANCE_NAME}
   annotations:
     eventstreams.ibm.com/use-connector-resources: 'true'
-    spec.template.pod.metadata.annotations.productVersion=${MY_ES_VERSION_NUM}
   labels:
     backup.eventstreams.ibm.com/component: kafkaconnect
   namespace: ${VAR_ES_NAMESPACE}    
@@ -56,7 +55,7 @@ spec:
           productName: IBM Event Streams for Non Production
           productVersion: $MY_ES_VERSION_NUM
           productMetric: VIRTUAL_PROCESSOR_CORE
-          productChargedContainers: ${VAR_ES_KAFKA_CONNECT_INSTANCE_NAME}-connect
+          productChargedContainers: All
           cloudpakId: c8b82d189e7545f0892db9ef2731b90d
           cloudpakName: IBM Cloud Pak for Integration
           productCloudpakRatio: '2:1'
