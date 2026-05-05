@@ -1,0 +1,35 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ${VAR_CERT_NAME}
+  namespace: ${VAR_NAMESPACE}
+spec:
+  commonName: "${VAR_CERT_COMMON_NAME}"
+  dnsNames:
+    - "${VAR_CERT_SAN_DNS_1}"
+  duration: 8760h
+  isCA: false
+  issuerRef:
+    kind: Issuer
+    name: ${VAR_CERT_ISSUER_REF}
+  privateKey:
+    algorithm: RSA
+    rotationPolicy: Always
+    size: 2048
+  renewBefore: 720h
+  secretName: ${VAR_CERT_NAME}
+  subject:
+    organizations:
+      - "${VAR_CERT_ORGANISATION}"
+    organizationalUnits:
+      - "${VAR_CERT_ORGANISATION}_PKI"
+    countries:
+      - "${VAR_CERT_COUNTRY}"
+    localities:
+      - "${VAR_CERT_LOCALITY}"
+    provinces:
+      - "${VAR_CERT_STATE}"
+  usages:
+    - server auth
+    - digital signature
+    - key encipherment

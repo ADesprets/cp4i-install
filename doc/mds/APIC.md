@@ -480,3 +480,74 @@ cat /opt/ibm/valkey/config/valkey.conf
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 openssl s_client -connect valkey-cluster-leader-0.valkey-cluster-leader-headless.cp4i.svc.cluster.local:6379 -CAfile /tmp/ca.crt -cert /tmp/tls.crt -key /tmp/tls.key
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## APIC V12.1
+
+This chapter is to describe all my experience with APC V12
+
+### Publishing and invoking an API
+
+I'm going to use first the sample provided with Studio
+
+HERE Add the image how to load the samples project
+
+I first test the back end API that I will expose to API Connect through the Nano gateway, this is a good practice.
+
+We are going to use Orders API deployed in wMs Integration
+
+I can now publish the API
+
+https://sample-api.eu-west-a.apiconnect.automation.ibm.com/environment/air-temperature
+
+### Manipulating projects
+
+#### Using apic CLI
+
+Login and get token
+
+apic login --server <platform-api-url> --username ${CM_ADMIN_UID} --password ${CM_ADMIN_PASSWORD}
+
+Export a Project:
+
+apic projects:export <project-name> --server <platform-api-url> --org <org-name>
+
+Import a Project:
+
+apic projects:import <project-zip-file> --server <platform-api-url> --org <org-name>
+
+Create Project from Zip:
+
+apic projects:create --from-zip <project-zip-file> --server <platform-api-url> --org <org-name>
+
+
+#### Using REST APIs
+
+Draft API Upload (from project)
+# Upload API as draft from project
+curl -sk "https://${APIC_MGR}/api/orgs/${org}/drafts/draft-apis?gateway_type=datapower-api-gateway&api_type=rest" \
+  -H 'accept: application/json' \
+  -H "authorization: Bearer ${token}" \
+  -H 'content-type: application/json' \
+  -d @api-definition.json
+
+Export/Import via Platform API
+# Get Platform API URL
+PLATFORM_API_URL=$(oc -n <namespace> get apiconnectcluster <instance> -o=jsonpath='{.status.endpoints[?(@.name=="platformApi")].uri}')
+
+# Export project
+curl -sk "${PLATFORM_API_URL}/api/orgs/${org}/projects/${project}/export" \
+  -H "Authorization: Bearer ${token}" \
+  -o project.zip
+
+# Import project
+curl -sk -X POST "${PLATFORM_API_URL}/api/orgs/${org}/projects/import" \
+  -H "Authorization: Bearer ${token}" \
+  -F "file=@project.zip"
+
+4. Authentication
+# Get admin credentials
+CM_ADMIN_UID=$(oc -n <namespace> get secret apic-mgmt-admin-pass -o=jsonpath='{.data.email}' | base64 --decode)
+CM_ADMIN_PASSWORD=$(oc -n <namespace> get secret apic-mgmt-admin-pass -o=jsonpath='{.data.password}' | base64 --decode)
+
+
+

@@ -80,8 +80,8 @@ spec:
     hosts:
     - name: consumer.${STACK_HOST}
       secretName: consumer-endpoint
-  # adminUser:
-    # secretName: apic-mgmt-admin-pass
+  adminUser:
+    secretName: apic-mgmt-admin-pass
   databaseVolumeClaimTemplate:
     storageClassName: ${MY_BLOCK_STORAGE_CLASS}
   microServiceSecurity: certManager

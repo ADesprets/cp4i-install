@@ -1290,6 +1290,7 @@ function install_nano_gateway() {
     mylog info "Create OpenShift API Gateway CRD for OpenShift < 4.19 or for Kubernetes" 1>&2
     create_crd "gatewayclasses.gateway.networking.k8s.io" "${MY_YAMLDIR}resources/" "${MY_APIC_WORKINGDIR}" "API_Gateway_CRD.yaml" 
 
+    mylog warn "nano gateway CRDs and operators are local files that needs to be updated" 1>&2
     # Installation of the nano gateway CRDs
     mylog info "Create nano gateway CRDs" 1>&2
     create_crd "apis.nano.datapower.ibm.com" "${MY_YAMLDIR}operators/" "${MY_APIC_WORKINGDIR}" "ibm-nanogw-crds.yaml"
@@ -1372,8 +1373,8 @@ function install_apic() {
     add_ibm_entitlement "$VAR_APIC_NAMESPACE"
   
     # Add the API Connect catalog sources to your cluster using ibm_pak plugin
-    mylog warn "There is an error with ibm-pak catalog source is incorrect: https://github.com/IBM/cloud-pak/blob/master/repo/case/ibm-apiconnect/7.1.0/OLM/catalog-sources-linux-amd64-all.yaml and
-https://github.com/IBM/cloud-pak/blob/master/repo/case/ibm-apiconnect/7.1.0/OLM/catalog-sources-all.yaml" 1>&2
+    mylog warn "There is an error with ibm-pak catalog source is incorrect: https://github.com/IBM/cloud-pak/blob/master/repo/case/ibm-apiconnect/7.2.0/OLM/catalog-sources-linux-amd64-all.yaml and
+https://github.com/IBM/cloud-pak/blob/master/repo/case/ibm-apiconnect/7.2.0/OLM/catalog-sources-all.yaml" 1>&2
     check_add_cs_ibm_pak $MY_APIC_CASE $MY_APIC_OPERATOR $MY_APIC_CATALOGSOURCE_LABEL amd64
     if [[ -z $MY_APIC_VERSION ]]; then
       export MY_APIC_VERSION=$VAR_APP_VERSION
@@ -1492,7 +1493,7 @@ function install_postgresql() {
   export VAR_NAMESPACE=${lf_postgre_namespace}
 
   # Create an OperatorGroup for postgre Operator
-  # create_oc_resource "OperatorGroup" "${lf_in_postgre_op_name}" "${MY_RESOURCESDIR}" "${lf_in_working_dir}" "operator-group-single.yaml" "${lf_in_postgre_namespace}"
+  create_oc_resource "OperatorGroup" "${lf_in_postgre_op_name}" "${MY_RESOURCESDIR}" "${lf_in_working_dir}" "operator-group-single.yaml" "${lf_in_postgre_namespace}"
   unset VAR_OPERATORGROUP VAR_NAMESPACE
 
   # Create the postgre operator subscription
@@ -1503,7 +1504,7 @@ function install_postgresql() {
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
-  mylog info "==== Installation of Postgre Crunchy (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+  mylog info "==== Installation of Postgre Crunchy operator (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
@@ -1515,6 +1516,7 @@ function crt_postgresql_db() {
   SECONDS=0
   local lf_starting_date=$(date)
   local lf_in_namespace="$1"
+
   mylog info "==== Create PostGre database in ${lf_in_namespace} namespace (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
 
   local lf_tracelevel=3
@@ -1536,6 +1538,7 @@ function crt_postgresql_db() {
   create_generic_secret "${lf_in_secret_name}" "username" "${lf_in_db_username}" "password" "${lf_in_db_password}" "${lf_in_namespace}" "${lf_in_working_dir}" "false"
 
   # PostGreSQL DB (Operand)
+  # name: pg-s5n-cluster, hostname: pg-s5n-cluster-ha, port: 5432, user: admin, password: defined in secret pg-s5n-cluster-pguser-admin
   export VAR_POSTGRES_CLUSTER="${lf_in_pg_cluster_name}"
   export VAR_POSTGRES_DATABASE="${lf_in_pg_db_name}"
   export VAR_POSTGRES_DB_PORT=5432
@@ -1543,9 +1546,14 @@ function crt_postgresql_db() {
   export VAR_POSTGRES_SECRET="${lf_in_secret_name}"
   export VAR_POSTGRES_DATABASE_DESCRIPTION="${lf_in_db_description}"
   export VAR_NAMESPACE="${lf_in_namespace}"
-  # create_operand_instance "PostgresCluster" "${VAR_APIC_GRAPHQL_PG_CLUSTER_NAME}" "${MY_OPERANDSDIR}" "${lf_in_working_dir}" "postgresql-cluster.yaml" "${lf_in_namespace}" "{.status.conditions[?(@.type==\"Ready\")].status}" "True"
+  create_operand_instance "PostgresCluster" "${VAR_APIC_GRAPHQL_PG_CLUSTER_NAME}" "${MY_OPERANDSDIR}" "${lf_in_working_dir}" "postgresql-cluster.yaml" "${lf_in_namespace}" "{.status.conditions[?(@.type==\"ProxyAvailable\")].status}" "True"
+
+  # This creates pg-s5n-cluster-pguser-admin (secret) managed by pg-s5n-cluster (pgcluster)
   
   # Create pgAdmin instance
+  # User is defined in PGAdmin operand under the user property, it is fixed to pgadmin@example.com
+  # The password is defined in the secret pg-s5n-cluster-pgadmin-pwd set to Passw0rd!
+
   # Create generic secret for PGAdmin
   local lf_pgadmin_password="Passw0rd!"
   create_generic_secret "${lf_in_pg_cluster_name}-pgadmin-pwd" "" "" "password" "${lf_pgadmin_password}" "${lf_in_namespace}" "${lf_in_working_dir}" "false"
@@ -1554,15 +1562,14 @@ function crt_postgresql_db() {
   export VAR_PG_PGADMIN_PASSWORD_ID="password"
   export VAR_PG_PGADMIN_SECRET_NAME="${lf_in_pg_cluster_name}-pgadmin-pwd"
   export MY_PG_PGADMIN_SVC_NAME="${lf_in_pg_cluster_name}-pgadmin-svc"
+  export SECRET_NAMESPACE="${lf_in_namespace}"
   export VAR_NAMESPACE="${lf_in_namespace}"
-  # create_operand_instance "PGAdmin" "${VAR_PG_PGADMIN_NAME}" "${MY_OPERANDSDIR}" "${lf_in_working_dir}" "postgresql-pgadmin-instance.yaml" "${lf_in_namespace}" "{.status.conditions[?(@.type==\"Ready\")].status}" "True"
+  create_operand_instance "PGAdmin" "${VAR_PG_PGADMIN_NAME}" "${MY_OPERANDSDIR}" "${lf_in_working_dir}" "postgresql-pgadmin-instance.yaml" "${lf_in_namespace}" "{.status.observedGeneration}" "1"
   
   export PGADMIN_GW_ROUTE_NAME=pgadmin-rte
   export VAR_NAMESPACE="${lf_in_namespace}"
   # Create the route for the pgAdmin database explorer
   create_oc_resource "Route" "pgadmin-rte" "${MY_RESOURCESDIR}" "${lf_in_working_dir}" "pg-admin-route.yaml" "${lf_in_namespace}"
-
-  exit 0
 
   # Authorize superuser access
   $MY_CLUSTER_COMMAND -n $VAR_POSTGRES_NAMESPACE patch "${MY_POSTGRES_CRD_CLUSTER}" $lf_in_cluster_name --type=merge -p '{"spec":{"enableSuperuserAccess":true}}' | awk '{printf "%*s%s\n", NR * $SC_SPACES_COUNTER, "", $0}'
@@ -1603,28 +1610,25 @@ function install_apic_graphql() {
     # Installation of the postgre database in the stepzen namespace and reusing the stepzen working directory
     install_postgresql "${VAR_APIC_GRAPHQL_NAMESPACE}" "${MY_POSTGRES_OPERATORGROUP}" "${MY_POSTGRES_WORKINGDIR}" "label"
 
-    # create a PostgreSQL database for the APIC Graphql
+    # create a PostgreSQL database for the APIC for GraphQL
     crt_postgresql_db "${VAR_APIC_GRAPHQL_NAMESPACE}" "${VAR_APIC_GRAPHQL_PG_CLUSTER_NAME}" "${VAR_APIC_GRAPHQL_PG_DB_NAME}" "${MY_POSTGRES_CREDS_SECRET}" "${VAR_POSTGRES_USER}" "${MY_POSTGRES_PASSWORD}" "${MY_POSTGRES_WORKINGDIR}" "Postgres DB for APIC Graphql"
 
-    # local lf_postgresql_password=$($MY_CLUSTER_COMMAND -n $VAR_POSTGRES_NAMESPACE get secret "${VAR_POSTGRES_CLUSTER}-superuser" -o jsonpath='{.data.paswword}' | base64 -d)
-    # create a generic secret for the PostgreSQL server
-    # there are three postgresql services : 
-    # - ${VAR_POSTGRES_CLUSTER}-r"  : for read-only workloads across all nodes
-    # - ${VAR_POSTGRES_CLUSTER}-ro" : for read-only workloads on replicas only
-    # - ${VAR_POSTGRES_CLUSTER}-rw" : for read-write workloads on the primary node
+    local lf_s5n_secret_name="${VAR_APIC_GRAPHQL_PG_CLUSTER_NAME}-pguser-postgres"
 
-    #lf_postgresql_host="${VAR_POSTGRES_CLUSTER}-rw.${VAR_POSTGRES_NAMESPACE}.svc.cluster.local"
-    #lf_dsn="postgresql://${VAR_POSTGRES_USER}:${lf_postgresql_password}@${lf_postgresql_host}/${VAR_POSTGRES_DATABASE}"
-
-    #$MY_CLUSTER_COMMAND -n $VAR_POSTGRES_NAMESPACE get Secret "${VAR_POSTGRES_CLUSTER}-superuser" -o jsonpath='{.data.uri}'
-    #export VAR_DSN=$($MY_CLUSTER_COMMAND -n $VAR_POSTGRES_NAMESPACE get secret "${VAR_POSTGRES_CLUSTER}-superuser" -o jsonpath='{.data.uri}' | base64 -d)
-    export VAR_DSN="postgresql://${VAR_POSTGRES_USER}:$($MY_CLUSTER_COMMAND get secret ${VAR_POSTGRES_SECRET} -n ${VAR_POSTGRES_NAMESPACE} -o jsonpath='{.data.password}' | base64 -d)@${VAR_POSTGRES_CLUSTER}-rw.${VAR_POSTGRES_NAMESPACE}.svc:5432/${VAR_POSTGRES_DATABASE}?sslmode=disable"
+    # MY_POSTGRES_CREDS_SECRET: pg-s5n-cluster-pguser-admin
+    local lf_s5n_pg_user=$($MY_CLUSTER_COMMAND get secret ${lf_s5n_secret_name} -n ${VAR_POSTGRES_NAMESPACE} -o jsonpath='{.data.user}' | base64 -d)
+    local lf_s5n_pg_pwd=$($MY_CLUSTER_COMMAND get secret ${lf_s5n_secret_name} -n ${VAR_POSTGRES_NAMESPACE} -o jsonpath='{.data.password}' | base64 -d)
+    local lf_s5n_pg_host=$($MY_CLUSTER_COMMAND get secret ${lf_s5n_secret_name} -n ${VAR_POSTGRES_NAMESPACE} -o jsonpath='{.data.host}' | base64 -d)
+    local lf_s5n_pg_port=$($MY_CLUSTER_COMMAND get secret ${lf_s5n_secret_name} -n ${VAR_POSTGRES_NAMESPACE} -o jsonpath='{.data.port}' | base64 -d)
+    local lf_s5n_pg_db_name=$($MY_CLUSTER_COMMAND get secret ${lf_s5n_secret_name} -n ${VAR_POSTGRES_NAMESPACE} -o jsonpath='{.data.dbname}' | base64 -d)
+	
+    export VAR_DSN="postgresql://${lf_s5n_pg_user}:${lf_s5n_pg_pwd}@${lf_s5n_pg_host}:${lf_s5n_pg_port}/${lf_s5n_pg_db_name}?sslmode=disable"
     echo "VAR_DSN=$VAR_DSN"
+    export VAR_SECRET_NAME="${MY_APIC_GRAPHQL_DSN_SECRET}"
+    export VAR_NAMESPACE="${VAR_APIC_GRAPHQL_NAMESPACE}"
     create_oc_resource "Secret" "${MY_APIC_GRAPHQL_DSN_SECRET}" "${MY_APIC_GRAPHQL_DIR}" "${MY_APIC_GRAPHQL_WORKINGDIR}" "stepzen_secret.yaml" "$VAR_APIC_GRAPHQL_NAMESPACE"
-    #$MY_CLUSTER_COMMAND create secret generic ${MY_APIC_GRAPHQL_DSN_SECRET} \
-  #--from-literal=dsn="postgresql://${VAR_POSTGRES_USER}:$($MY_CLUSTER_COMMAND get secret ${VAR_POSTGRES_SECRET} -n ${VAR_POSTGRES_NAMESPACE} -o jsonpath='{.data.password}' | base64 -d)@${VAR_POSTGRES_CLUSTER}-rw.${VAR_POSTGRES_NAMESPACE}.svc:5432/${VAR_POSTGRES_DATABASE}?sslmode=disable" \
-  #--namespace ${VAR_APIC_GRAPHQL_NAMESPACE}
-    unset VAR_NAMESPACE VAR_CERT_SECRET_NAME VAR_DSN
+
+    unset VAR_NAMESPACE VAR_SECRET_NAME VAR_DSN
     #$MY_CLUSTER_COMMAND -n ${VAR_APIC_GRAPHQL_NAMESPACE} create secret generic $MY_POSTGRES_DSN_SECRET --from-literal=DSN="${lf_dsn}"
 
     # Download and extract the CASE bundle.

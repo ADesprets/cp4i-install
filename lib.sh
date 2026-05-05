@@ -12,7 +12,7 @@ function install_mq_k8s() {
     check_directory_exist_create "${MY_MQ_WORKINGDIR}"
 
     create_project "$VAR_MQ_NAMESPACE" "$VAR_MQ_NAMESPACE project" "For MQ" "${MY_YAMLDIR}mq/" "${MY_MQ_WORKINGDIR}"
-    mylog info "Creating entitlement, need to check if it is needed or works"
+    mylog info "Creating entitlement, need to check if it is needed or works" 1>&2
     add_ibm_entitlement "$VAR_MQ_NAMESPACE"
 
     # create a mq service 
@@ -78,7 +78,7 @@ function install_flink_k8s() {
 
     create_project "${VAR_FLINK_NAMESPACE}" "${VAR_FLINK_NAMESPACE} project" "For Flink" "${MY_RESOURCESDIR}" "${MY_FLINK_WORKINGDIR}"
 
-    mylog info "Creating entitlement, need to check if it is needed or works"
+    mylog info "Creating entitlement, need to check if it is needed or works" 1>&2
     add_ibm_entitlement "$VAR_FLINK_NAMESPACE"
 
     # install the operator
@@ -180,7 +180,7 @@ function install_ep_keycloak_k8s() {
 
     create_project "${VAR_EP_NAMESPACE}" "${VAR_EP_NAMESPACE} project" "For Event Processing" "${MY_RESOURCESDIR}" "${MY_EP_WORKINGDIR}"
 
-    mylog info "Creating entitlement, need to check if it is needed or works"
+    mylog info "Creating entitlement, need to check if it is needed or works" 1>&2
     add_ibm_entitlement "$VAR_EP_NAMESPACE"
 
     # install the operator
@@ -257,7 +257,7 @@ function install_ep_local_k8s() {
 
     create_project "${VAR_EP_NAMESPACE}" "${VAR_EP_NAMESPACE} project" "For Event Processing" "${MY_RESOURCESDIR}" "${MY_EP_WORKINGDIR}"
 
-    mylog info "Creating entitlement, need to check if it is needed or works"
+    mylog info "Creating entitlement, need to check if it is needed or works" 1>&2
     add_ibm_entitlement "$VAR_EP_NAMESPACE"
 
     # install the operator
@@ -604,7 +604,7 @@ function install_eem_local_oc() {
     check_directory_exist_create "${MY_EEM_WORKINGDIR}"
 
     create_project "$VAR_EEM_NAMESPACE" "$VAR_EEM_NAMESPACE project" "For Eventstreams" "${MY_RESOURCESDIR}" "${MY_EEM_WORKINGDIR}"
-    mylog info "Creating entitlement, need to check if it is needed or works"
+    mylog info "Creating entitlement, need to check if it is needed or works" 1>&2
     add_ibm_entitlement "$VAR_EEM_NAMESPACE"
 
     ## event endpoint management
@@ -673,7 +673,7 @@ function install_eem_keycloak_oc() {
     check_directory_exist_create "${MY_EEM_WORKINGDIR}"
 
     create_project "$VAR_EEM_NAMESPACE" "$VAR_EEM_NAMESPACE project" "For Eventstreams" "${MY_RESOURCESDIR}" "${MY_EEM_WORKINGDIR}"
-    mylog info "Creating entitlement, need to check if it is needed or works"
+    mylog info "Creating entitlement, need to check if it is needed or works" 1>&2
     add_ibm_entitlement "$VAR_EEM_NAMESPACE"
 
     ## event endpoint management
@@ -725,7 +725,7 @@ function install_eem_local_k8s() {
 
     create_project "${VAR_EEM_NAMESPACE}" "${VAR_EEM_NAMESPACE} project" "For Event Endpoint Management" "${MY_RESOURCESDIR}" "${MY_EEM_WORKINGDIR}"
 
-    mylog info "Creating entitlement, need to check if it is needed or works"
+    mylog info "Creating entitlement, need to check if it is needed or works" 1>&2
     add_ibm_entitlement "$VAR_EEM_NAMESPACE"
 
     # Creating EventStreams operator subscription
@@ -779,7 +779,7 @@ function install_eem_keycloak_k8s() {
 
     create_project "${VAR_EEM_NAMESPACE}" "${VAR_EEM_NAMESPACE} project" "For Event Endpoint Management" "${MY_RESOURCESDIR}" "${MY_EEM_WORKINGDIR}"
 
-    mylog info "Creating entitlement, need to check if it is needed or works"
+    mylog info "Creating entitlement, need to check if it is needed or works" 1>&2
     add_ibm_entitlement "$VAR_EEM_NAMESPACE"
 
     # Creating EventStreams operator subscription
@@ -853,7 +853,7 @@ function install_microk8s_cluster {
 
   decho $lf_tracelevel "Parameters: |no parameters|"
   
-  mylog info "📦 Creating MicroK8s master node..."
+  mylog info "📦 Creating MicroK8s master node..." 1>&2
   multipass launch --name $MY_MASTER --cpus $MY_CPU --memory $MY_RAM --disk $MY_DISK $MY_IMAGE
   multipass exec $MY_MASTER -- sudo snap install microk8s --classic
   multipass exec $MY_MASTER -- sudo usermod -a -G microk8s ubuntu
@@ -861,13 +861,13 @@ function install_microk8s_cluster {
   
   # Fetch the join command
   for lf_worker in "${MY_WORKERS[@]}"; do
-    mylog info  "🔧 Creating and joining worker nodes..."
+    mylog info  "🔧 Creating and joining worker nodes..." 1>&2
     multipass launch --name $lf_worker --cpus $MY_CPU --memory $MY_RAM --disk $MY_DISK $MY_IMAGE
     multipass exec $lf_worker -- sudo snap install microk8s --classic
     multipass exec $lf_worker -- sudo usermod -a -G microk8s ubuntu
     multipass exec $lf_worker -- sudo apt update && sudo apt install -y nfs-common
   
-    mylog info  "🧪 Generating join command for $lf_worker..."
+    mylog info  "🧪 Generating join command for $lf_worker..." 1>&2
     lf_joind_cmd=$(multipass exec $MY_MASTER -- microk8s add-node | grep 'microk8s join' | head -n1)
   
     mylog info  "🔗 Joining $lf_worker to cluster..."
@@ -1108,6 +1108,7 @@ function display_access_info() {
   if $MY_APIC; then
     lf_platform_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get ManagementCluster -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].status.endpoints[?(@.name=="platformApi")].uri}')
     mylog info "APIC Platform API endpoint: ${lf_platform_url}" 0
+    # APIC Cloud Manager
     lf_cm_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get ManagementCluster -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].status.endpoints[?(@.name=="admin")].uri}')
     mylog info "APIC Cloud Manager endpoint: ${lf_cm_url}" 0
     echo "<TR><TD><A HREF=${lf_cm_url}>APIC Cloud Manager UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
@@ -1116,6 +1117,7 @@ function display_access_info() {
     lf_cm_admin_pwd=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get secret ${lf_cm_admin_pwd_secret_name} -o jsonpath='{.data.password}' | base64 -d)
     mylog info "APIC Cloud Manager admin password: ${lf_cm_admin_pwd}" 0
     lf_mgr_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get ManagementCluster -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].status.endpoints[?(@.name=="apiManager")].uri}')
+    # API Manager
     echo "<TR><TD><A HREF=${lf_mgr_url}>APIC API Manager UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
     mylog info "APIC API Manager endpoint: ${lf_mgr_url}" 0
     lf_ptl_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get PortalCluster -o=jsonpath='{.items[?(@.kind=="PortalCluster")].status.endpoints[?(@.name=="portalWeb")].uri}')
@@ -3031,7 +3033,7 @@ function create_certificate_chain() {
   export VAR_CERT_ISSUER=${lf_tls_cert_issuer_name}
   export VAR_SECRET=${lf_tls_cert_name}
   export VAR_CERT_LABEL=${lf_in_tls_label1}
-  export VAR_INGRESS=$($MY_CLUSTER_COMMAND get ingresses.resources/cluster -o jsonpath='{.spec.domain}')
+  export VAR_INGRESS=$($MY_CLUSTER_COMMAND get ingresses.config.openshift.io cluster -o jsonpath='{.spec.domain}')
   create_oc_resource "Certificate" "$lf_tls_cert_name" "${MY_YAMLDIR}tls/" "${lf_in_workingdir}" "server_certificate.yaml" "$lf_in_namespace"
   unset VAR_CERT_COMMON_NAME VAR_CERT_ISSUER VAR_SECRET VAR_CERT_LABEL VAR_INGRESS
 

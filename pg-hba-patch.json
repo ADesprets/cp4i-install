@@ -1,0 +1,10 @@
+[
+  {
+    "op": "replace",
+    "path": "/spec/patroni/dynamicConfiguration/postgresql/pg_hba",
+    "value": [
+      "hostssl all all 10.128.0.0/14 md5",
+      "host all all 10.128.0.0/14 md5"
+    ]
+  }
+]

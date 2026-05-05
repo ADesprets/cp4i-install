@@ -7,8 +7,8 @@ spec:
   license:
     accept: true
   controlDatabaseSecret: ${MY_APIC_GRAPHQL_DSN_SECRET}
-#  imagePullSecrets:
-#    - ${DEFAULT_IMAGE_PULL_SECRET}  
+  imagePullSecrets:
+    - ${DEFAULT_IMAGE_PULL_SECRET}  
   graphServer:
     hpa:
       minReplicas: 1
@@ -18,5 +18,4 @@ spec:
     hpa:
       minReplicas: 1
       maxReplicas: 5
-      targetCPUUtilizationPercentage: 80
-      
+      targetCPUUtilizationPercentage: 80      

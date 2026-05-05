@@ -37,6 +37,8 @@ function create_mq_root_certificate () {
     export VAR_ES_MQ_SOURCE_STORE_PASSWORD=${lf_store_password}
   fi
 
+  echo ">>> VAR_CERT_SECRET_NAME: ${VAR_CERT_SECRET_NAME}"
+
   create_oc_resource "Certificate" "${VAR_CERT_NAME}" "${MY_YAMLDIR}tls/" "${MY_MQ_WORKINGDIR}" "ca_certificate_jks.yaml" "${VAR_MQ_NAMESPACE}"
   wait_for_resource "Secret" "${VAR_CERT_SECRET_NAME}" "${VAR_MQ_NAMESPACE}"
 

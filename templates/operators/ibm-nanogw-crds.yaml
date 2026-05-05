@@ -114,8 +114,28 @@ spec:
                 oneOf:
                 - required:
                   - OpenAPIv3.0
+                - required:
+                  - OpenAPIv3.1
                 properties:
                   OpenAPIv3.0:
+                    properties:
+                      configMap:
+                        type: string
+                      securitySchemes:
+                        nullable: true
+                        properties:
+                          apiKeyTypes:
+                            additionalProperties:
+                              enum:
+                              - client-id
+                              - client-secret
+                              type: string
+                            type: object
+                        type: object
+                    required:
+                    - configMap
+                    type: object
+                  OpenAPIv3.1:
                     properties:
                       configMap:
                         type: string
@@ -288,6 +308,11 @@ spec:
                 description: Describes the dependencies for this resource's assembly.
                 nullable: true
                 properties:
+                  blockService:
+                    default: false
+                    description: True if this resource's assembly depends on a blockService
+                      configuration.
+                    type: boolean
                   cacheService:
                     default: false
                     description: True if this resource's assembly depends on a cacheService
@@ -484,6 +509,11 @@ spec:
                 description: Describes the dependencies for this resource's assembly.
                 nullable: true
                 properties:
+                  blockService:
+                    default: false
+                    description: True if this resource's assembly depends on a blockService
+                      configuration.
+                    type: boolean
                   cacheService:
                     default: false
                     description: True if this resource's assembly depends on a cacheService
@@ -3468,6 +3498,40 @@ spec:
                 additionalProperties:
                   type: string
                 type: object
+              blockService:
+                nullable: true
+                properties:
+                  database:
+                    description: Name of database configuration to use; must be defined
+                      in components.
+                    maxLength: 32
+                    minLength: 1
+                    type: string
+                  defaultMode:
+                    default: denyAll
+                    description: Default behaviour if no valid remote config is available
+                    enum:
+                    - allowAll
+                    - denyAll
+                    type: string
+                  retryIntervalSeconds:
+                    description: Retry interval in seconds, kicks in if TTL exceeded
+                      but failure encountered when fetching the new config
+                    format: uint64
+                    maximum: 86400
+                    minimum: 1
+                    nullable: true
+                    type: integer
+                  ttlSeconds:
+                    description: TTL in seconds for the cached block config
+                    format: uint64
+                    maximum: 86400
+                    minimum: 1
+                    nullable: true
+                    type: integer
+                required:
+                - database
+                type: object
               cacheService:
                 nullable: true
                 properties:
@@ -5486,6 +5550,11 @@ spec:
                 description: Describes the dependencies for this resource's assembly.
                 nullable: true
                 properties:
+                  blockService:
+                    default: false
+                    description: True if this resource's assembly depends on a blockService
+                      configuration.
+                    type: boolean
                   cacheService:
                     default: false
                     description: True if this resource's assembly depends on a cacheService

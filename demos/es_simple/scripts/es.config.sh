@@ -127,13 +127,14 @@ function es_run_all () {
   check_directory_exist_create "${MY_ES_WORKINGDIR}"
 
   # Create namespace 
-  create_project "$VAR_ES_NAMESPACE" "$VAR_ES_NAMESPACE project" "For Event Streams customisation" "${MY_RESOURCESDIR}" "${MY_ES_WORKINGDIR}"
+  #toto
+  # create_project "$VAR_ES_NAMESPACE" "$VAR_ES_NAMESPACE project" "For Event Streams customisation" "${MY_RESOURCESDIR}" "${MY_ES_WORKINGDIR}"
 
-  create_es
+  # create_es
 
-  create_kafka_topics
+  # create_kafka_topics
 
-  create_kafka_users
+  # create_kafka_users
 
   create_kafka_connector
 
