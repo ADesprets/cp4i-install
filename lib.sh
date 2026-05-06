@@ -1789,7 +1789,32 @@ function check_directory_exist_create() {
 }
 
 ################################################
-# 
+# create a dated directory using yyyymmdd format
+# @param 1: parent directory
+# @stdout: created/existing dated directory path
+function create_to_date_directory() {
+  local lf_tracelevel=5
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  local lf_in_parent_directory=$1
+  decho $lf_tracelevel "Parameters:\"$1\"|"
+
+  if [[ $# -ne 1 ]]; then
+    mylog error "You have to provide 1 argument: parent directory"
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
+    exit 1
+  fi
+
+  local lf_date_directory="${lf_in_parent_directory}$(date +%Y%m%d)/"
+  check_directory_exist_create "$lf_date_directory"
+
+  echo "$lf_date_directory"
+
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+}
+
+################################################
+#
 # @param 1:
 function read_config_file() {
   local lf_tracelevel=5

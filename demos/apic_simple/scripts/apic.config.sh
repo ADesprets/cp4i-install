@@ -62,6 +62,111 @@ function create_mail_server() {
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}  
 }
+
+################################################
+# Download projects
+function download_projects() {
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  mylog info "Download projects for organisations" 1>&2
+
+  # Creating  a folder to store the files from the project
+  local lf_projects_directory=$(create_to_date_directory "${MY_APIC_WORKINGDIR}projects/")
+  mylog info "Projects directory: ${lf_projects_directory}" 1>&2
+
+  # Getting the list of projects
+  local lf_org_name=$(echo "$APIC_PROVIDER_ORG" | tr '[:upper:]' '[:lower:]')
+  local lf_projects_list_file="${lf_projects_directory}projects.json"
+  local lf_projects_result
+  local lf_project_names
+  local lf_project_name
+  local lf_project_files_result
+
+  decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/${lf_org_name}/projects?fields=name\" -H \"Accept: application/json\" -H \"Authorization: Bearer \$amToken\""
+  lf_projects_result=$(curl -sk "${PLATFORM_API_URL}api/orgs/${lf_org_name}/projects?fields=name" \
+    -H "Accept: application/json" \
+    -H "Authorization: Bearer $amToken" \
+    -H "Content-Type: application/json")
+
+  decho $lf_tracelevel "lf_projects_result: ${lf_projects_result}"
+  lf_project_names=$(printf '%s\n' "${lf_projects_result}" | jq -r '.results[].name // empty')
+
+  #  Check if the projects list is empty
+  if [ -z "$lf_project_names" ]; then
+    mylog error "No projects found in the organization ${lf_org_name}" 1>&2
+    return 1
+  fi
+
+  # For each project get the files ids
+  for lf_project_name in ${lf_project_names}; do
+    mylog info "Listing files for project ${lf_project_name}" 1>&2
+
+    local lf_project_directory="${lf_projects_directory}${lf_project_name}/"
+    local lf_project_file_ids
+    local lf_project_file_id
+    local lf_project_file_content
+    local lf_project_file_output
+
+    check_directory_exist_create "${lf_project_directory}"
+
+    decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/${lf_org_name}/projects/${lf_project_name}/project-files?fields=id,file_name,file_path\" -H \"Accept: application/json\" -H \"Authorization: Bearer \$amToken\""
+    lf_project_files_result=$(curl -sk "${PLATFORM_API_URL}api/orgs/${lf_org_name}/projects/${lf_project_name}/project-files?fields=id,file_name,file_path" \
+      -H "Accept: application/json" \
+      -H "Authorization: Bearer $amToken" \
+      -H "Content-Type: application/json")
+
+    decho $lf_tracelevel "files: ${lf_project_files_result}"
+
+    local lf_project_file_entries
+    local lf_project_file_entry
+    local lf_project_file_id
+    local lf_project_file_name
+    local lf_project_file_path
+
+    lf_project_file_entries=$(printf '%s\n' "${lf_project_files_result}" | jq -rc '.results[] | @base64')
+
+    # For each file get id, file_name and file_path
+    for lf_project_file_entry in ${lf_project_file_entries}; do
+      lf_project_file_id=$(printf '%s' "${lf_project_file_entry}" | base64 --decode | jq -r '.id // empty')
+      lf_project_file_name=$(printf '%s' "${lf_project_file_entry}" | base64 --decode | jq -r '.file_name // empty')
+      lf_project_file_path=$(printf '%s' "${lf_project_file_entry}" | base64 --decode | jq -r '.file_path // empty')
+
+      mylog info "Getting the content for file_id ${lf_project_file_id}, file_name ${lf_project_file_name}, file_path ${lf_project_file_path}" 1>&2
+
+      lf_project_file_output="${lf_project_directory}${lf_project_file_name}"
+
+      decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/${lf_org_name}/projects/${lf_project_name}/project-files/${lf_project_file_id}?fields=file_content\" -H \"Authorization: Bearer \$amToken\""
+      lf_project_file_result=$(curl -sk "${PLATFORM_API_URL}api/orgs/${lf_org_name}/projects/${lf_project_name}/project-files/${lf_project_file_id}?fields=file_content" \
+      -H "Accept: application/json" \
+      -H "Authorization: Bearer $amToken" \
+      -H "Content-Type: application/json")
+
+      printf '%s' "${lf_project_file_result}" | jq -r '.file_content.data // empty' > "${lf_project_file_output}"
+      decho $lf_tracelevel "file content saved to ${lf_project_file_output}"
+
+    done
+  done
+
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+}
+
+################################################
+# Upload projects
+function upload_projects() {
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  mylog info "Upload projects for organisations" 1>&2
+
+  # Assume the projects are under 
+
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+}
 ################################################
 # Create TLS Profile for the Nano gateway with wildcard support
 function create_nano_gateway_tls_profile() {
@@ -1166,7 +1271,8 @@ function create_am_token(){
   local lf_tracelevel=3
   trace_in $lf_tracelevel ${FUNCNAME[0]}
 
-  # get token for the API Manager for 
+  # get token for the API Manager for
+  decho $lf_tracelevel "curl -sk --fail -X POST \"${PLATFORM_API_URL}api/token\" -H 'Content-Type: application/json' -H 'Accept: application/json' --data-raw \"{\\\"username\\\":\\\"$APIC_ORG1_USERNAME\\\",\\\"password\\\":\\\"<hidden>\\\",\\\"realm\\\":\\\"provider/default-idp-2\\\",\\\"client_id\\\":\\\"$TOOLKIT_CLIENT_ID\\\",\\\"client_secret\\\":\\\"<hidden>\\\",\\\"grant_type\\\":\\\"password\\\"}\" | jq .access_token | sed -e s/\\\"//g"
   amToken=$(curl -sk --fail -X POST "${PLATFORM_API_URL}api/token" \
    -H 'Content-Type: application/json' \
    -H 'Accept: application/json' \
@@ -1203,7 +1309,7 @@ function apic_run_all () {
 
   # Download toolkit/designer+loopback+toolkit
   # download_tools TODO
-  
+
   # Create Cloud Manager token
   create_cm_token
 
@@ -1224,6 +1330,10 @@ function apic_run_all () {
   
   # Create API Manager token
   create_am_token
+
+  download_projects
+
+  exit 0
   
   create_catalog "${APIC_PROVIDER_ORG}"
   
