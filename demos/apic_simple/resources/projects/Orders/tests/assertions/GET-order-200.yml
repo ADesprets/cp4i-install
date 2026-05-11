@@ -1,0 +1,42 @@
+kind: assertion
+apiVersion: api.ibm.com/v1
+metadata:
+  name: GET-order-200
+  namespace: default
+  version: '1.0'
+  tags: []
+  description: ''
+spec:
+  - name: Validate the response status code
+    key: code
+    action: equals
+    value: 200
+  - name: Validate content type header
+    key: responseHeaders.content-type
+    action: equals
+    value: application/json; charset=utf-8
+  - name: Validate response schema
+    key: json()
+    action: validateSchema
+    value: >-
+      {"type":"object","properties":{"Output":{"type":"object","properties":{"Order
+      Id":{"type":"string","description":"Unique identifier for the
+      order"},"First name":{"type":"string","description":"Customer's first
+      name"},"Last name":{"type":"string","description":"Customer's last
+      name"},"Customer":{"type":"string","description":"Customer department or
+      category"},"Product Name":{"type":"string","description":"Name of the
+      purchased product"},"Product Code":{"type":"string","description":"Product
+      identifier
+      code"},"Date":{"type":"string","format":"date","description":"Order date
+      in YYYY-MM-DD format"},"Quantity":{"type":"string","description":"Number
+      of items ordered (as
+      string)"},"Opt-in":{"type":"string","enum":["true","false"],"description":"Customer
+      opt-in status"},"Comment":{"type":"string","description":"Additional
+      customer comments"},"_connection":{"type":"string","description":"Internal
+      connection metadata (often empty)"}},"required":["Order Id","First
+      name","Last name","Customer","Product Name","Product
+      Code","Date","Quantity","Opt-in","Comment","_connection"],"additionalProperties":false}},"required":["Output"],"additionalProperties":false}
+  - name: 'Validate required property: Output'
+    key: json()
+    action: haveProperty
+    value: Output

@@ -1,0 +1,16 @@
+kind: Quota
+apiVersion: api.ibm.com/v1
+metadata:
+  name: Quota-0nzfz7
+  namespace: git_orders
+  version: '1.0'
+  tags: []
+  description: ''
+spec:
+  maxRequest: 60
+  interval: 1m
+  extensions:
+    dp-nano-gateway:
+      apiVersion: api.ibm.com/v1
+      spec:
+        intervalOffset: -1

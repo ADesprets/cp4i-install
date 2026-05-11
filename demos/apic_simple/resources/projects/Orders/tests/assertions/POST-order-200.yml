@@ -1,0 +1,13 @@
+kind: assertion
+apiVersion: api.ibm.com/v1
+metadata:
+  name: POST-order-200
+  namespace: default
+  version: '1.0'
+  tags: []
+  description: ''
+spec:
+  - name: Validate the response status code
+    key: code
+    action: equals
+    value: 200

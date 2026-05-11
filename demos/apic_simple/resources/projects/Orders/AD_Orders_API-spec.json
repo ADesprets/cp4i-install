@@ -1,0 +1,445 @@
+{
+    "openapi": "3.0.1",
+    "info": {
+        "title": "AD_Orders_API",
+        "description": "API for the creation, reading, update and delete of an order in the Sheet system\nPour MCP \n  routing-config:\n    server-url: http://prod870246.a-fra-s1.apigw.ipaas.automation.ibm.com/gateway/ES_Orders_API/1.0/\n    auth:\n      apikey:\n        key: x-Gateway-APIKey\n        value: e3152ffc-a124-4b58-898b-f145bf340290    \n  server:\n    mode: stdio\n  log-level: DEBUG",
+        "version": "1.0",
+        "x-ibm-name": "ad_orders_api",
+        "contact": {
+            "name": "Arnauld Desprets",
+            "email": "arnauld_desprets@fr.ibm.com"
+        },
+        "license": {
+            "name": "Apache 2.0"
+        }
+    },
+    "tags": [
+        {
+            "name": "ordermgmt",
+            "description": "Operations related to orders management"
+        }
+    ],
+    "paths": {
+        "/orders": {
+            "summary": "/orders",
+            "get": {
+                "description": "This method retrieves ALL the orders from the Orders System that is handled by using the IBM webMethods Hybrid Integration platform. It retrieves the information of only one order that is specified by the query parameter OrderID.",
+                "operationId": "orders_GET_1",
+                "parameters": [
+                    {
+                        "name": "X-IBM-Client-Id",
+                        "in": "header",
+                        "description": "client-id",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK\n[\n [\n \"477895\",\n \"Sir\",\n \"Michael\",\n \"Finance\",\n \"Mechanical Keyboard\",\n \"MK600\",\n \"2025-04-30\",\n \"3\",\n \"FALSE\",\n \"Comentario interesante\"\n ],\n [\n \"554068\",\n \"Mateous\",\n \"Snifowf\",\n \"Presales\",\n \"Mechanical Keyboard\",\n \"MK600\",\n \"2025-06-18\",\n \"233\",\n \"TRUE\",\n \"asdfasdf\"\n ]\n]",
+                        "headers": {},
+                        "content": {
+                            "application/json": {}
+                        }
+                    },
+                    "401": {
+                        "description": "Access Denied",
+                        "headers": {},
+                        "content": {}
+                    }
+                },
+                "tags": [
+                    "ordermgmt"
+                ]
+            },
+            "parameters": [],
+            "description": "The back end is accessed with curl -ks -H \"Content-type: application/json\" -H \"accept: application/json\" -H \"x-Gateway-APIKey: e3152ffc-a124-4b58-898b-f145bf340290\" \"http://prod870246.a-fra-s1.apigw.ipaas.automation.ibm.com/gateway/ES_Orders_API/1.0/orders\" | jq ."
+        },
+        "/order": {
+            "summary": "/order",
+            "get": {
+                "description": "This method retrieves one specific order from the Orders System that is handled by using the IBM webMethods Hybrid Integration platform. It retrieves the information of only one order that is specified by the query parameter OrderID. \n{\n    \"Output\": {\n        \"Order Id\": \"477895\",\n        \"First name\": \"Sir\",\n        \"Last name\": \"Michael\",\n        \"Customer\": \"Finance\",\n        \"Product Name\": \"Mechanical Keyboard\",\n        \"Product Code\": \"MK600\",\n        \"Date\": \"2025-04-30\",\n        \"Quantity\": \"3\",\n        \"Opt-in\": \"FALSE\",\n        \"Comment\": \"Comentario interesante\",\n        \"_connection\": \"\"\n    }\n}",
+                "operationId": "order_GET_2",
+                "parameters": [
+                    {
+                        "name": "orderID",
+                        "in": "query",
+                        "required": true,
+                        "allowEmptyValue": false,
+                        "schema": {
+                            "type": "string",
+                            "readOnly": false
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "headers": {},
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/full_order"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Access Denied",
+                        "headers": {},
+                        "content": {}
+                    }
+                },
+                "tags": [
+                    "ordermgmt"
+                ]
+            },
+            "put": {
+                "description": "This method updates one specific order from the Orders System that is handled by using the IBM webMethods Hybrid Integration platform. It first of all request the multiple parameters that are required to the user (\"Comment\", \"Product_code\",\"Customer\",\"Calendar\",\"Product\",\"Quantity\",\"Mail_pref\" and \"Name\") and then updates the information of the order that is specified by the query parameter OrderID. \n",
+                "operationId": "order_PUT_2",
+                "parameters": [
+                    {
+                        "name": "orderID",
+                        "in": "query",
+                        "required": true,
+                        "allowEmptyValue": false,
+                        "schema": {
+                            "type": "string",
+                            "readOnly": false
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Order"
+                            }
+                        }
+                    },
+                    "description": "Definition of an order",
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "headers": {},
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Order"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Access Denied",
+                        "headers": {},
+                        "content": {}
+                    }
+                },
+                "tags": [
+                    "ordermgmt"
+                ],
+                "summary": "Order management"
+            },
+            "post": {
+                "description": "This method creates a new order in the Orders System that is handled by using the IBM webMethods Hybrid Integration platform. It first of all request the multiple parameters that are required to the user (\"Comment\", \"Product_code\",\"Customer\",\"Calendar\",\"Product\",\"Quantity\",\"Mail_pref\" and \"Name\") and then returns the orderID that has been created.\n{\n    \"Name\": \"Jose Miguel\",\n    \"Calendar\": \"2025-04-24\",\n    \"Customer\": \"Presales\",\n    \"Product\": \"Portable Power Bank\",\n    \"Product_code\": \"PB1000\",\n    \"Quantity\": \"2\",\n    \"Comment\": \"test\",\n    \"Mail_pref\": \"true\"\n}",
+                "operationId": "order_POST_2",
+                "parameters": [],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Order"
+                            }
+                        }
+                    },
+                    "description": "Definition of an order",
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "headers": {},
+                        "content": {}
+                    },
+                    "401": {
+                        "description": "Access Denied",
+                        "headers": {},
+                        "content": {}
+                    }
+                },
+                "tags": [
+                    "ordermgmt"
+                ]
+            },
+            "delete": {
+                "description": "This method deletes one specific order from the Orders System that is handled by using the IBM webMethods Hybrid Integration platform. It first of all request the OrderID to the user and ask a second time to ensure the user wants to delete the API. After that the API is deleted by using the body parameter orderID with the value provided.\n{\n    \"orderID\": \"65423\"\n}",
+                "operationId": "order_DELETE",
+                "parameters": [],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/delete_1"
+                            },
+                            "example": {
+                                "orderID": "65423"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "headers": {},
+                        "content": {}
+                    },
+                    "401": {
+                        "description": "Access Denied",
+                        "headers": {},
+                        "content": {}
+                    }
+                },
+                "tags": [
+                    "ordermgmt"
+                ]
+            },
+            "parameters": []
+        }
+    },
+    "components": {
+        "schemas": {
+            "Order": {
+                "required": [
+                    "Calendar",
+                    "Comment",
+                    "Customer",
+                    "Mail_pref",
+                    "Name",
+                    "Product",
+                    "Product_code",
+                    "Quantity"
+                ],
+                "type": "object",
+                "properties": {
+                    "Calendar": {
+                        "type": "string",
+                        "example": "2025-12-25"
+                    },
+                    "Comment": {
+                        "type": "string",
+                        "example": "test"
+                    },
+                    "Customer": {
+                        "type": "string",
+                        "example": "Presales"
+                    },
+                    "Mail_pref": {
+                        "type": "string",
+                        "example": "true"
+                    },
+                    "Name": {
+                        "type": "string",
+                        "example": "Arnauld Desprets"
+                    },
+                    "Product": {
+                        "type": "string",
+                        "example": "Portable Power Bank"
+                    },
+                    "Product_code": {
+                        "type": "string",
+                        "example": "PB1000"
+                    },
+                    "Quantity": {
+                        "type": "string",
+                        "example": "2"
+                    }
+                },
+                "description": "Order to create"
+            },
+            "full_order": {
+                "type": "object",
+                "properties": {
+                    "Output": {
+                        "type": "object",
+                        "properties": {
+                            "Order Id": {
+                                "type": "string",
+                                "description": "Unique identifier for the order"
+                            },
+                            "First name": {
+                                "type": "string",
+                                "description": "Customer's first name"
+                            },
+                            "Last name": {
+                                "type": "string",
+                                "description": "Customer's last name"
+                            },
+                            "Customer": {
+                                "type": "string",
+                                "description": "Customer department or category"
+                            },
+                            "Product Name": {
+                                "type": "string",
+                                "description": "Name of the purchased product"
+                            },
+                            "Product Code": {
+                                "type": "string",
+                                "description": "Product identifier code"
+                            },
+                            "Date": {
+                                "type": "string",
+                                "format": "date",
+                                "description": "Order date in YYYY-MM-DD format"
+                            },
+                            "Quantity": {
+                                "type": "string",
+                                "description": "Number of items ordered (as string)"
+                            },
+                            "Opt-in": {
+                                "type": "string",
+                                "enum": [
+                                    "true",
+                                    "false"
+                                ],
+                                "description": "Customer opt-in status"
+                            },
+                            "Comment": {
+                                "type": "string",
+                                "description": "Additional customer comments"
+                            },
+                            "_connection": {
+                                "type": "string",
+                                "description": "Internal connection metadata (often empty)"
+                            }
+                        },
+                        "required": [
+                            "Order Id",
+                            "First name",
+                            "Last name",
+                            "Customer",
+                            "Product Name",
+                            "Product Code",
+                            "Date",
+                            "Quantity",
+                            "Opt-in",
+                            "Comment",
+                            "_connection"
+                        ],
+                        "additionalProperties": false
+                    }
+                },
+                "required": [
+                    "Output"
+                ],
+                "additionalProperties": false
+            },
+            "delete_1": {
+                "required": [
+                    "orderID"
+                ],
+                "type": "object",
+                "properties": {
+                    "orderID": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "responses": {},
+        "parameters": {},
+        "examples": {
+            "sample_order_1": {
+                "description": "",
+                "value": {
+                    "Calendar": "2026-03-12",
+                    "Comment": "Commande rapide",
+                    "Customer": "Desprets",
+                    "Mail_pref": "true",
+                    "Name": "Arnauld",
+                    "Product": "Portable Power Bank",
+                    "Product_code": "PB1000",
+                    "Quantity": "10"
+                },
+                "summary": "Sample order"
+            }
+        },
+        "requestBodies": {},
+        "headers": {},
+        "callbacks": {},
+        "securitySchemes": {
+            "clientID": {
+                "type": "apiKey",
+                "x-key-type": "client_id",
+                "name": "X-IBM-Client-Id",
+                "in": "header"
+            }
+        }
+    },
+    "security": [
+        {
+            "clientID": []
+        }
+    ],
+    "x-ibm-configuration": {
+        "type": "rest",
+        "phase": "realized",
+        "enforced": true,
+        "testable": true,
+        "gateway": "datapower-api-gateway",
+        "cors": {
+            "enabled": true
+        },
+        "assembly": {
+            "execute": [
+                {
+                    "invoke": {
+                        "version": "2.0.0",
+                        "title": "invoke",
+                        "backend-type": "detect",
+                        "header-control": {
+                            "type": "blocklist",
+                            "values": []
+                        },
+                        "parameter-control": {
+                            "type": "allowlist",
+                            "values": []
+                        },
+                        "timeout": 60,
+                        "verb": "keep",
+                        "chunked-uploads": true,
+                        "persistent-connection": true,
+                        "target-url": "$(target-url)$(request.path)$(request.search)",
+                        "follow-redirects": false,
+                        "inject-proxy-headers": true
+                    }
+                }
+            ]
+        },
+        "properties": {
+            "target-url": {
+                "value": "http://prod870246.a-fra-s1.apigw.ipaas.automation.ibm.com/gateway/AD_Orders_API/1.0",
+                "description": "The URL of the target service",
+                "encoded": false
+            }
+        },
+        "activity-log": {
+            "enabled": true,
+            "success-content": "activity",
+            "error-content": "payload"
+        },
+        "servers": [
+            {
+                "url": "https://cp4i-apic-gw-gateway-cp4i.apps.itz-5rxylx.infra01-lb.lon04.techzone.ibm.com/org1/sandbox"
+            }
+        ]
+    },
+    "servers": [
+        {
+            "url": "/AD_Orders_API/1.0"
+        }
+    ]
+}

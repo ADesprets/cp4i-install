@@ -1,0 +1,95 @@
+kind: test
+apiVersion: api.ibm.com/v1
+metadata:
+  namespace: git_orders
+  name: Orders Tests
+  version: '1.0'
+  tags: []
+spec:
+  api:
+    $endpoint: >-
+      https://rgw.apps.itz-uijsya.infra01-lb.wdc04.techzone.ibm.com/org1/sandbox/AD_Orders_API/1.0
+  request:
+    - method: GET
+      resource: /orders
+      headers:
+        - key: accept
+          value: application/json
+        - key: X-IBM-Client-Id
+          value: ${X-IBM-Client-Id_value}
+      parameters: []
+      assertions:
+        $ref: default:GET-orders-200:1.0
+      var: []
+    - method: GET
+      resource: /order
+      headers:
+        - key: accept
+          value: application/json
+        - key: X-IBM-Client-Id
+          value: ${X-IBM-Client-Id_value}
+      parameters:
+        - key: orderID
+          value: '563905'
+      assertions:
+        $ref: default:GET-order-200:1.0
+    - method: PUT
+      resource: /order
+      headers:
+        - key: accept
+          value: application/json
+        - key: content-type
+          value: application/json
+        - key: X-IBM-Client-Id
+          value: ${X-IBM-Client-Id_value}
+      payload:
+        raw:
+          json: |-
+            {
+              "Calendar": "2025-12-25",
+              "Comment": "test",
+              "Customer": "Presales",
+              "Mail_pref": "true",
+              "Name": "Arnauld Desprets",
+              "Product": "Portable Power Bank",
+              "Product_code": "PB1000",
+              "Quantity": "2"
+            }
+      parameters:
+        - key: orderID
+          value: string
+      assertions:
+        $ref: default:PUT-order-200:1.0
+      skipped: true
+    - method: POST
+      resource: /order
+      headers:
+        - key: content-type
+          value: application/json
+        - key: X-IBM-Client-Id
+          value: ${X-IBM-Client-Id_value}
+      parameters: []
+      assertions:
+        $ref: default:POST-order-200:1.0
+      payload:
+        raw:
+          json: "{\n\t\"Name\": \"Arnauld Desprets\",\n\t\"Calendar\": \"2026-04-17\",\n\t\"Customer\": \"Presales\",\n\t\"Product\": \"Portable Power Bank\",\n\t\"Product_code\": \"PB1000\",\n\t\"Quantity\": \"10\",\n\t\"Comment\": \"test\",\n\t\"Mail_pref\": \"true\"\n}"
+    - method: DELETE
+      resource: /order
+      headers:
+        - key: content-type
+          value: application/json
+        - key: X-IBM-Client-Id
+          value: ${X-IBM-Client-Id_value}
+      payload:
+        raw:
+          json: |-
+            {
+              "orderID": "65423"
+            }
+      parameters: []
+      assertions:
+        $ref: default:DELETE-order-200:1.0
+      skipped: true
+  environment:
+    - $ref: git_orders:environment_sandbox:1.0

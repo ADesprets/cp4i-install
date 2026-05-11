@@ -1,0 +1,22 @@
+kind: CORS
+apiVersion: api.ibm.com/v1
+metadata:
+  name: cors-AD_Orders_API
+  namespace: git_orders
+  version: '1.0'
+  tags: 
+    - ordermgmt
+  description: ''
+spec:
+  rules:
+    - action: allow
+      originList:
+        - 'http://prod870246.a-fra-s1.apigw.ipaas.automation.ibm.com'
+      allowCredentials: false
+      allowHeaders:
+        - Content-Type
+        - Authorization
+      exposeHeaders:
+        predefined: false
+        custom: ''
+        backend: false

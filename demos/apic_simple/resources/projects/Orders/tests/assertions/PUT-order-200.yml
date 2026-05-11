@@ -1,0 +1,55 @@
+kind: assertion
+apiVersion: api.ibm.com/v1
+metadata:
+  name: PUT-order-200
+  namespace: default
+  version: '1.0'
+  tags: []
+  description: ''
+spec:
+  - name: Validate the response status code
+    key: code
+    action: equals
+    value: 200
+  - name: Validate content type header
+    key: responseHeaders.content-type
+    action: include
+    value: application/json
+  - name: Validate response schema
+    key: json()
+    action: validateSchema
+    value: >-
+      {"required":["Calendar","Comment","Customer","Mail_pref","Name","Product","Product_code","Quantity"],"type":"object","properties":{"Calendar":{"type":"string"},"Comment":{"type":"string"},"Customer":{"type":"string"},"Mail_pref":{"type":"string"},"Name":{"type":"string"},"Product":{"type":"string"},"Product_code":{"type":"string"},"Quantity":{"type":"string"}},"description":"Order
+      to create"}
+  - name: 'Validate required property: Calendar'
+    key: json()
+    action: haveProperty
+    value: Calendar
+  - name: 'Validate required property: Comment'
+    key: json()
+    action: haveProperty
+    value: Comment
+  - name: 'Validate required property: Customer'
+    key: json()
+    action: haveProperty
+    value: Customer
+  - name: 'Validate required property: Mail_pref'
+    key: json()
+    action: haveProperty
+    value: Mail_pref
+  - name: 'Validate required property: Name'
+    key: json()
+    action: haveProperty
+    value: Name
+  - name: 'Validate required property: Product'
+    key: json()
+    action: haveProperty
+    value: Product
+  - name: 'Validate required property: Product_code'
+    key: json()
+    action: haveProperty
+    value: Product_code
+  - name: 'Validate required property: Quantity'
+    key: json()
+    action: haveProperty
+    value: Quantity

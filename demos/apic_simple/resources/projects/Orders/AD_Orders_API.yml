@@ -1,0 +1,18 @@
+kind: API
+apiVersion: api.ibm.com/v1
+metadata:
+  name: AD_Orders_API
+  namespace: git_orders
+  version: '1.0'
+  tags:
+    - ordermgmt
+  type: REST
+spec:
+  api-spec:
+    $path: ./AD_Orders_API-spec.json
+  cors:
+    $ref: git_orders:cors-AD_Orders_API:1.0
+  properties:
+    $ref: git_orders:properties-AD_Orders_API:1.0
+  policy-sequence:
+    - $ref: git_orders:assembly-AD_Orders_API:1.0

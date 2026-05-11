@@ -1,0 +1,12 @@
+kind: assertion
+metadata:
+  version: '1.0'
+  namespace: default
+  name: GET-orders-401
+  tags: []
+apiVersion: api.ibm.com/v1
+spec:
+  - name: Validate the response status code
+    key: code
+    action: equals
+    value: 401

@@ -1,0 +1,62 @@
+kind: DataPowerAssembly
+apiVersion: api.ibm.com/v1
+metadata:
+  name: assembly-AD_Orders_API
+  namespace: git_orders
+  version: '1.0'
+  tags: []
+spec:
+  x-ibm-configuration:
+    type: rest
+    phase: realized
+    enforced: true
+    testable: true
+    gateway: datapower-api-gateway
+    assembly:
+      execute:
+        - gatewayscript:
+            version: 2.0.0
+            title: uri-rewrite
+            source: "var rpath = context.get('request.path');\r\nvar bpath = context.get('api.root');\r\nvar dest_path = rpath.substr(bpath.length + 1);\r\ncontext.set('dest_path', dest_path);"
+            description: URI-Rewriting
+        - set-variable:
+            version: 2.0.0
+            title: set-be-gateway-key
+            actions:
+              - set: message.headers.x-Gateway-APIKey
+                value: e3152ffc-a124-4b58-898b-f145bf340290
+                type: string
+            description: |-
+              Set the x-Gateway-APIKey key to access webMethods backend.
+              Value should be e3152ffc-a124-4b58-898b-f145bf340290
+        - invoke:
+            version: 2.0.0
+            title: invoke
+            backend-type: detect
+            header-control:
+              type: blocklist
+              values: []
+            parameter-control:
+              type: allowlist
+              values: []
+            timeout: 60
+            verb: keep
+            chunked-uploads: true
+            persistent-connection: true
+            target-url: $(target-url)$(dest_path)$(request.search)
+            follow-redirects: false
+            inject-proxy-headers: true
+            description: Invokes the webMethods back end.
+    properties:
+      target-url:
+        value: >-
+          http://prod870246.a-fra-s1.apigw.ipaas.automation.ibm.com/gateway/ES_Orders_API/1.0
+        description: The URL of the target service
+        encoded: false
+    activity-log:
+      enabled: true
+      success-content: activity
+      error-content: payload
+    servers:
+      - url: >-
+          https://cp4i-apic-gw-gateway-cp4i.apps.itz-5rxylx.infra01-lb.lon04.techzone.ibm.com/org1/sandbox

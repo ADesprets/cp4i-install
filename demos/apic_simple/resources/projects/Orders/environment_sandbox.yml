@@ -1,0 +1,12 @@
+kind: environment
+apiVersion: api.ibm.com/v1
+metadata:
+  name: environment_sandbox
+  namespace: git_orders
+  version: '1.0'
+  tags: []
+spec:
+  variables:
+    - key: X-IBM-Client-Id_value
+      isSecret: false
+      value: a6ec83eb6221b8cc1543444ccdfe2669

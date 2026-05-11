@@ -1,0 +1,12 @@
+kind: environment
+apiVersion: api.ibm.com/v1
+metadata:
+  name: Orders Tests-1_0-environment
+  namespace: git_orders
+  version: '1.0'
+  tags: []
+spec:
+  variables:
+    - key: X-IBM-Client-Id_value
+      isSecret: true
+      value: $(X-IBM-Client-Id_value)

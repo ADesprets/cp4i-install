@@ -1,0 +1,39 @@
+kind: Product
+apiVersion: api.ibm.com/v1
+metadata:
+  name: AD_OrderProduct
+  namespace: git_orders
+  version: '1.0'
+  tags: []
+  description: Order mananagement
+spec:
+  apis:
+    - $ref: git_orders:AD_Orders_API:1.0
+  plans:
+    - $ref: git_orders:PlanLow:1.0
+  info:
+    categories: []
+    contact:
+      name: Arnauld Desprets
+      email: arnauld_desprets@fr.ibm.com
+      url: https://www.linkedin.com/in/arnauld-desprets
+    license:
+      name: Apache 2.0
+      url: https://www.apache.org/licenses/LICENSE-2.0
+    termsOfService: Apache 2.0
+    summary: Produit contenant l'API de  gestion d'ordre de commandes
+  extensions:
+    portal-config:
+      apiVersion: api.ibm.com/v1
+      spec:
+        visibility:
+          view:
+            type: public
+            orgs: []
+            enabled: true
+            tags: []
+          subscribe:
+            type: authenticated
+            orgs: []
+            enabled: true
+            tags: []

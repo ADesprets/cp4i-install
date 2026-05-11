@@ -1,0 +1,15 @@
+kind: Properties
+apiVersion: api.ibm.com/v1
+metadata:
+  name: properties-AD_Orders_API
+  namespace: git_orders
+  version: '1.0'
+  tags: 
+    - ordermgmt
+  description: ''
+spec:
+  target-url:
+    value: >-
+      http://prod870246.a-fra-s1.apigw.ipaas.automation.ibm.com/gateway/ES_Orders_API/1.0
+    description: The URL of the target service
+    encoded: false

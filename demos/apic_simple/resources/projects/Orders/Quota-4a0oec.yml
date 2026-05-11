@@ -1,0 +1,25 @@
+kind: Quota
+apiVersion: api.ibm.com/v1
+metadata:
+  name: Quota-4a0oec
+  namespace: git_orders
+  version: '1.0'
+  tags:
+    - bronze
+  description: Block with a bronze level
+spec:
+  maxRequest: 50
+  interval: 1m
+  extensions:
+    webm-gateway:
+      apiVersion: api.ibm.com/v1
+      spec:
+        alertMessage: You have exceeded the consumption
+        alertFrequency: always
+        onLimitReach: block
+        notification:
+          enabled: false
+          notifyAfter: ''
+          message: ''
+          email:
+            - arnauld_desprets@fr.ibm.com

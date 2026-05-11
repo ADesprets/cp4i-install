@@ -1,0 +1,17 @@
+kind: assertion
+apiVersion: api.ibm.com/v1
+metadata:
+  name: GET-orders-200
+  namespace: default
+  version: '1.0'
+  tags: []
+  description: ''
+spec:
+  - name: Validate the response status code
+    key: code
+    action: equals
+    value: 200
+  - name: Validate content type header
+    key: responseHeaders.content-type
+    action: include
+    value: application/json

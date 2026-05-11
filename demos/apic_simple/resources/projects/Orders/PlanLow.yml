@@ -1,0 +1,48 @@
+kind: Plan
+apiVersion: api.ibm.com/v1
+metadata:
+  name: PlanLow
+  namespace: git_orders
+  version: '1.0'
+  tags: []
+  description: ''
+spec:
+  qos:
+    withQuota:
+      bronze-limit:
+        - $ref: git_orders:Quota-4a0oec:1.0
+      plan-limit:
+        - $ref: git_orders:Quota-0nzfz7:1.0
+  extensions:
+    dp-nano-gateway:
+      apiVersion: api.ibm.com/v1
+      spec:
+        apis:
+          - $ref: git_orders:AD_Orders_API:1.0
+            operations:
+              - path: /orders
+                method: get
+              - path: /order
+                method: get
+              - path: /order
+                method: post
+              - path: /order
+                method: put
+              - path: /order
+                method: delete
+    dp-gateway:
+      apiVersion: api.ibm.com/v1
+      spec:
+        apis:
+          - $ref: git_orders:AD_Orders_API:1.0
+            operations:
+              - path: /orders
+                method: get
+              - path: /order
+                method: get
+              - path: /order
+                method: post
+              - path: /order
+                method: put
+              - path: /order
+                method: delete
