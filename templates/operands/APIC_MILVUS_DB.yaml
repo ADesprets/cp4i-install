@@ -22,7 +22,19 @@ spec:
     msgStreamType: kafka
     kafka:
       inCluster:
+        deletionPolicy: Retain
         values:
+          offsetsTopicReplicationFactor: 1
+          zookeeper:
+            enabled: true
+            replicaCount: 1
+          service:
+            ports:
+              client: 9092
+            type: ClusterIP
+          logRetentionHours: 168
+          replicaCount: 1
+          defaultReplicationFactor: 1
           persistence:
             enabled: true
             storageClass: "${MY_BLOCK_STORAGE_CLASS}"
@@ -42,7 +54,7 @@ spec:
     serviceAccountName: "apic-ai-agent-milvus-db-kafka"
     standalone:
       serviceAccountName: "apic-ai-agent-milvus-db-kafka"
-      serviceType: LoadBalancer
+      serviceType: ClusterIP
       nodeSelector: {}           # Optionally specify node labels
       tolerations: []            # Add tolerations if needed
       resources:

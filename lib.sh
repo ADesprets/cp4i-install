@@ -1010,6 +1010,16 @@ function check_pod_status() {
 }  
 
 ################################################
+# Get curl SSL options
+function get_curl_ssl_opts() {
+    if [[ "${CURL_VERIFY_SSL}" == "false" ]]; then
+        echo "-k"
+    else
+        echo ""
+    fi
+}
+
+################################################
 # Wait for the catalog source to be ready
 function wait_for_catalogsource_2be_ready() {
   local lf_tracelevel=3

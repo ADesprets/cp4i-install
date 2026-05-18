@@ -1078,10 +1078,13 @@ function install_milvus() {
     create_generic_secret "milvus-db-cred" "username" "milvus-admin" "password" "milvusPassw0rd!" "${VAR_MILVUS_OPERATOR_NAMESPACE}" "${MY_MILVUS_WORKINGDIR}" "false"
 
     # Add Milvus Operator
-    mylog info "Add various service accounts to the correct SCC"  1>&2
-    # helm install milvus-operator -n "${VAR_MILVUS_OPERATOR_NAMESPACE}" --create-namespace https://github.com/zilliztech/milvus-operator/releases/download/v1.3.2/milvus-operator-1.3.2.tgz
-    # helm_install "https://github.com/zilliztech/milvus-operator/releases/download/v1.1.9/milvus-operator-1.1.9.tgz" false "$VAR_MILVUS_OPERATOR_NAMESPACE"
+    mylog info "Install milvus operator"  1>&2
 
+    helm repo add milvus-operator https://zilliztech.github.io/milvus-operator/
+    helm repo update milvus-operator
+    helm -n "${VAR_MILVUS_OPERATOR_NAMESPACE}" upgrade --install milvus-operator milvus-operator/milvus-operator
+
+    mylog info "Add various service accounts to the correct SCC"  1>&2
     decho $lf_tracelevel "oc adm policy add-cluster-role-to-user cluster-admin milvus-operator -n ${VAR_MILVUS_OPERATOR_NAMESPACE}"
     oc adm policy add-cluster-role-to-user cluster-admin milvus-operator -n "${VAR_MILVUS_OPERATOR_NAMESPACE}"
     
@@ -1097,10 +1100,6 @@ function install_milvus() {
     decho $lf_tracelevel "oc adm policy add-scc-to-user anyuid -z default -n ${VAR_MILVUS_NAMESPACE}"
     oc adm policy add-scc-to-user anyuid -z default -n "${VAR_MILVUS_NAMESPACE}"
     
-    mylog info "Install Milvus operator in ${VAR_MILVUS_OPERATOR_NAMESPACE} namespace"  1>&2
-    decho $lf_tracelevel " $MY_CLUSTER_COMMAND -n "${VAR_MILVUS_OPERATOR_NAMESPACE}" apply -f ${MY_YAMLDIR}operators/milvus-operator.yaml"
-    $MY_CLUSTER_COMMAND -n "${VAR_MILVUS_OPERATOR_NAMESPACE}" apply -f ${MY_YAMLDIR}operators/milvus-operator.yaml
-
     # Deploy Milvus Cluster (Operand creation) inspired by https://raw.githubusercontent.com/milvus-io/milvus-operator/main/config/samples/demo.yaml
     create_operand_instance "Milvus" "apic-ai-agent-milvus-db" "${MY_OPERANDSDIR}" "${MY_MILVUS_WORKINGDIR}" "APIC_MILVUS_DB.yaml" "$VAR_MILVUS_NAMESPACE" "{.status.status}" "Healthy"
   fi
@@ -1373,8 +1372,8 @@ function install_apic() {
     add_ibm_entitlement "$VAR_APIC_NAMESPACE"
   
     # Add the API Connect catalog sources to your cluster using ibm_pak plugin
-    mylog warn "There is an error with ibm-pak catalog source is incorrect: https://github.com/IBM/cloud-pak/blob/master/repo/case/ibm-apiconnect/7.2.0/OLM/catalog-sources-linux-amd64-all.yaml and
-https://github.com/IBM/cloud-pak/blob/master/repo/case/ibm-apiconnect/7.2.0/OLM/catalog-sources-all.yaml" 1>&2
+    mylog warn "There is an error with ibm-pak catalog source is incorrect: https://github.com/IBM/cloud-pak/blob/master/repo/case/ibm-apiconnect/7.3.0/OLM/catalog-sources-linux-amd64-all.yaml and
+https://github.com/IBM/cloud-pak/blob/master/repo/case/ibm-apiconnect/7.3.0/OLM/catalog-sources-all.yaml" 1>&2
     check_add_cs_ibm_pak $MY_APIC_CASE $MY_APIC_OPERATOR $MY_APIC_CATALOGSOURCE_LABEL amd64
     if [[ -z $MY_APIC_VERSION ]]; then
       export MY_APIC_VERSION=$VAR_APP_VERSION

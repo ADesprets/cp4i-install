@@ -154,17 +154,103 @@ function download_projects() {
 }
 
 ################################################
+# Recursively adapt all files from a source directory tree to a target directory
+# @param 1: source directory
+# @param 2: target directory
+function adapt_files_recursive() {
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  local lf_in_source_dir=$1
+  local lf_in_target_dir=$2
+  local lf_entry
+  local lf_name
+
+  decho $lf_tracelevel "Parameters: \"$1\"|\"$2\"|"
+
+  if [[ $# -ne 2 ]]; then
+    mylog error "You have to provide 2 arguments: source directory and target directory"
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
+    exit 1
+  fi
+
+  for lf_entry in "${lf_in_source_dir}"/*; do
+    if [[ ! -e "${lf_entry}" ]]; then
+      continue
+    fi
+
+    if [[ -d "${lf_entry}" ]]; then
+      adapt_files_recursive "${lf_entry}" "${lf_in_target_dir}"
+    elif [[ -f "${lf_entry}" ]]; then
+      lf_name=$(basename "${lf_entry}")
+      adapt_file "${lf_in_source_dir}/" "${lf_in_target_dir}" "${lf_name}"
+    fi
+  done
+
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+}
+
+################################################
 # Upload projects
 function upload_projects() {
-  local lf_tracelevel=3
+  local lf_tracelevel=5
   trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
-  mylog info "Upload projects for organisations" 1>&2
+  mylog info "Upload projects for projects defined under ${MY_APIC_SIMPLE_DEMODIR}resources/projects/" 1>&2
 
-  # Assume the projects are under 
+  # local lf_projects_source_dir="${MY_APIC_SIMPLE_DEMODIR}resources/projects/"
+  # local lf_projects_target_dir="${MY_APIC_WORKINGDIR}resources/projects/"
+ 
+  # TODO adaptation of each files will be done later, assume that the files are directly loaded into the manager for now
+  # adapt_files_recursive "${lf_projects_source_dir}" "${lf_projects_target_dir}"
 
+  # Display each directory under the resources folder
+  local lf_projects_dir="${MY_APIC_SIMPLE_DEMODIR}resources/projects"
+  if [[ -d "${lf_projects_dir}" ]]; then
+    mylog info "Listing project directories:" 1>&2
+    for project_dir in "${lf_projects_dir}"*/; do
+      if [[ -d "${project_dir}" ]]; then
+        local project_name=$(basename "${project_dir}")
+        mylog info "  - ${project_name}" 1>&2
+        local zip_path="/tmp/api_${RANDOM}.zip"
+        (cd "${project_dir}" && zip -r "$zip_path" . > /dev/null)
+        local zip_size=$(stat -f%z "$zip_path" 2>/dev/null || stat -c%s "$zip_path" 2>/dev/null)
+        mylog info "Created project zip file at $zip_path with size: $zip_size bytes" 1>&2
+
+        # Display debug information
+        unzip -l "$zip_path" | while read -r line; do
+          decho $lf_tracelevel "$line"
+        done
+
+        # Now upload the zip to APIC Manager
+        local response
+        local status_code
+        
+        local apic_provider_org_lower=$(echo "$APIC_PROVIDER_ORG" | awk '{print tolower($0)}')
+        local catalog="sandbox"
+        
+		    decho $lf_tracelevel "curl -sk -X POST -H \"Accept: application/json\" -H \"authorization: Bearer \$AT\" -F \"project=@${zip_path};type=application/zip\" \"${PLATFORM_API_URL}api/catalogs/${apic_provider_org_lower}/${catalog}/publish-project\""
+        response=$(curl -s -w "\n%{http_code}" -k \
+            -X POST \
+            -H "Authorization: Bearer ${amToken}" \
+            -H "Accept: application/json" \
+            -F "project=@${zip_path};type=application/zip" \
+            "${PLATFORM_API_URL}api/catalogs/${apic_provider_org_lower}/${catalog}/publish-project")
+        
+        status_code=$(echo "$response" | tail -n1)
+        mylog info "Upload response status: ${status_code}" 1>&2
+        decho $lf_tracelevel "Upload response: $response"
+
+        # Cleanup zip file
+        rm -f "$zip_path"
+      fi
+    done
+  else
+    mylog warning "Projects directory not found: ${lf_projects_dir}" 1>&2
+  fi
+  
   trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 ################################################
@@ -1306,7 +1392,7 @@ function apic_run_all () {
   
   # Init APIC variables
   init_apic_variables
-
+  
   # Download toolkit/designer+loopback+toolkit
   # download_tools TODO
 
@@ -1331,10 +1417,8 @@ function apic_run_all () {
   # Create API Manager token
   create_am_token
 
-  download_projects
+  # download_projects
 
-  exit 0
-  
   create_catalog "${APIC_PROVIDER_ORG}"
   
   create_apic_resources $access_token $amToken $APIC_PROVIDER_ORG
