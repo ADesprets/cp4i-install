@@ -213,7 +213,65 @@ Update and Use tools/chgpasswd.py to change default root password
 
 ### Configure APIC Custom Resources
 
-The instructions provide information on enabloing the AI API Agent in APIC [here](https://www.ibm.com/docs/en/api-connect/software/10.0.x_cd?topic=subsystem-enabling-api-agent-management). Basically, 
+The instructions provide information on enabloing the AI API Agent in APIC [here](https://www.ibm.com/docs/en/api-connect/software/10.0.x_cd?topic=subsystem-enabling-api-agent-management). 
+
+
+### Testing milvus is running
+
+Create a pod to debug and install python libraries for Milvus
+
+``` bash
+oc -n iwhi run python-client --rm -it --image=python:3.11 -- bash
+pip install pymilvus
+```
+
+Create a script to connect to Milvus
+
+``` bash
+cat << EOF > /tmp/testcon.py
+#!/usr/bin/env python3
+from pymilvus import connections, utility
+connections.connect(alias="default",host="apic-ai-agent-milvus-db-milvus.milvus.svc.cluster.local",port="19530",user="root", password="Milvus", secure=True,server_pem_path="/tmp/ca.crt", server_name="apic-ai-agent-milvus-db-milvus.milvus.svc.cluster.local")
+collections = utility.list_collections()
+print(collections)
+EOF
+```
+
+Create a copy of the Milvus ca certificate
+
+``` bash
+cat << EOF > /tmp/ca.crt
+-----BEGIN CERTIFICATE-----
+MIIFPzCCAyegAwIBAgIUEvPalHMwSlhPgIwL0ZcbMQAQQtswDQYJKoZIhvcNAQEN
+...
+MtvluVC4xo+QnRq7vXqzefkNmnWwupraNFyuIsiq7YtBRFdjzsoQn0jBTS4euWe1
+h+Uu
+-----END CERTIFICATE-----
+EOF
+```
+
+Test the connection to Milvus
+
+``` bash
+/tmp/testcon.py
+```
+
+You should get something like this:
+
+``` bash
+/tmp/./testcon.py:3: PyMilvusDeprecationWarning: `connections.connect` is an ORM-style PyMilvus API and will be removed in PyMilvus 3.1. Use `MilvusClient` instead.
+  connections.connect(alias="default",host="apic-ai-agent-milvus-db-milvus.milvus.svc.cluster.local",port="19530",user="root", password="Milvus", secure=True,server_pem_path="/tmp/tls.crt", server_name="apic-ai-agent-milvus-db-milvus.milvus.svc.cluster.local")
+/tmp/./testcon.py:4: PyMilvusDeprecationWarning: `utility.list_collections` is an ORM-style PyMilvus API and will be removed in PyMilvus 3.1. Use `MilvusClient` instead.
+  collections = utility.list_collections()
+['test_col', 'apic_agent']
+```
+
+This command is interesting for TLS debug :
+
+
+``` bash
+oc -n milvus get secret,issuer,certificate | grep -v -e minio -e kafka -e operator -e dockercfg
+```
 
 ### Configure APIC API Agent
 

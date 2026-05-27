@@ -262,6 +262,7 @@ function mq_kafka_demo_generate_certs() {
 
   export VAR_CERT_ISSUER="${VAR_QMGR}-issuer"
   export VAR_SECRET="${VAR_QMGR}-secret"
+  export VAR_CERT_SECRET_NAME="${VAR_QMGR}-secret"
   export VAR_CERT_LABEL="${VAR_QMGR}-label" 
   create_oc_resource "Certificate" "${VAR_QMGR}" "${sc_mq_kafka_demo_tls_dir}" "${sc_mq_kafka_demo_workingdir}" "mq_server_certificate.yaml" "$VAR_MQ_NAMESPACE"
   unset VAR_CERT_ISSUER VAR_SECRET VAR_CERT_LABEL

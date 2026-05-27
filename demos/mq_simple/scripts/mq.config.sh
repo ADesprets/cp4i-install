@@ -58,6 +58,7 @@ function create_leaf_certificate () {
   export VAR_CERT_NAME=${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR_LC}-server
   export VAR_NAMESPACE=${VAR_MQ_NAMESPACE}
   export VAR_CERT_COMMON_NAME=${VAR_CERT_NAME}
+  export VAR_CERT_SECRET_NAME=${VAR_CERT_NAME}-secret
   export VAR_CERT_SAN_DNS_1="*.${lf_cluster_domain}"
   export VAR_CERT_SAN_DNS_2="${VAR_QMGR_LC}-ibm-mq.${VAR_MQ_NAMESPACE}.svc.cluster.local"
   export VAR_CERT_ISSUER_REF=${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR_LC}-int-issuer

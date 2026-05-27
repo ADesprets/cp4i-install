@@ -73,9 +73,10 @@ function download_projects() {
 
   mylog info "Download projects for organisations" 1>&2
 
-  # Creating  a folder to store the files from the project
-  local lf_projects_directory=$(create_to_date_directory "${MY_APIC_WORKINGDIR}projects/")
-  mylog info "Projects directory: ${lf_projects_directory}" 1>&2
+  # Creating a folder to store the files from the project with the current date
+  local lf_projects_directory="${MY_APIC_WORKINGDIR}projects/$(date +%Y%m%d)/"
+  check_directory_exist_create "$lf_projects_directory"
+  mylog info "Projects directory to download the projects: ${lf_projects_directory}" 1>&2
 
   # Getting the list of projects
   local lf_org_name=$(echo "$APIC_PROVIDER_ORG" | tr '[:upper:]' '[:lower:]')
@@ -198,7 +199,10 @@ function upload_projects() {
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
-  mylog info "Upload projects for projects defined under ${MY_APIC_SIMPLE_DEMODIR}resources/projects/" 1>&2
+  # the trailing / is mandatory
+  local lf_projects_dir="${MY_APIC_SIMPLE_DEMODIR}resources/v12/resources/"
+
+  mylog info "Upload projects for projects defined under ${lf_projects_dir}" 1>&2
 
   # local lf_projects_source_dir="${MY_APIC_SIMPLE_DEMODIR}resources/projects/"
   # local lf_projects_target_dir="${MY_APIC_WORKINGDIR}resources/projects/"
@@ -206,23 +210,35 @@ function upload_projects() {
   # TODO adaptation of each files will be done later, assume that the files are directly loaded into the manager for now
   # adapt_files_recursive "${lf_projects_source_dir}" "${lf_projects_target_dir}"
 
-  # Display each directory under the resources folder
-  local lf_projects_dir="${MY_APIC_SIMPLE_DEMODIR}resources/projects"
   if [[ -d "${lf_projects_dir}" ]]; then
-    mylog info "Listing project directories:" 1>&2
     for project_dir in "${lf_projects_dir}"*/; do
       if [[ -d "${project_dir}" ]]; then
         local project_name=$(basename "${project_dir}")
         mylog info "  - ${project_name}" 1>&2
         local zip_path="/tmp/api_${RANDOM}.zip"
-        (cd "${project_dir}" && zip -r "$zip_path" . > /dev/null)
+        # Create temporary directory structure
+        local temp_dir=$(mktemp -d)
+        mylog info "Copy project ${project_dir} files into ${temp_dir}" 1>&2
+
+        # meta data for the project
+        # echo "$api_definition" > "${temp_dir}/${project_name}.yaml"
+        
+        mkdir -p "${temp_dir}/resources/${project_name}"
+        cp -r "${project_dir}"* "${temp_dir}/resources/${project_name}/"
+        
+        # Create zip
+        (pushd "$temp_dir" > /dev/null && zip -r "$zip_path" . > /dev/null && popd > /dev/null)
+        
         local zip_size=$(stat -f%z "$zip_path" 2>/dev/null || stat -c%s "$zip_path" 2>/dev/null)
         mylog info "Created project zip file at $zip_path with size: $zip_size bytes" 1>&2
-
+        
         # Display debug information
         unzip -l "$zip_path" | while read -r line; do
           decho $lf_tracelevel "$line"
         done
+
+        # Cleanup temp directory
+        rm -rf "$temp_dir"
 
         # Now upload the zip to APIC Manager
         local response
@@ -244,7 +260,7 @@ function upload_projects() {
         decho $lf_tracelevel "Upload response: $response"
 
         # Cleanup zip file
-        rm -f "$zip_path"
+        # rm -f "$zip_path"
       fi
     done
   else

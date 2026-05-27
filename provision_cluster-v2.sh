@@ -1028,10 +1028,11 @@ function create_milvus_root_certificate () {
   trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   mylog warn "TODO: (${FUNCNAME[0]}) should be refactored with more generic approach." 0
+  mylog info "Create milvus root certificate." 1>&2
   export VAR_CERT_NAME=${VAR_MILVUS_OPERATOR_NAMESPACE}-milvus-ca
   export VAR_NAMESPACE=${VAR_MILVUS_OPERATOR_NAMESPACE}
   export VAR_CERT_ISSUER_REF="${VAR_MILVUS_OPERATOR_NAMESPACE}-ca-issuer"
-  export VAR_CERT_SECRET_NAME=${VAR_CERT_NAME}-secret
+  export VAR_CERT_SECRET_NAME=milvus-tls-ca
   export VAR_CERT_COMMON_NAME=${VAR_CERT_NAME}
   export VAR_CERT_ORGANISATION=${MY_CERT_ORGANISATION}
   export VAR_CERT_COUNTRY=${MY_CERT_COUNTRY}
@@ -1042,6 +1043,35 @@ function create_milvus_root_certificate () {
   create_oc_resource "Certificate" "${VAR_CERT_NAME}" "${MY_YAMLDIR}tls/" "${MY_MILVUS_WORKINGDIR}" "ca_certificate.yaml" "${VAR_MILVUS_OPERATOR_NAMESPACE}"
 
   unset VAR_CERT_NAME VAR_NAMESPACE VAR_CERT_ISSUER_REF VAR_CERT_COMMON_NAME VAR_CERT_ORGANISATION VAR_CERT_COUNTRY VAR_CERT_LOCALITY VAR_CERT_STATE
+
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+}
+
+################################################
+# TO BE REVIEWED 
+function create_milvus_leaf_certificate () {
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+    
+    # Create intermediate/leaf issuer
+    create_intermediate_issuer "${VAR_MILVUS_ISSUER}-int" "milvus-tls-ca" "${MY_MILVUS_WORKINGDIR}" "${VAR_MILVUS_OPERATOR_NAMESPACE}"
+
+    mylog info "Create milvus leaf certificate." 1>&2
+    # Create leaf certificate (server certificate)
+    export VAR_CERT_NAME=${VAR_MILVUS_OPERATOR_NAMESPACE}-milvus-server
+    export VAR_NAMESPACE=${VAR_MILVUS_OPERATOR_NAMESPACE}
+    export VAR_CERT_ISSUER_REF="${VAR_MILVUS_ISSUER}-int"
+    export VAR_CERT_SECRET_NAME=milvus-tls-secret
+    export VAR_CERT_COMMON_NAME="apic-ai-agent-milvus-db-milvus.${VAR_MILVUS_OPERATOR_NAMESPACE}.svc.cluster.local"
+    export VAR_CERT_ORGANISATION=${MY_CERT_ORGANISATION}
+    export VAR_CERT_COUNTRY=${MY_CERT_COUNTRY}
+    export VAR_CERT_LOCALITY=${MY_CERT_LOCALITY}
+    export VAR_CERT_STATE=${MY_CERT_STATE}
+    export VAR_CERT_SAN_DNS_1="apic-ai-agent-milvus-db-milvus.${VAR_MILVUS_OPERATOR_NAMESPACE}.svc.cluster.local"
+    export VAR_CERT_SAN_DNS_2="milvus.${VAR_MILVUS_OPERATOR_NAMESPACE}.svc"
+    create_certificate "${VAR_MILVUS_OPERATOR_NAMESPACE}" "${MY_MILVUS_WORKINGDIR}" "server_certificate.yaml"
+	
+	  unset VAR_CERT_NAME VAR_NAMESPACE VAR_CERT_ISSUER_REF VAR_CERT_SECRET_NAME VAR_CERT_COMMON_NAME VAR_CERT_ORGANISATION VAR_CERT_COUNTRY VAR_CERT_LOCALITY VAR_CERT_STATE VAR_CERT_SAN_DNS_1 VAR_CERT_SAN_DNS_2
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
@@ -1073,6 +1103,7 @@ function install_milvus() {
     # Installation Milvus DB (https://milvus.io/docs/fr/openshift.md)
 	  # CA Certificate for Milvus Operator in milvus namespace
     create_milvus_root_certificate
+    create_milvus_leaf_certificate
     
     # Create secret
     create_generic_secret "milvus-db-cred" "username" "milvus-admin" "password" "milvusPassw0rd!" "${VAR_MILVUS_OPERATOR_NAMESPACE}" "${MY_MILVUS_WORKINGDIR}" "false"

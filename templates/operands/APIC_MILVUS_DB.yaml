@@ -55,6 +55,14 @@ spec:
     standalone:
       serviceAccountName: "apic-ai-agent-milvus-db-kafka"
       serviceType: ClusterIP
+      volumes:
+      - name: milvus-tls
+        secret:
+          secretName: milvus-tls-secret
+      volumeMounts:
+      - name: milvus-tls
+        mountPath: /milvus/tls
+        readOnly: true
       nodeSelector: {}           # Optionally specify node labels
       tolerations: []            # Add tolerations if needed
       resources:
@@ -69,8 +77,18 @@ spec:
         storageClass: "${MY_BLOCK_STORAGE_CLASS}"
         size: 100Gi
   config:
+    tls:
+      serverPemPath: /milvus/tls/tls.crt
+      serverKeyPath: /milvus/tls/tls.key
+      caPemPath: /milvus/tls/ca.crt
+      tlsMode: 1
     common:
       security:
         authorizationEnabled: true
+        tlsMode: 1
+        internaltlsEnabled: false
     log:
       level: "debug"
+    proxy:
+      http:
+        enabled: false
