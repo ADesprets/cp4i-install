@@ -1069,25 +1069,27 @@ function display_access_info() {
   mylog info "==== Displaying Access Info to the full stack." 0
 
   # Initialisation of the bookmark
-  echo ${BOOKMARK_PROLOGUE} > ${MY_WORKINGDIR}/bookmarks.html
+  mylog info "All links in ${MY_WORKINGDIR}bookmarks.html" 0
+  echo "<TR><TD><A HREF=${lf_console_url}>OpenShift console</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
+  echo ${BOOKMARK_PROLOGUE} > ${MY_WORKINGDIR}bookmarks.html
 
   # OpenShift Console
   local lf_console_url
   lf_console_url=$(oc whoami --show-console)
   mylog info "OpenShift Console accessible at ${lf_console_url}" 0
-  echo "<TR><TD><A HREF=${lf_console_url}>OpenShift console</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
+  echo "<TR><TD><A HREF=${lf_console_url}>OpenShift console</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
 
   # Mailhog
   local lf_mailhog_hostname
   lf_mailhog_hostname=$($MY_CLUSTER_COMMAND -n ${VAR_MAIL_NAMESPACE} get route ${VAR_MAIL_ROUTE} -o jsonpath='{.spec.host}')
   mylog info "MailHog accessible at http://${lf_mailhog_hostname}" 0
-  echo "<TR><TD><A HREF=http://${lf_mailhog_hostname}>MailHog</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
+  echo "<TR><TD><A HREF=http://${lf_mailhog_hostname}>MailHog</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
 
   # Keycloak
   if $MY_KEYCLOAK_EXTERNAL; then
     lf_keycloak_admin_ui=$($MY_CLUSTER_COMMAND -n $MY_COMMONSERVICES_NAMESPACE get route keycloak -o jsonpath='{.spec.host}')
     mylog info "Keycloak admin UI URL: https://${lf_keycloak_admin_ui}" 0
-    echo "<TR><TD><A HREF=https://${lf_keycloak_admin_ui}>Keycloak Admin UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
+    echo "<TR><TD><A HREF=https://${lf_keycloak_admin_ui}>Keycloak Admin UI</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
     lf_keycloak_admin_pwd=$($MY_CLUSTER_COMMAND -n $MY_COMMONSERVICES_NAMESPACE get secret cs-keycloak-initial-admin -o jsonpath={.data.password} | base64 -d)
     mylog info "Keycloak admin password: $lf_keycloak_admin_pwd" 0
   fi
@@ -1099,7 +1101,7 @@ function display_access_info() {
     mylog info "Integration admin, user: integration-admin, password: ${lf_temp_integration_admin_pwd}" 0
     iwhi_url=$($MY_CLUSTER_COMMAND -n $VAR_NAVIGATOR_NAMESPACE get platformnavigator iwhi-navigator -o jsonpath='{range .status.endpoints[?(@.name=="navigator")]}{.uri}{end}')
     mylog info "CP4I Platform UI URL: $iwhi_url" 0
-    echo "<TR><TD><A HREF=${iwhi_url}>CP4I Platform UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html 
+    echo "<TR><TD><A HREF=${iwhi_url}>CP4I Platform UI</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html 
   fi
 
   # App Connect Entreprise
@@ -1107,10 +1109,10 @@ function display_access_info() {
   if $MY_ACE; then
     lf_ace_ui_db_url=$($MY_CLUSTER_COMMAND -n $VAR_ACE_NAMESPACE get Dashboard -o=jsonpath='{.items[?(@.kind=="Dashboard")].status.adminUiUrl}')
     mylog info "ACE Dahsboard UI endpoint: $lf_ace_ui_db_url" 0
-    echo "<TR><TD><A HREF=${lf_ace_ui_db_url}>ACE Dashboard UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
+    echo "<TR><TD><A HREF=${lf_ace_ui_db_url}>ACE Dashboard UI</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
     lf_ace_ui_dg_url=$($MY_CLUSTER_COMMAND -n $VAR_ACE_NAMESPACE get DesignerAuthoring -o=jsonpath='{.items[?(@.kind=="DesignerAuthoring")].status.endpoints[?(@.name=="ui")].uri}')
     mylog info "ACE Designer UI endpoint: $lf_ace_ui_dg_url" 0
-    echo "<TR><TD><A HREF=${lf_ace_ui_dg_url}>ACE Designer UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
+    echo "<TR><TD><A HREF=${lf_ace_ui_dg_url}>ACE Designer UI</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
   fi
 
   # API Connect
@@ -1121,14 +1123,14 @@ function display_access_info() {
     # APIC Cloud Manager
     lf_cm_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get ManagementCluster -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].status.endpoints[?(@.name=="admin")].uri}')
     mylog info "APIC Cloud Manager endpoint: ${lf_cm_url}" 0
-    echo "<TR><TD><A HREF=${lf_cm_url}>APIC Cloud Manager UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
+    echo "<TR><TD><A HREF=${lf_cm_url}>APIC Cloud Manager UI</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
     # lf_cm_admin_pwd_secret_name=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get ManagementCluster -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].spec.adminUser.secretName}')
     lf_cm_admin_pwd_secret_name=apic-mgmt-admin-pass
     lf_cm_admin_pwd=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get secret ${lf_cm_admin_pwd_secret_name} -o jsonpath='{.data.password}' | base64 -d)
     mylog info "APIC Cloud Manager admin password: ${lf_cm_admin_pwd}" 0
     lf_mgr_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get ManagementCluster -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].status.endpoints[?(@.name=="apiManager")].uri}')
     # API Manager
-    echo "<TR><TD><A HREF=${lf_mgr_url}>APIC API Manager UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
+    echo "<TR><TD><A HREF=${lf_mgr_url}>APIC API Manager UI</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
     mylog info "APIC API Manager endpoint: ${lf_mgr_url}" 0
     lf_ptl_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get PortalCluster -o=jsonpath='{.items[?(@.kind=="PortalCluster")].status.endpoints[?(@.name=="portalWeb")].uri}')
     mylog info "APIC Web Portal root endpoint: ${lf_ptl_url}" 0
@@ -1139,7 +1141,7 @@ function display_access_info() {
     mylog info "APIC Gateway endpoint: ${lf_gtw_url}" 0
     lf_gtw_webconsole_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get Route ${VAR_APIC_GW_ROUTE_NAME} -o=jsonpath='{.spec.host}')
     mylog info "APIC Gateway web console endpoint: https://${lf_gtw_webconsole_url}" 0
-    echo "<TR><TD><A HREF=https://${lf_gtw_webconsole_url}>APIC Gateway Web Console</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
+    echo "<TR><TD><A HREF=https://${lf_gtw_webconsole_url}>APIC Gateway Web Console</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
     lf_apic_gtw_admin_pwd_secret_name=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get GatewayCluster -o=jsonpath='{.items[?(@.kind=="GatewayCluster")].spec.adminUser.secretName}')
     lf_cm_admin_pwd=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get secret ${lf_apic_gtw_admin_pwd_secret_name} -o jsonpath={.data.password} | base64 -d)
     mylog info "APIC Gateway admin password: ${lf_cm_admin_pwd}" 0
@@ -1149,11 +1151,11 @@ function display_access_info() {
     lf_wmdp_admin_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get DevPortalCluster -o=jsonpath='{.items[?(@.kind=="DevPortalCluster")].status.endpoints[?(@.name=="devportalWeb")].uri}')
     mylog info "APIC WM Dev Portal Web UI: ${lf_wmdp_admin_url}" 0
     mylog info "APIC WM Dev Portal default credentials are administrator/manage" 0
-    echo "<TR><TD><A HREF=${lf_wmdp_admin_url}>APIC WM Dev Portal Web UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
+    echo "<TR><TD><A HREF=${lf_wmdp_admin_url}>APIC WM Dev Portal Web UI</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
     # FAM
     lf_fam_web_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get FederatedAPIManagementCluster -o=jsonpath='{.items[?(@.kind=="FederatedAPIManagementCluster")].status.endpoints[?(@.name=="uiEndpoint")].uri}')
     mylog info "APIC Federated API Mgmt Web UI: ${lf_fam_web_url}" 0
-    echo "<TR><TD><A HREF=${lf_fam_web_url}>APIC Federated API Mgmt Web UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
+    echo "<TR><TD><A HREF=${lf_fam_web_url}>APIC Federated API Mgmt Web UI</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
     mylog info "Federated API Management default credentials are administrator/manage" 0
     lf_fam_admin_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get FederatedAPIManagementCluster -o=jsonpath='{.items[?(@.kind=="FederatedAPIManagementCluster")].status.endpoints[?(@.name=="adminEndpoint")].uri}')
     mylog info "APIC Federated API Mgmt admin endpoint: ${lf_fam_admin_url}" 0
@@ -1161,7 +1163,7 @@ function display_access_info() {
     lf_wmgtw_web_url=$($MY_CLUSTER_COMMAND -n $VAR_WMGW_NAMESPACE get WMAPIGatewayCluster -o=jsonpath='{.items[?(@.kind=="WMAPIGatewayCluster")].status.endpoints[?(@.name=="uiEndpoint")].uri}')
     mylog info "APIC WM Gateway Web UI: ${lf_wmgtw_web_url}" 0
     mylog info "APIC WM Gateway Web UI default credentials are Administrator/manage" 0
-    echo "<TR><TD><A HREF=${lf_wmgtw_web_url}>APIC WM Gateway Web UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
+    echo "<TR><TD><A HREF=${lf_wmgtw_web_url}>APIC WM Gateway Web UI</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
     lf_wmgtw_ep_url=$($MY_CLUSTER_COMMAND -n $VAR_WMGW_NAMESPACE get WMAPIGatewayCluster -o=jsonpath='{.items[?(@.kind=="WMAPIGatewayCluster")].status.endpoints[?(@.name=="gatewayEndpoint")].uri}')
     mylog info "APIC WM Gateway endpoint: ${lf_wmgtw_ep_url}" 0
     lf_wmgtw_aep_url=$($MY_CLUSTER_COMMAND -n $VAR_WMGW_NAMESPACE get WMAPIGatewayCluster -o=jsonpath='{.items[?(@.kind=="WMAPIGatewayCluster")].status.endpoints[?(@.name=="mgmtEndpoint")].uri}')
@@ -1174,7 +1176,7 @@ function display_access_info() {
   if $MY_ES; then
     lf_es_ui_url=$($MY_CLUSTER_COMMAND -n $VAR_ES_NAMESPACE get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="ui")].uri}')
     mylog info "Event Streams Management UI endpoint: ${lf_es_ui_url}" 0
-    echo  "<TR><TD><A HREF=${lf_es_ui_url}>Event Streams Management UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
+    echo  "<TR><TD><A HREF=${lf_es_ui_url}>Event Streams Management UI</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
     lf_es_admin_url=$($MY_CLUSTER_COMMAND -n $VAR_ES_NAMESPACE get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="admin")].uri}')
     mylog info "Event Streams Management admin endpoint: ${lf_es_admin_url}" 0
     lf_es_apicurioregistry_url=$($MY_CLUSTER_COMMAND -n $VAR_ES_NAMESPACE get EventStreams -o=jsonpath='{.items[?(@.kind=="EventStreams")].status.endpoints[?(@.name=="apicurioregistry")].uri}')
@@ -1194,7 +1196,7 @@ function display_access_info() {
     # Need to remove the trailing /
     lf_eem_ui_url=${lf_eem_ui_url%/}
     mylog info "Event Endpoint Management UI endpoint: ${lf_eem_ui_url}" 0
-    echo  "<TR><TD><A HREF=${lf_eem_ui_url}>Event Endpoint Management UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
+    echo  "<TR><TD><A HREF=${lf_eem_ui_url}>Event Endpoint Management UI</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
     lf_eem_lf_gtw_url=$($MY_CLUSTER_COMMAND -n $VAR_EEM_NAMESPACE get EventEndpointManagement -o=jsonpath='{.items[?(@.kind=="EventEndpointManagement")].status.endpoints[?(@.name=="gateway")].uri}')
     mylog info "Event Endpoint Management Gateway endpoint: ${lf_eem_lf_gtw_url}" 0
     mylog info "The credentials are defined in the file ./working/EP/resources/user-credentials.yaml" 0
@@ -1206,7 +1208,7 @@ function display_access_info() {
     lf_ep_ui_url=$($MY_CLUSTER_COMMAND -n $VAR_EP_NAMESPACE get EventProcessing -o=jsonpath='{.items[?(@.kind=="EventProcessing")].status.endpoints[?(@.name=="ui")].uri}')
     lf_ep_ui_url=${lf_ep_ui_url%/}
     mylog info "Event Processing UI endpoint: ${lf_ep_ui_url}" 0
-    echo "<TR><TD><A HREF=${lf_ep_ui_url}>Event Processing UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
+    echo "<TR><TD><A HREF=${lf_ep_ui_url}>Event Processing UI</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
     mylog info "The credentials are defined in the file ./working/EP/resources/user-credentials.yaml" 0
   fi
   
@@ -1217,7 +1219,7 @@ function display_access_info() {
     lf_ldap_hostname=$($MY_CLUSTER_COMMAND -n ${VAR_LDAP_NAMESPACE} get route ${VAR_LDAP_ROUTE} -o jsonpath='{.spec.host}')
     lf_ldap_port=$($MY_CLUSTER_COMMAND -n ${VAR_LDAP_NAMESPACE} get route ${VAR_LDAP_ROUTE} -o jsonpath='{.spec.port.targetPort}')
     mylog info "LDAP hostname:port: ${lf_ldap_hostname}:${lf_ldap_port}" 0
-    echo  "<TR><TD><A HREF=ldap://${lf_ldap_hostname}:${lf_ldap_port}>LDAP</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
+    echo  "<TR><TD><A HREF=ldap://${lf_ldap_hostname}:${lf_ldap_port}>LDAP</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
     mylog info "LDAP admin dn/password: ${MY_LDAP_ADMIN_DN}/${MY_LDAP_ADMIN_PASSWORD}" 0
   fi
 
@@ -1226,7 +1228,7 @@ function display_access_info() {
   if $MY_ASSETREPO; then
     lf_ar_ui_url=$($MY_CLUSTER_COMMAND -n $VAR_ASSETREPO_NAMESPACE get AssetRepository -o=jsonpath='{.items[?(@.kind=="AssetRepository")].status.endpoints[?(@.name=="ui")].uri}')
     mylog info "Asset Repository UI endpoint: ${lf_ar_ui_url}" 0
-    echo  "<TR><TD><A HREF=${lf_ar_ui_url}>Asset Repository UI</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
+    echo  "<TR><TD><A HREF=${lf_ar_ui_url}>Asset Repository UI</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
   fi
 
   # DataPower
@@ -1245,7 +1247,7 @@ function display_access_info() {
     qms=$(oc -n $VAR_MQ_NAMESPACE get QueueManager -o=jsonpath='{range .items[*]}{.metadata.name},{.status.adminUiUrl}{"\n"}{end}')
     while IFS=, read -r qm_name qm_console; do
       mylog info "${qm_name} MQ Management Console : ${qm_console}" 0
-      echo  "<TR><TD><A HREF=${qm_console}>${qm_name} MQ Management Console</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
+      echo  "<TR><TD><A HREF=${qm_console}>${qm_name} MQ Management Console</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
     done <<< "$qms"
 
     local lf_mq_authentication_method=$($MY_CLUSTER_COMMAND -n $VAR_MQ_NAMESPACE get qmgr $VAR_MQ_INSTANCE_NAME -o jsonpath='{.spec.web.console.authentication.provider}')
@@ -1264,7 +1266,7 @@ function display_access_info() {
   if $MY_WASLIBERTY_CUSTOM; then
     lf_was_liberty_app_demo_url=$($MY_CLUSTER_COMMAND -n $VAR_WASLIBERTY_NAMESPACE get route demo -o jsonpath='{.status.ingress[0].host}')
     mylog info "WAS Liberty $MY_WASLIBERTY_APP_NAME application URL : https://${lf_was_liberty_app_demo_url}/$MY_WASLIBERTY_APP_NAME" 0
-    echo "<TR><TD><A HREF=https://${lf_was_liberty_app_demo_url}/$MY_WASLIBERTY_APP_NAME>WAS Liberty $MY_WASLIBERTY_APP_NAME application</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
+    echo "<TR><TD><A HREF=https://${lf_was_liberty_app_demo_url}/$MY_WASLIBERTY_APP_NAME>WAS Liberty $MY_WASLIBERTY_APP_NAME application</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
   fi
 
   # ILS - IBM Licensing Service and ILR - IBM Licensing Reporter
@@ -1272,17 +1274,17 @@ function display_access_info() {
   if $MY_LIC_SRV; then
     lf_licensing_service_url=$($MY_CLUSTER_COMMAND -n ${MY_LICENSE_SERVICE_NAMESPACE} get Route -o=jsonpath='{.items[?(@.metadata.name=="ibm-licensing-service-instance")].spec.host}')
     mylog info "Licensing service endpoint: https://${lf_licensing_service_url}" 0
-    echo "<TR><TD><A HREF=https://${lf_licensing_service_url}>Licensing Service</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
+    echo "<TR><TD><A HREF=https://${lf_licensing_service_url}>Licensing Service</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
     lf_licensing_secret_token=$($MY_CLUSTER_COMMAND -n ${MY_LICENSE_SERVICE_NAMESPACE} get secret ibm-licensing-token -o jsonpath='{.data.token}' | base64 -d)
     mylog info "Licensing service token: ${lf_licensing_secret_token}" 0
     lf_licensing_service_reporter_url=$($MY_CLUSTER_COMMAND -n ${MY_LICENSE_SERVICE_REPORTER_NAMESPACE} get Route ibm-lsr-console -o=jsonpath='{.status.ingress[0].host}')
     mylog info "Licensing service reporter console endpoint: https://${lf_licensing_service_reporter_url}/license-service-reporter/" 0
-    echo "<TR><TD><A HREF=https://${lf_licensing_service_reporter_url}/license-service-reporter/>Licensing Service Reporter</A></TD></TR>" >> ${MY_WORKINGDIR}/bookmarks.html
+    echo "<TR><TD><A HREF=https://${lf_licensing_service_reporter_url}/license-service-reporter/>Licensing Service Reporter</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
     lf_licensing_reporter_password=$($MY_CLUSTER_COMMAND -n ${MY_LICENSE_SERVICE_REPORTER_NAMESPACE} get secret ibm-license-service-reporter-credentials -o jsonpath='{.data.password}' | base64 -d)
     mylog info "Licensing service reporter credential: license-administrator/${lf_licensing_reporter_password}" 0
   fi
 
-  echo ${BOOKMARK_EPILOGUE} >> ${MY_WORKINGDIR}/bookmarks.html
+  echo ${BOOKMARK_EPILOGUE} >> ${MY_WORKINGDIR}bookmarks.html
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}
 }

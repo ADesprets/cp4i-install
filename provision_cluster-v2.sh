@@ -1317,8 +1317,25 @@ function install_nano_gateway() {
     fi
 
     # Installation of the OpenShift Gateway API CRD (it does exist in OpenShift V4.19 and above)
-    mylog info "Create OpenShift API Gateway CRD for OpenShift < 4.19 or for Kubernetes" 1>&2
-    create_crd "gatewayclasses.gateway.networking.k8s.io" "${MY_YAMLDIR}resources/" "${MY_APIC_WORKINGDIR}" "API_Gateway_CRD.yaml" 
+    # Check OpenShift version and only install CRD if version < 4.19
+    if [[ "$MY_CLUSTER_COMMAND" == "oc" ]]; then
+      local lf_ocp_version=$($MY_CLUSTER_COMMAND get clusterversion version -o jsonpath='{.status.desired.version}' 2>/dev/null | cut -d'.' -f1,2)
+      if [[ -n "$lf_ocp_version" ]]; then
+        mylog info "Detected OpenShift version: $lf_ocp_version" 1>&2
+        cmp_versions "$lf_ocp_version" "4.19"
+        local lf_version_cmp=$?
+        # cmp_versions returns: 0 if equal, 1 if v1 < v2, 2 if v1 > v2
+        if [[ $lf_version_cmp -eq 1 ]]; then
+          mylog info "OpenShift version $lf_ocp_version is less than 4.19, installing Gateway API CRD" 1>&2
+          create_crd "gatewayclasses.gateway.networking.k8s.io" "${MY_YAMLDIR}resources/" "${MY_APIC_WORKINGDIR}" "API_Gateway_CRD.yaml"
+        else
+          mylog info "OpenShift version $lf_ocp_version is >= 4.19, skipping Gateway API CRD installation (already included in OpenShift)" 1>&2
+        fi
+      else
+        mylog warn "Could not detect OpenShift version, installing Gateway API CRD as a precaution" 1>&2
+        create_crd "gatewayclasses.gateway.networking.k8s.io" "${MY_YAMLDIR}resources/" "${MY_APIC_WORKINGDIR}" "API_Gateway_CRD.yaml"
+      fi
+    fi
 
     mylog warn "nano gateway CRDs and operators are local files that needs to be updated" 1>&2
     # Installation of the nano gateway CRDs
@@ -1602,7 +1619,7 @@ function crt_postgresql_db() {
   create_oc_resource "Route" "pgadmin-rte" "${MY_RESOURCESDIR}" "${lf_in_working_dir}" "pg-admin-route.yaml" "${lf_in_namespace}"
 
   # Authorize superuser access
-  $MY_CLUSTER_COMMAND -n $VAR_POSTGRES_NAMESPACE patch "${MY_POSTGRES_CRD_CLUSTER}" $lf_in_cluster_name --type=merge -p '{"spec":{"enableSuperuserAccess":true}}' | awk '{printf "%*s%s\n", NR * $SC_SPACES_COUNTER, "", $0}'
+  $MY_CLUSTER_COMMAND -n ${lf_in_namespace} patch "${MY_POSTGRES_CRD_CLUSTER}" ${lf_in_pg_cluster_name} --type=merge -p '{"spec":{"enableSuperuserAccess":true}}' | awk '{printf "%*s%s\n", NR * $SC_SPACES_COUNTER, "", $0}'
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}
 
@@ -2176,6 +2193,133 @@ function customise_apic() {
 
   local lf_ending_date=$(date)
   mylog info "==== Customisation of apic (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+}
+
+################################################
+# Show API Connect Routes
+# This function retrieves and displays all routes associated with API Connect operands
+function show_apic_routes() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Retrieving API Connect Routes (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  if ! $MY_APIC; then
+    mylog warn "API Connect is not enabled (MY_APIC=false), skipping route retrieval" 1>&2
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
+    return
+  fi
+
+  mylog info "Retrieving routes for API Connect in namespace: ${VAR_APIC_NAMESPACE}" 1>&2
+  echo ""
+  echo "=========================================="
+  echo "API Connect Routes"
+  echo "=========================================="
+  echo ""
+
+  # Get all routes in the APIC namespace
+  local lf_routes=$($MY_CLUSTER_COMMAND get routes -n ${VAR_APIC_NAMESPACE} -o json 2>/dev/null)
+  
+  if [[ -z "$lf_routes" ]] || [[ "$lf_routes" == '{"items":[]}' ]]; then
+    mylog warn "No routes found in namespace ${VAR_APIC_NAMESPACE}" 1>&2
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
+    return
+  fi
+
+  # Management Cluster Routes
+  echo "Management Cluster:"
+  echo "-------------------"
+  local lf_admin_route=$($MY_CLUSTER_COMMAND get route -n ${VAR_APIC_NAMESPACE} -o json 2>/dev/null | jq -r '.items[] | select(.spec.host | contains("admin")) | "  Cloud Manager UI: https://\(.spec.host)"' 2>/dev/null)
+  local lf_manager_route=$($MY_CLUSTER_COMMAND get route -n ${VAR_APIC_NAMESPACE} -o json 2>/dev/null | jq -r '.items[] | select(.spec.host | contains("manager")) | "  API Manager UI:   https://\(.spec.host)"' 2>/dev/null)
+  local lf_api_route=$($MY_CLUSTER_COMMAND get route -n ${VAR_APIC_NAMESPACE} -o json 2>/dev/null | jq -r '.items[] | select(.spec.host | contains("api.") and (contains("portal") | not)) | "  Platform API:     https://\(.spec.host)"' 2>/dev/null)
+  local lf_consumer_route=$($MY_CLUSTER_COMMAND get route -n ${VAR_APIC_NAMESPACE} -o json 2>/dev/null | jq -r '.items[] | select(.spec.host | contains("consumer.")) | "  Consumer API:     https://\(.spec.host)"' 2>/dev/null)
+  local lf_catalog_route=$($MY_CLUSTER_COMMAND get route -n ${VAR_APIC_NAMESPACE} -o json 2>/dev/null | jq -r '.items[] | select(.spec.host | contains("consumer-catalog")) | "  Consumer Catalog: https://\(.spec.host)"' 2>/dev/null)
+  
+  [[ -n "$lf_admin_route" ]] && echo "$lf_admin_route"
+  [[ -n "$lf_manager_route" ]] && echo "$lf_manager_route"
+  [[ -n "$lf_api_route" ]] && echo "$lf_api_route"
+  [[ -n "$lf_consumer_route" ]] && echo "$lf_consumer_route"
+  [[ -n "$lf_catalog_route" ]] && echo "$lf_catalog_route"
+  echo ""
+
+  # Gateway Cluster Routes
+  echo "Gateway Cluster (DataPower):"
+  echo "----------------------------"
+  local lf_gw_route=$($MY_CLUSTER_COMMAND get route -n ${VAR_APIC_NAMESPACE} -o json 2>/dev/null | jq -r '.items[] | select(.spec.host | contains("rgw")) | "  Gateway Endpoint: https://\(.spec.host)"' 2>/dev/null)
+  local lf_gwmgr_route=$($MY_CLUSTER_COMMAND get route -n ${VAR_APIC_NAMESPACE} -o json 2>/dev/null | jq -r '.items[] | select(.spec.host | contains("rgwd")) | "  Gateway Manager:  https://\(.spec.host)"' 2>/dev/null)
+  local lf_gwui_route=$($MY_CLUSTER_COMMAND get route -n ${VAR_APIC_NAMESPACE} -o json 2>/dev/null | jq -r '.items[] | select(.metadata.name == "'${VAR_APIC_GW_ROUTE_NAME}'") | "  Gateway Web UI:   https://\(.spec.host)"' 2>/dev/null)
+  
+  [[ -n "$lf_gw_route" ]] && echo "$lf_gw_route"
+  [[ -n "$lf_gwmgr_route" ]] && echo "$lf_gwmgr_route"
+  [[ -n "$lf_gwui_route" ]] && echo "$lf_gwui_route"
+  echo ""
+
+  # Portal Cluster Routes
+  echo "Portal Cluster:"
+  echo "---------------"
+  local lf_portal_ui=$($MY_CLUSTER_COMMAND get route -n ${VAR_APIC_NAMESPACE} -o json 2>/dev/null | jq -r '.items[] | select(.spec.host | contains("portal.") and (contains("api.portal") | not)) | "  Portal UI:        https://\(.spec.host)"' 2>/dev/null)
+  local lf_portal_admin=$($MY_CLUSTER_COMMAND get route -n ${VAR_APIC_NAMESPACE} -o json 2>/dev/null | jq -r '.items[] | select(.spec.host | contains("api.portal")) | "  Portal Admin:     https://\(.spec.host)"' 2>/dev/null)
+  
+  [[ -n "$lf_portal_ui" ]] && echo "$lf_portal_ui"
+  [[ -n "$lf_portal_admin" ]] && echo "$lf_portal_admin"
+  echo ""
+
+  # Analytics Cluster Routes
+  echo "Analytics Cluster:"
+  echo "------------------"
+  local lf_analytics=$($MY_CLUSTER_COMMAND get route -n ${VAR_APIC_NAMESPACE} -o json 2>/dev/null | jq -r '.items[] | select(.spec.host | contains("ai.")) | "  Analytics Ingestion: https://\(.spec.host)"' 2>/dev/null)
+  
+  [[ -n "$lf_analytics" ]] && echo "$lf_analytics"
+  echo ""
+
+  # Nano Gateway Routes (if in separate namespace)
+  if [[ -n "${VAR_NANO_GATEWAY_NAMESPACE}" ]] && [[ "${VAR_NANO_GATEWAY_NAMESPACE}" != "${VAR_APIC_NAMESPACE}" ]]; then
+    echo "Nano Gateway:"
+    echo "-------------"
+    local lf_nano_routes=$($MY_CLUSTER_COMMAND get routes -n ${VAR_NANO_GATEWAY_NAMESPACE} -o json 2>/dev/null | jq -r '.items[] | "  \(.metadata.name): https://\(.spec.host)"' 2>/dev/null)
+    [[ -n "$lf_nano_routes" ]] && echo "$lf_nano_routes"
+    echo ""
+  fi
+
+  # Show all routes in a table format
+  echo "All Routes (Table Format):"
+  echo "--------------------------"
+  $MY_CLUSTER_COMMAND get routes -n ${VAR_APIC_NAMESPACE} -o custom-columns=NAME:.metadata.name,HOST:.spec.host,TLS:.spec.tls.termination 2>/dev/null
+  echo ""
+
+  # Get CRD status information
+  echo "=========================================="
+  echo "API Connect Operand Status"
+  echo "=========================================="
+  echo ""
+  
+  # Check ManagementCluster
+  local lf_mgmt_status=$($MY_CLUSTER_COMMAND get ManagementCluster -n ${VAR_APIC_NAMESPACE} -o json 2>/dev/null | jq -r '.items[] | "Management: \(.metadata.name) - Phase: \(.status.phase // "Unknown")"' 2>/dev/null)
+  [[ -n "$lf_mgmt_status" ]] && echo "$lf_mgmt_status"
+  
+  # Check GatewayCluster
+  local lf_gw_status=$($MY_CLUSTER_COMMAND get GatewayCluster -n ${VAR_APIC_NAMESPACE} -o json 2>/dev/null | jq -r '.items[] | "Gateway: \(.metadata.name) - Phase: \(.status.phase // "Unknown")"' 2>/dev/null)
+  [[ -n "$lf_gw_status" ]] && echo "$lf_gw_status"
+  
+  # Check PortalCluster
+  local lf_portal_status=$($MY_CLUSTER_COMMAND get PortalCluster -n ${VAR_APIC_NAMESPACE} -o json 2>/dev/null | jq -r '.items[] | "Portal: \(.metadata.name) - Phase: \(.status.phase // "Unknown")"' 2>/dev/null)
+  [[ -n "$lf_portal_status" ]] && echo "$lf_portal_status"
+  
+  # Check AnalyticsCluster
+  local lf_analytics_status=$($MY_CLUSTER_COMMAND get AnalyticsCluster -n ${VAR_APIC_NAMESPACE} -o json 2>/dev/null | jq -r '.items[] | "Analytics: \(.metadata.name) - Phase: \(.status.phase // "Unknown")"' 2>/dev/null)
+  [[ -n "$lf_analytics_status" ]] && echo "$lf_analytics_status"
+  
+  echo ""
+
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Retrieval of API Connect Routes (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################

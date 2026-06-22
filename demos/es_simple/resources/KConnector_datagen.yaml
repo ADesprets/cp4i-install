@@ -1,5 +1,4 @@
-apiVersion: eventstreams.ibm.com/v1beta2
-kind: KafkaConnector
+apiVersion: eventstreams.ibm.com/v1
 metadata:
   name: datagen
   namespace: $VAR_ES_NAMESPACE

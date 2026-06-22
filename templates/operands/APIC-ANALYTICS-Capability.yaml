@@ -23,6 +23,9 @@ spec:
     name: selfsigning-issuer
     kind: Issuer
   ingestion:
+    enabled: true
+    clientAuthEnabled: true
+    configReloadAutomatic: true
     endpoint:
       #ingressClassName: $INGRESS_CLASS
       annotations:
@@ -36,6 +39,7 @@ spec:
   federatedAPIManagementMode: true
   devPortalMode: true
   storage:
+    enabled: true  
     type: ${MY_APIC_A7S_STORAGE_TYPE}
     shared:
       volumeClaimTemplate:

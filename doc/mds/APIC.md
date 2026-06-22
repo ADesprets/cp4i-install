@@ -276,6 +276,12 @@ oc -n milvus get secret,issuer,certificate | grep -v -e minio -e kafka -e operat
 ### Configure APIC API Agent
 
 Notice that this is done at an organisation level
+echo $VIRTUAL_ENV
+./demos/apic_simple/programs/apic_simple.py install --no-prereqs --call enable_apic_api_agent_oc 
+./demos/apic_simple/programs/apic_simple.py install --no-prereqs --call configure_apic_watsonx_settings
+./demos/apic_simple/programs/apic_simple.py install --no-prereqs --call configure_apic_watsonx_settings_eugh_techzone
+./demos/apic_simple/programs/apic_simple.py install --no-prereqs --call configure_apic_watsonx_settings
+./demos/apic_simple/programs/apic_simple.py install --no-prereqs --call  patch_apic_api_agent_model_eugh_techzone
 
 SaaS
 ![SaaS APIC API Agent configuration](../images/apic_api_agent_configuration.png "SaaS APIC API Agent Configuration")

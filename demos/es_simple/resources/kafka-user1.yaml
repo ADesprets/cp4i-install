@@ -1,4 +1,5 @@
-apiVersion: eventstreams.ibm.com/v1beta2
+apiVersion: eventstreams.ibm.com/v1
+
 kind: KafkaUser
 metadata:
   generation: 1

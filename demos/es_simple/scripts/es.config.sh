@@ -8,7 +8,7 @@ function create_es() {
   if $MY_ES; then
 
     # Creating Event Streams instance
-    create_operand_instance "EventStreams" "${VAR_ES_INSTANCE_NAME}" "${sc_tmpl_dir}" "${MY_ES_WORKINGDIR}" "ES-Capability.yaml" "$VAR_ES_NAMESPACE" "{.status.phase}" "Ready"
+    create_operand_instance "EventStreams" "${VAR_ES_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_ES_WORKINGDIR}" "ES-Capability.yaml" "$VAR_ES_NAMESPACE" "{.status.phase}" "Ready"
 
     # Creating Event Streams Service Account associated with the ES instance to enable monitoring
     $MY_CLUSTER_COMMAND -n $VAR_ES_NAMESPACE adm policy add-cluster-role-to-user cluster-monitoring-view -z ${VAR_ES_SERVICE_ACCOUNT_NAME}
@@ -93,7 +93,7 @@ function create_kafka_connector () {
   # for example cp4i-mq-orders-server
   export VAR_MQ_ORDERS_TLS_SECRET="${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR_LC}-server"
 
-  # Will exit if the secret does not exist
+  # Create the certificate if it does not exist and copy it to MQ namespace
   local lf_jks_secret_name="${VAR_MQ_NAMESPACE}-mq-store-root-secret"
   if check_resource_exist secret $lf_jks_secret_name $VAR_MQ_NAMESPACE true; then
     local lf_store_password=$(oc -n "${VAR_MQ_NAMESPACE}" get secret "$lf_jks_secret_name" -o jsonpath='{.data.password}' | base64 --decode)
@@ -150,8 +150,6 @@ function es_run_all () {
 function es_init() {
   local lf_tracelevel=2
   trace_in $lf_tracelevel ${FUNCNAME[0]}
-  
-  sc_tmpl_dir="${sc_component_script_dir}../tmpl/"
   
   trace_out $lf_tracelevel ${FUNCNAME[0]}
 }

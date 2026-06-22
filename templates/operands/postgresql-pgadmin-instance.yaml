@@ -5,6 +5,7 @@ metadata:
   namespace: $VAR_NAMESPACE
 spec:
   dataVolumeClaimSpec:
+    storageClassName: $MY_BLOCK_STORAGE_CLASS
     accessModes:
       - ReadWriteOnce
     resources:

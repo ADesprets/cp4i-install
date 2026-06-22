@@ -1,13 +1,10 @@
-apiVersion: eventstreams.ibm.com/v1beta2
+apiVersion: eventstreams.ibm.com/v1
 kind: EventStreams
 metadata:
   name: $VAR_ES_INSTANCE_NAME
   namespace: $VAR_ES_NAMESPACE
   labels:
     backup.eventstreams.ibm.com/component: eventstreams
-  annotations:
-    eventstreams.ibm.com/node-pools: enabled
-    eventstreams.ibm.com/kraft: enabled
 spec:
   version: $MY_ES_VERSION
   license: 
@@ -17,16 +14,45 @@ spec:
   strimziOverrides:
     entityOperator:
       topicOperator: {}
+    nodePools:
+      - name: kafka
+        replicas: 3  # 3 brokers for high availability
+        storage:
+          type: "persistent-claim"
+          size: "30Gi"
+          class: $MY_BLOCK_STORAGE_CLASS
+          deleteClaim: false  # Prevent accidental data loss
+        roles:
+          - broker
+      - name: controller
+        replicas: 3  # 3 controllers for HA (quorum-based)
+        storage:
+          type: "persistent-claim"
+          size: "10Gi"  # Controllers need less storage
+          class: $MY_BLOCK_STORAGE_CLASS
+          deleteClaim: false
+        roles:
+          - controller
     kafka:
-      replicas: 3
+      # Note: replicas setting ignored when using nodePools
       config:
         auto.create.topics.enable: 'false'
-#        inter.broker.protocol.version: '3.9'
-        offsets.topic.replication.factor: 1
-        transaction.state.log.min.isr: 1
-        transaction.state.log.replication.factor: 1
+        # 3-broker replication settings for high availability
+        offsets.topic.replication.factor: 3
+        transaction.state.log.min.isr: 2
+        transaction.state.log.replication.factor: 3
         default.replication.factor: 3
-        min.insync.replicas: 3
+        min.insync.replicas: 2  # Allows 1 broker failure
+        log.retention.hours: 48  # 2 days retention
+        log.segment.bytes: 1073741824
+        compression.type: 'producer'
+      resources:
+        requests:
+          memory: 4Gi
+          cpu: 2000m
+        limits:
+          memory: 8Gi
+          cpu: 4000m
       authorization:
         type: simple
       listeners:
@@ -48,10 +74,6 @@ spec:
           configMapKeyRef:
             key: kafka-metrics-config.yaml
             name: ${VAR_ES_METRICS_CM}
-#      storage:
-#        type: persistent-claim
-#        class: $MY_BLOCK_STORAGE_CLASS
-#        size: 20Gi
   adminApi: {}
   adminUI:
      authentication:
