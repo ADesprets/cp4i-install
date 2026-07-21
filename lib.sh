@@ -1099,7 +1099,7 @@ function display_access_info() {
   if $MY_NAVIGATOR_INSTANCE; then
     lf_temp_integration_admin_pwd=$($MY_CLUSTER_COMMAND -n $MY_COMMONSERVICES_NAMESPACE get secret integration-admin-initial-temporary-credentials -o jsonpath={.data.password} | base64 -d)
     mylog info "Integration admin, user: integration-admin, password: ${lf_temp_integration_admin_pwd}" 0
-    iwhi_url=$($MY_CLUSTER_COMMAND -n $VAR_NAVIGATOR_NAMESPACE get platformnavigator iwhi-navigator -o jsonpath='{range .status.endpoints[?(@.name=="navigator")]}{.uri}{end}')
+    iwhi_url=$($MY_CLUSTER_COMMAND -n $VAR_NAVIGATOR_NAMESPACE get PlatformNavigator navigator -o jsonpath='{range .status.endpoints[?(@.name=="navigator")]}{.uri}{end}')
     mylog info "CP4I Platform UI URL: $iwhi_url" 0
     echo "<TR><TD><A HREF=${iwhi_url}>CP4I Platform UI</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html 
   fi
@@ -1118,7 +1118,7 @@ function display_access_info() {
   # API Connect
   local lf_gtw_url lf_apic_gtw_admin_pwd_secret_name lf_cm_admin_pwd lf_cm_url lf_cm_admin_pwd_secret_name lf_cm_admin_pwd lf_mgr_url lf_ptl_url lf_jwks_url
   if $MY_APIC; then
-    lf_platform_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get ManagementCluster -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].status.endpoints[?(@.name=="platformApi")].uri}')
+    lf_platform_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get ManagementCluster -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].status.endpoints[?(@.name=="navigator")].uri}')
     mylog info "APIC Platform API endpoint: ${lf_platform_url}" 0
     # APIC Cloud Manager
     lf_cm_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get ManagementCluster -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].status.endpoints[?(@.name=="admin")].uri}')
@@ -1265,8 +1265,8 @@ function display_access_info() {
   local lf_was_liberty_app_demo_url
   if $MY_WASLIBERTY_CUSTOM; then
     lf_was_liberty_app_demo_url=$($MY_CLUSTER_COMMAND -n $VAR_WASLIBERTY_NAMESPACE get route demo -o jsonpath='{.status.ingress[0].host}')
-    mylog info "WAS Liberty $MY_WASLIBERTY_APP_NAME application URL : https://${lf_was_liberty_app_demo_url}/$MY_WASLIBERTY_APP_NAME" 0
-    echo "<TR><TD><A HREF=https://${lf_was_liberty_app_demo_url}/$MY_WASLIBERTY_APP_NAME>WAS Liberty $MY_WASLIBERTY_APP_NAME application</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
+    mylog info "WAS Liberty $MY_WASLIBERTY_APP_NAME application URL : https://${lf_was_liberty_app_demo_url}/$MY_WASLIBERTY_APP_NAME/" 0
+    echo "<TR><TD><A HREF=https://${lf_was_liberty_app_demo_url}/$MY_WASLIBERTY_APP_NAME/>WAS Liberty $MY_WASLIBERTY_APP_NAME application</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
   fi
 
   # ILS - IBM Licensing Service and ILR - IBM Licensing Reporter
@@ -2670,15 +2670,17 @@ function check_add_cs_ibm_pak() {
   fi
 
   decho $lf_tracelevel "Looking for catalog source file ${MY_IBMPAK_MIRRORDIR}${lf_in_case_name}/${lf_case_version}/catalog-sources.yaml"
-  lf_file_tmp1=${MY_IBMPAK_MIRRORDIR}${lf_in_case_name}/${lf_case_version}/catalog-sources.yaml
-  lf_file_tmp2=${MY_IBMPAK_MIRRORDIR}${lf_in_case_name}/${lf_case_version}/catalog-sources-linux-${lf_in_arch}.yaml
+  # For reference for APIC: 6.2.0: catalog-sources.yaml; 7.0.0: catalog-sources-linux-amd64.yaml; 7.1.0, 7.2.0, 7.3.0, 8.0.0: catalog-sources-all.yaml, catalog-sources-linux-amd64-all.yaml, catalog-sources-linux-amd64.yaml
+  # We have chosen a precedence on the architecture, hence the order below
+  lf_file_tmp1=${MY_IBMPAK_MIRRORDIR}${lf_in_case_name}/${lf_case_version}/catalog-sources-linux-${lf_in_arch}.yaml
+  lf_file_tmp2=${MY_IBMPAK_MIRRORDIR}${lf_in_case_name}/${lf_case_version}/catalog-sources.yaml
 
   if [[ -e $lf_file_tmp1 ]]; then
     lf_file=$lf_file_tmp1
-    lf_display_name="${lf_in_case_name}-${lf_case_version}"
+    lf_display_name="${lf_in_case_name}-${lf_case_version}-linux-${lf_in_arch}"
   elif [[ -e $lf_file_tmp2 ]]; then
     lf_file=$lf_file_tmp2
-    lf_display_name="${lf_in_case_name}-${lf_case_version}-linux-${lf_in_arch}"
+    lf_display_name="${lf_in_case_name}-${lf_case_version}"
   else
     mylog error "No catalog source file found for case ${lf_in_case_name} ${lf_case_version}"
     exit 1
@@ -3092,7 +3094,7 @@ function accept_license_fs() {
 ################################################
 # Generate a random password of length {param 1} characters
 # Without starting with a special character
-# TODO Without more than 2 consecutive identical characters
+# Without more than 2 consecutive identical characters
 # TODO needs to URL safe?
 # Needs to have 2 at least two categories
 # @param 1: password length
@@ -3120,6 +3122,28 @@ function generate_password() {
     replacement=$(shuf -n1 -e {a..z} {A..Z})
     lf_password="${replacement}${lf_password:1}"
   fi
+
+  # Ensure no more than 2 consecutive identical characters
+  local lf_fixed=""
+  local lf_i
+  for (( lf_i=0; lf_i<${#lf_password}; lf_i++ )); do
+    local lf_char="${lf_password:$lf_i:1}"
+    local lf_len=${#lf_fixed}
+    if (( lf_len >= 2 )) && \
+       [[ "${lf_fixed: -1}" == "$lf_char" ]] && \
+       [[ "${lf_fixed: -2:1}" == "$lf_char" ]]; then
+      # Replace with a random char that differs from lf_char
+      local lf_replacement
+      while true; do
+        lf_replacement=$(cat /dev/urandom | tr -dc "$lf_pattern" | head -c 1)
+        [[ "$lf_replacement" != "$lf_char" ]] && break
+      done
+      lf_fixed+="$lf_replacement"
+    else
+      lf_fixed+="$lf_char"
+    fi
+  done
+  lf_password="$lf_fixed"
 
   export VAR_USER_PASSWORD_GEN=$lf_password
 

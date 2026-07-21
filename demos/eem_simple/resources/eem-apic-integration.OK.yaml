@@ -5,9 +5,9 @@ metadata:
 spec:
   license:
     accept: true
-    license: L-HRZF-DWHH7A
+    license: ${MY_EEM_LIC}
     metric: VIRTUAL_PROCESSOR_CORE
-    use: EventAutomationNonProduction
+    use: ${MY_EEM_LIC_USAGE}
   manager:
     authConfig:
       authType: LOCAL

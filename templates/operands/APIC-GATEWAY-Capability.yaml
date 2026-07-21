@@ -1,6 +1,10 @@
 apiVersion: gateway.apiconnect.ibm.com/v1beta1
 kind: GatewayCluster
 metadata:
+  labels:
+    app.kubernetes.io/instance: gateway
+    app.kubernetes.io/managed-by: ibm-apiconnect
+    app.kubernetes.io/name: ${VAR_APIC_INSTANCE_NAME}-gwv6
   name: ${VAR_APIC_INSTANCE_NAME}-gwv6
   namespace: ${VAR_APIC_NAMESPACE}
 spec:
@@ -32,8 +36,8 @@ spec:
     secretName: gateway-peering
   mgmtPlatformEndpointCASecret:
     secretName: ${MY_APIC_TLS_INGRESS_CERT_NAME} # Usually ingress-ca
-  #mgmtPlatformEndpointSvcCASecret:
-  #  secretName:  # Usually management-ca
+  mgmtPlatformEndpointSvcCASecret:
+    secretName: ${MY_APIC_TLS_APIM_CERT_NAME} # Usually management-ca
   datapowerLogLevel: 3
   license:
     accept: true
@@ -43,11 +47,11 @@ spec:
   tokenManagementService:
     enabled: true
     storage:
-      storageClassName: ${MY_BLOCK_STORAGE_CLASS}
+      storageClassName: ${OCP_BLOCK_STORAGE}
       volumeSize: 30Gi
   adminUser:
     secretName: ${MY_DPGW_ADMIN_USER_SECRET}
-  mtlsValidateClient: false
+  mtlsValidateClient: true
   # syslogConfig:
   #   enabled: false # if true, provide below details
   #   remoteHost: $DATAPOWER_SYSLOG_TCP_REMOTE_HOST # must be a string

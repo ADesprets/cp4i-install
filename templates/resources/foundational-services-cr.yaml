@@ -10,4 +10,4 @@ spec:
   size: starterset
   license:
     accept: true	
-  storageClass: ${MY_BLOCK_STORAGE_CLASS}
+  storageClass: ${OCP_BLOCK_STORAGE}

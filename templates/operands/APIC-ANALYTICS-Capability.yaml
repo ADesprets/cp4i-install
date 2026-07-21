@@ -3,8 +3,17 @@ kind: AnalyticsCluster
 metadata:
   name: ${VAR_APIC_INSTANCE_NAME}-a7s
   namespace: ${VAR_APIC_NAMESPACE}
+  labels:
+    app.kubernetes.io/instance: analytics
+    app.kubernetes.io/managed-by: ibm-apiconnect
+    app.kubernetes.io/name: ${INST_NAME}
+annotations:
+    apiconnect-operator/cp4i: "false"
 spec:
   version: ${MY_APIC_VERSION}
+  apiAgentMode: true
+  devPortalMode: true
+  federatedAPIManagementMode: true
   license:
     accept: true
     use: nonproduction
@@ -16,16 +25,16 @@ spec:
   imageRegistry: ${MY_APIC_IMAGE_REGISTRY}
   mgmtPlatformEndpointCASecret:
     secretName: ${MY_APIC_TLS_INGRESS_CERT_NAME} # Usually ingress-ca
-  #mgmtPlatformEndpointSvcCASecret:
-  #  secretName:  # Usually management-ca
+  mgmtPlatformEndpointSvcCASecret:
+    secretName: ${MY_APIC_TLS_APIM_CERT_NAME} # Usually management-ca
   microServiceSecurity: certManager
   certManagerIssuer:
     name: selfsigning-issuer
     kind: Issuer
   ingestion:
-    enabled: true
-    clientAuthEnabled: true
-    configReloadAutomatic: true
+    # enabled: true
+    # clientAuthEnabled: true
+    # configReloadAutomatic: true
     endpoint:
       #ingressClassName: $INGRESS_CLASS
       annotations:
@@ -34,14 +43,12 @@ spec:
       - name: ai.${STACK_HOST}
         secretName: analytics-ai-endpoint
     clientSubjectDN: CN=analytics-ingestion-client,O=cert-manager
-  mtlsValidateClient: true
-  analyticsMode: true
-  federatedAPIManagementMode: true
-  devPortalMode: true
+  # mtlsValidateClient: true
+  # analyticsMode: true
   storage:
     enabled: true  
     type: ${MY_APIC_A7S_STORAGE_TYPE}
     shared:
       volumeClaimTemplate:
-        storageClassName: ${MY_BLOCK_STORAGE_CLASS}
+        storageClassName: ${OCP_BLOCK_STORAGE}
         volumeSize: ${MY_APIC_A7S_STORAGE_SIZE}

@@ -3,26 +3,42 @@ kind: EventGateway
 metadata:
   name: ${VAR_EGW_INSTANCE_NAME}
   namespace: $VAR_EGW_NAMESPACE
+  labels:
+    backup.events.ibm.com/component: eventgateway
+    events.ibm.com/manager: ${VAR_EEM_INSTANCE_NAME}
 spec:
   license:
     accept: true
     license: $MY_EGW_LIC
     metric: VIRTUAL_PROCESSOR_CORE
     use: $MY_EGW_LIC_USAGE
-  managerEndpoint: ${VAR_EEM_MANAGER_GATEWAY_ROUTE}
-  gatewayGroupName: ${VAR_EGW_INSTANCE_GRP_NAME}
-  gatewayID: ${VAR_EGW_INSTANCE_NAME}
-  tls:
-    caSecretName: ${VAR_EEM_INSTANCE_NAME}-ibm-eem-manager-ca
+  gatewayGroupName: '${VAR_EGW_INSTANCE_NAME}_001'
+  gatewayID: '${VAR_EGW_INSTANCE_NAME}_001'
+  gatewayContact: ${MY_USER_ID}
+  replicas: 1
+  listeners:
+
+    - groups:
+        - name: group
+          type: EXPLICIT
+          maxNumKafkaBrokers: 3
+      name: listener
+      tls:
+        certificateType: "EXPLICIT" # "The type of certificate to generate: 'wildcard' for a single wildcard certificate (*.example.com), or 'explicit' for a single certificate with explicit hostnames as SANs. 
+        secretName: "<Kubernetes secret that contains your CA and server certificate and key>"
+        key: "tls.key"
+        serverCertificate: "tls.crt"
+        caCertificate: "ca.crt"
+      port: 8092
   template:
     pod:
       spec:
         containers:
-          - name: egw
-            resources:
-              requests:
-                cpu: '0.5'
-                memory: 512Mi
+          - resources:
               limits:
                 cpu: '1'
                 memory: 1Gi
+              requests:
+                cpu: '0.5'
+                memory: 512Mi
+            name: egw

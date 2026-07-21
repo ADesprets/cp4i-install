@@ -39,7 +39,7 @@ spec:
     route:
       enabled: true
     storage:
-      defaultClass: $MY_BLOCK_STORAGE_CLASS
+      defaultClass: $OCP_BLOCK_STORAGE
       queueManager:
         deleteClaim: true
         type: persistent-claim

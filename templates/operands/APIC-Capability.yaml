@@ -43,5 +43,5 @@ spec:
 #        databaseName: default
 #        collectionName: apic_agent
 #        credentials: milvus-creds
-  storageClassName: ${MY_BLOCK_STORAGE_CLASS}
+  storageClassName: ${OCP_BLOCK_STORAGE}
   version: ${MY_APIC_VERSION}

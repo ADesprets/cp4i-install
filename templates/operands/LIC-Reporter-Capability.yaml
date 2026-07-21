@@ -15,4 +15,4 @@ spec:
     useradmin:
       enabled: true
   version: ${MY_LICENSE_SERVICE_REPORTER_VERSION}      
-  storageClass: ${MY_BLOCK_STORAGE_CLASS}
+  storageClass: ${OCP_BLOCK_STORAGE}

@@ -13,6 +13,6 @@ spec:
     secret:
       name: $MY_LOKI_SECRET
       type: s3
-  storageClassName: $MY_BLOCK_STORAGE_CLASS
+  storageClassName: $OCP_BLOCK_STORAGE
   tenants:
     mode: $MY_LOGGING_NAMESPACE

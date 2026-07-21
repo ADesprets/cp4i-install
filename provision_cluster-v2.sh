@@ -577,6 +577,8 @@ function install_lic_svc() {
     local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
     unset VAR_CATALOG_SOURCE
 
+    echo "lf_catalog_source_name: $lf_catalog_source_name"
+
     export VAR_OPERATORGROUP=${MY_LICENSE_SERVICE_OPERATOR}-group
     export VAR_NAMESPACE=$MY_LICENSE_SERVICE_NAMESPACE
     create_oc_resource "OperatorGroup" "$MY_LICENSE_SERVICE_OPERATORGROUP" "$MY_RESOURCESDIR" "$MY_LICENSE_SERVICE_WORKINGDIR" "operator-group-single.yaml" "$MY_LICENSE_SERVICE_NAMESPACE"
@@ -1182,7 +1184,7 @@ function install_valkey() {
     export VAR_CERT_NAME=${VAR_VALKEY_NAMESPACE}-valkey-root
     export VAR_NAMESPACE=${VAR_VALKEY_NAMESPACE}
     export VAR_CERT_ISSUER_REF="${VAR_VALKEY_ISSUER}-root"
-    export VAR_CERT_SECRET_NAME=${VAR_CERT_NAME}-secret
+    export VAR_CERT_SECRET_NAME=${VAR_CERT_NAME}
     export VAR_CERT_COMMON_NAME="ValkeyCA"
     export VAR_CERT_ORGANISATION=${MY_CERT_ORGANISATION}
     export VAR_CERT_COUNTRY=${MY_CERT_COUNTRY}
@@ -1191,13 +1193,13 @@ function install_valkey() {
     create_certificate "${VAR_VALKEY_NAMESPACE}" "${MY_VALKEY_WORKINGDIR}" "ca_certificate.yaml"
 
     # Create intermediate/leaf issuer
-    create_intermediate_issuer "${VAR_VALKEY_ISSUER}-int" "${VAR_VALKEY_NAMESPACE}-valkey-root-secret" "${MY_VALKEY_WORKINGDIR}" "${VAR_VALKEY_NAMESPACE}"
+    create_intermediate_issuer "${VAR_VALKEY_ISSUER}-int" "${VAR_VALKEY_NAMESPACE}-valkey-root" "${MY_VALKEY_WORKINGDIR}" "${VAR_VALKEY_NAMESPACE}"
 
     # Create leaf certificate (server certificate)
     export VAR_CERT_NAME=${VAR_VALKEY_NAMESPACE}-valkey-server
     export VAR_NAMESPACE=${VAR_VALKEY_NAMESPACE}
     export VAR_CERT_ISSUER_REF="${VAR_VALKEY_ISSUER}-int"
-    export VAR_CERT_SECRET_NAME=${VAR_CERT_NAME}-secret
+    export VAR_CERT_SECRET_NAME=${VAR_CERT_NAME}
     export VAR_CERT_COMMON_NAME="valkey.${VAR_VALKEY_NAMESPACE}.svc.cluster.local"
     export VAR_CERT_ORGANISATION=${MY_CERT_ORGANISATION}
     export VAR_CERT_COUNTRY=${MY_CERT_COUNTRY}
@@ -1217,7 +1219,7 @@ function install_valkey() {
     decho $lf_tracelevel "oc adm policy add-scc-to-user restricted -z default -n ${VAR_VALKEY_NAMESPACE}"
     oc adm policy add-scc-to-user restricted -z default -n ${VAR_VALKEY_NAMESPACE}
     
-    export VAR_VALKEY_SERVER_TLS_SECRET_NAME="${VAR_VALKEY_NAMESPACE}-valkey-server-secret"
+    export VAR_VALKEY_SERVER_TLS_SECRET_NAME="${VAR_VALKEY_NAMESPACE}-valkey-server"
 
     # Create valkey operand
     if [ "$MY_NANO_DB_MODE" == "standalone" ]; then
@@ -1419,9 +1421,14 @@ function install_apic() {
     create_project "${VAR_APIC_NAMESPACE}" "${VAR_APIC_NAMESPACE} project" "For API Connect" "${MY_RESOURCESDIR}" "${MY_APIC_WORKINGDIR}"
     add_ibm_entitlement "$VAR_APIC_NAMESPACE"
   
+    # Create the Certificates required by API Connect
+    mylog info "Setting up issuers and certificates for API Connect in ${VAR_APIC_NAMESPACE} namespace" 1>&2
+    adapt_file ${MY_TLSDIR}APIC/ ${MY_APIC_WORKINGDIR} ingress-issuer-v1.yaml
+    oc -n "${VAR_APIC_NAMESPACE}" apply -f ${MY_APIC_WORKINGDIR}ingress-issuer-v1.yaml
+
     # Add the API Connect catalog sources to your cluster using ibm_pak plugin
-    mylog warn "There is an error with ibm-pak catalog source is incorrect: https://github.com/IBM/cloud-pak/blob/master/repo/case/ibm-apiconnect/7.3.0/OLM/catalog-sources-linux-amd64-all.yaml and
-https://github.com/IBM/cloud-pak/blob/master/repo/case/ibm-apiconnect/7.3.0/OLM/catalog-sources-all.yaml" 1>&2
+    mylog warn "There is an error with ibm-pak catalog source is incorrect: https://github.com/IBM/cloud-pak/blob/master/repo/case/ibm-apiconnect/8.0.0/OLM/catalog-sources-linux-amd64-all.yaml and 
+https://github.com/IBM/cloud-pak/blob/master/repo/case/ibm-apiconnect/8.0.0/OLM/catalog-sources-all.yaml" 1>&2
     check_add_cs_ibm_pak $MY_APIC_CASE $MY_APIC_OPERATOR $MY_APIC_CATALOGSOURCE_LABEL amd64
     if [[ -z $MY_APIC_VERSION ]]; then
       export MY_APIC_VERSION=$VAR_APP_VERSION
@@ -1432,7 +1439,7 @@ https://github.com/IBM/cloud-pak/blob/master/repo/case/ibm-apiconnect/7.3.0/OLM/
     # Install operators for DataPower gateway and nano gateway
     if $INSTALL_OVERWRITE; then
       install_datapower_gateway
-      install_nano_gateway
+      # install_nano_gateway
     else
       mylog warn "Skipping installation of DataPower gateway and nano gateway operators because INSTALL_OVERWRITE is set to false" 1>&2
     fi
@@ -1441,12 +1448,9 @@ https://github.com/IBM/cloud-pak/blob/master/repo/case/ibm-apiconnect/7.3.0/OLM/
     mylog info "Creating APIC operator subscription" 1>&2
     create_operator_instance "${MY_APIC_OPERATOR}" "${MY_APIC_CATALOGSOURCE_LABEL}" "${MY_OPERATORSDIR}" "${MY_APIC_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
     
-    mylog info "Setting up issuers and certificates for API Connect in ${VAR_APIC_NAMESPACE} namespace" 1>&2
-    oc -n "${VAR_APIC_NAMESPACE}" apply -f ${MY_TLSDIR}APIC/custom-certs-external.yaml
-   
     local lf_ingress=$($MY_CLUSTER_COMMAND get ingresses.config/cluster -o jsonpath='{.spec.domain}')
     export STACK_HOST="$lf_ingress"
-
+    
     if $MY_APIC_BY_COMPONENT; then
       mylog info "Creating APIC components individually, adding more control for APIC V12 and the multiple gateways" 1>&2
 
@@ -1473,7 +1477,7 @@ https://github.com/IBM/cloud-pak/blob/master/repo/case/ibm-apiconnect/7.3.0/OLM/
       create_operand_instance "GatewayCluster" "${VAR_APIC_INSTANCE_NAME}-gwv6" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-GATEWAY-Capability.yaml" "$VAR_APIC_NAMESPACE" "{.status.phase}" "Running"
       # Nano Gateway
       export VAR_REDIS_HOST=valkey.${VAR_VALKEY_NAMESPACE}.svc.cluster.local
-      create_operand_instance "NanoGatewayCluster" "ngw" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-NANOGATEWAY-Capability.yaml" "$VAR_NANO_GATEWAY_NAMESPACE" "{.status.phase}" "Running"
+      # toto create_operand_instance "NanoGatewayCluster" "ngw" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-NANOGATEWAY-Capability.yaml" "$VAR_NANO_GATEWAY_NAMESPACE" "{.status.phase}" "Running"
       unset VAR_REDIS_HOST
       # WMAPIGatewayCluster
       mylog info "Creating APIC WMAPIGatewayCluster" 1>&2
@@ -2613,7 +2617,7 @@ function provision_cluster_init() {
 
   # check the differents pre requisites
   check_exec_prereqs
-  check_resource_exist storageclass $MY_BLOCK_STORAGE_CLASS "default" true
+  check_resource_exist storageclass $OCP_BLOCK_STORAGE "default" true
   check_resource_exist storageclass $MY_FILE_STORAGE_CLASS "default" true
   check_directory_exist_create "$MY_WORKINGDIR"
 
@@ -2635,14 +2639,13 @@ function provision_cluster_init() {
   if ! ${TECHZONE};then
     $MY_CLUSTER_COMMAND create clusterrolebinding myname-cluster-admin-binding --clusterrole=cluster-admin --user=$MY_USER_ID > /dev/null 2>&1
     $MY_CLUSTER_COMMAND create clusterrolebinding myname-cluster-binding --clusterrole=admin --user=$MY_USER_ID > /dev/null 2>&1
-    $MY_CLUSTER_COMMAND -n $MY_OC_PROJECT adm policy add-cluster-role-to-user self-provisioner $MY_USER_ID
+    # $MY_CLUSTER_COMMAND -n $MY_OC_PROJECT adm policy add-cluster-role-to-user self-provisioner $MY_USER_ID
   fi
   
   # https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.4?topic=operators-installing-by-using-cli
   # (Only if your preferred installation mode is a specific namespace on the cluster) Create an OperatorGroup
   check_directory_exist_create "${MY_CP4I_WORKINGDIR}"
 
-  create_project "$MY_OC_PROJECT" "$MY_OC_PROJECT project" "For Cloud Pak for Integration" "${MY_RESOURCESDIR}" "${MY_CP4I_WORKINGDIR}"
   create_project "$MY_OPERATORS_NAMESPACE" "$MY_OPERATORS_NAMESPACE project" "For openshift-operators" "${MY_RESOURCESDIR}" "${MY_CP4I_WORKINGDIR}"
   create_project "openshift-image-registry" "openshift-image-registry project" "For openshift-operators" "${MY_RESOURCESDIR}" "${MY_CP4I_WORKINGDIR}"
   create_project "openshift-marketplace" "openshift-marketplace project" "For catalogsources" "${MY_RESOURCESDIR}" "${MY_CP4I_WORKINGDIR}"
@@ -2650,7 +2653,6 @@ function provision_cluster_init() {
   # Add ibm entitlement key to namespace
   # SB]20230209 Aspera hsts service cannot be created because a problem with the entitlement, it must be added in the openshift-operators namespace.
   mylog info "Creating entitlement, need to check if it is needed or works"
-  add_ibm_entitlement $MY_OC_PROJECT
   add_ibm_entitlement $MY_OPERATORS_NAMESPACE
 
   # Create a namespace object for Red Hat Openshift Logging Operator 5 I put it here because it's used by loki and observability)

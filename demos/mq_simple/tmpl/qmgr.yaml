@@ -15,7 +15,7 @@ spec:
     keys:
       - name: ${VAR_QMGR_LC}
         secret:
-          secretName: ${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR_LC}-server-secret
+          secretName: mq-${VAR_QMGR_LC}-server-secret
           items:
             - tls.key
             - tls.crt
@@ -42,7 +42,7 @@ spec:
       requests:
         cpu: 500m
     storage:
-      defaultClass: $MY_BLOCK_STORAGE_CLASS
+      defaultClass: $OCP_BLOCK_STORAGE
       queueManager:
         type: persistent-claim
         size: 2Gi

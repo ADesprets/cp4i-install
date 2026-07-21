@@ -73,9 +73,9 @@ spec:
     storage:
       queueManager:
         type: persistent-claim
-        class: $MY_BLOCK_STORAGE_CLASS
+        class: $OCP_BLOCK_STORAGE
         size: 2Gi
-      defaultClass: $MY_BLOCK_STORAGE_CLASS
+      defaultClass: $OCP_BLOCK_STORAGE
   template:
     pod:
       containers:
@@ -92,4 +92,4 @@ spec:
         provider: manual
       manualConfig:
         secret:
-          name: ${VAR_MQ_NAMESPACE}-web-secret
+          name: web-secret

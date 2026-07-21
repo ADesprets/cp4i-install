@@ -66,11 +66,11 @@ spec:
   #   secretName: wmapigateway-enc-key
   storage:
     volumeClaimTemplate:
-      storageClassName: ${MY_BLOCK_STORAGE_CLASS}
+      storageClassName: ${OCP_BLOCK_STORAGE}
       volumeSize: ${MY_APIC_WMGTW_STORAGE_SIZE}
   # integrationServerPackages:
   #   packages:
   #   - NativeService
   #   volumeClaimTemplate:
-  #     storageClassName: ${MY_BLOCK_STORAGE_CLASS}
+  #     storageClassName: ${OCP_BLOCK_STORAGE}
   #     volumeSize: $DATA_VOLUME_SIZE

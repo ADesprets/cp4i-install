@@ -1,4 +1,9 @@
 apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${VAR_NANO_GATEWAY_NAMESPACE}
+---
+apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: datapower-nano-operator
@@ -41,10 +46,12 @@ rules:
       - nano.datapower.ibm.com
     resources:
       - apis
+      - apisets
       - assemblies
       - autoscaleconfigs
       - jwtproviders
       - managements
+      - mcptools
       - oauthproviders
       - runtimeconfigs
       - runtimes
@@ -63,11 +70,13 @@ rules:
       - nano.datapower.ibm.com
     resources:
       - apis/status
+      - apisets/status
       - assemblies/status
       - autoscaleconfigs/status
       - jwtproviders/status
       - managements/scale
       - managements/status
+      - mcptools/status
       - oauthproviders/status
       - runtimeconfigs/status
       - runtimes/scale
@@ -195,7 +204,7 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-          image: ${MY_CP_IO_IMAGE_REGISTRY}/datapower/datapower-nano-operator:build.289@sha256:1143fb55029eb99389a9e055703d0e9fa785dffc39512563923b9873327cd299
+          image: ${MY_CP_IO_IMAGE_REGISTRY}/datapower/datapower-nano-operator:build.344@sha256:9de6c4ab2cc0b3af6f0c9441d598edde362031fc0f80eaf33d9052136f2129da
           imagePullPolicy: Always
           name: datapower-nano-operator
           resources:

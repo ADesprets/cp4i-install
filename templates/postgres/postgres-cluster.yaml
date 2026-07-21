@@ -9,7 +9,7 @@ spec:
   storage:
     resizeInUseVolumes: true
     size: 1Gi
-    storageClass: $MY_BLOCK_STORAGE_CLASS
+    storageClass: $OCP_BLOCK_STORAGE
   imagePullSecrets:
     - name: ${DEFAULT_IMAGE_PULL_SECRET}
   imageName: $VAR_POSTGRES_IMAGE_NAME

@@ -1,4 +1,4 @@
-FROM icr.io/appcafe/websphere-liberty:24.0.0.5-kernel-java17-openj9-ubi
+FROM icr.io/appcafe/websphere-liberty:26.0.0.6-kernel-java25-openj9-ubi-minimal
 
 COPY --chown=1001:0 /src/main/liberty/config /config
 

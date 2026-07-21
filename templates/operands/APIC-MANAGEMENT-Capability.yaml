@@ -1,25 +1,20 @@
 apiVersion: management.apiconnect.ibm.com/v1beta1
 kind: ManagementCluster
 metadata:
+  labels:
+    app.kubernetes.io/instance: management
+    app.kubernetes.io/managed-by: ibm-apiconnect
+    app.kubernetes.io/name: ${VAR_APIC_INSTANCE_NAME}
+  annotations:
+    apiconnect-operator/cp4i: "false"    
   name: ${VAR_APIC_INSTANCE_NAME}-mgmt
   namespace: ${VAR_APIC_NAMESPACE}
 spec:
   version: ${MY_APIC_VERSION}
+  profile: ${MY_APIC_PROFILE_MGMT}
   imagePullSecrets:
   - ${DEFAULT_IMAGE_PULL_SECRET}
   imageRegistry: ${MY_APIC_IMAGE_REGISTRY}
-  profile: ${MY_APIC_PROFILE_MGMT}
-  governance:
-    enabled: true
-  testAndMonitor:
-    autoTestEnabled: true
-    hubEndpoint: {}
-    turnstileEndpoint: {}
-  discovery:
-    enabled: true
-    tablespaceDbVolumeClaimTemplate:
-      storageClassName: ocs-external-storagecluster-ceph-rbd
-      volumeSize: 25Gi
   portal:
     admin:
       secretName: portal-admin-client
@@ -57,13 +52,6 @@ spec:
     hosts:
     - name: manager.${STACK_HOST}
       secretName: apim-endpoint
-  consumerCatalogEndpoint:
-    #ingressClassName: $INGRESS_CLASS
-    annotations:
-      cert-manager.io/issuer: ingress-issuer
-    hosts:
-    - name: consumer-catalog.${STACK_HOST}
-      secretName: consumer-catalog-endpoint
   platformAPIEndpoint:
     #ingressClassName: $INGRESS_CLASS
     annotations:
@@ -82,13 +70,15 @@ spec:
       secretName: consumer-endpoint
   adminUser:
     secretName: apic-mgmt-admin-pass
+  consumerCatalogEndpoint:
+    annotations:
+      cert-manager.io/issuer: ingress-issuer
+    hosts: 
+    - name: consumer-catalog.${STACK_HOST}
+      secretName: consumer-catalog-endpoint
   databaseVolumeClaimTemplate:
-    storageClassName: ${MY_BLOCK_STORAGE_CLASS}
+    storageClassName: ${OCP_BLOCK_STORAGE}
   microServiceSecurity: certManager
-  #platformEndpointCASecret:
-  #  secretName:
-  #consumerEndpointCASecret:
-  #  secretName:
   certManagerIssuer:
     name: selfsigning-issuer
     kind: Issuer
@@ -97,3 +87,11 @@ spec:
     use: nonproduction
     license: ${MY_APIC_LIC}
     metric: ${MY_APIC_METRIC}
+  governance:
+    enabled: true
+  discovery:
+    enabled: true
+    proxyCollectorEnabled: true
+    tablespaceDbVolumeClaimTemplate:
+      storageClassName: ocs-external-storagecluster-ceph-rbd
+      volumeSize: 25Gi

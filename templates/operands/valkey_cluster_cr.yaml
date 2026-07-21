@@ -41,7 +41,7 @@ spec:
         resources:
           requests:
             storage: 1Gi
-        storageClassName: ${MY_BLOCK_STORAGE_CLASS}
+        storageClassName: ${OCP_BLOCK_STORAGE}
   TLS:
     ca: "ca.crt"
     cert: "tls.crt"

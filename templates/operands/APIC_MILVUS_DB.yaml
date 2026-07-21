@@ -17,7 +17,7 @@ spec:
           replicaCount: 1
           persistence:
             enabled: true
-            storageClass: "${MY_BLOCK_STORAGE_CLASS}"
+            storageClass: "${OCP_BLOCK_STORAGE}"
             size: 10Gi
     msgStreamType: kafka
     kafka:
@@ -37,7 +37,7 @@ spec:
           defaultReplicationFactor: 1
           persistence:
             enabled: true
-            storageClass: "${MY_BLOCK_STORAGE_CLASS}"
+            storageClass: "${OCP_BLOCK_STORAGE}"
             size: 10Gi
     storage:
       type: MinIO
@@ -74,7 +74,7 @@ spec:
           memory: "16Gi"
       persistence:
         enabled: true
-        storageClass: "${MY_BLOCK_STORAGE_CLASS}"
+        storageClass: "${OCP_BLOCK_STORAGE}"
         size: 100Gi
   config:
     tls:

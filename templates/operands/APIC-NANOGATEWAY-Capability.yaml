@@ -2,7 +2,7 @@ apiVersion: nanogateway.apiconnect.ibm.com/v1beta1
 kind: NanoGatewayCluster
 metadata:
   name: ngw
-  namespace: ${VAR_APIC_NAMESPACE}
+  namespace: ${VAR_NANO_GATEWAY_NAMESPACE}
 spec:
   profile: ${MY_APIC_PROFILE_NGW}
   version: ${MY_APIC_VERSION}
@@ -33,5 +33,5 @@ spec:
     credential:
       secretName: valkey-${VAR_VALKEY_NAMESPACE}-secret
     tls:
-      secretName: ${VAR_VALKEY_NAMESPACE}-valkey-server-secret
+      secretName: ${VAR_VALKEY_NAMESPACE}-valkey-server
   gatewayDomain: nanogw.${STACK_HOST}

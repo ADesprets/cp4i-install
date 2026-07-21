@@ -62,7 +62,7 @@ spec:
       volumes:
         - name: certs
           secret:
-            secretName: ${VAR_ES_NAMESPACE}-mq-root-secret
+            secretName: mq-root-secret
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

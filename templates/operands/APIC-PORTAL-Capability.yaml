@@ -1,6 +1,10 @@
 apiVersion: portal.apiconnect.ibm.com/v1beta1
 kind: PortalCluster
 metadata:
+  labels:
+    app.kubernetes.io/instance: portal
+    app.kubernetes.io/managed-by: ibm-apiconnect
+    app.kubernetes.io/name: ${VAR_APIC_INSTANCE_NAME}-ptl
   name: ${VAR_APIC_INSTANCE_NAME}-ptl
   namespace: ${VAR_APIC_NAMESPACE}  
 spec:
@@ -11,12 +15,10 @@ spec:
   imageRegistry: ${MY_APIC_IMAGE_REGISTRY}
   mgmtPlatformEndpointCASecret:
     secretName: ${MY_APIC_TLS_INGRESS_CERT_NAME} # Usually ingress-ca
-  mgmtConsumerEndpointCASecret:
-    secretName: ${MY_APIC_TLS_INGRESS_CERT_NAME} # Usually ingress-ca
-  #mgmtPlatformEndpointSvcCASecret:
-  #  secretName:  # Usually management-ca ${MY_APIC_TLS_APIM_CERT_NAME}
-  #mgmtConsumerEndpointSvcCASecret:
-  #  secretName:  # Usually management-ca  ${MY_APIC_TLS_APIM_CERT_NAME}
+  mgmtPlatformEndpointSvcCASecret:
+    secretName: ${MY_APIC_TLS_APIM_CERT_NAME} # Usually management-ca
+  mgmtConsumerEndpointSvcCASecret:
+    secretName: ${MY_APIC_TLS_APIM_CERT_NAME} # Usually management-ca
   portalAdminEndpoint:
     #ingressClassName: $INGRESS_CLASS
     annotations:
@@ -32,22 +34,22 @@ spec:
     - name: portal.${STACK_HOST}
       secretName: portal-web
   databaseVolumeClaimTemplate:
-    storageClassName: ${MY_BLOCK_STORAGE_CLASS}
-    volumeSize: 64Gi
+    storageClassName: ${OCP_BLOCK_STORAGE}
+    volumeSize: 100Gi
   databaseLogsVolumeClaimTemplate:
-    storageClassName: ${MY_BLOCK_STORAGE_CLASS}
+    storageClassName: ${OCP_BLOCK_STORAGE}
     volumeSize: 12Gi
   webVolumeClaimTemplate:
-    storageClassName: ${MY_BLOCK_STORAGE_CLASS}
+    storageClassName: ${OCP_BLOCK_STORAGE}
     volumeSize: 64Gi
   backupVolumeClaimTemplate:
-    storageClassName: ${MY_BLOCK_STORAGE_CLASS}
-    volumeSize: 15Gi
+    storageClassName: ${OCP_BLOCK_STORAGE}
+    volumeSize: 80Gi
   adminVolumeClaimTemplate:
-    storageClassName: ${MY_BLOCK_STORAGE_CLASS}
-    volumeSize: 6Gi
+    storageClassName: ${OCP_BLOCK_STORAGE}
+    volumeSize: 20Gi
   certVolumeClaimTemplate:
-    storageClassName: ${MY_BLOCK_STORAGE_CLASS}
+    storageClassName: ${OCP_BLOCK_STORAGE}
     volumeSize: 4Gi
   adminClientSubjectDN: CN=portal-admin-client,O=cert-manager
   microServiceSecurity: certManager
@@ -59,4 +61,4 @@ spec:
     use: nonproduction
     license: ${MY_APIC_LIC}
     metric: ${MY_APIC_METRIC}
-  mtlsValidateClient: true
+  # mtlsValidateClient: true

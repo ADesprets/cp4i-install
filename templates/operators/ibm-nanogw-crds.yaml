@@ -318,6 +318,13 @@ spec:
                     description: True if this resource's assembly depends on a cacheService
                       configuration.
                     type: boolean
+                  countLimitAliases:
+                    default: []
+                    description: The set of count limit aliases used in this resource's
+                      assembly.
+                    items:
+                      type: string
+                    type: array
                   customSqlInjectionFilters:
                     default: []
                     description: Names of custom SQL injection filters required by
@@ -351,8 +358,15 @@ spec:
                     type: array
                   plans:
                     default: false
-                    description: True is this resource's assembly depends on plans.
+                    description: True if this resource's assembly depends on plans.
                     type: boolean
+                  rateLimitAliases:
+                    default: []
+                    description: The set of rate limit aliases used in this resource's
+                      assembly.
+                    items:
+                      type: string
+                    type: array
                   rateLimitService:
                     default: false
                     description: True if this resource's assembly depends on a rateLimitService
@@ -401,6 +415,455 @@ spec:
         required:
         - spec
         title: ApiValidated
+        type: object
+        x-kubernetes-validations:
+        - message: metadata.name must be 32 characters or less
+          rule: self.metadata.name.size() <= 32
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: apisets.nano.datapower.ibm.com
+spec:
+  group: nano.datapower.ibm.com
+  names:
+    categories:
+    - dpn
+    kind: APISet
+    plural: apisets
+    shortNames: []
+    singular: apiset
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - description: number of APIs in set
+      jsonPath: .status.apiCount
+      name: APIs
+      type: integer
+    - description: age of resource
+      jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Auto-generated derived type for ApiSetSpec via `CustomResource`
+        properties:
+          spec:
+            properties:
+              apis:
+                additionalProperties:
+                  properties:
+                    assembly:
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
+                    cors:
+                      description: A list of CORS rules, to be attempted in the order
+                        listed. The first rule that matches the requested Origin is
+                        applied. If no rule matches the Origin, the CORS request is
+                        denied. If the list is empty, CORS is not enabled for this
+                        API, and CORS requests to this API receive no special handling.
+                      items:
+                        description: A rule that specifies how to handle a CORS request.
+                          A CORS rule contains a list of origins that is compared
+                          with the request Origin to determine if the rule applies.
+                        properties:
+                          action:
+                            description: Is this an Allow or Deny rule? Specifically,
+                              whether the origins in `originList` are allowed or denied
+                              by this rule.
+                            enum:
+                            - allow
+                            - deny
+                            type: string
+                          allowCredentials:
+                            default: false
+                            description: 'If true, return `Access-Control-Allow-Credentials:
+                              true`. If false (default), the header `Access-Control-Allow-Credentials`
+                              is not returned.'
+                            type: boolean
+                          allowHeaders:
+                            description: 'Headers allowed in the follow-on to a preflight
+                              request. If empty, allow all headers: the headers requested
+                              in `Access-Control-Request-Headers` are all returned
+                              in the header `Access-Control-Allow-Headers`'
+                            items:
+                              type: string
+                            type: array
+                          allowMethods:
+                            description: 'Methods allowed in the follow-on to a preflight
+                              request. If empty, allow any method: the method requested
+                              by header `Access-Control-Request-Method` is returned
+                              in `Access-Control-Allow-Methods`'
+                            items:
+                              type: string
+                            type: array
+                          exposeHeaders:
+                            description: Headers that can be exposed as part of a
+                              response. If not specified, the header `Access-Control-Expose-Headers`
+                              is returned with default values.
+                            nullable: true
+                            properties:
+                              backend:
+                                default: false
+                                type: boolean
+                              custom:
+                                minLength: 1
+                                nullable: true
+                                type: string
+                              predefined:
+                                default: true
+                                type: boolean
+                            type: object
+                          maxAgeSeconds:
+                            description: Max age (seconds) for which the preflight
+                              response is valid. If not specified, the header `Access-Control-Max-Age`
+                              is not returned.
+                            format: uint16
+                            minimum: 0
+                            nullable: true
+                            type: integer
+                          originList:
+                            description: |-
+                              Origins to which this rule applies. Origins include scheme (e.g., `http:`, `https:`, etc.), hostname, and optionally port. (For example, `http://example.com` or `https://example.com:1234`). Origin names may contain a `*` wildcard character which will match 0 or more characters.
+
+                              If `action` = `allow`, specifies origins allowed by this rule. If the requested Origin does not match any origin in this list, this rule does not apply, and the next rule in the rules list (if any) is attempted.
+
+                              Advanced: If `action` = `deny`, specifies origins that are denied by this rule. A requested origin that matches any element in the list will be denied; all other origins are allowed and the settings in the rule apply. A Deny rule always results in either the Origin being accepted (because it did not appear in `originList`) and the rule applied, OR the CORS request being rejected; it never falls through to the next rule, as Allow rules do.
+
+                              Therefore, at most one Deny rule may appear in a list of CORS rules, and it must be the last (or only) rule.
+                            items:
+                              type: string
+                            type: array
+                        required:
+                        - action
+                        - originList
+                        type: object
+                      type: array
+                    definition:
+                      oneOf:
+                      - required:
+                        - OpenAPIv3.0
+                      - required:
+                        - OpenAPIv3.1
+                      properties:
+                        OpenAPIv3.0:
+                          properties:
+                            inline:
+                              type: object
+                              x-kubernetes-preserve-unknown-fields: true
+                            securitySchemes:
+                              nullable: true
+                              properties:
+                                apiKeyTypes:
+                                  additionalProperties:
+                                    enum:
+                                    - client-id
+                                    - client-secret
+                                    type: string
+                                  type: object
+                              type: object
+                          required:
+                          - inline
+                          type: object
+                        OpenAPIv3.1:
+                          properties:
+                            inline:
+                              type: object
+                              x-kubernetes-preserve-unknown-fields: true
+                            securitySchemes:
+                              nullable: true
+                              properties:
+                                apiKeyTypes:
+                                  additionalProperties:
+                                    enum:
+                                    - client-id
+                                    - client-secret
+                                    type: string
+                                  type: object
+                              type: object
+                          required:
+                          - inline
+                          type: object
+                      type: object
+                    properties:
+                      additionalProperties:
+                        type: string
+                      type: object
+                    telemetry:
+                      description: Telemetry configuration for the API.
+                      nullable: true
+                      properties:
+                        attributes:
+                          additionalProperties:
+                            type: string
+                          description: Additional attributes to be passed on the transaction
+                            spans
+                          type: object
+                        verbosity:
+                          description: Tracing verbosity settings that control how
+                            much data is sent in telemetry
+                          items:
+                            properties:
+                              inboundLevel:
+                                description: Level of data collected and sent in trace
+                                  for the inbound transaction
+                                enum:
+                                - none
+                                - basic
+                                - normal
+                                - detailed
+                                nullable: true
+                                type: string
+                              level:
+                                default: normal
+                                description: Level of data to be collected and sent
+                                  by default
+                                enum:
+                                - none
+                                - basic
+                                - normal
+                                - detailed
+                                type: string
+                              onSuccessTrimTo:
+                                description: Level of data to reduce to for successful
+                                  transactions
+                                enum:
+                                - none
+                                - basic
+                                - normal
+                                - detailed
+                                nullable: true
+                                type: string
+                              operations:
+                                description: Apply this to only specific transactions
+                                  matching these operations
+                                items:
+                                  anyOf:
+                                  - required:
+                                    - id
+                                  - required:
+                                    - method
+                                    - path
+                                  - required:
+                                    - path
+                                  - required:
+                                    - method
+                                  description: Defines an operation using `operation_id`
+                                    or path and/or method
+                                  properties:
+                                    id:
+                                      type: string
+                                    method:
+                                      type: string
+                                    path:
+                                      type: string
+                                  type: object
+                                type: array
+                              outboundLevel:
+                                description: Level of data collected and sent in trace
+                                  for the outbound/backend transaction
+                                enum:
+                                - none
+                                - basic
+                                - normal
+                                - detailed
+                                nullable: true
+                                type: string
+                            type: object
+                          type: array
+                      type: object
+                    uriSchemes:
+                      items:
+                        enum:
+                        - http
+                        - https
+                        type: string
+                      minItems: 1
+                      type: array
+                  required:
+                  - assembly
+                  - definition
+                  type: object
+                description: Set of APIs; maps API name to its specification
+                minProperties: 1
+                type: object
+            required:
+            - apis
+            type: object
+          status:
+            nullable: true
+            properties:
+              apiCount:
+                format: uint32
+                minimum: 0
+                nullable: true
+                type: integer
+              conditions:
+                items:
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
+                  properties:
+                    lastTransitionTime:
+                      description: lastTransitionTime is the last time the condition
+                        transitioned from one status to another. This should be when
+                        the underlying condition changed.  If that is not known, then
+                        using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: message is a human readable message indicating
+                        details about the transition. This may be an empty string.
+                      type: string
+                    observedGeneration:
+                      description: observedGeneration represents the .metadata.generation
+                        that the condition was set based upon. For instance, if .metadata.generation
+                        is currently 12, but the .status.conditions[x].observedGeneration
+                        is 9, the condition is out of date with respect to the current
+                        state of the instance.
+                      format: int64
+                      type: integer
+                    reason:
+                      description: reason contains a programmatic identifier indicating
+                        the reason for the condition's last transition. Producers
+                        of specific condition types may define expected values and
+                        meanings for this field, and whether the values are considered
+                        a guaranteed API. The value should be a CamelCase string.
+                        This field may not be empty.
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                nullable: true
+                type: array
+              configMap:
+                nullable: true
+                type: string
+              dependencies:
+                description: Describes the dependencies for this resource's assembly.
+                nullable: true
+                properties:
+                  blockService:
+                    default: false
+                    description: True if this resource's assembly depends on a blockService
+                      configuration.
+                    type: boolean
+                  cacheService:
+                    default: false
+                    description: True if this resource's assembly depends on a cacheService
+                      configuration.
+                    type: boolean
+                  countLimitAliases:
+                    default: []
+                    description: The set of count limit aliases used in this resource's
+                      assembly.
+                    items:
+                      type: string
+                    type: array
+                  customSqlInjectionFilters:
+                    default: []
+                    description: Names of custom SQL injection filters required by
+                      this resource's assembly.
+                    items:
+                      type: string
+                    type: array
+                  distributedVariableService:
+                    default: false
+                    description: True if this resource's assembly depends on a distributedVariableService
+                      configuration.
+                    type: boolean
+                  jwtProviders:
+                    default: []
+                    description: List of JWTProvider resources depended on by this
+                      resource's assembly.
+                    items:
+                      type: string
+                    type: array
+                  loadBalancerService:
+                    default: false
+                    description: True if this resource's assembly depends on a loadBalancerService
+                      configuration.
+                    type: boolean
+                  oauthProviders:
+                    default: []
+                    description: List of OAuthProvider resources depended on by this
+                      resource's assembly.
+                    items:
+                      type: string
+                    type: array
+                  plans:
+                    default: false
+                    description: True if this resource's assembly depends on plans.
+                    type: boolean
+                  rateLimitAliases:
+                    default: []
+                    description: The set of rate limit aliases used in this resource's
+                      assembly.
+                    items:
+                      type: string
+                    type: array
+                  rateLimitService:
+                    default: false
+                    description: True if this resource's assembly depends on a rateLimitService
+                      configuration.
+                    type: boolean
+                  secrets:
+                    additionalProperties:
+                      description: Defines sets of required and optional data key(s)
+                        within a Secret.
+                      properties:
+                        optional:
+                          description: Keys which may be used if present in the Secret.
+                          items:
+                            type: string
+                          type: array
+                        required:
+                          description: Keys which are required to exist in the Secret.
+                          items:
+                            type: string
+                          type: array
+                      type: object
+                    default: {}
+                    description: Secrets depended on by this resource's assembly.
+                      Maps Secret name to required and optional data key(s) within
+                      Secret.
+                    type: object
+                  tlsClientProfiles:
+                    default: []
+                    description: List of TlsClientProfile resources depended on by
+                      this resource's assembly.
+                    items:
+                      type: string
+                    type: array
+                  userDefinedPolicies:
+                    default: []
+                    description: List of UserDefinedPolicy resources depended on by
+                      this resource's assembly.
+                    items:
+                      type: string
+                    type: array
+                type: object
+              hash:
+                nullable: true
+                type: string
+            type: object
+        required:
+        - spec
+        title: ApiSetValidated
         type: object
         x-kubernetes-validations:
         - message: metadata.name must be 32 characters or less
@@ -519,6 +982,13 @@ spec:
                     description: True if this resource's assembly depends on a cacheService
                       configuration.
                     type: boolean
+                  countLimitAliases:
+                    default: []
+                    description: The set of count limit aliases used in this resource's
+                      assembly.
+                    items:
+                      type: string
+                    type: array
                   customSqlInjectionFilters:
                     default: []
                     description: Names of custom SQL injection filters required by
@@ -552,8 +1022,15 @@ spec:
                     type: array
                   plans:
                     default: false
-                    description: True is this resource's assembly depends on plans.
+                    description: True if this resource's assembly depends on plans.
                     type: boolean
+                  rateLimitAliases:
+                    default: []
+                    description: The set of rate limit aliases used in this resource's
+                      assembly.
+                    items:
+                      type: string
+                    type: array
                   rateLimitService:
                     default: false
                     description: True if this resource's assembly depends on a rateLimitService
@@ -704,20 +1181,22 @@ spec:
                     nullable: true
                     properties:
                       cpu:
-                        description: Target average CPU utilization percentage. May
-                          be configured alongside memory. Required if memory is not
-                          specified. Must be between 1 and 100, inclusive.
+                        description: Target average CPU utilization, as a percentage
+                          of CPU request. For example, given a request of 100m and
+                          limit of 1000m, and target average utilization of 800m,
+                          the precentage would be 800%. May be configured alongside
+                          memory. Required if memory is not specified.
                         format: int32
-                        maximum: 100
                         minimum: 1
                         nullable: true
                         type: integer
                       memory:
-                        description: Target average memory utilization percentage.
-                          May be configured alongside cpu. Required if cpu is not
-                          specified. Must be between 1 and 100, inclusive.
+                        description: Target average memory utilization, as a percentage
+                          of memory request. For example, given a request of 20Mi
+                          and limit of 600Mi, and target average utilization of 480Mi
+                          (80% of 600Mi), the precentage would be 2400%. May be configured
+                          alongside cpu. Required if cpu is not specified.
                         format: int32
-                        maximum: 100
                         minimum: 1
                         nullable: true
                         type: integer
@@ -2555,6 +3034,289 @@ spec:
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
+  name: mcptools.nano.datapower.ibm.com
+spec:
+  group: nano.datapower.ibm.com
+  names:
+    categories:
+    - dpn
+    kind: MCPTool
+    plural: mcptools
+    shortNames:
+    - mcpt
+    singular: mcptool
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - description: age of resource
+      jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Auto-generated derived type for McpToolSpec via `CustomResource`
+        properties:
+          spec:
+            properties:
+              assembly:
+                description: Assembly to execute on tools/call
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
+              description:
+                description: A human-readable description of the tool. This can be
+                  used by clients to improve the LLM's understanding of available
+                  tools. It can be thought of like a "hint" to the model.
+                nullable: true
+                type: string
+              inputSchema:
+                description: JSON Schema defining expected input parameters
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
+              outputSchema:
+                description: JSON Schema defining expected output structure
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
+              telemetry:
+                description: Telemetry settings for the tool
+                nullable: true
+                properties:
+                  attributes:
+                    additionalProperties:
+                      type: string
+                    description: Additional attributes to be passed on the transaction
+                      spans
+                    type: object
+                  verbosity:
+                    description: Tracing verbosity settings that control how much
+                      data is sent in telemetry
+                    nullable: true
+                    properties:
+                      inboundLevel:
+                        description: Level of data collected and sent in trace for
+                          the inbound transaction
+                        enum:
+                        - none
+                        - basic
+                        - normal
+                        - detailed
+                        nullable: true
+                        type: string
+                      level:
+                        description: Level of data to be collected and sent by default
+                        enum:
+                        - none
+                        - basic
+                        - normal
+                        - detailed
+                        type: string
+                      onSuccessTrimTo:
+                        description: Level of data to reduce to for successful transactions
+                        enum:
+                        - none
+                        - basic
+                        - normal
+                        - detailed
+                        nullable: true
+                        type: string
+                      outboundLevel:
+                        description: Level of data collected and sent in trace for
+                          the outbound/backend transaction
+                        enum:
+                        - none
+                        - basic
+                        - normal
+                        - detailed
+                        nullable: true
+                        type: string
+                    required:
+                    - level
+                    type: object
+                type: object
+              title:
+                description: A human-readable title for the tool. Used in tools/list
+                  and tools/call.
+                nullable: true
+                type: string
+            required:
+            - assembly
+            type: object
+          status:
+            nullable: true
+            properties:
+              conditions:
+                items:
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
+                  properties:
+                    lastTransitionTime:
+                      description: lastTransitionTime is the last time the condition
+                        transitioned from one status to another. This should be when
+                        the underlying condition changed.  If that is not known, then
+                        using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: message is a human readable message indicating
+                        details about the transition. This may be an empty string.
+                      type: string
+                    observedGeneration:
+                      description: observedGeneration represents the .metadata.generation
+                        that the condition was set based upon. For instance, if .metadata.generation
+                        is currently 12, but the .status.conditions[x].observedGeneration
+                        is 9, the condition is out of date with respect to the current
+                        state of the instance.
+                      format: int64
+                      type: integer
+                    reason:
+                      description: reason contains a programmatic identifier indicating
+                        the reason for the condition's last transition. Producers
+                        of specific condition types may define expected values and
+                        meanings for this field, and whether the values are considered
+                        a guaranteed API. The value should be a CamelCase string.
+                        This field may not be empty.
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                nullable: true
+                type: array
+              configMap:
+                nullable: true
+                type: string
+              dependencies:
+                description: Describes the dependencies for this resource's assembly.
+                nullable: true
+                properties:
+                  blockService:
+                    default: false
+                    description: True if this resource's assembly depends on a blockService
+                      configuration.
+                    type: boolean
+                  cacheService:
+                    default: false
+                    description: True if this resource's assembly depends on a cacheService
+                      configuration.
+                    type: boolean
+                  countLimitAliases:
+                    default: []
+                    description: The set of count limit aliases used in this resource's
+                      assembly.
+                    items:
+                      type: string
+                    type: array
+                  customSqlInjectionFilters:
+                    default: []
+                    description: Names of custom SQL injection filters required by
+                      this resource's assembly.
+                    items:
+                      type: string
+                    type: array
+                  distributedVariableService:
+                    default: false
+                    description: True if this resource's assembly depends on a distributedVariableService
+                      configuration.
+                    type: boolean
+                  jwtProviders:
+                    default: []
+                    description: List of JWTProvider resources depended on by this
+                      resource's assembly.
+                    items:
+                      type: string
+                    type: array
+                  loadBalancerService:
+                    default: false
+                    description: True if this resource's assembly depends on a loadBalancerService
+                      configuration.
+                    type: boolean
+                  oauthProviders:
+                    default: []
+                    description: List of OAuthProvider resources depended on by this
+                      resource's assembly.
+                    items:
+                      type: string
+                    type: array
+                  plans:
+                    default: false
+                    description: True if this resource's assembly depends on plans.
+                    type: boolean
+                  rateLimitAliases:
+                    default: []
+                    description: The set of rate limit aliases used in this resource's
+                      assembly.
+                    items:
+                      type: string
+                    type: array
+                  rateLimitService:
+                    default: false
+                    description: True if this resource's assembly depends on a rateLimitService
+                      configuration.
+                    type: boolean
+                  secrets:
+                    additionalProperties:
+                      description: Defines sets of required and optional data key(s)
+                        within a Secret.
+                      properties:
+                        optional:
+                          description: Keys which may be used if present in the Secret.
+                          items:
+                            type: string
+                          type: array
+                        required:
+                          description: Keys which are required to exist in the Secret.
+                          items:
+                            type: string
+                          type: array
+                      type: object
+                    default: {}
+                    description: Secrets depended on by this resource's assembly.
+                      Maps Secret name to required and optional data key(s) within
+                      Secret.
+                    type: object
+                  tlsClientProfiles:
+                    default: []
+                    description: List of TlsClientProfile resources depended on by
+                      this resource's assembly.
+                    items:
+                      type: string
+                    type: array
+                  userDefinedPolicies:
+                    default: []
+                    description: List of UserDefinedPolicy resources depended on by
+                      this resource's assembly.
+                    items:
+                      type: string
+                    type: array
+                type: object
+              hash:
+                nullable: true
+                type: string
+            type: object
+        required:
+        - spec
+        title: McpToolValidated
+        type: object
+        x-kubernetes-validations:
+        - message: metadata.name must be 32 characters or less
+          rule: self.metadata.name.size() <= 32
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
   name: oauthproviders.nano.datapower.ibm.com
 spec:
   group: nano.datapower.ibm.com
@@ -2701,6 +3463,118 @@ spec:
                   allowEmptyIntrospectionResponse:
                     default: false
                     type: boolean
+                  authorization:
+                    nullable: true
+                    properties:
+                      endpoint:
+                        properties:
+                          chunkedUpload:
+                            default: false
+                            description: 'Specify to use `transfer-encoding: chunked`
+                              or to use input message headers and payload type unmodified.
+                              Default to use incoming (false).'
+                            type: boolean
+                          compressRequest:
+                            default: none
+                            description: Specify which compression to use. Default
+                              to None. Set Accept-Encoding header with all supported
+                              types. Handle Content-Encoding with all supported types.
+                            enum:
+                            - br
+                            - gzip
+                            - deflate
+                            - none
+                            type: string
+                          decompressResponse:
+                            default: false
+                            description: Specify if response should be decompressed.
+                            type: boolean
+                          followRedirects:
+                            default: false
+                            description: Specify to follow redirects, default to false
+                            type: boolean
+                          persistentConnections:
+                            default: true
+                            description: Enable use of persistent connections
+                            type: boolean
+                          timeoutSeconds:
+                            description: The time to wait before a reply from the
+                              endpoint (in seconds).
+                            format: uint64
+                            minimum: 0
+                            nullable: true
+                            type: integer
+                          tlsClientProfile:
+                            description: The TLS profile to use for the secure transmission
+                              of data
+                            nullable: true
+                            type: string
+                          url:
+                            description: The URL for the target service
+                            type: string
+                          urlType:
+                            default: variables
+                            description: Indication of how url string is interpreted
+                            enum:
+                            - plain
+                            - variables
+                            - distributedVariable
+                            - jsonata
+                            type: string
+                          version:
+                            description: The HTTP version to use. The default is to
+                              keep the version of the incoming request.
+                            enum:
+                            - HTTP/1.0
+                            - HTTP/1.1
+                            - HTTP/2
+                            nullable: true
+                            type: string
+                        required:
+                        - url
+                        type: object
+                      security:
+                        description: Security credentials used to authenticate with
+                          OAuth provider endpoints.
+                        nullable: true
+                        oneOf:
+                        - required:
+                          - basicAuth
+                        properties:
+                          basicAuth:
+                            description: Basic authentication using Kubernetes Secret.
+                            properties:
+                              bodyCredentials:
+                                description: Optional body field names to use when
+                                  sending credentials in the request body (for endpoints
+                                  that expect credentials in the body rather than
+                                  HTTP Basic header).
+                                nullable: true
+                                properties:
+                                  passwordField:
+                                    description: Name of the body field to send `password`
+                                      from Secret
+                                    nullable: true
+                                    type: string
+                                  usernameField:
+                                    description: Name of the body field to send `username`
+                                      from Secret.
+                                    type: string
+                                required:
+                                - usernameField
+                                type: object
+                              secret:
+                                description: Name of the Kubernetes Secret which contains
+                                  basic auth credentials. Secret data must contain
+                                  keys `username` and `password`.
+                                type: string
+                            required:
+                            - secret
+                            type: object
+                        type: object
+                    required:
+                    - endpoint
+                    type: object
                   cacheTtlSeconds:
                     description: Required when cacheType=ttl, ignored otherwise
                     format: uint16
@@ -2787,7 +3661,7 @@ spec:
                         type: object
                       security:
                         description: Security credentials used to authenticate with
-                          OAuth provider introspection endpoint.
+                          OAuth provider endpoints.
                         nullable: true
                         oneOf:
                         - required:
@@ -2831,12 +3705,131 @@ spec:
                     items:
                       type: string
                     type: array
+                  token:
+                    nullable: true
+                    properties:
+                      endpoint:
+                        properties:
+                          chunkedUpload:
+                            default: false
+                            description: 'Specify to use `transfer-encoding: chunked`
+                              or to use input message headers and payload type unmodified.
+                              Default to use incoming (false).'
+                            type: boolean
+                          compressRequest:
+                            default: none
+                            description: Specify which compression to use. Default
+                              to None. Set Accept-Encoding header with all supported
+                              types. Handle Content-Encoding with all supported types.
+                            enum:
+                            - br
+                            - gzip
+                            - deflate
+                            - none
+                            type: string
+                          decompressResponse:
+                            default: false
+                            description: Specify if response should be decompressed.
+                            type: boolean
+                          followRedirects:
+                            default: false
+                            description: Specify to follow redirects, default to false
+                            type: boolean
+                          persistentConnections:
+                            default: true
+                            description: Enable use of persistent connections
+                            type: boolean
+                          timeoutSeconds:
+                            description: The time to wait before a reply from the
+                              endpoint (in seconds).
+                            format: uint64
+                            minimum: 0
+                            nullable: true
+                            type: integer
+                          tlsClientProfile:
+                            description: The TLS profile to use for the secure transmission
+                              of data
+                            nullable: true
+                            type: string
+                          url:
+                            description: The URL for the target service
+                            type: string
+                          urlType:
+                            default: variables
+                            description: Indication of how url string is interpreted
+                            enum:
+                            - plain
+                            - variables
+                            - distributedVariable
+                            - jsonata
+                            type: string
+                          version:
+                            description: The HTTP version to use. The default is to
+                              keep the version of the incoming request.
+                            enum:
+                            - HTTP/1.0
+                            - HTTP/1.1
+                            - HTTP/2
+                            nullable: true
+                            type: string
+                        required:
+                        - url
+                        type: object
+                      security:
+                        description: Security credentials used to authenticate with
+                          OAuth provider endpoints.
+                        nullable: true
+                        oneOf:
+                        - required:
+                          - basicAuth
+                        properties:
+                          basicAuth:
+                            description: Basic authentication using Kubernetes Secret.
+                            properties:
+                              bodyCredentials:
+                                description: Optional body field names to use when
+                                  sending credentials in the request body (for endpoints
+                                  that expect credentials in the body rather than
+                                  HTTP Basic header).
+                                nullable: true
+                                properties:
+                                  passwordField:
+                                    description: Name of the body field to send `password`
+                                      from Secret
+                                    nullable: true
+                                    type: string
+                                  usernameField:
+                                    description: Name of the body field to send `username`
+                                      from Secret.
+                                    type: string
+                                required:
+                                - usernameField
+                                type: object
+                              secret:
+                                description: Name of the Kubernetes Secret which contains
+                                  basic auth credentials. Secret data must contain
+                                  keys `username` and `password`.
+                                type: string
+                            required:
+                            - secret
+                            type: object
+                        type: object
+                    required:
+                    - endpoint
+                    type: object
                 required:
                 - introspection
                 type: object
                 x-kubernetes-validations:
                 - message: cacheTtlSeconds is required when cacheType=ttl
                   rule: (!has(self.cacheType) || (self.cacheType != 'ttl')) || has(self.cacheTtlSeconds)
+              version:
+                description: OAuth version to use
+                enum:
+                - "2.0"
+                - "2.1"
+                nullable: true
+                type: string
             type: object
             x-kubernetes-validations:
             - message: spec requires either remote or jwtProvider, both cannot be
@@ -3532,6 +4525,10 @@ spec:
                 required:
                 - database
                 type: object
+                x-kubernetes-validations:
+                - message: retryIntervalSeconds must not be greater than ttlSeconds
+                  rule: '!has(self.retryIntervalSeconds) || !has(self.ttlSeconds)
+                    || self.retryIntervalSeconds <= self.ttlSeconds'
               cacheService:
                 nullable: true
                 properties:
@@ -4175,16 +5172,23 @@ spec:
                   - apiRouter
                 - required:
                   - gatewayApi
+                - required:
+                  - mcpServer
                 properties:
                   apiRouter:
                     description: Route among provided APIs
                     properties:
+                      apiSets:
+                        description: List of `APISet` custom resources to deploy to
+                          this Runtime
+                        items:
+                          type: string
+                        type: array
                       apis:
                         description: List of `API` custom resources to deploy to this
                           Runtime
                         items:
                           type: string
-                        minItems: 1
                         type: array
                       assembly:
                         description: Name of `Assembly` custom resource to define
@@ -4310,8 +5314,6 @@ spec:
                         required:
                         - database
                         type: object
-                    required:
-                    - apis
                     type: object
                   basic:
                     description: Execute given assembly
@@ -4447,6 +5449,127 @@ spec:
                         type: array
                     required:
                     - httpRoutes
+                    type: object
+                  mcpServer:
+                    description: MCP Server
+                    properties:
+                      assembly:
+                        description: Name of `Assembly` custom resource to define
+                          assembly flow. The `Assembly` must use `flow` type of assembly.
+                        nullable: true
+                        type: string
+                      description:
+                        description: A human-readable description of the server. This
+                          can be used by clients to improve the LLM's understanding
+                          of available tools, resources, etc.
+                        nullable: true
+                        type: string
+                      instructions:
+                        description: Instructions describing how to use the server
+                          and its features. This can be used by clients to improve
+                          the LLM's understanding of available tools, resources, etc.
+                        nullable: true
+                        type: string
+                      plans:
+                        description: Properties specific to a selection of Primitives.
+                        items:
+                          properties:
+                            name:
+                              description: Name of plan
+                              type: string
+                            selectors:
+                              description: List of primitive selections
+                              items:
+                                description: Identifies a primitive call type
+                                oneOf:
+                                - required:
+                                  - tool
+                                properties:
+                                  tool:
+                                    description: Identifies a Tool call type
+                                    properties:
+                                      name:
+                                        description: Name of Tool
+                                        type: string
+                                    required:
+                                    - name
+                                    type: object
+                                type: object
+                              type: array
+                          required:
+                          - name
+                          type: object
+                        type: array
+                      protocolVersion:
+                        description: The version of Model Context Protocol that the
+                          server wants to use. This may not match the version that
+                          a client requests. If a client cannot support this version,
+                          it MUST disconnect.
+                        enum:
+                        - "2025-06-18T00:00:00Z"
+                        - latest
+                        nullable: true
+                        type: string
+                      routing:
+                        description: External routing configuration for this Runtime
+                        properties:
+                          basePath:
+                            type: string
+                          domain:
+                            type: string
+                          subdomain:
+                            type: string
+                        required:
+                        - basePath
+                        - domain
+                        - subdomain
+                        type: object
+                      subscriptionService:
+                        description: Configure gateway authentication / authorization
+                        nullable: true
+                        properties:
+                          cache:
+                            nullable: true
+                            properties:
+                              enableStale:
+                                nullable: true
+                                type: boolean
+                              maxRecords:
+                                format: uint64
+                                maximum: 1000
+                                minimum: 10
+                                nullable: true
+                                type: integer
+                              ttlSeconds:
+                                format: uint64
+                                maximum: 3600
+                                minimum: 1
+                                type: integer
+                            required:
+                            - ttlSeconds
+                            type: object
+                          database:
+                            description: Name of database configuration to use; must
+                              be defined in components.
+                            maxLength: 32
+                            minLength: 1
+                            type: string
+                        required:
+                        - database
+                        type: object
+                      title:
+                        description: A human-readable title for the server.
+                        nullable: true
+                        type: string
+                      tools:
+                        description: List of `MCPTool` custom resources to deploy
+                          to this Runtime.
+                        items:
+                          type: string
+                        minItems: 1
+                        type: array
+                    required:
+                    - tools
                     type: object
                 type: object
               modules:
@@ -5244,9 +6367,77 @@ spec:
                   - ECDHE_RSA_WITH_AES_256_GCM_SHA384
                   type: string
                 type: array
-              secret:
+              clientSecret:
+                description: Secret containing only client credentials (tls.key, tls.crt).
+                  Any ca.crt in this secret represents the client's CA, not the server
+                  CA. Mutually exclusive with `secret`.
                 nullable: true
                 type: string
+              secret:
+                description: Secret containing server CA and optional client credentials.
+                  Mutually exclusive with `clientSecret` and `serverAuth`.
+                nullable: true
+                type: string
+              serverAuth:
+                description: Server authentication configuration. Optional even when
+                  `clientSecret` is specified. Mutually exclusive with `secret`.
+                nullable: true
+                properties:
+                  caSourceRefs:
+                    description: Array of server CA certificate sources. Currently
+                      only one source is supported.
+                    items:
+                      description: Reference to a ConfigMap or Secret containing a
+                        CA certificate
+                      oneOf:
+                      - required:
+                        - configMap
+                      - required:
+                        - secret
+                      properties:
+                        configMap:
+                          description: Reference to a ConfigMap or Secret containing
+                            a CA certificate
+                          properties:
+                            keys:
+                              description: Keys within the resource. Currently only
+                                one key is supported. If not specified, "ca.crt" is
+                                used.
+                              items:
+                                type: string
+                              maxItems: 1
+                              type: array
+                            name:
+                              description: Name of the resource
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        secret:
+                          description: Reference to a ConfigMap or Secret containing
+                            a CA certificate
+                          properties:
+                            keys:
+                              description: Keys within the resource. Currently only
+                                one key is supported. If not specified, "ca.crt" is
+                                used.
+                              items:
+                                type: string
+                              maxItems: 1
+                              type: array
+                            name:
+                              description: Name of the resource
+                              type: string
+                          required:
+                          - name
+                          type: object
+                      type: object
+                    maxItems: 1
+                    minItems: 1
+                    type: array
+                required:
+                - caSourceRefs
+                type: object
               versions:
                 default:
                 - TLSv1.2
@@ -5258,6 +6449,10 @@ spec:
                   type: string
                 type: array
             type: object
+            x-kubernetes-validations:
+            - message: '''secret'' is mutually exclusive with ''clientSecret'' and
+                ''serverAuth'''
+              rule: '!has(self.secret) || (!has(self.clientSecret) && !has(self.serverAuth))'
           status:
             nullable: true
             properties:
@@ -5369,7 +6564,76 @@ spec:
                   - ECDHE_RSA_WITH_AES_256_GCM_SHA384
                   type: string
                 type: array
+              clientAuth:
+                description: Client authentication configuration. Requires `serverSecret`
+                  when specified. Mutually exclusive with `secret`.
+                nullable: true
+                properties:
+                  caSourceRefs:
+                    description: Array of client CA certificate sources. Currently
+                      only one source is supported.
+                    items:
+                      description: Reference to a ConfigMap or Secret containing a
+                        CA certificate
+                      oneOf:
+                      - required:
+                        - configMap
+                      - required:
+                        - secret
+                      properties:
+                        configMap:
+                          description: Reference to a ConfigMap or Secret containing
+                            a CA certificate
+                          properties:
+                            keys:
+                              description: Keys within the resource. Currently only
+                                one key is supported. If not specified, "ca.crt" is
+                                used.
+                              items:
+                                type: string
+                              maxItems: 1
+                              type: array
+                            name:
+                              description: Name of the resource
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        secret:
+                          description: Reference to a ConfigMap or Secret containing
+                            a CA certificate
+                          properties:
+                            keys:
+                              description: Keys within the resource. Currently only
+                                one key is supported. If not specified, "ca.crt" is
+                                used.
+                              items:
+                                type: string
+                              maxItems: 1
+                              type: array
+                            name:
+                              description: Name of the resource
+                              type: string
+                          required:
+                          - name
+                          type: object
+                      type: object
+                    maxItems: 1
+                    minItems: 1
+                    type: array
+                required:
+                - caSourceRefs
+                type: object
               secret:
+                description: Secret containing server credentials and optional client
+                  CA. Mutually exclusive with `serverSecret` and `clientAuth`.
+                nullable: true
+                type: string
+              serverSecret:
+                description: Secret containing only server credentials (tls.key, tls.crt).
+                  Any ca.crt in this Secret represents the server's CA, not the client
+                  CA. Mutually exclusive with `secret`.
+                nullable: true
                 type: string
               versions:
                 default:
@@ -5381,9 +6645,15 @@ spec:
                   - TLSv1.3
                   type: string
                 type: array
-            required:
-            - secret
             type: object
+            x-kubernetes-validations:
+            - message: Either 'secret' must be specified alone, or 'serverSecret'
+                must be specified (with optional 'clientAuth')
+              rule: (has(self.secret) && !has(self.serverSecret) && !has(self.clientAuth))
+                || (!has(self.secret) && has(self.serverSecret))
+            - message: When 'clientAuth' is specified, 'serverSecret' must also be
+                specified
+              rule: '!has(self.clientAuth) || has(self.serverSecret)'
           status:
             nullable: true
             properties:
@@ -5560,6 +6830,13 @@ spec:
                     description: True if this resource's assembly depends on a cacheService
                       configuration.
                     type: boolean
+                  countLimitAliases:
+                    default: []
+                    description: The set of count limit aliases used in this resource's
+                      assembly.
+                    items:
+                      type: string
+                    type: array
                   customSqlInjectionFilters:
                     default: []
                     description: Names of custom SQL injection filters required by
@@ -5593,8 +6870,15 @@ spec:
                     type: array
                   plans:
                     default: false
-                    description: True is this resource's assembly depends on plans.
+                    description: True if this resource's assembly depends on plans.
                     type: boolean
+                  rateLimitAliases:
+                    default: []
+                    description: The set of rate limit aliases used in this resource's
+                      assembly.
+                    items:
+                      type: string
+                    type: array
                   rateLimitService:
                     default: false
                     description: True if this resource's assembly depends on a rateLimitService

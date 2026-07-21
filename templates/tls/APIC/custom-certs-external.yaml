@@ -1,3 +1,4 @@
+
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,12 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
 ---
+
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
   name: selfsigning-issuer
   labels: {
+    app.kubernetes.io/component: "management",
     app.kubernetes.io/instance: "management",
     app.kubernetes.io/managed-by: "ibm-apiconnect",
     app.kubernetes.io/name: "selfsigning-issuer"
@@ -30,6 +34,7 @@ kind: Certificate
 metadata:
   name: ingress-ca
   labels: {
+    app.kubernetes.io/component: "management",
     app.kubernetes.io/instance: "management",
     app.kubernetes.io/managed-by: "ibm-apiconnect",
     app.kubernetes.io/name: "ingress-ca"
@@ -46,15 +51,23 @@ spec:
   renewBefore: 720h # 30 days
   privateKey:
     rotationPolicy: Always
+    encoding: PKCS8
   issuerRef:
     name: selfsigning-issuer
     kind: Issuer
+  secretTemplate:
+    labels:
+      app.kubernetes.io/component: "management"
+      app.kubernetes.io/instance: "management"
+      app.kubernetes.io/managed-by: "ibm-apiconnect"
+      app.kubernetes.io/name: "ingress-ca"
 ---
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
   name: ingress-issuer
   labels: {
+    app.kubernetes.io/component: "management",
     app.kubernetes.io/instance: "management",
     app.kubernetes.io/managed-by: "ibm-apiconnect",
     app.kubernetes.io/name: "ingress-issuer"
@@ -68,6 +81,7 @@ kind: Certificate
 metadata:
   name: analytics-ingestion-client
   labels: {
+    app.kubernetes.io/component: "management",
     app.kubernetes.io/instance: "management",
     app.kubernetes.io/managed-by: "ibm-apiconnect",
     app.kubernetes.io/name: "analytics-ingestion-client"
@@ -88,12 +102,21 @@ spec:
   renewBefore: 720h # 30 days
   privateKey:
     rotationPolicy: Always
+    encoding: PKCS8
+  secretTemplate:
+    labels:
+      app.kubernetes.io/component: "management"
+      app.kubernetes.io/instance: "management"
+      app.kubernetes.io/managed-by: "ibm-apiconnect"
+      app.kubernetes.io/name: "analytics-ingestion-client"
+
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: portal-admin-client
   labels: {
+    app.kubernetes.io/component: "management",
     app.kubernetes.io/instance: "management",
     app.kubernetes.io/managed-by: "ibm-apiconnect",
     app.kubernetes.io/name: "portal-admin-client"
@@ -114,12 +137,20 @@ spec:
   renewBefore: 720h # 30 days
   privateKey:
     rotationPolicy: Always
+    encoding: PKCS8
+  secretTemplate:
+    labels:
+      app.kubernetes.io/component: "management"
+      app.kubernetes.io/instance: "management"
+      app.kubernetes.io/managed-by: "ibm-apiconnect"
+      app.kubernetes.io/name: "portal-admin-client"
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: gateway-client-client
   labels: {
+    app.kubernetes.io/component: "management",
     app.kubernetes.io/instance: "management",
     app.kubernetes.io/managed-by: "ibm-apiconnect",
     app.kubernetes.io/name: "gateway-client-client"
@@ -140,6 +171,13 @@ spec:
   renewBefore: 720h # 30 days
   privateKey:
     rotationPolicy: Always
+    encoding: PKCS8
+  secretTemplate:
+    labels:
+      app.kubernetes.io/component: "management"
+      app.kubernetes.io/instance: "management"
+      app.kubernetes.io/managed-by: "ibm-apiconnect"
+      app.kubernetes.io/name: "gateway-client-client"
 ---
 #Gateway Subsystem Internal Certificates
 apiVersion: cert-manager.io/v1
@@ -147,6 +185,7 @@ kind: Certificate
 metadata:
   name: gateway-service
   labels: {
+    app.kubernetes.io/component: "gatewaycluster",
     app.kubernetes.io/instance: "gatewaycluster",
     app.kubernetes.io/managed-by: "ibm-apiconnect",
     app.kubernetes.io/name: "gateway-service"
@@ -167,12 +206,20 @@ spec:
   renewBefore: 720h # 30 days
   privateKey:
     rotationPolicy: Always
+    encoding: PKCS8
+  secretTemplate:
+    labels:
+      app.kubernetes.io/component: "gatewaycluster"
+      app.kubernetes.io/instance: "gatewaycluster"
+      app.kubernetes.io/managed-by: "ibm-apiconnect"
+      app.kubernetes.io/name: "gateway-service"
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: gateway-peering
   labels: {
+    app.kubernetes.io/component: "gatewaycluster",
     app.kubernetes.io/instance: "gatewaycluster",
     app.kubernetes.io/managed-by: "ibm-apiconnect",
     app.kubernetes.io/name: "gateway-peering"
@@ -194,6 +241,13 @@ spec:
   renewBefore: 720h # 30 days
   privateKey:
     rotationPolicy: Always
+    encoding: PKCS8
+  secretTemplate:
+    labels:
+      app.kubernetes.io/component: "gatewaycluster"
+      app.kubernetes.io/instance: "gatewaycluster"
+      app.kubernetes.io/managed-by: "ibm-apiconnect"
+      app.kubernetes.io/name: "gateway-peering"
 ---
 #Management External Frontend/Ingress Certificates
 apiVersion: cert-manager.io/v1
@@ -201,6 +255,7 @@ kind: Certificate
 metadata:
   name: cm-endpoint
   labels: {
+    app.kubernetes.io/component: "management",
     app.kubernetes.io/instance: "management",
     app.kubernetes.io/managed-by: "ibm-apiconnect",
     app.kubernetes.io/name: "cm-endpoint"
@@ -209,7 +264,9 @@ spec:
   commonName: cm-endpoint
   secretName: cm-endpoint
   dnsNames:
-  - admin.example.com
+  - admin.${STACK_HOST}
+  - admin.${VAR_APIC_NAMESPACE}.svc
+  - admin.${VAR_APIC_NAMESPACE}.svc.cluster.local
   issuerRef:
     name: ingress-issuer
   usages:
@@ -220,12 +277,20 @@ spec:
   renewBefore: 720h # 30 days
   privateKey:
     rotationPolicy: Always
+    encoding: PKCS8
+  secretTemplate:
+    labels:
+      app.kubernetes.io/component: "management"
+      app.kubernetes.io/instance: "management"
+      app.kubernetes.io/managed-by: "ibm-apiconnect"
+      app.kubernetes.io/name: "cm-endpoint"
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: apim-endpoint
   labels: {
+    app.kubernetes.io/component: "management",
     app.kubernetes.io/instance: "management",
     app.kubernetes.io/managed-by: "ibm-apiconnect",
     app.kubernetes.io/name: "apim-endpoint"
@@ -234,7 +299,9 @@ spec:
   commonName: apim-endpoint
   secretName: apim-endpoint
   dnsNames:
-  - manager.example.com
+  - manager.${STACK_HOST}
+  - manager.${VAR_APIC_NAMESPACE}.svc
+  - manager.${VAR_APIC_NAMESPACE}.svc.cluster.local
   issuerRef:
     name: ingress-issuer
   usages:
@@ -245,12 +312,20 @@ spec:
   renewBefore: 720h # 30 days
   privateKey:
     rotationPolicy: Always
+    encoding: PKCS8
+  secretTemplate:
+    labels:
+      app.kubernetes.io/component: "management"
+      app.kubernetes.io/instance: "management"
+      app.kubernetes.io/managed-by: "ibm-apiconnect"
+      app.kubernetes.io/name: "apim-endpoint"
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: consumer-catalog-endpoint
   labels: {
+    app.kubernetes.io/component: "management",
     app.kubernetes.io/instance: "management",
     app.kubernetes.io/managed-by: "ibm-apiconnect",
     app.kubernetes.io/name: "consumer-catalog-endpoint"
@@ -259,7 +334,9 @@ spec:
   commonName: consumer-catalog-endpoint
   secretName: consumer-catalog-endpoint
   dnsNames:
-  - consumer-catalog.example.com
+  - consumer-catalog.${STACK_HOST}
+  - consumer-catalog.${VAR_APIC_NAMESPACE}.svc
+  - consumer-catalog.${VAR_APIC_NAMESPACE}.svc.cluster.local
   issuerRef:
     name: ingress-issuer
   usages:
@@ -270,12 +347,20 @@ spec:
   renewBefore: 720h # 30 days
   privateKey:
     rotationPolicy: Always
+    encoding: PKCS8
+  secretTemplate:
+    labels:
+      app.kubernetes.io/component: "management"
+      app.kubernetes.io/instance: "management"
+      app.kubernetes.io/managed-by: "ibm-apiconnect"
+      app.kubernetes.io/name: "consumer-catalog-endpoint"
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: api-endpoint
   labels: {
+    app.kubernetes.io/component: "management",
     app.kubernetes.io/instance: "management",
     app.kubernetes.io/managed-by: "ibm-apiconnect",
     app.kubernetes.io/name: "api-endpoint"
@@ -284,7 +369,9 @@ spec:
   commonName: api-endpoint
   secretName: api-endpoint
   dnsNames:
-  - api.example.com
+  - api.${STACK_HOST}
+  - api.${VAR_APIC_NAMESPACE}.svc
+  - api.${VAR_APIC_NAMESPACE}.svc.cluster.local
   issuerRef:
     name: ingress-issuer
   usages:
@@ -295,12 +382,20 @@ spec:
   renewBefore: 720h # 30 days
   privateKey:
     rotationPolicy: Always
+    encoding: PKCS8
+  secretTemplate:
+    labels:
+      app.kubernetes.io/component: "management"
+      app.kubernetes.io/instance: "management"
+      app.kubernetes.io/managed-by: "ibm-apiconnect"
+      app.kubernetes.io/name: "api-endpoint"
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: consumer-endpoint
   labels: {
+    app.kubernetes.io/component: "management",
     app.kubernetes.io/instance: "management",
     app.kubernetes.io/managed-by: "ibm-apiconnect",
     app.kubernetes.io/name: "consumer-endpoint"
@@ -309,7 +404,9 @@ spec:
   commonName: consumer-endpoint
   secretName: consumer-endpoint
   dnsNames:
-  - consumer.example.com
+  - consumer.${STACK_HOST}
+  - consumer.${VAR_APIC_NAMESPACE}.svc
+  - consumer.${VAR_APIC_NAMESPACE}.svc.cluster.local
   issuerRef:
     name: ingress-issuer
   usages:
@@ -320,12 +417,20 @@ spec:
   renewBefore: 720h # 30 days
   privateKey:
     rotationPolicy: Always
+    encoding: PKCS8
+  secretTemplate:
+    labels:
+      app.kubernetes.io/component: "management"
+      app.kubernetes.io/instance: "management"
+      app.kubernetes.io/managed-by: "ibm-apiconnect"
+      app.kubernetes.io/name: "consumer-endpoint"
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: analytics-ai-endpoint
   labels: {
+    app.kubernetes.io/component: "analytics",
     app.kubernetes.io/instance: "analytics",
     app.kubernetes.io/managed-by: "ibm-apiconnect",
     app.kubernetes.io/name: "analytics-ai-endpoint"
@@ -334,7 +439,9 @@ spec:
   commonName: analytics-ai-endpoint
   secretName: analytics-ai-endpoint
   dnsNames:
-  - ai.example.com
+  - ai.${STACK_HOST}
+  - ai.${VAR_APIC_NAMESPACE}.svc
+  - ai.${VAR_APIC_NAMESPACE}.svc.cluster.local
   issuerRef:
     name: ingress-issuer
   usages:
@@ -345,6 +452,13 @@ spec:
   renewBefore: 720h # 30 days
   privateKey:
     rotationPolicy: Always
+    encoding: PKCS8
+  secretTemplate:
+    labels:
+      app.kubernetes.io/component: "analytics"
+      app.kubernetes.io/instance: "analytics"
+      app.kubernetes.io/managed-by: "ibm-apiconnect"
+      app.kubernetes.io/name: "analytics-ai-endpoint"
 ---
 #Gateway External Frontend/Ingress Certificates
 apiVersion: cert-manager.io/v1
@@ -352,6 +466,7 @@ kind: Certificate
 metadata:
   name: gwv6-endpoint
   labels: {
+    app.kubernetes.io/component: "gwv6",
     app.kubernetes.io/instance: "gwv6",
     app.kubernetes.io/managed-by: "ibm-apiconnect",
     app.kubernetes.io/name: "gwv6-endpoint"
@@ -360,7 +475,9 @@ spec:
   commonName: gwv6-endpoint
   secretName: gwv6-endpoint
   dnsNames:
-  - rgw.example.com
+  - rgw.${STACK_HOST}
+  - rgw.${VAR_APIC_NAMESPACE}.svc
+  - rgw.${VAR_APIC_NAMESPACE}.svc.cluster.local
   issuerRef:
     name: ingress-issuer
   usages:
@@ -371,12 +488,20 @@ spec:
   renewBefore: 720h # 30 days
   privateKey:
     rotationPolicy: Always
+    encoding: PKCS8
+  secretTemplate:
+    labels:
+      app.kubernetes.io/component: "gwv6"
+      app.kubernetes.io/instance: "gwv6"
+      app.kubernetes.io/managed-by: "ibm-apiconnect"
+      app.kubernetes.io/name: "gwv6-endpoint"
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: gwv6-manager-endpoint
   labels: {
+    app.kubernetes.io/component: "gwv6",
     app.kubernetes.io/instance: "gwv6",
     app.kubernetes.io/managed-by: "ibm-apiconnect",
     app.kubernetes.io/name: "gwv6-manager-endpoint"
@@ -385,7 +510,9 @@ spec:
   commonName: gwv6-manager-endpoint
   secretName: gwv6-manager-endpoint
   dnsNames:
-  - rgwd.example.com
+  - rgwd.${STACK_HOST}
+  - rgwd.${VAR_APIC_NAMESPACE}.svc
+  - rgwd.${VAR_APIC_NAMESPACE}.svc.cluster.local
   issuerRef:
     name: ingress-issuer
   usages:
@@ -396,12 +523,20 @@ spec:
   renewBefore: 720h # 30 days
   privateKey:
     rotationPolicy: Always
+    encoding: PKCS8
+  secretTemplate:
+    labels:
+      app.kubernetes.io/component: "gwv6"
+      app.kubernetes.io/instance: "gwv6"
+      app.kubernetes.io/managed-by: "ibm-apiconnect"
+      app.kubernetes.io/name: "gwv6-manager-endpoint"
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: gwv5-endpoint
   labels: {
+    app.kubernetes.io/component: "gwv5",
     app.kubernetes.io/instance: "gwv5",
     app.kubernetes.io/managed-by: "ibm-apiconnect",
     app.kubernetes.io/name: "gwv5-endpoint"
@@ -410,7 +545,9 @@ spec:
   commonName: gwv5-endpoint
   secretName: gwv5-endpoint
   dnsNames:
-  - gw.example.com
+  - gw.${STACK_HOST}
+  - gw.${VAR_APIC_NAMESPACE}.svc
+  - gw.${VAR_APIC_NAMESPACE}.svc.cluster.local
   issuerRef:
     name: ingress-issuer
   usages:
@@ -421,12 +558,20 @@ spec:
   renewBefore: 720h # 30 days
   privateKey:
     rotationPolicy: Always
+    encoding: PKCS8
+  secretTemplate:
+    labels:
+      app.kubernetes.io/component: "gwv5"
+      app.kubernetes.io/instance: "gwv5"
+      app.kubernetes.io/managed-by: "ibm-apiconnect"
+      app.kubernetes.io/name: "gwv5-endpoint"
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: gwv5-manager-endpoint
   labels: {
+    app.kubernetes.io/component: "gwv5",
     app.kubernetes.io/instance: "gwv5",
     app.kubernetes.io/managed-by: "ibm-apiconnect",
     app.kubernetes.io/name: "gwv5-manager-endpoint"
@@ -435,7 +580,9 @@ spec:
   commonName: gwv5-manager-endpoint
   secretName: gwv5-manager-endpoint
   dnsNames:
-  - gwd.example.com
+  - gwd.${STACK_HOST}
+  - gwd.${VAR_APIC_NAMESPACE}.svc
+  - gwd.${VAR_APIC_NAMESPACE}.svc.cluster.local
   issuerRef:
     name: ingress-issuer
   usages:
@@ -446,6 +593,13 @@ spec:
   renewBefore: 720h # 30 days
   privateKey:
     rotationPolicy: Always
+    encoding: PKCS8
+  secretTemplate:
+    labels:
+      app.kubernetes.io/component: "gwv5"
+      app.kubernetes.io/instance: "gwv5"
+      app.kubernetes.io/managed-by: "ibm-apiconnect"
+      app.kubernetes.io/name: "gwv5-manager-endpoint"
 ---
 #Portal External Frontend/Ingress Certificates
 apiVersion: cert-manager.io/v1
@@ -453,6 +607,7 @@ kind: Certificate
 metadata:
   name: portal-admin
   labels: {
+    app.kubernetes.io/component: "portal",
     app.kubernetes.io/instance: "portal",
     app.kubernetes.io/managed-by: "ibm-apiconnect",
     app.kubernetes.io/name: "portal-admin"
@@ -461,7 +616,9 @@ spec:
   commonName: portal-admin
   secretName: portal-admin
   dnsNames:
-  - api.portal.example.com
+  - api.portal.${STACK_HOST}
+  - api.portal.${VAR_APIC_NAMESPACE}.svc
+  - api.portal.${VAR_APIC_NAMESPACE}.svc.cluster.local
   issuerRef:
     name: ingress-issuer
   usages:
@@ -472,12 +629,20 @@ spec:
   renewBefore: 720h # 30 days
   privateKey:
     rotationPolicy: Always
+    encoding: PKCS8
+  secretTemplate:
+    labels:
+      app.kubernetes.io/component: "portal"
+      app.kubernetes.io/instance: "portal"
+      app.kubernetes.io/managed-by: "ibm-apiconnect"
+      app.kubernetes.io/name: "portal-admin"
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: portal-web
   labels: {
+    app.kubernetes.io/component: "portal",
     app.kubernetes.io/instance: "portal",
     app.kubernetes.io/managed-by: "ibm-apiconnect",
     app.kubernetes.io/name: "portal-web"
@@ -486,7 +651,9 @@ spec:
   commonName: portal-web
   secretName: portal-web
   dnsNames:
-  - portal.example.com
+  - portal.${STACK_HOST}
+  - portal.${VAR_APIC_NAMESPACE}.svc
+  - portal.${VAR_APIC_NAMESPACE}.svc.cluster.local
   issuerRef:
     name: ingress-issuer
   usages:
@@ -497,12 +664,20 @@ spec:
   renewBefore: 720h # 30 days
   privateKey:
     rotationPolicy: Always
+    encoding: PKCS8
+  secretTemplate:
+    labels:
+      app.kubernetes.io/component: "portal"
+      app.kubernetes.io/instance: "portal"
+      app.kubernetes.io/managed-by: "ibm-apiconnect"
+      app.kubernetes.io/name: "portal-web"
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: devportal-admin-client
   labels: {
+    app.kubernetes.io/component: "management",
     app.kubernetes.io/instance: "management",
     app.kubernetes.io/managed-by: "ibm-apiconnect",
     app.kubernetes.io/name: "devportal-admin-client"
@@ -523,6 +698,13 @@ spec:
   renewBefore: 720h # 30 days
   privateKey:
     rotationPolicy: Always
+    encoding: PKCS8
+  secretTemplate:
+    labels:
+      app.kubernetes.io/component: "management"
+      app.kubernetes.io/instance: "management"
+      app.kubernetes.io/managed-by: "ibm-apiconnect"
+      app.kubernetes.io/name: "devportal-admin-client"
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
@@ -548,12 +730,18 @@ spec:
   renewBefore: 720h # 30 days
   privateKey:
     rotationPolicy: Always
+    encoding: PKCS8
+  secretTemplate:
+    labels:
+      app.kubernetes.io/managed-by: "ibm-apiconnect"
+      app.kubernetes.io/name: "devportal-wmapigateway-client"
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: wmapigateway-mgmt-client
   labels: {
+    app.kubernetes.io/component: "management",
     app.kubernetes.io/instance: "management",
     app.kubernetes.io/managed-by: "ibm-apiconnect",
     app.kubernetes.io/name: "wmapigateway-mgmt-client"
@@ -574,6 +762,13 @@ spec:
   renewBefore: 720h # 30 days
   privateKey:
     rotationPolicy: Always
+    encoding: PKCS8
+  secretTemplate:
+    labels:
+      app.kubernetes.io/component: "management"
+      app.kubernetes.io/instance: "management"
+      app.kubernetes.io/managed-by: "ibm-apiconnect"
+      app.kubernetes.io/name: "wmapigateway-mgmt-client"
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
@@ -599,12 +794,18 @@ spec:
   renewBefore: 720h # 30 days
   privateKey:
     rotationPolicy: Always
+    encoding: PKCS8
+  secretTemplate:
+    labels:
+      app.kubernetes.io/managed-by: "ibm-apiconnect"
+      app.kubernetes.io/name: "wmapigateway-devportal-client"
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: nano-gateway-mgmt-client
   labels: {
+    app.kubernetes.io/component: "management",
     app.kubernetes.io/instance: "management",
     app.kubernetes.io/managed-by: "ibm-apiconnect",
     app.kubernetes.io/name: "nano-gateway-mgmt-client"
@@ -625,12 +826,20 @@ spec:
   renewBefore: 720h # 30 days
   privateKey:
     rotationPolicy: Always
+    encoding: PKCS8
+  secretTemplate:
+    labels:
+      app.kubernetes.io/component: "management"
+      app.kubernetes.io/instance: "management"
+      app.kubernetes.io/managed-by: "ibm-apiconnect"
+      app.kubernetes.io/name: "nano-gateway-mgmt-client"
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: federatedapimanagement-admin-client
   labels: {
+    app.kubernetes.io/component: "management",
     app.kubernetes.io/instance: "management",
     app.kubernetes.io/managed-by: "ibm-apiconnect",
     app.kubernetes.io/name: "federatedapimanagement-admin-client"
@@ -651,12 +860,20 @@ spec:
   renewBefore: 720h # 30 days
   privateKey:
     rotationPolicy: Always
+    encoding: PKCS8
+  secretTemplate:
+    labels:
+      app.kubernetes.io/component: "management"
+      app.kubernetes.io/instance: "management"
+      app.kubernetes.io/managed-by: "ibm-apiconnect"
+      app.kubernetes.io/name: "federatedapimanagement-admin-client"
 ---
 # devportal-admin endpoint
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   labels:
+    app.kubernetes.io/component: devportal
     app.kubernetes.io/instance: devportal
     app.kubernetes.io/managed-by: ibm-apiconnect
     app.kubernetes.io/name: devportal-admin-endpoint
@@ -665,7 +882,9 @@ spec:
   commonName: devportal-admin
   secretName: devportal-admin
   dnsNames:
-  - api.devportal.example.com
+  - api.devportal.${STACK_HOST}
+  - api.devportal.${VAR_APIC_NAMESPACE}.svc
+  - api.devportal.${VAR_APIC_NAMESPACE}.svc.cluster.local
   issuerRef:
     name: ingress-issuer
   usages:
@@ -675,12 +894,20 @@ spec:
   renewBefore: 720h # 30 days
   privateKey:
     rotationPolicy: Always
+    encoding: PKCS8
+  secretTemplate:
+    labels:
+      app.kubernetes.io/component: devportal
+      app.kubernetes.io/instance: devportal
+      app.kubernetes.io/managed-by: ibm-apiconnect
+      app.kubernetes.io/name: devportal-admin-endpoint
 ---
 # devportal-web endpoint
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   labels:
+    app.kubernetes.io/component: devportal
     app.kubernetes.io/instance: devportal
     app.kubernetes.io/managed-by: ibm-apiconnect
     app.kubernetes.io/name: devportal-web-endpoint
@@ -689,7 +916,9 @@ spec:
   commonName: devportal-web
   secretName: devportal-web
   dnsNames:
-  - devportal.example.com
+  - devportal.${STACK_HOST}
+  - devportal.${VAR_APIC_NAMESPACE}.svc
+  - devportal.${VAR_APIC_NAMESPACE}.svc.cluster.local
   issuerRef:
     name: ingress-issuer
   usages:
@@ -699,12 +928,20 @@ spec:
   renewBefore: 720h # 30 days
   privateKey:
     rotationPolicy: Always
+    encoding: PKCS8
+  secretTemplate:
+    labels:
+      app.kubernetes.io/component: devportal
+      app.kubernetes.io/instance: devportal
+      app.kubernetes.io/managed-by: ibm-apiconnect
+      app.kubernetes.io/name: devportal-web-endpoint
 ---
 # fam-admin-endpoint
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   labels:
+    app.kubernetes.io/component: federatedapimanagement
     app.kubernetes.io/instance: federatedapimanagement
     app.kubernetes.io/managed-by: ibm-apiconnect
     app.kubernetes.io/name: admin-endpoint
@@ -713,7 +950,9 @@ spec:
   commonName: fam-admin-endpoint
   secretName: fam-admin-endpoint
   dnsNames:
-  - api.fam.example.com
+  - api.fam.${STACK_HOST}
+  - api.fam.${VAR_APIC_NAMESPACE}.svc
+  - api.fam.${VAR_APIC_NAMESPACE}.svc.cluster.local
   issuerRef:
     name: ingress-issuer
   usages:
@@ -723,12 +962,20 @@ spec:
   renewBefore: 720h # 30 days
   privateKey:
     rotationPolicy: Always
+    encoding: PKCS8
+  secretTemplate:
+    labels:
+      app.kubernetes.io/component: federatedapimanagement
+      app.kubernetes.io/instance: federatedapimanagement
+      app.kubernetes.io/managed-by: ibm-apiconnect
+      app.kubernetes.io/name: admin-endpoint
 ---
 # fam-ui-endpoint
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   labels:
+    app.kubernetes.io/component: federatedapimanagement
     app.kubernetes.io/instance: federatedapimanagement
     app.kubernetes.io/managed-by: ibm-apiconnect
     app.kubernetes.io/name: ui-endpoint
@@ -737,7 +984,9 @@ spec:
   commonName: fam-ui-endpoint
   secretName: fam-ui-endpoint
   dnsNames:
-  - fam.example.com
+  - fam.${STACK_HOST}
+  - fam.${VAR_APIC_NAMESPACE}.svc
+  - fam.${VAR_APIC_NAMESPACE}.svc.cluster.local
   issuerRef:
     name: ingress-issuer
   usages:
@@ -747,12 +996,20 @@ spec:
   renewBefore: 720h # 30 days
   privateKey:
     rotationPolicy: Always
+    encoding: PKCS8
+  secretTemplate:
+    labels:
+      app.kubernetes.io/component: federatedapimanagement
+      app.kubernetes.io/instance: federatedapimanagement
+      app.kubernetes.io/managed-by: ibm-apiconnect
+      app.kubernetes.io/name: ui-endpoint
 ---
 # wmapigateway-gw-tls-secret for wmapigateway-gateway-endpoint
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   labels:
+    app.kubernetes.io/component: wmapigateway
     app.kubernetes.io/instance: wmapigateway
     app.kubernetes.io/managed-by: ibm-apiconnect
     app.kubernetes.io/name: api-endpoint
@@ -761,7 +1018,9 @@ spec:
   commonName: wmapigateway-gw-tls-secret
   secretName: wmapigateway-gw-tls-secret
   dnsNames:
-  - wmapigw-admin.example.com
+  - wmapigw-admin.${STACK_HOST}
+  - wmapigw-admin.${VAR_APIC_NAMESPACE}.svc
+  - wmapigw-admin.${VAR_APIC_NAMESPACE}.svc.cluster.local
   issuerRef:
     name: ingress-issuer
   usages:
@@ -771,12 +1030,20 @@ spec:
   renewBefore: 720h # 30 days
   privateKey:
     rotationPolicy: Always
+    encoding: PKCS8
+  secretTemplate:
+    labels:
+      app.kubernetes.io/component: wmapigateway
+      app.kubernetes.io/instance: wmapigateway
+      app.kubernetes.io/managed-by: ibm-apiconnect
+      app.kubernetes.io/name: api-endpoint
 ---
 # wmapigateway-mgmt-tls-secret for wmapigateway-mgmt-endpoint
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   labels:
+    app.kubernetes.io/component: wmapigateway
     app.kubernetes.io/instance: wmapigateway
     app.kubernetes.io/managed-by: ibm-apiconnect
     app.kubernetes.io/name: api-endpoint
@@ -785,7 +1052,9 @@ spec:
   commonName: wmapigateway-mgmt-tls-secret
   secretName: wmapigateway-mgmt-tls-secret
   dnsNames:
-  - wmapigateway-mgmt.example.com
+  - wmapigateway-mgmt.${STACK_HOST}
+  - wmapigateway-mgmt.${VAR_APIC_NAMESPACE}.svc
+  - wmapigateway-mgmt.${VAR_APIC_NAMESPACE}.svc.cluster.local
   issuerRef:
     name: ingress-issuer
   usages:
@@ -795,12 +1064,20 @@ spec:
   renewBefore: 720h # 30 days
   privateKey:
     rotationPolicy: Always
+    encoding: PKCS8
+  secretTemplate:
+    labels:
+      app.kubernetes.io/component: wmapigateway
+      app.kubernetes.io/instance: wmapigateway
+      app.kubernetes.io/managed-by: ibm-apiconnect
+      app.kubernetes.io/name: api-endpoint
 ---
 # wmapigateway-ui-tls-secret for wmapigateway-ui-endpoint
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   labels:
+    app.kubernetes.io/component: wmapigateway
     app.kubernetes.io/instance: wmapigateway
     app.kubernetes.io/managed-by: ibm-apiconnect
     app.kubernetes.io/name: api-endpoint
@@ -809,7 +1086,9 @@ spec:
   commonName: wmapigateway-ui-tls-secret
   secretName: wmapigateway-ui-tls-secret
   dnsNames:
-  - wmapigw-ui.example.com
+  - wmapigw-ui.${STACK_HOST}
+  - wmapigw-ui.${VAR_APIC_NAMESPACE}.svc
+  - wmapigw-ui.${VAR_APIC_NAMESPACE}.svc.cluster.local
   issuerRef:
     name: ingress-issuer
   usages:
@@ -819,12 +1098,20 @@ spec:
   renewBefore: 720h # 30 days
   privateKey:
     rotationPolicy: Always
+    encoding: PKCS8
+  secretTemplate:
+    labels:
+      app.kubernetes.io/component: wmapigateway
+      app.kubernetes.io/instance: wmapigateway
+      app.kubernetes.io/managed-by: ibm-apiconnect
+      app.kubernetes.io/name: api-endpoint
 ---
 # gateway-proxy-endpoint certificate for ngw-mgmt-endpoint
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   labels:
+    app.kubernetes.io/component: ngw
     app.kubernetes.io/instance: ngw
     app.kubernetes.io/managed-by: ibm-apiconnect
     app.kubernetes.io/name: nanogw
@@ -833,7 +1120,9 @@ spec:
   commonName: gateway-proxy-endpoint
   secretName: gateway-proxy-endpoint
   dnsNames:
-  - apic-gateway-proxy.example.com
+  - apic-gateway-proxy.${STACK_HOST}
+  - apic-gateway-proxy.${VAR_APIC_NAMESPACE}.svc
+  - apic-gateway-proxy.${VAR_APIC_NAMESPACE}.svc.cluster.local
   issuerRef:
     name: ingress-issuer
   usages:
@@ -843,3 +1132,10 @@ spec:
   renewBefore: 720h # 30 days
   privateKey:
     rotationPolicy: Always
+    encoding: PKCS8
+  secretTemplate:
+    labels:
+      app.kubernetes.io/component: ngw
+      app.kubernetes.io/instance: ngw
+      app.kubernetes.io/managed-by: ibm-apiconnect
+      app.kubernetes.io/name: nanogw

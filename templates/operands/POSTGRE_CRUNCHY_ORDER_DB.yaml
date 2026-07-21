@@ -13,7 +13,7 @@ spec:
       replicas: 1  # 1 primary + 1 replica
       # Storage configuration
       dataVolumeClaimSpec:
-        storageClassName: ocs-external-storagecluster-ceph-rbd  # MY_BLOCK_STORAGE_CLASS=ocs-external-storagecluster-ceph-rbd
+        storageClassName: ocs-external-storagecluster-ceph-rbd  # OCP_BLOCK_STORAGE=ocs-external-storagecluster-ceph-rbd
         accessModes:
           - "ReadWriteOnce"
         resources:

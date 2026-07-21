@@ -91,17 +91,17 @@ function create_kafka_connector () {
   export VAR_ES_TOPIC_DEST="LH.ORDERS"
   export VAR_QMGR_CONNECTION_HOST=""
   # for example cp4i-mq-orders-server
-  export VAR_MQ_ORDERS_TLS_SECRET="${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR_LC}-server"
+  export VAR_MQ_ORDERS_TLS_SECRET="mq-${VAR_QMGR_LC}-server"
 
   # Create the certificate if it does not exist and copy it to MQ namespace
-  local lf_jks_secret_name="${VAR_MQ_NAMESPACE}-mq-store-root-secret"
-  if check_resource_exist secret $lf_jks_secret_name $VAR_MQ_NAMESPACE true; then
-    local lf_store_password=$(oc -n "${VAR_MQ_NAMESPACE}" get secret "$lf_jks_secret_name" -o jsonpath='{.data.password}' | base64 --decode)
+  local lf_jks_secret_name="mq-store-root-secret"
+  if check_resource_exist secret $lf_jks_secret_name $VAR_ES_NAMESPACE true; then
+    local lf_store_password=$(oc -n "${VAR_ES_NAMESPACE}" get secret "$lf_jks_secret_name" -o jsonpath='{.data.password}' | base64 --decode)
     export VAR_ES_MQ_SOURCE_STORE_PASSWORD=${lf_store_password}
   fi
   
   create_oc_resource "KafkaConnect" "${VAR_ES_KAFKA_CONNECT_INSTANCE_NAME}" "${lf_source_directory}" "${MY_ES_WORKINGDIR}" "KConnect.yaml" "$VAR_ES_NAMESPACE"
-  export VAR_MQ_ORDERS_TLS_SECRET=${VAR_MQ_NAMESPACE}-mq-${VAR_QMGR_LC}-server
+  export VAR_MQ_ORDERS_TLS_SECRET=mq-${VAR_QMGR_LC}-server
   # TODO check for the TLS configuration: https://ibm.github.io/event-automation/es/connecting/mq/#configuration-options
   
   mylog info "Create Kafka Connectors for datagen and MQ connectors"

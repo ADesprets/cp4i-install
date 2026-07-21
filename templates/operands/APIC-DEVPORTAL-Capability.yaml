@@ -24,7 +24,7 @@ spec:
     - ${DEFAULT_IMAGE_PULL_SECRET}
   imageRegistry: ${MY_APIC_IMAGE_REGISTRY}
   devportalAdminEndpoint:
-    #ingressClassName: $INGRESS_CLASS
+    #ingressClassName: $INGRESS_CLASS # TODO
     annotations:
       cert-manager.io/issuer: ingress-issuer
     hosts:

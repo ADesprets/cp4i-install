@@ -74,7 +74,7 @@ spec:
     - name: instance1
       replicas: 3
       dataVolumeClaimSpec:
-        storageClassName: $MY_BLOCK_STORAGE_CLASS
+        storageClassName: $OCP_BLOCK_STORAGE
         accessModes: [ReadWriteOnce]
         resources:
           requests:

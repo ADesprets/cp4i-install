@@ -13,7 +13,7 @@ spec:
     use: $MY_INTASSEMBLY_LIC_USAGE
   storage:
     readWriteOnce:
-      class: $MY_BLOCK_STORAGE_CLASS
+      class: $OCP_BLOCK_STORAGE
   managedInstances:
     list:
     - kind: QueueManager

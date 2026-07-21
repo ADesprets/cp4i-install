@@ -14,7 +14,7 @@ spec:
     assetDataVolume:
       class: $MY_FILE_STORAGE_CLASS
     couchVolume:
-      class: $MY_BLOCK_STORAGE_CLASS
+      class: $OCP_BLOCK_STORAGE
   version: $MY_ASSETREPO_VERSION
   designerAIFeatures:
     enabled: true

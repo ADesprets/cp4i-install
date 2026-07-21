@@ -20,7 +20,7 @@ spec:
         storage:
           type: "persistent-claim"
           size: "30Gi"
-          class: $MY_BLOCK_STORAGE_CLASS
+          class: $OCP_BLOCK_STORAGE
           deleteClaim: false  # Prevent accidental data loss
         roles:
           - broker
@@ -29,7 +29,7 @@ spec:
         storage:
           type: "persistent-claim"
           size: "10Gi"  # Controllers need less storage
-          class: $MY_BLOCK_STORAGE_CLASS
+          class: $OCP_BLOCK_STORAGE
           deleteClaim: false
         roles:
           - controller

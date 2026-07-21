@@ -15,7 +15,7 @@ spec:
   # Storage Configuration
   storage:
     size: "1Gi"
-    storageClass: "${MY_BLOCK_STORAGE_CLASS}"         # e.g., "ocs-storagecluster-ceph-rbd"
+    storageClass: "${OCP_BLOCK_STORAGE}"         # e.g., "ocs-storagecluster-ceph-rbd"
   # Environment Variables (for PostgreSQL container)
   containers:
     env:
