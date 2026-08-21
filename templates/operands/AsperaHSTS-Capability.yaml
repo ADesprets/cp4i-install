@@ -14,14 +14,14 @@ spec:
   version: $MY_HSTS_VERSION
   storages:
     - claimName: hsts-transfer-pvc
-      class: $MY_FILE_STORAGE_CLASS
+      class: ${MY_FILE_STORAGE_CLASS}
       deleteClaim: true
       mountPath: /data/
       size: 50Gi
   redis:
     persistence:
       enabled: false
-      storageClass: $MY_FILE_STORAGE_CLASS
+      storageClass: ${MY_FILE_STORAGE_CLASS}
   services:
     httpProxy:
       type: ClusterIP

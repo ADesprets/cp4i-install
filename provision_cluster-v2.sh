@@ -1427,8 +1427,6 @@ function install_apic() {
     oc -n "${VAR_APIC_NAMESPACE}" apply -f ${MY_APIC_WORKINGDIR}ingress-issuer-v1.yaml
 
     # Add the API Connect catalog sources to your cluster using ibm_pak plugin
-    mylog warn "There is an error with ibm-pak catalog source is incorrect: https://github.com/IBM/cloud-pak/blob/master/repo/case/ibm-apiconnect/8.0.0/OLM/catalog-sources-linux-amd64-all.yaml and 
-https://github.com/IBM/cloud-pak/blob/master/repo/case/ibm-apiconnect/8.0.0/OLM/catalog-sources-all.yaml" 1>&2
     check_add_cs_ibm_pak $MY_APIC_CASE $MY_APIC_OPERATOR $MY_APIC_CATALOGSOURCE_LABEL amd64
     if [[ -z $MY_APIC_VERSION ]]; then
       export MY_APIC_VERSION=$VAR_APP_VERSION
@@ -1439,7 +1437,7 @@ https://github.com/IBM/cloud-pak/blob/master/repo/case/ibm-apiconnect/8.0.0/OLM/
     # Install operators for DataPower gateway and nano gateway
     if $INSTALL_OVERWRITE; then
       install_datapower_gateway
-      # install_nano_gateway
+      # install_nano_gateway TODO NGW
     else
       mylog warn "Skipping installation of DataPower gateway and nano gateway operators because INSTALL_OVERWRITE is set to false" 1>&2
     fi
@@ -1447,13 +1445,20 @@ https://github.com/IBM/cloud-pak/blob/master/repo/case/ibm-apiconnect/8.0.0/OLM/
     # Create the apiconnect subscription
     mylog info "Creating APIC operator subscription" 1>&2
     create_operator_instance "${MY_APIC_OPERATOR}" "${MY_APIC_CATALOGSOURCE_LABEL}" "${MY_OPERATORSDIR}" "${MY_APIC_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
-    
+
+    # Wait for the APIC operator manager deployment to be fully available so that
+    # the ibm-apiconnect-service webhook (mmanagementcluster.kb.io, etc.) is reachable
+    # before any operand (ManagementCluster, PortalCluster, …) is created.
+    mylog info "Waiting for APIC operator webhook deployment to be available" 1>&2
+    wait_for_state "Deployment" "${MY_APIC_OPERATOR}" "{.status.conditions[?(@.type=='Available')].status}" "True" "${MY_OPERATORS_NAMESPACE}"
+
     local lf_ingress=$($MY_CLUSTER_COMMAND get ingresses.config/cluster -o jsonpath='{.spec.domain}')
     export STACK_HOST="$lf_ingress"
     
     if $MY_APIC_BY_COMPONENT; then
       mylog info "Creating APIC components individually, adding more control for APIC V12 and the multiple gateways" 1>&2
 
+      mylog info "Creating secret apic-mgmt-admin-pass" 1>&2
       generate_password 10
       local lf_admin_password=${VAR_USER_PASSWORD_GEN}
       unset VAR_USER_PASSWORD_GEN

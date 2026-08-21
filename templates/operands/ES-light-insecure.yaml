@@ -28,7 +28,7 @@ spec:
         type: jmxPrometheusExporter
       storage:
         type: persistent-claim
-        class: $OCP_BLOCK_STORAGE
+        class: ${OCP_BLOCK_STORAGE}
       listeners:
         - name: plain
           port: 9092
@@ -44,7 +44,7 @@ spec:
         type: jmxPrometheusExporter
       storage:
         type: persistent-claim
-        class: $OCP_BLOCK_STORAGE
+        class: ${OCP_BLOCK_STORAGE}
       replicas: 1
   adminUI: {}
   restProducer: {}

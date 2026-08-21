@@ -4,9 +4,9 @@ metadata:
   name: ${VAR_APIC_INSTANCE_NAME}-a7s
   namespace: ${VAR_APIC_NAMESPACE}
   labels:
-    app.kubernetes.io/instance: analytics
+    app.kubernetes.io/instance: ${VAR_APIC_INSTANCE_NAME}-a7s
     app.kubernetes.io/managed-by: ibm-apiconnect
-    app.kubernetes.io/name: ${INST_NAME}
+    app.kubernetes.io/name: ${VAR_APIC_INSTANCE_NAME}-a7s
 annotations:
     apiconnect-operator/cp4i: "false"
 spec:
@@ -44,7 +44,7 @@ spec:
         secretName: analytics-ai-endpoint
     clientSubjectDN: CN=analytics-ingestion-client,O=cert-manager
   # mtlsValidateClient: true
-  # analyticsMode: true
+  analyticsMode: true
   storage:
     enabled: true  
     type: ${MY_APIC_A7S_STORAGE_TYPE}

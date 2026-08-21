@@ -13,7 +13,7 @@ spec:
       type: shared
   imagePullSecrets:
     - ${DEFAULT_IMAGE_PULL_SECRET}
-  imageRegistry: ${MY_APIC_IMAGE_REGISTR}
+  imageRegistry: ${MY_APIC_IMAGE_REGISTRY}
   management:
     testAndMonitor:
       enabled: true

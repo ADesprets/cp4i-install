@@ -2,9 +2,11 @@ apiVersion: gateway.apiconnect.ibm.com/v1beta1
 kind: GatewayCluster
 metadata:
   labels:
-    app.kubernetes.io/instance: gateway
+    app.kubernetes.io/instance: ${VAR_APIC_INSTANCE_NAME}-gwv6
     app.kubernetes.io/managed-by: ibm-apiconnect
     app.kubernetes.io/name: ${VAR_APIC_INSTANCE_NAME}-gwv6
+  annotations:
+    apiconnect-operator/cp4i: "false"
   name: ${VAR_APIC_INSTANCE_NAME}-gwv6
   namespace: ${VAR_APIC_NAMESPACE}
 spec:
@@ -14,6 +16,10 @@ spec:
   - ${DEFAULT_IMAGE_PULL_SECRET}
   imageRegistry: ${MY_APIC_IMAGE_REGISTRY}
   apicGatewayServiceV5CompatibilityMode: false
+  mgmtPlatformEndpointCASecret:
+    secretName: ${MY_APIC_TLS_INGRESS_CERT_NAME} # Usually ingress-ca
+  mgmtPlatformEndpointSvcCASecret:
+    secretName: ${MY_APIC_TLS_APIM_CERT_NAME} # Usually management-ca
   webGUIManagementPort: 9090
   webGUIManagementEnabled: true
   gatewayEndpoint:
@@ -34,10 +40,6 @@ spec:
     secretName: gateway-service
   apicGatewayPeeringTLS:
     secretName: gateway-peering
-  mgmtPlatformEndpointCASecret:
-    secretName: ${MY_APIC_TLS_INGRESS_CERT_NAME} # Usually ingress-ca
-  mgmtPlatformEndpointSvcCASecret:
-    secretName: ${MY_APIC_TLS_APIM_CERT_NAME} # Usually management-ca
   datapowerLogLevel: 3
   license:
     accept: true

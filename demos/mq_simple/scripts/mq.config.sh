@@ -22,9 +22,6 @@ function create_mq_root_certificate () {
 
   echo ">>> VAR_CERT_SECRET_NAME: ${VAR_CERT_SECRET_NAME}"
 
-  create_oc_resource "Certificate" "${VAR_CERT_NAME}" "${MY_YAMLDIR}tls/" "${MY_MQ_WORKINGDIR}" "ca_certificate_jks.yaml" "${VAR_MQ_NAMESPACE}"
-  wait_for_resource "Secret" "${VAR_CERT_SECRET_NAME}" "${VAR_MQ_NAMESPACE}"
-
   # We are using a secure QM, we want to expose the jks in the secret associated to the root certificate.
   # Since this is secured we are going to create a secret for the password with the TLS certificate of the queue manager
   # TODO Need to check what is happening when the certificate is regenerated maybe automatically by Cert Manager
@@ -41,7 +38,10 @@ function create_mq_root_certificate () {
     create_generic_secret "$lf_jks_secret_name"  "username" "" "password" "$lf_store_password" "${VAR_MQ_NAMESPACE}" "${MY_ES_WORKINGDIR}" "false"
     export VAR_ES_MQ_SOURCE_STORE_PASSWORD=${lf_store_password}
   fi
-  
+
+  create_oc_resource "Certificate" "${VAR_CERT_NAME}" "${MY_YAMLDIR}tls/" "${MY_MQ_WORKINGDIR}" "ca_certificate_jks.yaml" "${VAR_MQ_NAMESPACE}"
+  wait_for_resource "Secret" "${VAR_CERT_SECRET_NAME}" "${VAR_MQ_NAMESPACE}"
+ 
   unset VAR_CERT_NAME VAR_NAMESPACE VAR_CERT_ISSUER_REF VAR_CERT_COMMON_NAME VAR_CERT_ORGANISATION VAR_CERT_COUNTRY VAR_CERT_LOCALITY VAR_CERT_STATE VAR_CERT_JKS_SECRET_REF
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}

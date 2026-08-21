@@ -23,7 +23,7 @@ spec:
 #          https://${VAR_KEYCLOAK_HOST}/realms/${MY_KEYCLOAK_CP4I_REALM}.well-known/openid-configuration
     storage:
       type: persistent-claim
-      storageClassName: $MY_FILE_STORAGE_CLASS
+      storageClassName: ${MY_FILE_STORAGE_CLASS}
 ---
 # Voir ceci trouvé dans le slack channel #icp4i-keycloak
 #      oidcConfig:

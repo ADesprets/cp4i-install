@@ -363,7 +363,9 @@ function create_nano_gateway_tls_profile() {
       --argjson ciphers "$lf_sp_ciphers" \
       '{ title: $title, name: $name, version:"1.0.0", summary: $summary, protocols: $protocols, mutual_authentication:"none", limit_renegotiation: true, ciphers: $ciphers, keystore_url: $keystore_url }')
 
-    decho $lf_tracelevel "curl -skv \"${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles/${lf_sp_name}?fields=url\" -H \"Accept: application/json\" -H \"authorization: Bearer \$AT\" -H \"content-type: application/json\"  --data-raw \"$jsonpayload\""
+    decho $lf_tracelevel "jsonpayload: ${jsonpayload}"
+
+    decho $lf_tracelevel "curl -skv \"${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles/${lf_sp_name}?fields=url\" -H \"Accept: application/json\" -H \"authorization: Bearer \$AT\" -H \"content-type: application/json\"  --data-raw \"jsonpayload\""
     lf_tls_server_profile=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles" \
       -H "Authorization: Bearer $access_token" \
       -H "Content-Type: application/json" \
@@ -453,7 +455,9 @@ function replace_dp_gtw_cert() {
       --argjson ciphers "$lf_sp_ciphers" \
       '{ title: $title, name: $name, version:"1.0.0", summary: $summary, protocols: $protocols, mutual_authentication:"none", limit_renegotiation: true, ciphers: $ciphers, keystore_url: $keystore_url }')
 
-    decho $lf_tracelevel "curl -skv \"${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles/${lf_sp_name}?fields=url\" -H \"Accept: application/json\" -H \"authorization: Bearer \$AT\" -H \"content-type: application/json\"  --data-raw \"<value>\""
+    decho $lf_tracelevel "jsonpayload: ${jsonpayload}"
+
+    decho $lf_tracelevel "curl -skv \"${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles/${lf_sp_name}?fields=url\" -H \"Accept: application/json\" -H \"authorization: Bearer \$AT\" -H \"content-type: application/json\"  --data-raw \"jsonpayload\""
     lf_tls_server_profile=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles" \
       -H "Authorization: Bearer $access_token" \
       -H "Content-Type: application/json" \
@@ -475,9 +479,11 @@ function replace_dp_gtw_cert() {
   jsonpayload=$(jq -n \
     --arg host "$lf_dp_sni_host" \
     --arg tls_server_profile_url "$lf_tls_server_profile_url" \
-	  '{sni:[{host:$host,tls_server_profile_url:$tls_server_profile_url}]}')
+    '{ sni: [{ host: $host, tls_server_profile_url: $tls_server_profile_url }] }')
 
-  decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services/${lf_dp_name}\" -X PATCH -H \"Accept: application/json\" -H \"authorization: Bearer \$AT\" -H \"content-type: application/json\"  --data-raw \"$jsonpayload\""
+  decho $lf_tracelevel "jsonpayload: ${jsonpayload}"
+
+  decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services/${lf_dp_name}\" -X PATCH -H \"Accept: application/json\" -H \"authorization: Bearer \$AT\" -H \"content-type: application/json\"  --data-raw \"jsonpayload\""
   lf_dp_gtw_service=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services/${lf_dp_name}" \
 	  -X PATCH \
     -H "Authorization: Bearer $access_token" \
@@ -630,7 +636,9 @@ function create_topology() {
       --arg integration_url "$integration_url" \
       '{name:$name,title:$title, runtime_name: $runtime_name, gateway_service_type: $gtw_svc_type, endpoint:$endpoint,api_endpoint_base:$endpoint_base,tls_client_profile_url:$tls_client_profile_url,visibility:{type:"public"},sni:[{host:"*",tls_server_profile_url:$tls_server_profile_url}],integration_url:$integration_url, communication_kind: "external", communication_to_analytics_with_jwt: false, ai_gateway_enabled: true}')
 
-    decho $lf_tracelevel "curl -skv \"${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles/${lf_sp_name}\" -H \"Accept: application/json\" -H \"authorization: Bearer \$AT\" -H \"content-type: application/json\"  --data-raw \"$jsonpayload\""
+    decho $lf_tracelevel "jsonpayload: ${jsonpayload}"
+
+    decho $lf_tracelevel "curl -skv \"${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles/${lf_sp_name}\" -H \"Accept: application/json\" -H \"authorization: Bearer \$AT\" -H \"content-type: application/json\"  --data-raw \"jsonpayload\""
 
     dpUrl=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services" \
       -H "Authorization: Bearer $access_token" \
@@ -673,23 +681,26 @@ function create_topology() {
   -H 'Connection: keep-alive');
 
   if [ $(echo $lf_a8s_url | jq .status ) = "404" ] || [ -z "$lf_a8s_url" ] || [ "$lf_a8s_url" = "null" ]; then
-    mylog info "Create Analytics Service. Use in-cluster communication for both ingestion and queries." 1>&2
+    mylog info "Create Analytics Service." 1>&2
 
     local lf_a8s_ingestion_tls_name="analytics-ingestion-default"
     a8sClientDefaultTLS=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-client-profiles/${lf_a8s_ingestion_tls_name}" \
     -H "Authorization: Bearer $access_token" \
     -H 'Accept: application/json' --compressed | jq '.results[]| .url' | sed -e s/\"//g );
+
     decho $lf_tracelevel "a8sClientDefaultTLS: $a8sClientDefaultTLS"
 
     local jsonpayload=$(jq -n \
       --arg title "$lf_a8s_title" \
       --arg name "$lf_a8s_name" \
       --arg summary "$lf_a8s_title" \
-      --arg internal_svc_endpoint "https://${VAR_APIC_INSTANCE_NAME}-a7s.${VAR_APIC_NAMESPACE}.svc" \
-      --arg tls_client_profile_url "$a8sClientDefaultTLS" \
-      '{title:$title,name:$name,summary:$summary,communication_from_apim_kind:"internal_svc",internal_svc_endpoint:$internal_svc_endpoint,internal_svc_endpoint_tls_client_profile_url:$tls_client_profile_url}')
+      --arg ingestion_endpoint "https://${EP_AI}" \
+      --arg ingestion_endpoint_tls_client_profile "$a8sClientDefaultTLS" \
+      '{"api_version":"2.0.0","type":"analytics_service",title:$title,name:$name,summary:$summary,"communication_from_apim_kind":"external",endpoint:$ingestion_endpoint,ingestion_endpoint_tls_client_profile_url:$ingestion_endpoint_tls_client_profile}')
 
-    decho $lf_tracelevel "curl -skv \"${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/analytics-services\" -H \"Accept: application/json\" -H \"authorization: Bearer \$AT\" -H \"content-type: application/json\"  --data-raw \"$jsonpayload\""
+    decho $lf_tracelevel "jsonpayload: ${jsonpayload}"
+
+    decho $lf_tracelevel "curl -skv \"${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/analytics-services\" -H \"Accept: application/json\" -H \"authorization: Bearer \$AT\" -H \"content-type: application/json\"  --data-raw \"jsonpayload\""
 
     lf_a8s_url=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/analytics-services" \
       -H "Authorization: Bearer $access_token" \
@@ -711,21 +722,35 @@ function create_topology() {
   fi
 
   mylog info "Associate Analytics Service with DataPower Gateway" 1>&2
-  decho $lf_tracelevel "curl -sk -X PATCH \"${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services/${lf_gw_name}\" -H 'Accept: application/json' -H \"Authorization: Bearer \$access_token\" -H 'Cache-Control: no-cache' -H 'Content-Type: application/json' --data-raw \"{\\\"analytics_service_url\\\": \\\"$lf_a8s_url\\\", \\\"communication_to_analytics_kind\\\": \\\"\\\", \\\"communication_to_analytics_with_jwt\\\": false }\""
+  local jsonpayload=$(jq -n \
+    --arg analytics_service_url "$lf_a8s_url" \
+    '{analytics_service_url:$analytics_service_url,communication_to_analytics_kind:"external",communication_to_analytics_with_jwt:false}')
+
+  decho $lf_tracelevel "jsonpayload: ${jsonpayload}"
+
+  decho $lf_tracelevel "curl -sk -X PATCH \"${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services/${lf_gw_name}\" -H 'Accept: application/json' -H \"Authorization: Bearer \$access_token\" -H 'Cache-Control: no-cache' -H 'Content-Type: application/json' --data-raw \"{jsonpayload}\""
   analytGwy=$(curl -sk -X PATCH \
     "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services/${lf_gw_name}" \
   -H 'Accept: application/json' \
   -H "Authorization: Bearer $access_token"\
   -H 'Cache-Control: no-cache' \
   -H 'Content-Type: application/json' \
-  --data-raw "{\"analytics_service_url\":	\"$lf_a8s_url\", \"communication_to_analytics_kind\": \"internal_svc\",	\"communication_to_analytics_with_jwt\": false }");
+  --data-raw "$jsonpayload");
 
-  # Update the ManagementCluster CRD to enable AI features toto
+  # Update the ManagementCluster CRD to enable AI features
   mylog info "Patching ManagementCluster to enable AI features" 1>&2
-  decho $lf_tracelevel "$MY_CLUSTER_COMMAND -n ${VAR_APIC_NAMESPACE} patch ManagementCluster ${VAR_APIC_INSTANCE_NAME}-mgmt --type=merge --patch ..."
+
+  local jsonpayload=$(jq -n \
+    --arg analyticsRefName "${VAR_APIC_INSTANCE_NAME}-a7s" \
+    --arg analyticsRefNamespace "$VAR_APIC_NAMESPACE" \
+    '{spec:{ai:{enabled:true,apiAgent:{enabled:true,codegenEnabled:true,rationalizationEnabled:true,analyticsRef:{name:$analyticsRefName,namespace:$analyticsRefNamespace}}}}}')
+
+  decho $lf_tracelevel "jsonpayload: ${jsonpayload}"
+
+  decho $lf_tracelevel "$MY_CLUSTER_COMMAND -n ${VAR_APIC_NAMESPACE} patch ManagementCluster ${VAR_APIC_INSTANCE_NAME}-mgmt --type=merge --patch jsonpayload"
   $MY_CLUSTER_COMMAND -n "${VAR_APIC_NAMESPACE}" patch ManagementCluster "${VAR_APIC_INSTANCE_NAME}-mgmt" \
     --type=merge \
-    --patch "{\"spec\":{\"ai\":{\"enabled\":true,\"apiAgent\":{\"enabled\":true,\"codegenEnabled\":true,\"rationalizationEnabled\":true,\"analyticsRef\":{\"name\":\"${VAR_APIC_INSTANCE_NAME}-a7s\",\"namespace\":\"${VAR_APIC_NAMESPACE}\"}}}}}"
+    --patch "$jsonpayload"
 
   # CMS Portal service creation
   local lf_cms_portal_name="cms-api-portal-service"
@@ -764,7 +789,7 @@ function create_topology() {
       --arg endpoint_tls_client_profile_url "$cmsPortalClientDefaultTLS" \
 	    '{name:$name,title:$title,summary:$summary,runtime_name:$runtime_name,portal_service_type:$portal_service_type,communication_kind:"external",endpoint:$endpoint,endpoint_tls_client_profile_url:$endpoint_tls_client_profile_url,web_endpoint_base:$web_endpoint_base,visibility:{group_urls:null,org_urls:null,type:"public"}}')
 
-    decho $lf_tracelevel "jsonpayload: $jsonpayload" 1>&2 
+    decho $lf_tracelevel "jsonpayload: ${jsonpayload}"
 
     lf_cms_portal=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/portal-services"\
       -H "Accept: application/json" \
@@ -798,7 +823,7 @@ function create_topology() {
   -H 'Accept: application/json' \
   -H 'Connection: keep-alive');
 
-  lf_nano_gtw_url=$(printf '%s\n' "$lf_nano_gtw_url" | jq -r '.url // empty')wmapigateway-mgmt-client
+  lf_nano_gtw_url=$(printf '%s\n' "$lf_nano_gtw_url" | jq -r '.url // empty')
 
   if [ -z "$lf_nano_gtw_url" ] || [ "$lf_nano_gtw_url" = "null" ]; then
     mylog info "Create DataPower Nano Gateway Service" 1>&2
@@ -839,7 +864,7 @@ function create_topology() {
       --arg integration_url "$ngw_integration_url" \
     '{name: $name,title: $title,gateway_service_type: $gateway_service_type,runtime_name: $runtime_name,summary: $summary,communication_kind: "external",endpoint: $endpoint,api_endpoint_base: $api_endpoint_base,communication_kind: "external",tls_client_profile_url: $tls_client_profile_url,visibility: {type: "public"},sni: [{host: "*",tls_server_profile_url: $tls_server_profile_url}],integration_url: $integration_url}')
 
-    decho $lf_tracelevel "jsonpayload: $jsonpayload"
+    decho $lf_tracelevel "jsonpayload: ${jsonpayload}"
 
     lf_nano_gtw=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services" \
     -H "Accept: application/json" \
@@ -886,7 +911,7 @@ function create_topology() {
     local lf_wms_gtw_title="wMs API Gateway"
     local lf_wms_gtw_summary="webMethods API Gateway"
 
-    local lf_wms_gtw_client_tls_name="wmapigateway-mgmt-client"
+    local lf_wms_gtw_client_tls_name="wmapigateway-mgmt-client-default"
     wmsGatewayClientDefaultTLS=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-client-profiles/${lf_wms_gtw_client_tls_name}" \
     -H "Authorization: Bearer $access_token" \
     -H 'Accept: application/json' --compressed | jq '.results[]| .url' | sed -e s/\"//g );
@@ -897,6 +922,12 @@ function create_topology() {
     -H "Authorization: Bearer $access_token" \
     -H 'Accept: application/json' --compressed | jq '.results[]| .url' | sed -e s/\"//g );
     decho $lf_tracelevel "wmsGatewayServerDefaultTLS: $wmsGatewayServerDefaultTLS"
+
+
+    local integration_url=$(curl -sk "${PLATFORM_API_URL}api/cloud/integrations" \
+    -H "Authorization: Bearer $access_token" \
+    -H 'Accept: application/json' --compressed | jq -r '.results[] | select(.integration_type=="gateway_service" and .name=="wm-api-gateway")| .url');
+    decho $lf_tracelevel "integration_url: $integration_url"
 
     local jsonpayload=$(jq -n \
       --arg name "$lf_wms_gtw_name" \
@@ -909,7 +940,8 @@ function create_topology() {
       --arg api_endpoint_base "https://${EP_WM_API_GW}" \
       --arg tls_client_profile_url "${wmsGatewayClientDefaultTLS}" \
       --arg tls_server_profile_url "${wmsGatewayServerDefaultTLS}" \
-  	'{gateway_service_type:$gateway_service_type,name:$name,title:$title,runtime_name:$runtime_name,runtime_id:$runtime_id,summary:$summary,endpoint:$endpoint,api_endpoint_base:$api_endpoint_base,communication_kind:"external",tls_client_profile_url:$tls_client_profile_url,visibility:{type:"public"},sni:[{host:"*",tls_server_profile_url:$tls_server_profile_url}]}')
+      --arg integration_url "$integration_url" \
+  	'{gateway_service_type:$gateway_service_type,name:$name,title:$title,runtime_name:$runtime_name,runtime_id:$runtime_id,summary:$summary,endpoint:$endpoint,api_endpoint_base:$api_endpoint_base,communication_kind:"external",communication_to_analytics_with_jwt: false,tls_client_profile_url:$tls_client_profile_url,visibility:{type:"public"},sni:[{host:$api_endpoint_base,tls_server_profile_url:$tls_server_profile_url}],integration_url:$integration_url}')
 
     decho $lf_tracelevel  "jsonpayload: $jsonpayload"
 
@@ -957,7 +989,7 @@ function create_topology() {
     local lf_dev_prtl_title="wMs Dev Portal"
     local lf_dev_prtl_summary="webMethods Developer Portal"
 
-    local lf_dev_prtl_tls_name="devportal-admin-client"
+    local lf_dev_prtl_tls_name="devportal-admin-client-default"
     devPortalClientDefaultTLS=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-client-profiles/${lf_dev_prtl_tls_name}" \
     -H "Authorization: Bearer $access_token" \
     -H 'Accept: application/json' --compressed | jq '.results[]| .url' | sed -e s/\"//g );
@@ -981,7 +1013,7 @@ function create_topology() {
       --arg endpoint_tls_client_profile_url "${devPortalClientDefaultTLS}" \
       '{name:$name,title:$title,summary:$summary,type:"portal_service",portal_service_type:$portal_service_type,integration_url:$integration_url,runtime_name: $runtime_name,runtime_id: $runtime_id,communication_kind:"external",endpoint:$endpoint,web_endpoint_base:$web_endpoint_base,endpoint_tls_client_profile_url:$endpoint_tls_client_profile_url,visibility:{type:"public", group_urls: null, org_urls: null}}')
 
-    decho $lf_tracelevel "jsonpayload: $jsonpayload" 1>&2 
+    decho $lf_tracelevel "jsonpayload: ${jsonpayload}"
 
     lf_dev_prtl_url=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/portal-services" \
     -H "Accept: application/json" \
@@ -1189,7 +1221,6 @@ function configureAIAgent() {
 
   # Configure the AI Agent for VS Code extension with watsonx.ai settings
   # host, credential (token) and project
-
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
@@ -1466,7 +1497,9 @@ function apic_run_all () {
 
   update_manager_lur
 
-  create_topology 
+  create_topology
+
+  exit 1
 
   replace_dp_gtw_cert
 

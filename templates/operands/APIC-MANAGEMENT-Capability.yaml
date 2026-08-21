@@ -1,12 +1,8 @@
 apiVersion: management.apiconnect.ibm.com/v1beta1
 kind: ManagementCluster
 metadata:
-  labels:
-    app.kubernetes.io/instance: management
-    app.kubernetes.io/managed-by: ibm-apiconnect
-    app.kubernetes.io/name: ${VAR_APIC_INSTANCE_NAME}
   annotations:
-    apiconnect-operator/cp4i: "false"    
+    apiconnect-operator/cp4i: "false"
   name: ${VAR_APIC_INSTANCE_NAME}-mgmt
   namespace: ${VAR_APIC_NAMESPACE}
 spec:
@@ -73,25 +69,32 @@ spec:
   consumerCatalogEndpoint:
     annotations:
       cert-manager.io/issuer: ingress-issuer
-    hosts: 
+      haproxy.router.openshift.io/timeout: 240s
+    hosts:
     - name: consumer-catalog.${STACK_HOST}
       secretName: consumer-catalog-endpoint
   databaseVolumeClaimTemplate:
     storageClassName: ${OCP_BLOCK_STORAGE}
+  databaseBackup:
+    protocol: local
+    repoRetentionFull: 14
+    schedule: 0 0 1 * * *
   microServiceSecurity: certManager
   certManagerIssuer:
-    name: selfsigning-issuer
     kind: Issuer
+    name: selfsigning-issuer
   license:
     accept: true
     use: nonproduction
     license: ${MY_APIC_LIC}
     metric: ${MY_APIC_METRIC}
+  transferAdvisor:
+    enabled: true
   governance:
     enabled: true
   discovery:
     enabled: true
     proxyCollectorEnabled: true
     tablespaceDbVolumeClaimTemplate:
-      storageClassName: ocs-external-storagecluster-ceph-rbd
+      storageClassName: ${OCP_BLOCK_STORAGE}
       volumeSize: 25Gi

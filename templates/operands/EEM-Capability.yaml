@@ -16,7 +16,7 @@ spec:
     authConfig:
       authType: $MY_EEM_AUTH_TYPE
     storage: 
-      storageClassName: $MY_FILE_STORAGE_CLASS 
+      storageClassName: ${MY_FILE_STORAGE_CLASS} 
       type: persistent-claim
     template:
       pod:

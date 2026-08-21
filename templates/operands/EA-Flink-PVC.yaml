@@ -9,4 +9,4 @@ spec:
   resources:
     requests:
       storage: 20Gi
-  storageClassName: $MY_FILE_STORAGE_CLASS
+  storageClassName: ${MY_FILE_STORAGE_CLASS}

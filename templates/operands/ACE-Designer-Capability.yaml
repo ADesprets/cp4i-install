@@ -12,7 +12,7 @@ spec:
     storage:
       size: 10Gi
       type: persistent-claim
-      class: $OCP_BLOCK_STORAGE
+      class: ${OCP_BLOCK_STORAGE}
     replicas: 1
   designerMappingAssist:
     enabled: true
@@ -20,7 +20,7 @@ spec:
       schedule: Every 15 days
       storage:
         type: persistent-claim
-        class: $MY_FILE_STORAGE_CLASS
+        class: ${MY_FILE_STORAGE_CLASS}
       useIncrementalLearning: true
   designerFlowsOperationMode: local
   switchServer:

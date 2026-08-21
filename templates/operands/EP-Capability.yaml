@@ -15,4 +15,4 @@ spec:
       authType: $MY_EP_AUTH_TYPE
     storage:
       type: persistent-claim
-      storageClassName: $MY_FILE_STORAGE_CLASS
+      storageClassName: ${MY_FILE_STORAGE_CLASS}

@@ -42,7 +42,7 @@ spec:
       requests:
         cpu: 500m
     storage:
-      defaultClass: $OCP_BLOCK_STORAGE
+      defaultClass: ${OCP_BLOCK_STORAGE}
       queueManager:
         type: persistent-claim
         size: 2Gi

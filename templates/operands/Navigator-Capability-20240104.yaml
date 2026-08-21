@@ -16,5 +16,5 @@ spec:
 #Setting [spec.storage] is not needed and is not used by any resource for version [2023.4.1-0] of the Platform UI. 
 #Remove the [storage] section from the spec to remove this warning.
 #  storage:
-#    class: $MY_FILE_STORAGE_CLASS
+#    class: ${MY_FILE_STORAGE_CLASS}
   version: $MY_NAVIGATOR_VERSION

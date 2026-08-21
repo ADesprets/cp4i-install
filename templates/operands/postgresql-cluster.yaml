@@ -48,7 +48,7 @@ spec:
             incremental: "0 */8 * * *"
           volume:
             volumeClaimSpec:
-              storageClassName: $MY_FILE_STORAGE_CLASS
+              storageClassName: ${MY_FILE_STORAGE_CLASS}
               accessModes: [ReadWriteMany]
               resources:
                 requests:
@@ -74,7 +74,7 @@ spec:
     - name: instance1
       replicas: 3
       dataVolumeClaimSpec:
-        storageClassName: $OCP_BLOCK_STORAGE
+        storageClassName: ${OCP_BLOCK_STORAGE}
         accessModes: [ReadWriteOnce]
         resources:
           requests:

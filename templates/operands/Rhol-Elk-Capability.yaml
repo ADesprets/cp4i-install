@@ -19,7 +19,7 @@ spec:
     elasticsearch:
       nodeCount: 3 
       storage:
-        storageClassName: $OCP_BLOCK_STORAGE
+        storageClassName: ${OCP_BLOCK_STORAGE}
         size: 200G
       resources: 
           limits:

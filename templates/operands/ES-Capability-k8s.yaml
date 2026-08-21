@@ -47,7 +47,7 @@ spec:
             name: ${VAR_ES_METRICS_CM}
       storage:
         type: persistent-claim
-        class: $OCP_BLOCK_STORAGE
+        class: ${OCP_BLOCK_STORAGE}
         size: 20Gi
     zookeeper:
       replicas: 1
@@ -59,7 +59,7 @@ spec:
             name: ${VAR_ES_METRICS_CM}
       storage:
         type: persistent-claim
-        class: $OCP_BLOCK_STORAGE
+        class: ${OCP_BLOCK_STORAGE}
         size: 20Gi
   adminApi: {}
   adminUI:

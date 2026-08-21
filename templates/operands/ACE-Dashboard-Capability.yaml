@@ -37,6 +37,6 @@ spec:
   version: $MY_ACE_VERSION
   storage:
     size: 5Gi
-    class: $MY_FILE_STORAGE_CLASS
+    class: ${MY_FILE_STORAGE_CLASS}
     type: persistent-claim
   replicas: 2

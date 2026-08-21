@@ -10,7 +10,7 @@ spec:
     use: $MY_MSGSRV_LIC_USAGE
   queueManager:
     storage:
-      defaultClass: $OCP_BLOCK_STORAGE
+      defaultClass: ${OCP_BLOCK_STORAGE}
     availability:
       type: SingleInstance
   version: $MY_MSGSRV_VERSION

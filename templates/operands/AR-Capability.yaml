@@ -12,9 +12,9 @@ spec:
   replicas: 1
   storage:
     assetDataVolume:
-      class: $MY_FILE_STORAGE_CLASS
+      class: ${MY_FILE_STORAGE_CLASS}
     couchVolume:
-      class: $OCP_BLOCK_STORAGE
+      class: ${OCP_BLOCK_STORAGE}
   version: $MY_ASSETREPO_VERSION
   designerAIFeatures:
     enabled: true

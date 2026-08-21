@@ -73,9 +73,9 @@ spec:
     storage:
       queueManager:
         type: persistent-claim
-        class: $OCP_BLOCK_STORAGE
+        class: ${OCP_BLOCK_STORAGE}
         size: 2Gi
-      defaultClass: $OCP_BLOCK_STORAGE
+      defaultClass: ${OCP_BLOCK_STORAGE}
   template:
     pod:
       containers:
