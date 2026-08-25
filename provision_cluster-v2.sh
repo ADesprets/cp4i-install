@@ -1339,6 +1339,11 @@ function install_nano_gateway() {
       fi
     fi
 
+    # Patch ingress controller to allow wildcard usage, needed for Nano gateway
+    # TODO Check if it has not been done yet
+    $MY_CLUSTER_COMMAND patch ingresscontroller/default -n openshift-ingress-operator --type=merge -p "{ \"spec\": { \"routeAdmission\": { \"wildcardPolicy\": \"WildcardsAllowed\" } } }"
+    $MY_CLUSTER_COMMAND rollout status deployment/router-default -n openshift-ingress
+
     mylog warn "nano gateway CRDs and operators are local files that needs to be updated" 1>&2
     # Installation of the nano gateway CRDs
     mylog info "Create nano gateway CRDs" 1>&2
@@ -1437,7 +1442,7 @@ function install_apic() {
     # Install operators for DataPower gateway and nano gateway
     if $INSTALL_OVERWRITE; then
       install_datapower_gateway
-      # install_nano_gateway TODO NGW
+      install_nano_gateway
     else
       mylog warn "Skipping installation of DataPower gateway and nano gateway operators because INSTALL_OVERWRITE is set to false" 1>&2
     fi
@@ -1481,8 +1486,9 @@ function install_apic() {
       mylog info "Creating APIC GatewayCluster" 1>&2
       create_operand_instance "GatewayCluster" "${VAR_APIC_INSTANCE_NAME}-gwv6" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-GATEWAY-Capability.yaml" "$VAR_APIC_NAMESPACE" "{.status.phase}" "Running"
       # Nano Gateway
+      mylog info "Creating APIC NanoGatewayCluster" 1>&2
       export VAR_REDIS_HOST=valkey.${VAR_VALKEY_NAMESPACE}.svc.cluster.local
-      # toto create_operand_instance "NanoGatewayCluster" "ngw" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-NANOGATEWAY-Capability.yaml" "$VAR_NANO_GATEWAY_NAMESPACE" "{.status.phase}" "Running"
+      create_operand_instance "NanoGatewayCluster" "ngw" "${MY_OPERANDSDIR}" "${MY_APIC_WORKINGDIR}" "APIC-NANOGATEWAY-Capability.yaml" "$VAR_NANO_GATEWAY_NAMESPACE" "{.status.phase}" "Running"
       unset VAR_REDIS_HOST
       # WMAPIGatewayCluster
       mylog info "Creating APIC WMAPIGatewayCluster" 1>&2

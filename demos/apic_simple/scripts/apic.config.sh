@@ -814,7 +814,7 @@ function create_topology() {
   fi
 
   # Create a TLS Profile for the Nano gateway
-  # create_nano_gateway_tls_profile
+  create_nano_gateway_tls_profile
 
   local lf_nano_gtw_name="datapower-nano-gateway"
   local lf_nano_gtw_url=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services/${lf_nano_gtw_name}?fields=url" \
@@ -832,7 +832,7 @@ function create_topology() {
     local lf_nano_gtw_title="DataPower Nano Gateway"
     local lf_nano_gtw_summary="DataPower Nano Gateway"
 
-    local lf_nano_gtw_client_tls_name="datapower-nano-gateway-mgmt-client"
+    local lf_nano_gtw_client_tls_name="datapower-nano-gateway-mgmt-client-default"
     nanoGatewayClientDefaultTLS=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-client-profiles/${lf_nano_gtw_client_tls_name}" \
     -H "Authorization: Bearer $access_token" \
     -H 'Accept: application/json' --compressed | jq '.results[]| .url' | sed -e s/\"//g );
@@ -1498,8 +1498,6 @@ function apic_run_all () {
   update_manager_lur
 
   create_topology
-
-  exit 1
 
   replace_dp_gtw_cert
 

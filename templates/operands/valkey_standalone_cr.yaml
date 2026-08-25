@@ -31,4 +31,4 @@ spec:
     cert: "tls.crt"
     key: "tls.key"
     secret:
-      secretName: "${VAR_NANO_GATEWAY_NAMESPACE}-valkey-server-secret"
+      secretName: "${VAR_NANO_GATEWAY_NAMESPACE}-valkey-server"
