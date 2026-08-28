@@ -380,7 +380,7 @@ function Get_APIC_Infos() {
 
   if [ $(echo $cmToken | jq .status ) = "401" ] ; then
     mylog error "Error with login -> $cmToken"
-    mylog warning "Probably don't need to change password"
+    mylog warn "Probably don't need to change password"
   elif [ $(echo $cmToken | jq .access_token) != "null" ]
     then
       # echo "Try to Change password"
@@ -544,7 +544,7 @@ cmToken=$(curl -sk -X POST "${PLATFORM_API_URL}api/token" \
 
 if [ $(echo $cmToken | jq .status ) = "401" ] ; then
   mylog error "Error with login -> $cmToken"
-  mylog warning "Probably don't need to change password"
+  mylog warn "Probably don't need to change password"
 elif [ $(echo $cmToken | jq .access_token) != "null" ]
   then
     # echo "Try to Change password"

@@ -50,7 +50,7 @@ function create_mail_server() {
   decho $lf_tracelevel "mailServerUrl: ${mailServerUrl}"
 
   # No need to check, it is a modification (PUT)
-  decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/cloud/settings\" -X PUT -H \"Accept: application/json\" -H \"authorization: Bearer \$AT\" -H \"content-type: application/json\" --data \"{\\\"mail_server_url\\\":${mailServerUrl},\\\"email_sender\\\":{\\\"name\\\":\\\"APIC Administrator\\\",\\\"address\\\":\\\"$APIC_ADMIN_EMAIL\\\"}}\""
+  decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/cloud/settings\" -X PUT -H \"Accept: application/json\" -H \"Authorization: Bearer \$AT\" -H \"Content-Type: application/json\" --data \"{\\\"mail_server_url\\\":${mailServerUrl},\\\"email_sender\\\":{\\\"name\\\":\\\"APIC Administrator\\\",\\\"address\\\":\\\"$APIC_ADMIN_EMAIL\\\"}}\""
   setReplyTo=$(curl -sk "${PLATFORM_API_URL}api/cloud/settings"\
   -X PUT\
   -H "Accept: application/json"\
@@ -264,7 +264,7 @@ function upload_projects() {
       fi
     done
   else
-    mylog warning "Projects directory not found: ${lf_projects_dir}" 1>&2
+    mylog warn "Projects directory not found: ${lf_projects_dir}" 1>&2
   fi
   
   trace_out $lf_tracelevel ${FUNCNAME[0]}
@@ -297,7 +297,7 @@ function create_nano_gateway_tls_profile() {
   
   local lf_ks_name="ngw-server-keystore"
 
-  decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/keystores/${lf_ks_name}?fields=url\" -H \"Accept: application/json\" -H \"authorization: Bearer \$AT\" -H \"content-type: application/json\""
+  decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/keystores/${lf_ks_name}?fields=url\" -H \"Accept: application/json\" -H \"Authorization: Bearer \$AT\" -H \"Content-Type: application/json\""
   local lf_keystore_url=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/keystores/${lf_ks_name}?fields=url" \
   -H "Accept: application/json" \
   -H "authorization: Bearer $access_token" \
@@ -319,7 +319,7 @@ function create_nano_gateway_tls_profile() {
     
     # decho $lf_tracelevel "The content of the keystore to create is: $lf_ks"
 
-    decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/keystores\" -H \"Accept: application/json\" -H \"authorization: Bearer \$AT\" -H \"content-type: application/json\" --data-raw \"{\\\"name\\\":\\\"${lf_ks_name}\\\",\\\"title\\\":\\\"${lf_ks_title}\\\",\\\"summary\\\":\\\"${lf_ks_summary}\\\",\\\"keystore\\\":\\\"<lf_ks value>\\\"}\""
+    decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/keystores\" -H \"Accept: application/json\" -H \"Authorization: Bearer \$AT\" -H \"Content-Type: application/json\" --data-raw \"{\\\"name\\\":\\\"${lf_ks_name}\\\",\\\"title\\\":\\\"${lf_ks_title}\\\",\\\"summary\\\":\\\"${lf_ks_summary}\\\",\\\"keystore\\\":\\\"<lf_ks value>\\\"}\""
     keystore=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/keystores" \
       -H "content-type: application/json" \
       -H "authorization: Bearer $access_token" \
@@ -341,7 +341,7 @@ function create_nano_gateway_tls_profile() {
   # Then we need to create the TLS server profile used for the gateway endpoint to use this new keystore
   local lf_sp_name="nano-gateway-tls-server-profile"
 
-  decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles/${lf_sp_name}?fields=url\" -H \"Accept: application/json\" -H \"authorization: Bearer \$AT\" -H \"content-type: application/json\""
+  decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles/${lf_sp_name}?fields=url\" -H \"Accept: application/json\" -H \"Authorization: Bearer \$AT\" -H \"Content-Type: application/json\""
   local lf_tls_server_profile_url=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles/${lf_sp_name}?fields=url" \
   -H "Accept: application/json" \
   -H "authorization: Bearer $access_token" \
@@ -365,7 +365,7 @@ function create_nano_gateway_tls_profile() {
 
     decho $lf_tracelevel "jsonpayload: ${jsonpayload}"
 
-    decho $lf_tracelevel "curl -skv \"${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles/${lf_sp_name}?fields=url\" -H \"Accept: application/json\" -H \"authorization: Bearer \$AT\" -H \"content-type: application/json\"  --data-raw \"jsonpayload\""
+    decho $lf_tracelevel "curl -skv \"${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles/${lf_sp_name}?fields=url\" -H \"Accept: application/json\" -H \"Authorization: Bearer \$AT\" -H \"Content-Type: application/json\"  --data-raw \"jsonpayload\""
     lf_tls_server_profile=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles" \
       -H "Authorization: Bearer $access_token" \
       -H "Content-Type: application/json" \
@@ -393,7 +393,7 @@ function replace_dp_gtw_cert() {
 
   local lf_ks_name="datapower-gateway-server-keystore"
 
-  decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/keystores/${lf_ks_name}?fields=url\" -H \"Accept: application/json\" -H \"authorization: Bearer \$AT\" -H \"content-type: application/json\""
+  decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/keystores/${lf_ks_name}?fields=url\" -H \"Accept: application/json\" -H \"Authorization: Bearer \$AT\" -H \"Content-Type: application/json\""
   local lf_keystore_url=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/keystores/${lf_ks_name}?fields=url" \
   -H "Accept: application/json" \
   -H "authorization: Bearer $access_token" \
@@ -414,7 +414,7 @@ function replace_dp_gtw_cert() {
     local lf_ks="${lf_cert}${lf_ca}${lf_key}"
     # decho $lf_tracelevel "The content of the keystore to create is: $lf_ks"
 
-    decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/keystores\" -H \"Accept: application/json\" -H \"authorization: Bearer \$AT\" -H \"content-type: application/json\" --data-raw \"{\\\"name\\\":\\\"${lf_ks_name}\\\",\\\"title\\\":\\\"${lf_ks_title}\\\",\\\"summary\\\":\\\"${lf_ks_summary}\\\",\\\"keystore\\\":\\\"<value>\\\"}\""
+    decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/keystores\" -H \"Accept: application/json\" -H \"Authorization: Bearer \$AT\" -H \"Content-Type: application/json\" --data-raw \"{\\\"name\\\":\\\"${lf_ks_name}\\\",\\\"title\\\":\\\"${lf_ks_title}\\\",\\\"summary\\\":\\\"${lf_ks_summary}\\\",\\\"keystore\\\":\\\"<value>\\\"}\""
     keystore=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/keystores" \
       -H "content-type: application/json" \
       -H "authorization: Bearer $access_token" \
@@ -433,7 +433,7 @@ function replace_dp_gtw_cert() {
   # Then we need to create the TLS server profile used for the gateway endpoint to use this new keystore
   local lf_sp_name="datapower-gateway-tls-server-profile"
 
-  decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles/${lf_sp_name}?fields=url\" -H \"Accept: application/json\" -H \"authorization: Bearer \$AT\" -H \"content-type: application/json\""
+  decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles/${lf_sp_name}?fields=url\" -H \"Accept: application/json\" -H \"Authorization: Bearer \$AT\" -H \"Content-Type: application/json\""
   local lf_tls_server_profile_url=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles/${lf_sp_name}?fields=url" \
   -H "Accept: application/json" \
   -H "authorization: Bearer $access_token" \
@@ -457,7 +457,7 @@ function replace_dp_gtw_cert() {
 
     decho $lf_tracelevel "jsonpayload: ${jsonpayload}"
 
-    decho $lf_tracelevel "curl -skv \"${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles/${lf_sp_name}?fields=url\" -H \"Accept: application/json\" -H \"authorization: Bearer \$AT\" -H \"content-type: application/json\"  --data-raw \"jsonpayload\""
+    decho $lf_tracelevel "curl -skv \"${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles/${lf_sp_name}?fields=url\" -H \"Accept: application/json\" -H \"Authorization: Bearer \$AT\" -H \"Content-Type: application/json\"  --data-raw \"jsonpayload\""
     lf_tls_server_profile=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles" \
       -H "Authorization: Bearer $access_token" \
       -H "Content-Type: application/json" \
@@ -483,7 +483,7 @@ function replace_dp_gtw_cert() {
 
   decho $lf_tracelevel "jsonpayload: ${jsonpayload}"
 
-  decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services/${lf_dp_name}\" -X PATCH -H \"Accept: application/json\" -H \"authorization: Bearer \$AT\" -H \"content-type: application/json\"  --data-raw \"jsonpayload\""
+  decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services/${lf_dp_name}\" -X PATCH -H \"Accept: application/json\" -H \"Authorization: Bearer \$AT\" -H \"Content-Type: application/json\"  --data-raw \"jsonpayload\""
   lf_dp_gtw_service=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services/${lf_dp_name}" \
 	  -X PATCH \
     -H "Authorization: Bearer $access_token" \
@@ -572,7 +572,7 @@ function update_manager_lur() {
   decho $lf_tracelevel "No Parameters|"
 
   mylog info "Making the API Manager Local User Registry public" 1>&2
-  decho $lf_tracelevel "curl -sk -X PATCH \"${PLATFORM_API_URL}api/user-registries/admin/api-manager-lur\" -H \"Accept: application/json\" -H \"authorization: Bearer cm_token\" -H \"content-type: application/json\" --data-raw '{\"visibility\":{\"type\":\"public\"}}'"
+  decho $lf_tracelevel "curl -sk -X PATCH \"${PLATFORM_API_URL}api/user-registries/admin/api-manager-lur\" -H \"Accept: application/json\" -H \"Authorization: Bearer \$AT\" -H \"Content-Type: application/json\" --data-raw '{\"visibility\":{\"type\":\"public\"}}'"
   local lf_lur_update=$(curl -sk -X PATCH "${PLATFORM_API_URL}api/user-registries/admin/api-manager-lur" \
     -H "Accept: application/json" \
     -H "authorization: Bearer $access_token" \
@@ -652,9 +652,9 @@ function create_topology() {
 
     decho $lf_tracelevel "dpUrl: $dpUrl"
 
-    # Make it the default gateway service for catalogs
-    mylog info "Set gateway Service as default for catalogs" 1>&2
-    setGWdefault=$(curl -sk --request PUT "${PLATFORM_API_URL}api/cloud/settings" \
+    # Make the DataPower Gateway one of the default gateway service for catalogs at the cloud level
+    mylog info "Make the DataPower Gateway one of the default gateway service for catalogs at the cloud level" 1>&2
+    setDPGWdefault=$(curl -sk --request PUT "${PLATFORM_API_URL}api/cloud/settings" \
       -H "Authorization: Bearer $access_token" \
       -H 'Content-Type: application/json' \
       -H 'Accept: application/json' \
@@ -766,7 +766,6 @@ function create_topology() {
   -H 'Accept: application/json' \
   -H 'Connection: keep-alive');
 
-  lf_cms_portal_url=$(printf '%s\n' "$lf_cms_portal_url" | jq -r '.url // empty')
   if [ $(echo $lf_cms_portal_url | jq .status ) = "404" ] || [ -z "$lf_cms_portal_url" ] || [ "$lf_cms_portal_url" = "null" ]; then
     mylog info "Create CMS Portal Service" 1>&2
     local lf_cms_portal_type="portal_service"
@@ -801,6 +800,7 @@ function create_topology() {
     decho $lf_tracelevel "lf_cms_portal_url: $lf_cms_portal_url"
   else
     mylog info "CMS Portal service already exists, use it."       1>&2
+    lf_cms_portal_url=$(printf '%s\n' "$lf_cms_portal_url" | jq -r '.url // empty')
   fi
   decho $lf_tracelevel "lf_cms_portal_url: $lf_cms_portal_url"
 
@@ -877,7 +877,16 @@ function create_topology() {
     lf_nano_gtw_url=$(printf '%s\n' "$lf_nano_gtw" | jq -r '.url // empty')
 
     decho $lf_tracelevel "lf_nano_gtw_url: $lf_nano_gtw_url"
-  
+
+   # Make the DataPower Nano Gateway one of the default gateway service for catalogs at the cloud level
+    mylog info "Make the DataPower Nano Gateway one of the default gateway service for catalogs at the cloud level" 1>&2
+    setDPNGWdefault=$(curl -sk --request PUT "${PLATFORM_API_URL}api/cloud/settings" \
+      -H "Authorization: Bearer $access_token" \
+      -H 'Content-Type: application/json' \
+      -H 'Accept: application/json' \
+      -H 'Connection: keep-alive' \
+      --data "{\"gateway_service_default_urls\": [\"$dpUrl\", \"$lf_nano_gtw_url\"]}");
+
     mylog info "Associate Analytics Service with DataPower Nano gateway" 1>&2
     analytGwy=$(curl -sk -X PATCH \
       "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services/${lf_nano_gtw_name}" \
@@ -1040,12 +1049,12 @@ function create_catalog() {
 
 # decho $lf_tracelevel "url: ${PLATFORM_API_URL}api/orgs/$org_name/catalogs and token: $amToken"
 
-# Hard coded values
+# Hard coded values to create 3 catalogs on top of the default sandbox
 catalog_title=("Prod" "UAT" "QA")
 catalog_name=("prod" "uat" "qa")
 catalog_summary=("Production" "UAT" "Quality and Acceptance")
 
-  decho $lf_tracelevel "Interact with API Manager: curl -sk -X GET \"${PLATFORM_API_URL}api/orgs/$org_name/portal-services?fields=url\" -H \"Authorization: Bearer <amToken>\" -H 'accept: application/json' -H 'content-type: application/json' -H 'Connection: keep-alive'"
+  decho $lf_tracelevel "Interact with API Manager: curl -sk -X GET \"${PLATFORM_API_URL}api/orgs/$org_name/portal-services?fields=url\" -H \"Authorization: Bearer \$AT\" -H 'Accept: application/json' -H 'Content-Type: application/json' -H 'Connection: keep-alive'"
   portalServiceURL=$(curl -sk -X GET "${PLATFORM_API_URL}api/orgs/$org_name/portal-services?fields=url" \
     -H "Authorization: Bearer $amToken" \
     -H 'accept: application/json' \
@@ -1085,6 +1094,29 @@ for index in ${!catalog_name[@]}
        -H 'Connection: keep-alive' \
        --data-raw "{\"portal\": {\"endpoint\": \"https://$EP_PORTAL/$org_name/${catalog_name[$index]}\",\"portal_service_url\": \"$portalServiceURL\", \"type\": \"drupal\"},\"application_lifecycle\": {} }" | jq .portal.endpoint);
       # mylog info "Portal endpoint for: "${catalog_summary[$index]}": $res"
+
+      # Configure both default gateway services on this catalog
+      mylog info "Configure gateway services on catalog: ${catalog_name[$index]}" 1>&2
+
+      for lf_gw_svc_name in "api-gateway-service" "datapower-nano-gateway"; do
+        lf_gw_svc_url=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services/${lf_gw_svc_name}?fields=url" \
+          -H "Authorization: Bearer $access_token" \
+          -H 'accept: application/json' \
+          -H 'content-type: application/json' \
+          -H 'Connection: keep-alive' | jq -r '.url // empty')
+        decho $lf_tracelevel "lf_gw_svc_url (${lf_gw_svc_name}): $lf_gw_svc_url"
+        if [ -n "$lf_gw_svc_url" ] && [ "$lf_gw_svc_url" != "null" ]; then
+          lf_cat_gw_res=$(curl -sk -X POST "${catURL}/configured-gateway-services" \
+            -H "Authorization: Bearer $amToken" \
+            -H 'accept: application/json' \
+            -H 'content-type: application/json' \
+            -H 'Connection: keep-alive' \
+            --data-raw "{\"gateway_service_url\": \"$lf_gw_svc_url\"}")
+          decho $lf_tracelevel "configured-gateway-services (${lf_gw_svc_name}): $lf_cat_gw_res"
+        else
+          mylog warn "Gateway service ${lf_gw_svc_name} not found, skipping for catalog ${catalog_name[$index]}." 1>&2
+        fi
+      done
     done
   trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
@@ -1099,7 +1131,11 @@ function create_apic_resources() {
   local lf_cm_token=$1
   local lf_am_token=$2
   local org=$3
-  
+  local org_lower
+  org_lower=$(echo "$3" | tr '[:upper:]' '[:lower:]')
+
+  decho $lf_tracelevel "Parameters: \"$1\"|\"$2\"|\"$3\"|"
+    
   # Check if already created
   decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/user-registries/admin/url_registry?fields=url\" -H \"Authorization: Bearer cmtoken\" -H 'Accept: application/json'"
   local registryURLfakeAPI=$(curl -sk "${PLATFORM_API_URL}api/user-registries/admin/url_registry?fields=url" -H "Authorization: Bearer $lf_cm_token" -H 'Accept: application/json')
@@ -1117,7 +1153,7 @@ function create_apic_resources() {
     export APIC_EP_GTW=${gtw_url}
     adapt_file ${MY_APIC_SIMPLE_DEMODIR}resources/ ${MY_APIC_WORKINGDIR}resources/ AuthenticationURL_Registry_res.json
 
-    decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/user-registries\" -H 'accept: application/json' -H \"authorization: Bearer cm_token\" -H 'content-type: application/json' -H \"Connection: keep-alive\" --compressed --data-raw \"@${MY_APIC_WORKINGDIR}resources/AuthenticationURL_Registry_res.json\""
+    decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/user-registries\" -H 'Accept: application/json' -H \"Authorization: Bearer \$AT\" -H 'Content-Type: application/json' -H \"Connection: keep-alive\" --compressed --data-raw \"@${MY_APIC_WORKINGDIR}resources/AuthenticationURL_Registry_res.json\""
     registryURLfakeAPI=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/user-registries" \
       -H 'accept: application/json' \
       -H "authorization: Bearer $lf_cm_token" \
@@ -1129,33 +1165,39 @@ function create_apic_resources() {
     mylog info "URL Fake Authentication URL registry already exists, do not load it." 1>&2
   fi
 
-  # Get the url of the url registry in org
-  # TODO : process null case
-  lf_org=$APIC_PROVIDER_ORG
-  lf_urlregistryname=url_registry
-  lf_apicpath=api/user-registries/$lf_org/$lf_urlregistryname?fields=url
-  decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}${lf_apicpath}\" -H \"Authorization: Bearer $lf_am_token\" -H 'Accept: application/json' | jq -r .url"
-  local sandboxURLRegistries=$(curl -sk "${PLATFORM_API_URL}${lf_apicpath}" -H "Authorization: Bearer $lf_am_token" -H 'Accept: application/json' | jq -r .url )
-  decho $lf_tracelevel "sandboxURLRegistries: $sandboxURLRegistries"
+  # Get the URL of the url_registry defined in the Cloud Manager (admin org)
+  local lf_urlregistry_name="url_registry"
+  local lf_urlregistry_cm_url
+  lf_urlregistry_cm_url=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/user-registries/${lf_urlregistry_name}?fields=url" \
+    -H "Authorization: Bearer $lf_cm_token" \
+    -H 'Accept: application/json' | jq -r '.url // empty')
+  decho $lf_tracelevel "lf_urlregistry_cm_url: $lf_urlregistry_cm_url"
 
-  # Check if the registry has already been added
-  lf_apicpath="api/catalogs/$org/$catalog/configured-api-user-registries?fields=user_registry_url"
-  local sandboxCfgedRegistries=$(curl -sk "${PLATFORM_API_URL}${lf_apicpath}" -H "Authorization: Bearer $lf_am_token" -H 'Accept: application/json' | jq --arg ur "$sandboxCfgedRegistries" '.results[].user_registry_url | select(. == "$ur")')
-  decho $lf_tracelevel "sandboxCfgedRegistries: $sandboxCfgedRegistries"
-
-  export APIC_URL_REGISTRY=${sandboxURLRegistries}
-
-  # Add it if not already added TODO if
-  if [ 2 -gt 3 ]; then
-    lf_apicpath=api/catalogs/$org/$catalog/configured-api-user-registries
-    adapt_file ${MY_APIC_SIMPLE_DEMODIR}resources/ ${MY_APIC_WORKINGDIR}resources/ ConfiguredUserRegistry_res.json
-    curl -sk "${PLATFORM_API_URL}${lf_apicpath}" \
-      -H 'accept: application/json' \
-      -H "authorization: Bearer $lf_am_token" \
-      -H 'content-type: application/json' \
-      -H "Connection: keep-alive" \
-      --compressed \
-      --data-binary "@${MY_APIC_WORKINGDIR}resources/ConfiguredUserRegistry_res.json"
+  if [ -n "$lf_urlregistry_cm_url" ] && [ "$lf_urlregistry_cm_url" != "null" ]; then
+    # Configure the registry on each catalog in the provider org
+    for lf_cat_name in "sandbox" "prod" "uat" "qa"; do
+      decho $lf_tracelevel "Checking configured-api-user-registries for catalog: $lf_cat_name"
+      # Check if the registry is already configured on this catalog
+      local lf_already_set
+      lf_already_set=$(curl -sk "${PLATFORM_API_URL}api/catalogs/$org_lower/$lf_cat_name/configured-api-user-registries" \
+        -H "Authorization: Bearer $lf_am_token" \
+        -H 'Accept: application/json' | jq -r --arg url "$lf_urlregistry_cm_url" '.results[]?.user_registry_url | select(. == $url)')
+      decho $lf_tracelevel "lf_already_set (${lf_cat_name}): $lf_already_set"
+      if [ -z "$lf_already_set" ]; then
+        mylog info "Adding url_registry to configured-api-user-registries for catalog: $lf_cat_name" 1>&2
+        lf_reg_res=$(curl -sk -X POST "${PLATFORM_API_URL}api/catalogs/$org_lower/$lf_cat_name/configured-api-user-registries" \
+          -H "Authorization: Bearer $lf_am_token" \
+          -H 'accept: application/json' \
+          -H 'content-type: application/json' \
+          -H 'Connection: keep-alive' \
+          --data-raw "{\"user_registry_url\": \"$lf_urlregistry_cm_url\"}")
+        decho $lf_tracelevel "lf_reg_res (${lf_cat_name}): $lf_reg_res"
+      else
+        mylog info "url_registry already configured on catalog $lf_cat_name, skipping." 1>&2
+      fi
+    done
+  else
+    mylog warn "url_registry not found in Cloud Manager, skipping catalog user registry configuration." 1>&2
   fi
 
   # Check if the oauth provider has already been added
@@ -1210,6 +1252,101 @@ function create_apic_resources() {
   trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
+
+################################################
+# Create a Keycloak OIDC user registry in APIC Cloud Manager
+# Uses the Keycloak OIDC integration to allow APIC users to authenticate via Keycloak.
+# Requires Keycloak to be running and the APIC client to be registered in Keycloak.
+# Variables used:
+#   MY_KEYCLOAK_CP4I_REALM, MY_KEYCLOAK_APIC_CLIENT_ID : from cp4i-constants.properties
+#   VAR_KEYCLOAK_NAMESPACE                              : from cp4i-variables.properties
+#   access_token                                        : Cloud Manager token (set by create_cm_token)
+function create_keycloak_oidc_registry() {
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  mylog info "Creating/checking Keycloak OIDC user registry in APIC" 1>&2
+
+  local lf_registry_name="keycloak-oidc"
+
+  # Check if the registry already exists
+  decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/user-registries/admin/${lf_registry_name}?fields=url\" -H \"Authorization: Bearer \$AT\" -H 'Accept: application/json'"
+  local lf_registry_url
+  lf_registry_url=$(curl -sk "${PLATFORM_API_URL}api/user-registries/admin/${lf_registry_name}?fields=url" \
+    -H "Authorization: Bearer $access_token" \
+    -H "Accept: application/json")
+  decho $lf_tracelevel "lf_registry_url: $lf_registry_url"
+
+  local lf_status
+  lf_status=$(printf '%s\n' "$lf_registry_url" | jq -r '.status // empty')
+
+  if [[ "$lf_status" == "404" ]] || [[ -z "$lf_registry_url" ]] || [[ "$lf_registry_url" == "null" ]]; then
+    mylog info "Creating Keycloak OIDC user registry" 1>&2
+
+    # Get the OIDC integration URL
+    export APIC_OIDC_INTEGRATION_URL
+    APIC_OIDC_INTEGRATION_URL=$(curl -sk "${PLATFORM_API_URL}api/cloud/integrations/user-registry/oidc?fields=url" \
+      -H "Authorization: Bearer $access_token" \
+      -H "Accept: application/json" \
+      -H "Content-Type: application/json" | jq -r '.url // empty')
+    decho $lf_tracelevel "APIC_OIDC_INTEGRATION_URL: $APIC_OIDC_INTEGRATION_URL"
+
+    if [[ -z "$APIC_OIDC_INTEGRATION_URL" ]]; then
+      mylog error "Could not retrieve OIDC integration URL from APIC. Is the OIDC integration available?" 1>&2
+      trace_out $lf_tracelevel ${FUNCNAME[0]}
+      return 1
+    fi
+
+    # Resolve the Keycloak route host
+    export APIC_KEYCLOAK_HOST
+    APIC_KEYCLOAK_HOST=$($MY_CLUSTER_COMMAND -n "${VAR_KEYCLOAK_NAMESPACE}" get route keycloak-route -o jsonpath='{.spec.host}' 2>/dev/null)
+    if [[ -z "$APIC_KEYCLOAK_HOST" ]]; then
+      # Fallback: try the generic 'keycloak' route name used in ibm-common-services namespace
+      APIC_KEYCLOAK_HOST=$($MY_CLUSTER_COMMAND -n "${MY_COMMONSERVICES_NAMESPACE}" get route keycloak -o jsonpath='{.spec.host}' 2>/dev/null)
+    fi
+    decho $lf_tracelevel "APIC_KEYCLOAK_HOST: $APIC_KEYCLOAK_HOST"
+
+    if [[ -z "$APIC_KEYCLOAK_HOST" ]]; then
+      mylog error "Could not determine Keycloak host. Is Keycloak deployed?" 1>&2
+      trace_out $lf_tracelevel ${FUNCNAME[0]}
+      return 1
+    fi
+
+    # Retrieve the Keycloak client secret for the APIC client
+    export APIC_KEYCLOAK_CLIENT_SECRET
+    APIC_KEYCLOAK_CLIENT_SECRET=$($MY_CLUSTER_COMMAND -n "${VAR_KEYCLOAK_NAMESPACE}" get secret "${MY_KEYCLOAK_APIC_CLIENT_ID}-secret" \
+      -o jsonpath='{.data.secret}' 2>/dev/null | base64 --decode)
+    if [[ -z "$APIC_KEYCLOAK_CLIENT_SECRET" ]]; then
+      mylog warn "Keycloak client secret not found in secret '${MY_KEYCLOAK_APIC_CLIENT_ID}-secret'. Proceeding with empty secret (update manually if required)." 1>&2
+      APIC_KEYCLOAK_CLIENT_SECRET=""
+    fi
+
+    adapt_file "${MY_APIC_SIMPLE_DEMODIR}resources/" "${MY_APIC_WORKINGDIR}resources/" OIDC_Registry_res.json
+
+    decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/user-registries\" -H 'accept: application/json' -H \"authorization: Bearer \$AT\" -H 'content-type: application/json' --data-binary \"@${MY_APIC_WORKINGDIR}resources/OIDC_Registry_res.json\""
+    local lf_create_result
+    lf_create_result=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/user-registries" \
+      -H "accept: application/json" \
+      -H "authorization: Bearer $access_token" \
+      -H "content-type: application/json" \
+      --data-binary "@${MY_APIC_WORKINGDIR}resources/OIDC_Registry_res.json")
+    decho $lf_tracelevel "lf_create_result: $lf_create_result"
+
+    local lf_new_url
+    lf_new_url=$(printf '%s\n' "$lf_create_result" | jq -r '.url // empty')
+    if [[ -z "$lf_new_url" ]]; then
+      mylog error "Failed to create Keycloak OIDC user registry: $lf_create_result" 1>&2
+    else
+      mylog info "Keycloak OIDC user registry created: $lf_new_url" 1>&2
+    fi
+  else
+    mylog info "Keycloak OIDC user registry '${lf_registry_name}' already exists, skipping." 1>&2
+  fi
+
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+}
 
 ################################################
 # Configure the AI Agent for VS Code extension
@@ -1296,7 +1433,12 @@ function init_apic_variables() {
   # ngw-mgmt-endpoint
   EP_NANO_MGMT_GW=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "ngw-mgmt-endpoint" -o jsonpath="{.spec.host}")
   # ngw-nanogw
-  EP_NANO_GW=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "ngw-nanogw" -o jsonpath="{.spec.host}")
+  EP_NANO_GW=$($MY_CLUSTER_COMMAND -n ${apic_project} get NanoGatewayCluster ngw -o jsonpath="{.spec.gatewayDomain}")
+    # TODO Check if it is working with this call
+    # WRONG (old): oc -n iwhi-apic get route "ngw-nanogw" -o jsonpath="{.spec.host}"
+    # >>> wildcard.nanogw.apps.itz-c4h13x.hub04-lb.techzone.ibm.com
+    # OK oc -n iwhi-apic get NanoGatewayCluster ngw -o jsonpath="{.spec.gatewayDomain}"
+    # >>> nanogw.apps.itz-c4h13x.hub04-lb.techzone.ibm.com
   # cms portal-portal-director
   EP_PADMIN=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-ptl-portal-director" -o jsonpath="{.spec.host}")
   # cms portal-portal-web
@@ -1511,6 +1653,10 @@ function apic_run_all () {
   create_catalog "${APIC_PROVIDER_ORG}"
   
   create_apic_resources $access_token $amToken $APIC_PROVIDER_ORG
+
+  # toto Work in progress
+  # exit 1
+  create_keycloak_oidc_registry
 
   # Push API into draft
   apic_provider_org_lower=$(echo "$APIC_PROVIDER_ORG" | awk '{print tolower($0)}')
