@@ -10,7 +10,7 @@
     "native_provider": {
         "api": {
             "info": {
-                "description": "nativeprovider"
+                "description": "OAuth 2.0 Native provider provided by API Connect"
             },
             "x-ibm-configuration": {
                 "assembly": {

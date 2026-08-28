@@ -1509,9 +1509,9 @@ function mylog() {
   esac
   
   if [[ -z $lf_in_indent_level ]]; then
-    echo -e $w "$(tput setaf $c)$lf_spaces$p$2$s$(tput setaf 9)\t"
+    echo -e $w "$(tput setaf $c)$lf_spaces$p$2$s$(tput setaf 9)"
   else
-    echo -e $w "$(tput setaf $c)$p$2$s$(tput setaf 9)\t"
+    echo -e $w "$(tput setaf $c)$p$2$s$(tput setaf 9)"
   fi
 }
 

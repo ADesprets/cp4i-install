@@ -578,7 +578,7 @@ function update_manager_lur() {
     -H "authorization: Bearer $access_token" \
     -H "content-type: application/json" \
     --data-raw '{"visibility":{"type":"public"}}')
-  decho $lf_tracelevel "lf_lur_update: $lf_lur_update"
+  decho $lf_tracelevel "lf_lur_update: $(echo "$lf_lur_update" | jq -r '.visibility.type // .message // empty')"
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
@@ -1086,7 +1086,7 @@ for index in ${!catalog_name[@]}
       fi
 
       # TODO Check if we can skip this action if already done
-      mylog info "Create the portal site in Drupal for: "${catalog_summary[$index]}"" 1>&2
+      mylog info "Create the portal site in Drupal for: ${catalog_summary[$index]}" 1>&2
       res=$(curl -sk -X PUT "$catURL/settings" \
        -H "Authorization: Bearer $amToken" \
        -H 'accept: application/json' \
@@ -1095,7 +1095,7 @@ for index in ${!catalog_name[@]}
        --data-raw "{\"portal\": {\"endpoint\": \"https://$EP_PORTAL/$org_name/${catalog_name[$index]}\",\"portal_service_url\": \"$portalServiceURL\", \"type\": \"drupal\"},\"application_lifecycle\": {} }" | jq .portal.endpoint);
       # mylog info "Portal endpoint for: "${catalog_summary[$index]}": $res"
 
-      # Configure both default gateway services on this catalog
+      # Configure both default gateway services (DP et DP Nano) on this catalog
       mylog info "Configure gateway services on catalog: ${catalog_name[$index]}" 1>&2
 
       for lf_gw_svc_name in "api-gateway-service" "datapower-nano-gateway"; do
@@ -1128,12 +1128,87 @@ for index in ${!catalog_name[@]}
           mylog warn "Gateway service ${lf_gw_svc_name} not found, skipping for catalog ${catalog_name[$index]}." 1>&2
         fi
       done
+
+      # Configure the url_registry on this catalog
+      mylog info "Configure url_registry on catalog: ${catalog_name[$index]}" 1>&2
+
+      local lf_url_registry_url
+      decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/user-registries/${org_name}/url_registry?fields=url\" -H \"Authorization: Bearer \$AT\" -H 'Accept: application/json' -H 'Content-Type: application/json'"
+      lf_url_registry_url=$(curl -sk "${PLATFORM_API_URL}api/user-registries/${org_name}/url_registry?fields=url" \
+        -H "Authorization: Bearer $amToken" \
+        -H 'accept: application/json' \
+        -H 'content-type: application/json' \
+        -H 'Connection: keep-alive' | jq -r '.url // empty')
+      decho $lf_tracelevel "lf_url_registry_url: $lf_url_registry_url"
+
+      if [ -n "$lf_url_registry_url" ] && [ "$lf_url_registry_url" != "null" ]; then
+        # Check if already configured on this catalog
+        local lf_already_configured_reg
+        lf_already_configured_reg=$(curl -sk "${catURL}/configured-api-user-registries/url_registry?fields=url" \
+          -H "Authorization: Bearer $amToken" \
+          -H 'accept: application/json' \
+          -H 'content-type: application/json' \
+          -H 'Connection: keep-alive' | jq -r '.url // empty')
+        if [ -n "$lf_already_configured_reg" ] && [ "$lf_already_configured_reg" != "null" ]; then
+          mylog info "url_registry already configured on catalog ${catalog_name[$index]}, skipping." 1>&2
+        else
+          lf_cat_reg_res=$(curl -sk -X POST "${catURL}/configured-api-user-registries" \
+            -H "Authorization: Bearer $amToken" \
+            -H 'accept: application/json' \
+            -H 'content-type: application/json' \
+            -H 'Connection: keep-alive' \
+            --data-raw "{\"user_registry_url\": \"$lf_url_registry_url\"}")
+          decho $lf_tracelevel "configured-api-user-registries (url_registry): $(echo "$lf_cat_reg_res" | jq -r '.url // .message // empty')"
+        fi
+      else
+        mylog warn "url_registry not found in org ${org_name}, skipping for catalog ${catalog_name[$index]}." 1>&2
+      fi
+
+      # Configure the native oauth provider on this catalog
+      mylog info "Configure nativeprovider oauth on catalog: ${catalog_name[$index]}" 1>&2
+
+      local lf_oauth_provider_url
+      decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/${org_name}/oauth-providers/nativeprovider?fields=url\" -H \"Authorization: Bearer \$AT\" -H 'Accept: application/json' -H 'Content-Type: application/json'"
+      lf_oauth_provider_url=$(curl -sk "${PLATFORM_API_URL}api/orgs/${org_name}/oauth-providers/nativeprovider?fields=url" \
+        -H "Authorization: Bearer $amToken" \
+        -H 'accept: application/json' \
+        -H 'content-type: application/json' \
+        -H 'Connection: keep-alive' | jq -r '.url // empty')
+      decho $lf_tracelevel "lf_oauth_provider_url: $lf_oauth_provider_url"
+
+      if [ -n "$lf_oauth_provider_url" ] && [ "$lf_oauth_provider_url" != "null" ]; then
+        # Check if already configured on this catalog
+        local lf_already_configured_oauth
+        decho $lf_tracelevel "curl -sk \"${catURL}/configured-oauth-providers?fields=name,url\" -H \"Authorization: Bearer \$AT\" -H 'Accept: application/json'"
+        lf_already_configured_oauth=$(curl -sk "${catURL}/configured-oauth-providers?fields=name,url" \
+          -H "Authorization: Bearer $amToken" \
+          -H 'accept: application/json' \
+          -H 'content-type: application/json' \
+          -H 'Connection: keep-alive' | jq -r '.results[] | select(.name == "nativeprovider") | .url // empty')
+        decho $lf_tracelevel "lf_already_configured_oauth: $lf_already_configured_oauth"
+        if [ -n "$lf_already_configured_oauth" ] && [ "$lf_already_configured_oauth" != "null" ]; then
+          mylog info "nativeprovider oauth already configured on catalog ${catalog_name[$index]}, skipping." 1>&2
+        else
+          lf_cat_oauth_res=$(curl -sk -X POST "${catURL}/configured-oauth-providers" \
+            -H "Authorization: Bearer $amToken" \
+            -H 'accept: application/json' \
+            -H 'content-type: application/json' \
+            -H 'Connection: keep-alive' \
+            --data-raw "{\"oauth_provider_url\": \"$lf_oauth_provider_url\"}")
+          decho $lf_tracelevel "configured-oauth-providers (nativeprovider): $(echo "$lf_cat_oauth_res" | jq -r '.url // .message // empty')"
+        fi
+      else
+        mylog warn "nativeprovider oauth not found in org ${org_name}, skipping for catalog ${catalog_name[$index]}." 1>&2
+      fi
+
     done
   trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
 ################################################
-# Create resources
+# Create resources at the cloud manager level
+# Creates an URL Registry
+# Creates a native OAuth provider
 # @param lf_integration_url
 function create_apic_resources() {
   local lf_tracelevel=3
@@ -1147,7 +1222,7 @@ function create_apic_resources() {
 
   decho $lf_tracelevel "Parameters: \"$1\"|\"$2\"|\"$3\"|"
     
-  # Check if already created
+  # Create a URL Registry at the APIC Cloud scope
   decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/user-registries/admin/url_registry?fields=url\" -H \"Authorization: Bearer cmtoken\" -H 'Accept: application/json'"
   local registryURLfakeAPI=$(curl -sk "${PLATFORM_API_URL}api/user-registries/admin/url_registry?fields=url" -H "Authorization: Bearer $lf_cm_token" -H 'Accept: application/json')
   decho $lf_tracelevel "registryURLfakeAPI: $registryURLfakeAPI"
@@ -1176,42 +1251,7 @@ function create_apic_resources() {
     mylog info "URL Fake Authentication URL registry already exists, do not load it." 1>&2
   fi
 
-  # Get the URL of the url_registry defined in the Cloud Manager (admin org)
-  local lf_urlregistry_name="url_registry"
-  local lf_urlregistry_cm_url
-  lf_urlregistry_cm_url=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/user-registries/${lf_urlregistry_name}?fields=url" \
-    -H "Authorization: Bearer $lf_cm_token" \
-    -H 'Accept: application/json' | jq -r '.url // empty')
-  decho $lf_tracelevel "lf_urlregistry_cm_url: $lf_urlregistry_cm_url"
-
-  if [ -n "$lf_urlregistry_cm_url" ] && [ "$lf_urlregistry_cm_url" != "null" ]; then
-    # Configure the registry on each catalog in the provider org
-    for lf_cat_name in "sandbox" "prod" "uat" "qa"; do
-      decho $lf_tracelevel "Checking configured-api-user-registries for catalog: $lf_cat_name"
-      # Check if the registry is already configured on this catalog
-      local lf_already_set
-      lf_already_set=$(curl -sk "${PLATFORM_API_URL}api/catalogs/$org_lower/$lf_cat_name/configured-api-user-registries" \
-        -H "Authorization: Bearer $lf_am_token" \
-        -H 'Accept: application/json' | jq -r --arg url "$lf_urlregistry_cm_url" '.results[]?.user_registry_url | select(. == $url)')
-      decho $lf_tracelevel "lf_already_set (${lf_cat_name}): $lf_already_set"
-      if [ -z "$lf_already_set" ]; then
-        mylog info "Adding url_registry to configured-api-user-registries for catalog: $lf_cat_name" 1>&2
-        lf_reg_res=$(curl -sk -X POST "${PLATFORM_API_URL}api/catalogs/$org_lower/$lf_cat_name/configured-api-user-registries" \
-          -H "Authorization: Bearer $lf_am_token" \
-          -H 'accept: application/json' \
-          -H 'content-type: application/json' \
-          -H 'Connection: keep-alive' \
-          --data-raw "{\"user_registry_url\": \"$lf_urlregistry_cm_url\"}")
-        decho $lf_tracelevel "lf_reg_res (${lf_cat_name}): $lf_reg_res"
-      else
-        mylog info "url_registry already configured on catalog $lf_cat_name, skipping." 1>&2
-      fi
-    done
-  else
-    mylog warn "url_registry not found in Cloud Manager, skipping catalog user registry configuration." 1>&2
-  fi
-
-  # Check if the oauth provider has already been added
+  # Create a native oauth provider at the APIC Cloud scope
   lf_org=admin
   lf_oauthprovidername=nativeprovider
   lf_apicpath=api/orgs/$lf_org/oauth-providers/$lf_oauthprovidername?fields=url
@@ -1232,32 +1272,6 @@ function create_apic_resources() {
       --compressed \
       --data-binary "@${MY_APIC_WORKINGDIR}resources/NativeOAuthProvider_res.json" | jq .url)
     decho $lf_tracelevel "oauthProvider: $oauthProvider"
-  fi
-
-  # Get the url of the oauth provider in org
-  lf_org=APIC_PROVIDER_ORG
-  lf_apicpath=api/orgs/$lf_org/oauth-providers/$lf_oauthprovidername?fields=url
-  local oauthProviderURL=$(curl -sk "${PLATFORM_API_URL}${lf_apicpath}" -H "Authorization: Bearer $lf_am_token" -H 'Accept: application/json' | jq -r .url )
-  decho $lf_tracelevel "oauthProviderURL: $oauthProviderURL"
-
-  # Check if the oauth provider has already been added
-  lf_apicpath="api/catalogs/$org/$catalog/configured-oauth-providers?fields=user_registry_url"
-  local sandboxCfoauthProviderURL=$(curl -sk "${PLATFORM_API_URL}${lf_apicpath}" -H "Authorization: Bearer $lf_am_token" -H 'Accept: application/json' | jq --arg ur "$oauthProviderURL" '.results[].user_registry_url | select(. == "$ur")')
-  decho $lf_tracelevel "sandboxCfoauthProviderURL: $sandboxCfoauthProviderURL"
-
-  # Add it if not already added TODO if, important for idempotence  (hard coded for now)
-  if [ 2 -gt 3 ]; then
-    lf_org=APIC_PROVIDER_ORG
-    lf_apicpath=api/catalogs/$org/$catalog/configured-oauth-providers
-    export APIC_OAUTH_PROVIDER=$oauthProviderURL
-    adapt_file ${MY_APIC_SIMPLE_DEMODIR}resources/ ${MY_APIC_WORKINGDIR}resources/ ConfiguredOAuthProvider_res.json
-    curl -sk "${PLATFORM_API_URL}${lf_apicpath}" \
-      -H 'accept: application/json' \
-      -H "authorization: Bearer $lf_am_token" \
-      -H 'content-type: application/json' \
-      -H "Connection: keep-alive" \
-      --compressed \
-      --data-binary "@${MY_APIC_WORKINGDIR}resources/ConfiguredOAuthProvider_res.json"
   fi
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}
@@ -1661,9 +1675,9 @@ function apic_run_all () {
 
   # download_projects
 
-  create_catalog "${APIC_PROVIDER_ORG}"
-  
   create_apic_resources $access_token $amToken $APIC_PROVIDER_ORG
+
+  create_catalog "${APIC_PROVIDER_ORG}"
 
   # toto Work in progress
   exit 1
