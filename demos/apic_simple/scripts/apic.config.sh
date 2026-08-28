@@ -1099,20 +1099,31 @@ for index in ${!catalog_name[@]}
       mylog info "Configure gateway services on catalog: ${catalog_name[$index]}" 1>&2
 
       for lf_gw_svc_name in "api-gateway-service" "datapower-nano-gateway"; do
-        lf_gw_svc_url=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services/${lf_gw_svc_name}?fields=url" \
-          -H "Authorization: Bearer $access_token" \
+        lf_gw_svc_url=$(curl -sk "${PLATFORM_API_URL}api/orgs/${org_name}/gateway-services/${lf_gw_svc_name}?fields=url" \
+          -H "Authorization: Bearer $amToken" \
           -H 'accept: application/json' \
           -H 'content-type: application/json' \
           -H 'Connection: keep-alive' | jq -r '.url // empty')
         decho $lf_tracelevel "lf_gw_svc_url (${lf_gw_svc_name}): $lf_gw_svc_url"
         if [ -n "$lf_gw_svc_url" ] && [ "$lf_gw_svc_url" != "null" ]; then
-          lf_cat_gw_res=$(curl -sk -X POST "${catURL}/configured-gateway-services" \
+          # Check if already configured on this catalog
+          local lf_already_configured
+          lf_already_configured=$(curl -sk "${catURL}/configured-gateway-services/${lf_gw_svc_name}?fields=url" \
             -H "Authorization: Bearer $amToken" \
             -H 'accept: application/json' \
             -H 'content-type: application/json' \
-            -H 'Connection: keep-alive' \
-            --data-raw "{\"gateway_service_url\": \"$lf_gw_svc_url\"}")
-          decho $lf_tracelevel "configured-gateway-services (${lf_gw_svc_name}): $lf_cat_gw_res"
+            -H 'Connection: keep-alive' | jq -r '.url // empty')
+          if [ -n "$lf_already_configured" ] && [ "$lf_already_configured" != "null" ]; then
+            mylog info "Gateway service ${lf_gw_svc_name} already configured on catalog ${catalog_name[$index]}, skipping." 1>&2
+          else
+            lf_cat_gw_res=$(curl -sk -X POST "${catURL}/configured-gateway-services" \
+              -H "Authorization: Bearer $amToken" \
+              -H 'accept: application/json' \
+              -H 'content-type: application/json' \
+              -H 'Connection: keep-alive' \
+              --data-raw "{\"gateway_service_url\": \"$lf_gw_svc_url\"}")
+            decho $lf_tracelevel "configured-gateway-services (${lf_gw_svc_name}): $(echo "$lf_cat_gw_res" | jq -r '.url // .message // empty')"
+          fi
         else
           mylog warn "Gateway service ${lf_gw_svc_name} not found, skipping for catalog ${catalog_name[$index]}." 1>&2
         fi
@@ -1639,9 +1650,9 @@ function apic_run_all () {
 
   update_manager_lur
 
-  create_topology
+  # toto create_topology
 
-  replace_dp_gtw_cert
+  # toto replace_dp_gtw_cert
 
   create_org "${APIC_PROVIDER_ORG}" "${APIC_ORG1_USERNAME}" "${APIC_ORG1_PASSWORD}" "${APIC_ORG1_USER_EMAIL}"
   
@@ -1655,7 +1666,7 @@ function apic_run_all () {
   create_apic_resources $access_token $amToken $APIC_PROVIDER_ORG
 
   # toto Work in progress
-  # exit 1
+  exit 1
   create_keycloak_oidc_registry
 
   # Push API into draft
