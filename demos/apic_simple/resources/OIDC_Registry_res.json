@@ -1,0 +1,42 @@
+{
+    "type": "user_registry",
+    "api_version": "2.0.0",
+    "name": "keycloak-oidc",
+    "title": "Keycloak OIDC",
+    "summary": "Keycloak OIDC user registry (${MY_KEYCLOAK_CP4I_REALM} realm)",
+    "integration_url": "${APIC_OIDC_INTEGRATION_URL}",
+    "registry_type": "oidc",
+    "user_managed": false,
+    "user_registry_managed": false,
+    "external_group_mapping_enabled": false,
+    "case_sensitive": false,
+    "email_required": true,
+    "email_unique_if_exist": true,
+    "identity_providers": [
+        {
+            "name": "keycloak-oidc",
+            "title": "Keycloak OIDC"
+        }
+    ],
+    "visibility": {
+        "type": "public"
+    },
+    "configuration": {
+        "client_id": "${MY_KEYCLOAK_APIC_CLIENT_ID}",
+        "client_secret": "${APIC_KEYCLOAK_CLIENT_SECRET}",
+        "authorization_endpoint": "https://${APIC_KEYCLOAK_HOST}/realms/${MY_KEYCLOAK_CP4I_REALM}/protocol/openid-connect/auth",
+        "token_endpoint": {
+            "endpoint": "https://${APIC_KEYCLOAK_HOST}/realms/${MY_KEYCLOAK_CP4I_REALM}/protocol/openid-connect/token"
+        },
+        "userinfo_endpoint": {
+            "endpoint": "https://${APIC_KEYCLOAK_HOST}/realms/${MY_KEYCLOAK_CP4I_REALM}/protocol/openid-connect/userinfo"
+        },
+        "jwks_endpoint": {
+            "endpoint": "https://${APIC_KEYCLOAK_HOST}/realms/${MY_KEYCLOAK_CP4I_REALM}/protocol/openid-connect/certs"
+        },
+        "logout_endpoint": "https://${APIC_KEYCLOAK_HOST}/realms/${MY_KEYCLOAK_CP4I_REALM}/protocol/openid-connect/logout",
+        "features": {
+            "use_pkce": true
+        }
+    }
+}
