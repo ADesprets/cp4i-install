@@ -1664,9 +1664,9 @@ function apic_run_all () {
 
   update_manager_lur
 
-  # toto create_topology
+  create_topology
 
-  # toto replace_dp_gtw_cert
+  replace_dp_gtw_cert
 
   create_org "${APIC_PROVIDER_ORG}" "${APIC_ORG1_USERNAME}" "${APIC_ORG1_PASSWORD}" "${APIC_ORG1_USER_EMAIL}"
   
@@ -1679,8 +1679,6 @@ function apic_run_all () {
 
   create_catalog "${APIC_PROVIDER_ORG}"
 
-  # toto Work in progress
-  exit 1
   create_keycloak_oidc_registry
 
   # Push API into draft
@@ -1768,7 +1766,7 @@ function main() {
 # SB] getting the path of this script independently from using it directly or calling it from another script
 # sc_component_script_dir="$( cd "$( dirname "$0" )" && pwd )/": this statement returns the calling script path
 
-# Voir aussi comment on peut utiliser l'option suivante (trouvée dans un sript de Dale Lane)
+# Voir aussi comment on peut utiliser l'option suivante (trouvée dans un script de Dale Lane)
 # allow this script to be run from other locations, despite the
 # relative file paths used in it
 #OPTION# if [[ $BASH_SOURCE = */* ]]; then
