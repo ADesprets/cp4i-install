@@ -2107,6 +2107,34 @@ function customise_openldap() {
   mylog info "==== Customisation of ldap (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
+
+################################################
+# Customise Keycloak
+# Add email configuration
+# Add users and groups
+function customise_keycloak() {
+  SECONDS=0
+  local lf_starting_date=$(date);
+  mylog info "==== Customise keycloak (keycloak.config.sh)." 0
+
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  if $MY_KEYCLOAK_CUSTOM; then
+
+    # launch custom script
+    chmod a+x ${MY_KEYCLOAK_DEMODIR}scripts/keycloak.config.sh
+    ${MY_KEYCLOAK_DEMODIR}scripts/keycloak.config.sh --all
+  fi
+
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+
+  local lf_ending_date=$(date)
+  mylog info "==== Customisation of Keycloak (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+}
+
 ################################################
 # Customise Open Liberty
 function customise_openliberty() {
@@ -2761,6 +2789,7 @@ function customise_part() {
   trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   customise_openldap
+  customise_keycloak
   
   # customise_openliberty
   

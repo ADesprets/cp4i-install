@@ -11,7 +11,7 @@ function create_mail_server() {
   mylog info "Creating/checking mail server configuration (mymailhog)" 1>&2
 
   # Get ClusterIP for the mail server (MailHog)
-  export MY_MAIL_SERVER_HOST_IP=$($MY_CLUSTER_COMMAND -n ${VAR_MAIL_NAMESPACE} get svc/mail -o jsonpath='{.spec.clusterIP}')
+  export MY_MAIL_SERVER_HOST_IP=$($MY_CLUSTER_COMMAND -n ${VAR_MAIL_NAMESPACE} get svc/${VAR_MAIL_SERVICE} -o jsonpath='{.spec.clusterIP}')
   decho $lf_tracelevel "The mail server clusterIP is ${MY_MAIL_SERVER_HOST_IP} and port is ${APIC_SMTP_SERVER_PORT}"
 
   decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/mail-servers/mymailhog?fields=url\" -H \"Accept: application/json\" -H \"Authorization: Bearer \$AT\" -H \"Content-type: application/json\""
