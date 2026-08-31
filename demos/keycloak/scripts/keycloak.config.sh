@@ -10,11 +10,13 @@
 # Uses the same mail service as the APIC configuration (MailHog / SMTP relay
 # running in ${VAR_MAIL_NAMESPACE}).
 # Variables read from properties:
-#   VAR_KEYCLOAK_NAMESPACE, VAR_MAIL_NAMESPACE, VAR_MAIL_SERVICE : cp4i-variables.properties
+#   VAR_KEYCLOAK_NAMESPACE, VAR_MAIL_NAMESPACE, VAR_MAIL_SERVICE  : cp4i-variables.properties
+#   VAR_KEYCLOAK_ADMIN_EMAIL, VAR_KEYCLOAK_ADMIN_EMAIL_DISPLAY_NAME,
+#   VAR_KEYCLOAK_REPLY_TO_EMAIL, VAR_KEYCLOAK_REPLY_TO_DISPLAY_NAME : cp4i-variables.properties
 #   MY_KEYCLOAK_MASTER_REALM, MY_KEYCLOAK_USERNAME,
 #   MY_KEYCLOAK_ADMIN_CLI_CLIENT                                  : cp4i-constants.properties
-#   APIC_SMTP_SERVER_PORT, APIC_SMTP_USERNAME,
-#   APIC_SMTP_PASSWORD, APIC_ADMIN_EMAIL                          : apic.properties (reused)
+#   VAR_SMTP_SERVER_PORT, VAR_SMTP_USERNAME,
+#   VAR_SMTP_PASSWORD                                             : cp4i-variables.properties
 function keycloak_configure_email() {
   local lf_tracelevel=3
   trace_in $lf_tracelevel ${FUNCNAME[0]}
@@ -32,35 +34,41 @@ function keycloak_configure_email() {
     trace_out $lf_tracelevel ${FUNCNAME[0]}
     return 1
   fi
-  decho $lf_tracelevel "lf_mail_host: ${lf_mail_host} port: ${APIC_SMTP_SERVER_PORT}"
+  decho $lf_tracelevel "lf_mail_host: ${lf_mail_host} port: ${VAR_SMTP_SERVER_PORT}"
 
   # Build the SMTP JSON payload
   local lf_smtp_payload
   lf_smtp_payload=$(jq -n \
-    --arg host    "${lf_mail_host}" \
-    --arg port    "${APIC_SMTP_SERVER_PORT}" \
-    --arg from    "${APIC_ADMIN_EMAIL}" \
-    --arg user    "${APIC_SMTP_USERNAME}" \
-    --arg pass    "${APIC_SMTP_PASSWORD}" \
+    --arg host            "${lf_mail_host}" \
+    --arg port            "${VAR_SMTP_SERVER_PORT}" \
+    --arg from            "${VAR_KEYCLOAK_ADMIN_EMAIL}" \
+    --arg fromDisplayName "${VAR_KEYCLOAK_ADMIN_EMAIL_DISPLAY_NAME}" \
+    --arg replyTo         "${VAR_KEYCLOAK_REPLY_TO_EMAIL}" \
+    --arg replyToDisplayName "${VAR_KEYCLOAK_REPLY_TO_DISPLAY_NAME}" \
+    --arg user            "${VAR_SMTP_USERNAME}" \
+    --arg pass            "${VAR_SMTP_PASSWORD}" \
     '{
-      host:        $host,
-      port:        ($port | tonumber),
-      from:        $from,
-      auth:        (if $user != "" then true else false end),
-      user:        $user,
-      password:    $pass,
-      ssl:         false,
-      starttls:    false,
-      envelopeFrom: $from
+      host:             $host,
+      port:             ($port | tonumber),
+      from:             $from,
+      fromDisplayName:  $fromDisplayName,
+      replyTo:          $replyTo,
+      replyToDisplayName: $replyToDisplayName,
+      auth:             (if $user != "" then true else false end),
+      user:             $user,
+      password:         $pass,
+      ssl:              false,
+      starttls:         false,
+      envelopeFrom:     $from
     }')
-  decho $lf_tracelevel "lf_smtp_payload: ${lf_smtp_payload}"
+  decho $lf_tracelevel "lf_smtp_payload: $(echo "${lf_smtp_payload}" | jq -c .)"
 
-  # ── 6. PUT the SMTP settings on the realm ─────────────────────────────────
-  decho $lf_tracelevel "curl -sk -X PUT \"${EP_KEYCLOAK}/admin/realms/${MY_KEYCLOAK_MASTER_REALM}\" --data '{\"smtpServer\": ...}'"
+  # PUT the SMTP settings on the master realm
+  decho $lf_tracelevel "curl -sk -X PUT -H \"Content-Type: application/json\" -H \"Authorization: Bearer \$AT\" \"${EP_KEYCLOAK}/admin/realms/${MY_KEYCLOAK_MASTER_REALM}\" --data '{\"smtpServer\": ...}'"
   local lf_put_response
   lf_put_response=$(curl -sk -o /dev/null -w "%{http_code}" -X PUT \
     "${EP_KEYCLOAK}/admin/realms/${MY_KEYCLOAK_MASTER_REALM}" \
-    -H "Authorization: Bearer ${lf_access_token}" \
+    -H "Authorization: Bearer ${KC_AT}" \
     -H "Content-Type: application/json" \
     --data "{\"smtpServer\": ${lf_smtp_payload}}")
   decho $lf_tracelevel "lf_put_response HTTP status: ${lf_put_response}"
@@ -122,6 +130,8 @@ function create_kc_token(){
     mylog error "Failed to obtain Keycloak admin token. HTTP status: ${lf_http_status} | Response: ${lf_token_response}" 1>&2
     trace_out $lf_tracelevel ${FUNCNAME[0]}
     return 1
+  else
+    mylog info "The token is valid only one minute" 1>&2
   fi
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}

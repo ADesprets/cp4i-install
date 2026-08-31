@@ -12,7 +12,7 @@ function create_mail_server() {
 
   # Get ClusterIP for the mail server (MailHog)
   export MY_MAIL_SERVER_HOST_IP=$($MY_CLUSTER_COMMAND -n ${VAR_MAIL_NAMESPACE} get svc/${VAR_MAIL_SERVICE} -o jsonpath='{.spec.clusterIP}')
-  decho $lf_tracelevel "The mail server clusterIP is ${MY_MAIL_SERVER_HOST_IP} and port is ${APIC_SMTP_SERVER_PORT}"
+  decho $lf_tracelevel "The mail server clusterIP is ${MY_MAIL_SERVER_HOST_IP} and port is ${VAR_SMTP_SERVER_PORT}"
 
   decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/mail-servers/mymailhog?fields=url\" -H \"Accept: application/json\" -H \"Authorization: Bearer \$AT\" -H \"Content-type: application/json\""
   mailServerUrl=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/mail-servers/mymailhog?fields=url" \
@@ -28,9 +28,9 @@ function create_mail_server() {
 
     local jsonpayload=$(jq -n \
     --arg host "$MY_MAIL_SERVER_HOST_IP" \
-    --arg port "${APIC_SMTP_SERVER_PORT}" \
-    --arg username "$APIC_SMTP_USERNAME" \
-    --arg password "$APIC_SMTP_PASSWORD" \
+    --arg port "${VAR_SMTP_SERVER_PORT}" \
+    --arg username "$VAR_SMTP_USERNAME" \
+    --arg password "$VAR_SMTP_PASSWORD" \
 	  '{title:"MailHog",name:"mymailhog",host:$host,port:($port|tonumber),credentials:{username:$username,password:$password}}')
     decho $lf_tracelevel "jsonpayload: ${jsonpayload}"
 
@@ -1660,7 +1660,7 @@ function apic_run_all () {
   mylog info "Downloading apic config json file (${MY_APIC_WORKINGDIR}resources/fullcreds.json)" 1>&2
   curl -sk "${TOOLKIT_CREDS_URL}" -H "Authorization: Bearer ${access_token}" -H "Accept: application/json" -H "Content-Type: application/json" -o "${MY_APIC_WORKINGDIR}resources/fullcreds.json"
   
-  create_mail_server "${APIC_SMTP_SERVER_IP}" "${APIC_SMTP_SERVER_PORT}"
+  create_mail_server "${VAR_SMTP_SERVER_IP}" "${VAR_SMTP_SERVER_PORT}"
 
   update_manager_lur
 

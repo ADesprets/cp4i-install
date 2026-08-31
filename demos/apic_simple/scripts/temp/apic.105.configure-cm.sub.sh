@@ -30,7 +30,7 @@ function CreateMailServer() {
     -H "authorization: Bearer $access_token" \
     -H "content-type: application/json" \
     -H "Connection: keep-alive" \
-    --data "{\"title\":\"MailHog\",\"name\":\"mymailhog\",\"host\":\"$mail_server_ip\",\"port\":$mail_server_port,\"credentials\":{\"username\":\"$APIC_SMTP_USERNAME\",\"password\":\"$APIC_SMTP_PASSWORD\"}}" | jq .url );
+    --data "{\"title\":\"MailHog\",\"name\":\"mymailhog\",\"host\":\"$mail_server_ip\",\"port\":$mail_server_port,\"credentials\":{\"username\":\"$VAR_SMTP_USERNAME\",\"password\":\"$VAR_SMTP_PASSWORD\"}}" | jq .url );
     # mylog info "mailServerUrl: $mailServerUrl"
   else
     mylog info "Mail Server mymailhog already exists, use it."
@@ -569,7 +569,7 @@ TOOLKIT_CREDS_URL="${PLATFORM_API_URL}api/cloud/settings/toolkit-credentials"
 # 	[[ -e creds.json ]] && rm creds.json
 # fi
 
-CreateMailServer "${APIC_SMTP_SERVER}" "${APIC_SMTP_SERVER_PORT}"
+CreateMailServer "${APIC_SMTP_SERVER}" "${VAR_SMTP_SERVER_PORT}"
 
 tlsServer=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles" \
  -H "Authorization: Bearer $access_token" \

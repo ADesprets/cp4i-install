@@ -1087,11 +1087,12 @@ function display_access_info() {
 
   # Keycloak
   if $MY_KEYCLOAK_EXTERNAL; then
-    lf_keycloak_admin_ui=$($MY_CLUSTER_COMMAND -n $MY_COMMONSERVICES_NAMESPACE get route keycloak -o jsonpath='{.spec.host}')
+    lf_keycloak_admin_ui=$($MY_CLUSTER_COMMAND -n $VAR_KEYCLOAK_NAMESPACE get route keycloak -o jsonpath='{.spec.host}')
     mylog info "Keycloak admin UI URL: https://${lf_keycloak_admin_ui}" 0
     echo "<TR><TD><A HREF=https://${lf_keycloak_admin_ui}>Keycloak Admin UI</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
-    lf_keycloak_admin_pwd=$($MY_CLUSTER_COMMAND -n $MY_COMMONSERVICES_NAMESPACE get secret cs-keycloak-initial-admin -o jsonpath={.data.password} | base64 -d)
-    mylog info "Keycloak admin password: $lf_keycloak_admin_pwd" 0
+    lf_keycloak_admin_username=$($MY_CLUSTER_COMMAND -n "${VAR_KEYCLOAK_NAMESPACE}" get secret cs-keycloak-initial-admin -o jsonpath='{.data.username}' 2>/dev/null | base64 --decode)
+    lf_keycloak_admin_password=$($MY_CLUSTER_COMMAND -n "${VAR_KEYCLOAK_NAMESPACE}" get secret cs-keycloak-initial-admin -o jsonpath='{.data.password}' 2>/dev/null | base64 --decode)
+    mylog info "Keycloak admin credentials: ${lf_keycloak_admin_username}/${lf_keycloak_admin_password}" 0
   fi
   
   # Platform Navigator
