@@ -138,10 +138,128 @@ function create_kc_token(){
 }
 
 ################################################
+# Create a Keycloak administrator user in the master realm.
+# Variables read from properties:
+#   MY_USER           : private/user.properties  (username / uid)
+#   MY_USER_PASSWORD  : private/user.properties  (password)
+#   MY_USER_EMAIL     : private/user.properties  (email address)
+#   MY_USER_FIRSTNAME : private/user.properties  (first name)
+#   MY_USER_LASTNAME  : private/user.properties  (last name)
+#   MY_KEYCLOAK_MASTER_REALM                    : cp4i-constants.properties
+# Prerequisites:
+#   EP_KEYCLOAK and KC_AT must already be set (call keycloak_init first).
+function keycloak_create_master_admin() {
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  mylog info "Creating administrator user '${MY_USER}' in Keycloak master realm '${MY_KEYCLOAK_MASTER_REALM}'" 1>&2
+
+  # Build the user JSON payload
+  local lf_user_payload
+  lf_user_payload=$(jq -n \
+    --arg username  "${MY_USER}" \
+    --arg email     "${MY_USER_EMAIL}" \
+    --arg password  "${MY_USER_PASSWORD}" \
+    --arg firstname "${MY_USER_FIRSTNAME}" \
+    --arg lastname  "${MY_USER_LASTNAME}" \
+    '{
+      username:       $username,
+      email:          $email,
+      firstName:      $firstname,
+      lastName:       $lastname,
+      enabled:        true,
+      emailVerified:  true,
+      credentials: [{
+        type:      "password",
+        value:     $password,
+        temporary: false
+      }]
+    }')
+  decho $lf_tracelevel "lf_user_payload: $(echo "${lf_user_payload}" | jq -c .)"
+
+  # POST the new user to the master realm
+  decho $lf_tracelevel "curl -sk -X POST -H \"Content-Type: application/json\" -H \"Authorization: Bearer \$KC_AT\" \"${EP_KEYCLOAK}/admin/realms/${MY_KEYCLOAK_MASTER_REALM}/users\" --data '...'"
+  local lf_http_status
+  lf_http_status=$(curl -sk -o /dev/null -w "%{http_code}" -X POST \
+    "${EP_KEYCLOAK}/admin/realms/${MY_KEYCLOAK_MASTER_REALM}/users" \
+    -H "Authorization: Bearer ${KC_AT}" \
+    -H "Content-Type: application/json" \
+    --data "${lf_user_payload}")
+  decho $lf_tracelevel "lf_http_status: ${lf_http_status}"
+
+  case "${lf_http_status}" in
+    201)
+      mylog info "Administrator user '${MY_USER}' created successfully in realm '${MY_KEYCLOAK_MASTER_REALM}'." 1>&2
+      ;;
+    409)
+      mylog info "Administrator user '${MY_USER}' already exists in realm '${MY_KEYCLOAK_MASTER_REALM}' – proceeding to role assignment." 1>&2
+      ;;
+    *)
+      mylog error "Failed to create administrator user '${MY_USER}' in realm '${MY_KEYCLOAK_MASTER_REALM}'. HTTP status: ${lf_http_status}" 1>&2
+      trace_out $lf_tracelevel ${FUNCNAME[0]}
+      return 1
+      ;;
+  esac
+
+  # Retrieve the user ID by username search (works for both 201 and 409)
+  decho $lf_tracelevel "curl -sk -X GET \"${EP_KEYCLOAK}/admin/realms/${MY_KEYCLOAK_MASTER_REALM}/users?username=${MY_USER}&exact=true\""
+  local lf_user_id
+  lf_user_id=$(curl -sk -X GET \
+    "${EP_KEYCLOAK}/admin/realms/${MY_KEYCLOAK_MASTER_REALM}/users?username=${MY_USER}&exact=true" \
+    -H "Authorization: Bearer ${KC_AT}" \
+    -H "Content-Type: application/json" \
+    | jq -r '.[0].id // empty')
+  if [[ -z "${lf_user_id}" ]]; then
+    mylog error "Could not determine user ID for '${MY_USER}' in realm '${MY_KEYCLOAK_MASTER_REALM}'." 1>&2
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
+    return 1
+  fi
+  decho $lf_tracelevel "lf_user_id: ${lf_user_id}"
+
+  # Fetch the 'admin' realm-role representation (id + name are required for the mapping call)
+  decho $lf_tracelevel "curl -sk -X GET \"${EP_KEYCLOAK}/admin/realms/${MY_KEYCLOAK_MASTER_REALM}/roles/admin\""
+  local lf_role_payload
+  lf_role_payload=$(curl -sk -X GET \
+    "${EP_KEYCLOAK}/admin/realms/${MY_KEYCLOAK_MASTER_REALM}/roles/admin" \
+    -H "Authorization: Bearer ${KC_AT}" \
+    -H "Content-Type: application/json")
+  decho $lf_tracelevel "lf_role_payload: $(echo "${lf_role_payload}" | jq -c .)"
+
+  if [[ -z "${lf_role_payload}" ]] || echo "${lf_role_payload}" | jq -e '.error' >/dev/null 2>&1; then
+    mylog error "Could not retrieve 'admin' role from realm '${MY_KEYCLOAK_MASTER_REALM}': ${lf_role_payload}" 1>&2
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
+    return 1
+  fi
+
+  # Assign the 'admin' realm role to the newly created user
+  decho $lf_tracelevel "curl -sk -X POST \"${EP_KEYCLOAK}/admin/realms/${MY_KEYCLOAK_MASTER_REALM}/users/${lf_user_id}/role-mappings/realm\""
+  local lf_role_status
+  lf_role_status=$(curl -sk -o /dev/null -w "%{http_code}" -X POST \
+    "${EP_KEYCLOAK}/admin/realms/${MY_KEYCLOAK_MASTER_REALM}/users/${lf_user_id}/role-mappings/realm" \
+    -H "Authorization: Bearer ${KC_AT}" \
+    -H "Content-Type: application/json" \
+    --data "[${lf_role_payload}]")
+  decho $lf_tracelevel "lf_role_status: ${lf_role_status}"
+
+  if [[ "${lf_role_status}" == "204" ]]; then
+    mylog info "Realm role 'admin' assigned to user '${MY_USER}'." 1>&2
+  else
+    mylog error "Failed to assign realm role 'admin' to user '${MY_USER}'. HTTP status: ${lf_role_status}" 1>&2
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
+    return 1
+  fi
+
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+}
+
+################################################
 function keycloak_run_all () {
   local lf_tracelevel=2
   trace_in $lf_tracelevel ${FUNCNAME[0]}
 
+  keycloak_create_master_admin
   keycloak_configure_email
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}
