@@ -85,53 +85,64 @@ function keycloak_configure_email() {
 }
 
 ################################################
-# Create Keycloak token
+# Create a Keycloak access token and store it in KC_AT.
+# Parameters (all optional):
+#   $1 : username  – if omitted, read from the 'cs-keycloak-initial-admin' secret (temp-admin)
+#   $2 : password  – if omitted, read from the 'cs-keycloak-initial-admin' secret
+#   $3 : realm     – if omitted, defaults to MY_KEYCLOAK_MASTER_REALM
+# Examples:
+#   create_kc_token                                          # temp-admin / master
+#   create_kc_token "${MY_USER}" "${MY_USER_PASSWORD}"       # desprets   / master
+#   create_kc_token "${MY_USER}" "${MY_USER_PASSWORD}" "${MY_KEYCLOAK_CP4I_REALM}"
 function create_kc_token(){
   local lf_tracelevel=3
   trace_in $lf_tracelevel ${FUNCNAME[0]}
-  
-  decho $lf_tracelevel "Parameters: |no parameters|"
 
-  # Retrieve the Keycloak initial admin credentials from the secret created by the Keycloak operator.
-  # CP4I Common Services Keycloak stores credentials in 'cs-keycloak-initial-admin' (username=temp-admin).
-  local lf_cs_keycloak_initial_admin_secret=cs-keycloak-initial-admin
-  local lf_admin_username lf_admin_password
-  lf_admin_username=$($MY_CLUSTER_COMMAND -n "${VAR_KEYCLOAK_NAMESPACE}" \
-    get secret "${lf_cs_keycloak_initial_admin_secret}" \
-    -o jsonpath='{.data.username}' 2>/dev/null | base64 --decode)
-  lf_admin_password=$($MY_CLUSTER_COMMAND -n "${VAR_KEYCLOAK_NAMESPACE}" \
-    get secret "${lf_cs_keycloak_initial_admin_secret}" \
-    -o jsonpath='{.data.password}' 2>/dev/null | base64 --decode)
-  if [[ -z "${lf_admin_username}" || -z "${lf_admin_password}" ]]; then
-    mylog error "Could not retrieve Keycloak admin credentials from secret '${lf_cs_keycloak_initial_admin_secret}' in namespace '${VAR_KEYCLOAK_NAMESPACE}'." 1>&2
-    mylog error "  username='${lf_admin_username}' password=$([ -n "${lf_admin_password}" ] && echo '<set>' || echo '<empty>')" 1>&2
-    trace_out $lf_tracelevel ${FUNCNAME[0]}
-    return 1
+  local lf_username="${1:-}"
+  local lf_password="${2:-}"
+  local lf_realm="${3:-${MY_KEYCLOAK_MASTER_REALM}}"
+  decho $lf_tracelevel "Parameters: |username=${lf_username:-<from secret>}| |realm=${lf_realm}|"
+
+  # If no credentials supplied, retrieve them from the Keycloak operator secret (temp-admin).
+  if [[ -z "${lf_username}" || -z "${lf_password}" ]]; then
+    local lf_cs_keycloak_initial_admin_secret=cs-keycloak-initial-admin
+    lf_username=$($MY_CLUSTER_COMMAND -n "${VAR_KEYCLOAK_NAMESPACE}" \
+      get secret "${lf_cs_keycloak_initial_admin_secret}" \
+      -o jsonpath='{.data.username}' 2>/dev/null | base64 --decode)
+    lf_password=$($MY_CLUSTER_COMMAND -n "${VAR_KEYCLOAK_NAMESPACE}" \
+      get secret "${lf_cs_keycloak_initial_admin_secret}" \
+      -o jsonpath='{.data.password}' 2>/dev/null | base64 --decode)
+    if [[ -z "${lf_username}" || -z "${lf_password}" ]]; then
+      mylog error "Could not retrieve Keycloak admin credentials from secret '${lf_cs_keycloak_initial_admin_secret}' in namespace '${VAR_KEYCLOAK_NAMESPACE}'." 1>&2
+      mylog error "  username='${lf_username}' password=$([ -n "${lf_password}" ] && echo '<set>' || echo '<empty>')" 1>&2
+      trace_out $lf_tracelevel ${FUNCNAME[0]}
+      return 1
+    fi
   fi
-  decho $lf_tracelevel "lf_admin_username: ${lf_admin_username} | EP_KEYCLOAK: ${EP_KEYCLOAK}"
+  decho $lf_tracelevel "lf_username: ${lf_username} | lf_realm: ${lf_realm} | EP_KEYCLOAK: ${EP_KEYCLOAK}"
 
-  # Obtain an admin access token (master realm / admin-cli)
-  local lf_token_url="${EP_KEYCLOAK}/realms/${MY_KEYCLOAK_MASTER_REALM}/protocol/openid-connect/token"
-  decho $lf_tracelevel "curl -sk -X POST \"${lf_token_url}\" --data grant_type=password username=${lf_admin_username} ..."
+  # Obtain an access token for the requested realm / admin-cli client
+  local lf_token_url="${EP_KEYCLOAK}/realms/${lf_realm}/protocol/openid-connect/token"
+  decho $lf_tracelevel "curl -sk -X POST \"${lf_token_url}\" --data grant_type=password username=${lf_username} ..."
   local lf_token_response lf_http_status
   lf_token_response=$(curl -sk -o /tmp/kc_token_response.json -w "%{http_code}" -X POST \
     "${lf_token_url}" \
     -H "Content-Type: application/x-www-form-urlencoded" \
     --data-urlencode "grant_type=password" \
     --data-urlencode "client_id=${MY_KEYCLOAK_ADMIN_CLI_CLIENT}" \
-    --data-urlencode "username=${lf_admin_username}" \
-    --data-urlencode "password=${lf_admin_password}")
+    --data-urlencode "username=${lf_username}" \
+    --data-urlencode "password=${lf_password}")
   lf_http_status="${lf_token_response}"
   lf_token_response=$(cat /tmp/kc_token_response.json 2>/dev/null)
   decho $lf_tracelevel "HTTP status: ${lf_http_status} | lf_token_response: ${lf_token_response}"
 
   KC_AT=$(printf '%s\n' "${lf_token_response}" | jq -r '.access_token // empty')
   if [[ -z "${KC_AT}" ]]; then
-    mylog error "Failed to obtain Keycloak admin token. HTTP status: ${lf_http_status} | Response: ${lf_token_response}" 1>&2
+    mylog error "Failed to obtain Keycloak token for '${lf_username}' on realm '${lf_realm}'. HTTP status: ${lf_http_status} | Response: ${lf_token_response}" 1>&2
     trace_out $lf_tracelevel ${FUNCNAME[0]}
     return 1
   else
-    mylog info "The token is valid only one minute" 1>&2
+    mylog info "Token obtained for '${lf_username}' on realm '${lf_realm}' (valid ~1 minute)." 1>&2
   fi
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}
@@ -255,12 +266,119 @@ function keycloak_create_master_admin() {
 }
 
 ################################################
+# Create the APIC OIDC/OAuth2 client in the cloudpak realm.
+# The client is used by APIC to authenticate users via Keycloak.
+# Variables read from properties:
+#   MY_KEYCLOAK_APIC_CLIENT_ID : cp4i-constants.properties  (client_id)
+#   MY_KEYCLOAK_CP4I_REALM     : cp4i-constants.properties  (target realm)
+# Prerequisites:
+#   EP_KEYCLOAK and KC_AT must already be set with credentials that have
+#   admin rights on the cloudpak realm (call create_kc_token with MY_USER first).
+function keycloak_create_apic_client() {
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  mylog info "Creating APIC OIDC client '${MY_KEYCLOAK_APIC_CLIENT_ID}' in Keycloak realm '${MY_KEYCLOAK_CP4I_REALM}'" 1>&2
+
+  # Build the client JSON payload
+  # standardFlowEnabled   : Authorization Code flow  (OIDC / browser login)
+  # serviceAccountsEnabled: Client Credentials flow  (OAuth2 machine-to-machine)
+  # directAccessGrantsEnabled: Resource Owner Password flow (optional – useful for testing)
+  local lf_client_payload
+  lf_client_payload=$(jq -n \
+    --arg clientId "${MY_KEYCLOAK_APIC_CLIENT_ID}" \
+    '{
+      clientId:                  $clientId,
+      name:                      "APIC Keycloak Client",
+      description:               "OIDC/OAuth2 client for IBM API Connect",
+      enabled:                   true,
+      protocol:                  "openid-connect",
+      publicClient:              false,
+      standardFlowEnabled:       true,
+      implicitFlowEnabled:       false,
+      directAccessGrantsEnabled: true,
+      serviceAccountsEnabled:    true,
+      authorizationServicesEnabled: false,
+      redirectUris:              ["*"],
+      webOrigins:                ["*"],
+      attributes: {
+        "access.token.lifespan": "300"
+      }
+    }')
+  decho $lf_tracelevel "lf_client_payload: $(echo "${lf_client_payload}" | jq -c .)"
+
+  # POST the client to the cloudpak realm
+  decho $lf_tracelevel "curl -sk -X POST \"${EP_KEYCLOAK}/admin/realms/${MY_KEYCLOAK_CP4I_REALM}/clients\""
+  local lf_http_status
+  lf_http_status=$(curl -sk -o /dev/null -w "%{http_code}" -X POST \
+    "${EP_KEYCLOAK}/admin/realms/${MY_KEYCLOAK_CP4I_REALM}/clients" \
+    -H "Authorization: Bearer ${KC_AT}" \
+    -H "Content-Type: application/json" \
+    --data "${lf_client_payload}")
+  decho $lf_tracelevel "lf_http_status: ${lf_http_status}"
+
+  case "${lf_http_status}" in
+    201)
+      mylog info "APIC client '${MY_KEYCLOAK_APIC_CLIENT_ID}' created successfully in realm '${MY_KEYCLOAK_CP4I_REALM}'." 1>&2
+      ;;
+    409)
+      mylog info "APIC client '${MY_KEYCLOAK_APIC_CLIENT_ID}' already exists in realm '${MY_KEYCLOAK_CP4I_REALM}' (HTTP 409 – skipping)." 1>&2
+      trace_out $lf_tracelevel ${FUNCNAME[0]}
+      return 0
+      ;;
+    *)
+      mylog error "Failed to create APIC client '${MY_KEYCLOAK_APIC_CLIENT_ID}' in realm '${MY_KEYCLOAK_CP4I_REALM}'. HTTP status: ${lf_http_status}" 1>&2
+      trace_out $lf_tracelevel ${FUNCNAME[0]}
+      return 1
+      ;;
+  esac
+
+  # Retrieve the internal client UUID (needed for the client-secret endpoint)
+  decho $lf_tracelevel "curl -sk -X GET \"${EP_KEYCLOAK}/admin/realms/${MY_KEYCLOAK_CP4I_REALM}/clients?clientId=${MY_KEYCLOAK_APIC_CLIENT_ID}&exact=true\""
+  local lf_client_uuid
+  lf_client_uuid=$(curl -sk -X GET \
+    "${EP_KEYCLOAK}/admin/realms/${MY_KEYCLOAK_CP4I_REALM}/clients?clientId=${MY_KEYCLOAK_APIC_CLIENT_ID}&exact=true" \
+    -H "Authorization: Bearer ${KC_AT}" \
+    -H "Content-Type: application/json" \
+    | jq -r '.[0].id // empty')
+  if [[ -z "${lf_client_uuid}" ]]; then
+    mylog error "Could not retrieve UUID for client '${MY_KEYCLOAK_APIC_CLIENT_ID}' in realm '${MY_KEYCLOAK_CP4I_REALM}'." 1>&2
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
+    return 1
+  fi
+  decho $lf_tracelevel "lf_client_uuid: ${lf_client_uuid}"
+
+  # Retrieve and display the generated client secret
+  decho $lf_tracelevel "curl -sk -X GET \"${EP_KEYCLOAK}/admin/realms/${MY_KEYCLOAK_CP4I_REALM}/clients/${lf_client_uuid}/client-secret\""
+  local lf_client_secret
+  lf_client_secret=$(curl -sk -X GET \
+    "${EP_KEYCLOAK}/admin/realms/${MY_KEYCLOAK_CP4I_REALM}/clients/${lf_client_uuid}/client-secret" \
+    -H "Authorization: Bearer ${KC_AT}" \
+    -H "Content-Type: application/json" \
+    | jq -r '.value // empty')
+  if [[ -z "${lf_client_secret}" ]]; then
+    mylog error "Could not retrieve client secret for '${MY_KEYCLOAK_APIC_CLIENT_ID}'." 1>&2
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
+    return 1
+  fi
+
+  mylog info "APIC client secret (store this for APIC OIDC registry configuration): ${lf_client_secret}" 1>&2
+
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+}
+
+################################################
 function keycloak_run_all () {
   local lf_tracelevel=2
   trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   keycloak_create_master_admin
   keycloak_configure_email
+  # Refresh the token as MY_USER (admin) before acting on the cloudpak realm
+  create_kc_token "${MY_USER}" "${MY_USER_PASSWORD}"
+  keycloak_create_apic_client
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
@@ -288,7 +406,7 @@ function keycloak_init() {
     decho $lf_tracelevel "EP_KEYCLOAK: ${EP_KEYCLOAK}"
   fi
 
-   # Create the token
+  # Create the initial token using the operator-provisioned temp-admin credentials
   create_kc_token
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}
