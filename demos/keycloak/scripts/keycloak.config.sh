@@ -84,6 +84,7 @@ function keycloak_configure_email() {
   trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
+################################################
 # create_kc_token is defined in lib.sh and available to all demo scripts.
 # See lib.sh for the full implementation and parameter documentation.
 
@@ -205,6 +206,89 @@ function keycloak_create_master_admin() {
 }
 
 ################################################
+# Create a plain user (no extra roles) in the specified Keycloak realm.
+# The user gets the default roles assigned automatically by Keycloak for that realm.
+# Parameters:
+#   $1 : realm       – target realm name
+#   $2 : username    – login name
+#   $3 : email       – email address
+#   $4 : password    – initial password (non-temporary)
+#   $5 : firstname   – first name
+#   $6 : lastname    – last name
+# Prerequisites:
+#   EP_KEYCLOAK and KC_AT must already be set (call keycloak_init / create_kc_token first).
+function keycloak_create_user() {
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  local lf_realm="${1}"
+  local lf_username="${2}"
+  local lf_email="${3}"
+  local lf_password="${4}"
+  local lf_firstname="${5}"
+  local lf_lastname="${6}"
+
+  decho $lf_tracelevel "Parameters: realm='${lf_realm}' username='${lf_username}' email='${lf_email}' firstname='${lf_firstname}' lastname='${lf_lastname}'"
+
+  if [[ $# -ne 6 ]]; then
+    mylog error "Usage: keycloak_create_user <realm> <username> <email> <password> <firstname> <lastname>" 1>&2
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
+    return 1
+  fi
+
+  mylog info "Creating user '${lf_username}' in Keycloak realm '${lf_realm}'" 1>&2
+
+  # Build the user JSON payload (no extra role mappings – Keycloak assigns realm defaults automatically)
+  local lf_user_payload
+  lf_user_payload=$(jq -n \
+    --arg username  "${lf_username}" \
+    --arg email     "${lf_email}" \
+    --arg password  "${lf_password}" \
+    --arg firstname "${lf_firstname}" \
+    --arg lastname  "${lf_lastname}" \
+    '{
+      username:       $username,
+      email:          $email,
+      firstName:      $firstname,
+      lastName:       $lastname,
+      enabled:        true,
+      emailVerified:  true,
+      credentials: [{
+        type:      "password",
+        value:     $password,
+        temporary: false
+      }]
+    }')
+  decho $lf_tracelevel "lf_user_payload: $(echo "${lf_user_payload}" | jq -c .)"
+
+  # POST the new user to the target realm
+  decho $lf_tracelevel "curl -sk -X POST -H \"Content-Type: application/json\" -H \"Authorization: Bearer \$KC_AT\" \"${EP_KEYCLOAK}/admin/realms/${lf_realm}/users\" --data '...'"
+  local lf_http_status
+  lf_http_status=$(curl -sk -o /dev/null -w "%{http_code}" -X POST \
+    "${EP_KEYCLOAK}/admin/realms/${lf_realm}/users" \
+    -H "Authorization: Bearer ${KC_AT}" \
+    -H "Content-Type: application/json" \
+    --data "${lf_user_payload}")
+  decho $lf_tracelevel "lf_http_status: ${lf_http_status}"
+
+  case "${lf_http_status}" in
+    201)
+      mylog info "User '${lf_username}' created successfully in realm '${lf_realm}'." 1>&2
+      ;;
+    409)
+      mylog info "User '${lf_username}' already exists in realm '${lf_realm}' – skipping." 1>&2
+      ;;
+    *)
+      mylog error "Failed to create user '${lf_username}' in realm '${lf_realm}'. HTTP status: ${lf_http_status}" 1>&2
+      trace_out $lf_tracelevel ${FUNCNAME[0]}
+      return 1
+      ;;
+  esac
+
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+}
+
+################################################
 # Create the APIC OIDC/OAuth2 client in the cloudpak realm.
 # The client is used by APIC to authenticate users via Keycloak.
 # Variables read from properties:
@@ -315,9 +399,11 @@ function keycloak_run_all () {
 
   keycloak_create_master_admin
   keycloak_configure_email
-  # Refresh the token as MY_USER (admin) before acting on the cloudpak realm
+  # Refresh the token as MY_USER (admin role) before acting on the cloudpak realm
   create_kc_token "${MY_USER}" "${MY_USER_PASSWORD}"
   keycloak_create_apic_client
+  # Create a test user in the cloudpak realm for OIDC security validation
+  keycloak_create_user "${MY_KEYCLOAK_CP4I_REALM}" 'nono' "nono@fr.ibm.com" "${MY_USER_PASSWORD}" "Nono" "Legrand"
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}
 }

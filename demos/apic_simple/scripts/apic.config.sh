@@ -1386,6 +1386,19 @@ function create_keycloak_oidc_registry() {
     fi
     decho $lf_tracelevel "APIC_KEYCLOAK_CLIENT_ID: ${APIC_KEYCLOAK_CLIENT_ID} | APIC_KEYCLOAK_CLIENT_SECRET: <set>"
 
+    # Retrieve the TLS client profile URL for tls-client-profile-default
+    local lf_oidc_tls_profile_name="tls-client-profile-default"
+    export APIC_TLS_CLIENT_PROFILE_DEFAULT_URL
+    APIC_TLS_CLIENT_PROFILE_DEFAULT_URL=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-client-profiles/${lf_oidc_tls_profile_name}" \
+      -H "Authorization: Bearer $access_token" \
+      -H "Accept: application/json" | jq -r '.url // empty')
+    decho $lf_tracelevel "APIC_TLS_CLIENT_PROFILE_DEFAULT_URL: ${APIC_TLS_CLIENT_PROFILE_DEFAULT_URL}"
+    if [[ -z "${APIC_TLS_CLIENT_PROFILE_DEFAULT_URL}" ]]; then
+      mylog error "Could not retrieve TLS client profile URL for '${lf_oidc_tls_profile_name}'." 1>&2
+      trace_out $lf_tracelevel ${FUNCNAME[0]}
+      return 1
+    fi
+
     adapt_file "${MY_APIC_SIMPLE_DEMODIR}resources/" "${MY_APIC_WORKINGDIR}resources/" OIDC_Registry_res.json
 
     decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/user-registries\" -H 'accept: application/json' -H \"authorization: Bearer \$AT\" -H 'content-type: application/json' --data-binary \"@${MY_APIC_WORKINGDIR}resources/OIDC_Registry_res.json\""
@@ -1406,6 +1419,56 @@ function create_keycloak_oidc_registry() {
     fi
   else
     mylog info "Keycloak OIDC user registry '${lf_registry_name}' already exists, skipping." 1>&2
+  fi
+
+  # Register both the Keycloak OIDC registry and the API Manager LUR as provider
+  # user registries (Settings > User Registries in the API Manager UI).
+  mylog info "Updating API Manager provider user registries list" 1>&2
+
+  # Fetch the URL of the Keycloak OIDC registry
+  decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/user-registries/admin/${lf_registry_name}?fields=url\" -H \"Authorization: Bearer \$AT\" -H 'Accept: application/json'"
+  local lf_oidc_url
+  lf_oidc_url=$(curl -sk "${PLATFORM_API_URL}api/user-registries/admin/${lf_registry_name}?fields=url" \
+    -H "Authorization: Bearer $access_token" \
+    -H "Accept: application/json" | jq -r '.url // empty')
+  decho $lf_tracelevel "lf_oidc_url: ${lf_oidc_url}"
+
+  # Fetch the URL of the API Manager Local User Registry
+  local lf_lur_name="api-manager-lur"
+  decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/user-registries/admin/${lf_lur_name}?fields=url\" -H \"Authorization: Bearer \$AT\" -H 'Accept: application/json'"
+  local lf_lur_url
+  lf_lur_url=$(curl -sk "${PLATFORM_API_URL}api/user-registries/admin/${lf_lur_name}?fields=url" \
+    -H "Authorization: Bearer $access_token" \
+    -H "Accept: application/json" | jq -r '.url // empty')
+  decho $lf_tracelevel "lf_lur_url: ${lf_lur_url}"
+
+  if [[ -z "${lf_oidc_url}" ]] || [[ -z "${lf_lur_url}" ]]; then
+    mylog error "Could not resolve user registry URLs (oidc='${lf_oidc_url}', lur='${lf_lur_url}'). Skipping provider registry update." 1>&2
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
+    return 1
+  fi
+
+  local lf_provider_registries_payload
+  lf_provider_registries_payload=$(jq -n \
+    --arg oidc "${lf_oidc_url}" \
+    --arg lur "${lf_lur_url}" \
+    '{"provider_user_registry_urls": [$lur, $oidc]}')
+
+  decho $lf_tracelevel "curl -sk -X PUT \"${PLATFORM_API_URL}api/cloud/settings/user-registries\" -H 'Accept: application/json' -H \"Authorization: Bearer \$AT\" -H 'Content-Type: application/json' --data '${lf_provider_registries_payload}'"
+  local lf_update_result
+  lf_update_result=$(curl -sk -X PUT "${PLATFORM_API_URL}api/cloud/settings/user-registries" \
+    -H "Accept: application/json" \
+    -H "Authorization: Bearer $access_token" \
+    -H "Content-Type: application/json" \
+    --data "${lf_provider_registries_payload}")
+  decho $lf_tracelevel "lf_update_result: ${lf_update_result}"
+
+  local lf_update_status
+  lf_update_status=$(printf '%s\n' "${lf_update_result}" | jq -r '.status // empty')
+  if [[ -n "${lf_update_status}" ]] && [[ "${lf_update_status}" != "200" ]]; then
+    mylog error "Failed to update provider user registries: ${lf_update_result}" 1>&2
+  else
+    mylog info "API Manager provider user registries updated (LUR + Keycloak OIDC)" 1>&2
   fi
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}
@@ -1475,12 +1538,12 @@ function init_apic_variables() {
   trace_in $lf_tracelevel ${FUNCNAME[0]}
 
   # Retrieve the various routes for APIC components
-  # Cloud Management UI
-  EP_CM=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-mgmt-admin" -o jsonpath="{.spec.host}")
+  # Cloud Management UI (export are used for adapt_file)
+  export EP_CM=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-mgmt-admin" -o jsonpath="{.spec.host}")
   # Manager UI
-  EP_APIC_MGR=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-mgmt-api-manager" -o jsonpath="{.spec.host}")
+  export EP_APIC_MGR=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-mgmt-api-manager" -o jsonpath="{.spec.host}")
   # Platform API URL
-  EP_API=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-mgmt-platform-api" -o jsonpath="{.spec.host}")
+  export EP_API=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-mgmt-platform-api" -o jsonpath="{.spec.host}")
   # gwv6-gateway-manager
   EP_GWD=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-gwv6-gateway-manager" -o jsonpath="{.spec.host}")
   # EP_GWD=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-gw-gateway-manager" -o jsonpath="{.spec.host}")
@@ -1513,7 +1576,7 @@ function init_apic_variables() {
   # dev portal-portal-web
   local lf_dev_portal_web_route_name=$(oc -n ${apic_project} get route -o custom-columns="Name:metadata.name" --no-headers | grep -E "^${APIC_INSTANCE_NAME}-.*-devportal-web$");
   decho $lf_tracelevel "lf_dev_portal_web_route_name: $lf_dev_portal_web_route_name" 
-  EP_PDEV_WEB=$($MY_CLUSTER_COMMAND -n ${apic_project}  get route "${lf_dev_portal_web_route_name}" -o jsonpath="{.spec.host}" --no-headers)
+  export EP_PDEV_WEB=$($MY_CLUSTER_COMMAND -n ${apic_project}  get route "${lf_dev_portal_web_route_name}" -o jsonpath="{.spec.host}" --no-headers)
 
   decho $lf_tracelevel "EP_CM: https://$EP_CM"
   decho $lf_tracelevel "EP_APIC_MGR: $EP_APIC_MGR"
@@ -1698,34 +1761,26 @@ function apic_run_all () {
   mylog info "Downloading apic config json file (${MY_APIC_WORKINGDIR}resources/fullcreds.json)" 1>&2
   curl -sk "${TOOLKIT_CREDS_URL}" -H "Authorization: Bearer ${access_token}" -H "Accept: application/json" -H "Content-Type: application/json" -o "${MY_APIC_WORKINGDIR}resources/fullcreds.json"
   
-  # toto
-  # create_mail_server "${VAR_SMTP_SERVER_IP}" "${VAR_SMTP_SERVER_PORT}"
+  create_mail_server "${VAR_SMTP_SERVER_IP}" "${VAR_SMTP_SERVER_PORT}"
 
-  # toto
-  # update_manager_lur
+  update_manager_lur
 
-  # toto
-  # create_topology
+  create_topology
 
-  # toto
-  # replace_dp_gtw_cert
+  replace_dp_gtw_cert
 
-  # toto
-  # create_org "${APIC_PROVIDER_ORG}" "${APIC_ORG1_USERNAME}" "${APIC_ORG1_PASSWORD}" "${APIC_ORG1_USER_EMAIL}"
+  create_org "${APIC_PROVIDER_ORG}" "${APIC_ORG1_USERNAME}" "${APIC_ORG1_PASSWORD}" "${APIC_ORG1_USER_EMAIL}"
   
   # Create API Manager token
   create_am_token
 
   # download_projects
 
-  # create_apic_resources $access_token $amToken $APIC_PROVIDER_ORG
+  create_apic_resources $access_token $amToken $APIC_PROVIDER_ORG
 
-  # toto
-  # create_catalog "${APIC_PROVIDER_ORG}"
+  create_catalog "${APIC_PROVIDER_ORG}"
 
   create_keycloak_oidc_registry
-
-  exit 1
 
   # Push API into draft
   apic_provider_org_lower=$(echo "$APIC_PROVIDER_ORG" | awk '{print tolower($0)}')

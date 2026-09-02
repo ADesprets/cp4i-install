@@ -18,11 +18,11 @@
         "authorization_endpoint": "https://${APIC_KEYCLOAK_HOST}/realms/${MY_KEYCLOAK_CP4I_REALM}/protocol/openid-connect/auth",
         "token_endpoint": {
             "endpoint": "https://${APIC_KEYCLOAK_HOST}/realms/${MY_KEYCLOAK_CP4I_REALM}/protocol/openid-connect/token",
-            "tls_client_profile_url": "https://api.apps.itz-c4h13x.hub04-lb.techzone.ibm.com/api/orgs/8c5de558-f37e-4a2c-8383-f84b303fffef/tls-client-profiles/caa5f439-5ef8-44a5-8c26-ba5fcebf2254"
+            "tls_client_profile_url": "${APIC_TLS_CLIENT_PROFILE_DEFAULT_URL}"
         },
         "jwks_uri": {
             "endpoint": "https://${APIC_KEYCLOAK_HOST}/realms/${MY_KEYCLOAK_CP4I_REALM}/protocol/openid-connect/certs",
-            "tls_client_profile_url": "https://api.apps.itz-c4h13x.hub04-lb.techzone.ibm.com/api/orgs/8c5de558-f37e-4a2c-8383-f84b303fffef/tls-client-profiles/caa5f439-5ef8-44a5-8c26-ba5fcebf2254"
+            "tls_client_profile_url": "${APIC_TLS_CLIENT_PROFILE_DEFAULT_URL}"
         },
 		"oidc_rp_logout": {
 			"enabled": false,
@@ -38,23 +38,23 @@
 			"last_name": "family_name"
 		},
 		"userinfo_endpoint": {
-			"endpoint": "https://keycloak-ibm-common-services.apps.itz-c4h13x.hub04-lb.techzone.ibm.com/realms/cloudpak/protocol/openid-connect/userinfo",
-			"tls_client_profile_url": "https://api.apps.itz-c4h13x.hub04-lb.techzone.ibm.com/api/orgs/8c5de558-f37e-4a2c-8383-f84b303fffef/tls-client-profiles/caa5f439-5ef8-44a5-8c26-ba5fcebf2254"
+			"endpoint": "https://${APIC_KEYCLOAK_HOST}/realms/${MY_KEYCLOAK_CP4I_REALM}/protocol/openid-connect/userinfo",
+			"tls_client_profile_url": "${APIC_TLS_CLIENT_PROFILE_DEFAULT_URL}"
 		},
 		"redirect_uris": {
 			"provider": {
-				"redirect_uri": "https://manager.apps.itz-c4h13x.hub04-lb.techzone.ibm.com/manager/uia/oauth2/redirect",
-				"redirect_uri_implicit": "https://manager.apps.itz-c4h13x.hub04-lb.techzone.ibm.com/manager/oauth2/redirect",
-				"oidc_redirect_uri": "https://api.apps.itz-c4h13x.hub04-lb.techzone.ibm.com/api/oauth2/redirect"
+				"redirect_uri": "https://${EP_APIC_MGR}/manager/uia/oauth2/redirect",
+				"redirect_uri_implicit": "https://${EP_APIC_MGR}/manager/oauth2/redirect",
+				"oidc_redirect_uri": "https://${EP_API}/api/oauth2/redirect"
 			},
 			"admin": {
-				"redirect_uri": "https://admin.apps.itz-c4h13x.hub04-lb.techzone.ibm.com/admin/uia/oauth2/redirect",
-				"redirect_uri_implicit": "https://admin.apps.itz-c4h13x.hub04-lb.techzone.ibm.com/admin/oauth2/redirect",
-				"oidc_redirect_uri": "https://api.apps.itz-c4h13x.hub04-lb.techzone.ibm.com/api/oauth2/redirect"
+				"redirect_uri": "https://${EP_CM}/admin/uia/oauth2/redirect",
+				"redirect_uri_implicit": "https://${EP_CM}/admin/oauth2/redirect",
+				"oidc_redirect_uri": "https://${EP_API}/api/oauth2/redirect"
 			},
 			"consumer": {
-				"redirect_uri": "https://consumer.apps.itz-c4h13x.hub04-lb.techzone.ibm.com/consumer-api/ibm_apim/oauth2/redirect",
-				"oidc_redirect_uri": "https://consumer.apps.itz-c4h13x.hub04-lb.techzone.ibm.com/consumer-api/oauth2/redirect"
+				"redirect_uri": "https://${EP_PDEV_WEB}/consumer-api/ibm_apim/oauth2/redirect",
+				"oidc_redirect_uri": "https://${EP_PDEV_WEB}/consumer-api/oauth2/redirect"
 			}
 		}
     },
