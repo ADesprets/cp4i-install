@@ -2,7 +2,7 @@
     "type": "user_registry",
     "api_version": "2.0.0",
     "name": "url_registry",
-    "title": "url_registry",
+    "title": "Fake authentication URL Registry",
     "summary": "Sample URL registry using the fake authentication service.",
     "integration_url": "${APIC_INTEGRATION_URL}",
     "registry_type": "authurl",
@@ -15,7 +15,7 @@
     "identity_providers": [
         {
             "name": "url_registry",
-            "title": "url_registry"
+            "title": "Fake authentication URL Registry"
         }
     ],
     "visibility": {

@@ -1,42 +1,62 @@
 {
-    "type": "user_registry",
     "api_version": "2.0.0",
     "name": "keycloak-oidc",
     "title": "Keycloak OIDC",
     "summary": "Keycloak OIDC user registry (${MY_KEYCLOAK_CP4I_REALM} realm)",
-    "integration_url": "${APIC_OIDC_INTEGRATION_URL}",
     "registry_type": "oidc",
-    "user_managed": false,
-    "user_registry_managed": false,
-    "external_group_mapping_enabled": false,
-    "case_sensitive": false,
-    "email_required": true,
-    "email_unique_if_exist": true,
-    "identity_providers": [
-        {
-            "name": "keycloak-oidc",
-            "title": "Keycloak OIDC"
-        }
-    ],
     "visibility": {
         "type": "public"
     },
+    "case_sensitive": false,
+    "email_required": false,
+    "email_unique_if_exist": true,
     "configuration": {
+		"provider_type": "standard",
+        "scope": "openid",
         "client_id": "${MY_KEYCLOAK_APIC_CLIENT_ID}",
         "client_secret": "${APIC_KEYCLOAK_CLIENT_SECRET}",
         "authorization_endpoint": "https://${APIC_KEYCLOAK_HOST}/realms/${MY_KEYCLOAK_CP4I_REALM}/protocol/openid-connect/auth",
         "token_endpoint": {
-            "endpoint": "https://${APIC_KEYCLOAK_HOST}/realms/${MY_KEYCLOAK_CP4I_REALM}/protocol/openid-connect/token"
+            "endpoint": "https://${APIC_KEYCLOAK_HOST}/realms/${MY_KEYCLOAK_CP4I_REALM}/protocol/openid-connect/token",
+            "tls_client_profile_url": "https://api.apps.itz-c4h13x.hub04-lb.techzone.ibm.com/api/orgs/8c5de558-f37e-4a2c-8383-f84b303fffef/tls-client-profiles/caa5f439-5ef8-44a5-8c26-ba5fcebf2254"
         },
-        "userinfo_endpoint": {
-            "endpoint": "https://${APIC_KEYCLOAK_HOST}/realms/${MY_KEYCLOAK_CP4I_REALM}/protocol/openid-connect/userinfo"
+        "jwks_uri": {
+            "endpoint": "https://${APIC_KEYCLOAK_HOST}/realms/${MY_KEYCLOAK_CP4I_REALM}/protocol/openid-connect/certs",
+            "tls_client_profile_url": "https://api.apps.itz-c4h13x.hub04-lb.techzone.ibm.com/api/orgs/8c5de558-f37e-4a2c-8383-f84b303fffef/tls-client-profiles/caa5f439-5ef8-44a5-8c26-ba5fcebf2254"
         },
-        "jwks_endpoint": {
-            "endpoint": "https://${APIC_KEYCLOAK_HOST}/realms/${MY_KEYCLOAK_CP4I_REALM}/protocol/openid-connect/certs"
-        },
-        "logout_endpoint": "https://${APIC_KEYCLOAK_HOST}/realms/${MY_KEYCLOAK_CP4I_REALM}/protocol/openid-connect/logout",
-        "features": {
-            "use_pkce": true
-        }
-    }
+		"oidc_rp_logout": {
+			"enabled": false,
+			"include_refresh_token": false,
+			"endpoint": {}
+		},		"response_type": "code",
+		"credential_location": "auth_header",
+		"features": [],
+		"field_mapping": {
+			"email": "email",
+			"username": "name",
+			"first_name": "given_name",
+			"last_name": "family_name"
+		},
+		"userinfo_endpoint": {
+			"endpoint": "https://keycloak-ibm-common-services.apps.itz-c4h13x.hub04-lb.techzone.ibm.com/realms/cloudpak/protocol/openid-connect/userinfo",
+			"tls_client_profile_url": "https://api.apps.itz-c4h13x.hub04-lb.techzone.ibm.com/api/orgs/8c5de558-f37e-4a2c-8383-f84b303fffef/tls-client-profiles/caa5f439-5ef8-44a5-8c26-ba5fcebf2254"
+		},
+		"redirect_uris": {
+			"provider": {
+				"redirect_uri": "https://manager.apps.itz-c4h13x.hub04-lb.techzone.ibm.com/manager/uia/oauth2/redirect",
+				"redirect_uri_implicit": "https://manager.apps.itz-c4h13x.hub04-lb.techzone.ibm.com/manager/oauth2/redirect",
+				"oidc_redirect_uri": "https://api.apps.itz-c4h13x.hub04-lb.techzone.ibm.com/api/oauth2/redirect"
+			},
+			"admin": {
+				"redirect_uri": "https://admin.apps.itz-c4h13x.hub04-lb.techzone.ibm.com/admin/uia/oauth2/redirect",
+				"redirect_uri_implicit": "https://admin.apps.itz-c4h13x.hub04-lb.techzone.ibm.com/admin/oauth2/redirect",
+				"oidc_redirect_uri": "https://api.apps.itz-c4h13x.hub04-lb.techzone.ibm.com/api/oauth2/redirect"
+			},
+			"consumer": {
+				"redirect_uri": "https://consumer.apps.itz-c4h13x.hub04-lb.techzone.ibm.com/consumer-api/ibm_apim/oauth2/redirect",
+				"oidc_redirect_uri": "https://consumer.apps.itz-c4h13x.hub04-lb.techzone.ibm.com/consumer-api/oauth2/redirect"
+			}
+		}
+    },
+    "integration_url": "${APIC_OIDC_INTEGRATION_URL}"
 }

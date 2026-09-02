@@ -84,69 +84,8 @@ function keycloak_configure_email() {
   trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
-################################################
-# Create a Keycloak access token and store it in KC_AT.
-# Parameters (all optional):
-#   $1 : username  – if omitted, read from the 'cs-keycloak-initial-admin' secret (temp-admin)
-#   $2 : password  – if omitted, read from the 'cs-keycloak-initial-admin' secret
-#   $3 : realm     – if omitted, defaults to MY_KEYCLOAK_MASTER_REALM
-# Examples:
-#   create_kc_token                                          # temp-admin / master
-#   create_kc_token "${MY_USER}" "${MY_USER_PASSWORD}"       # desprets   / master
-#   create_kc_token "${MY_USER}" "${MY_USER_PASSWORD}" "${MY_KEYCLOAK_CP4I_REALM}"
-function create_kc_token(){
-  local lf_tracelevel=3
-  trace_in $lf_tracelevel ${FUNCNAME[0]}
-
-  local lf_username="${1:-}"
-  local lf_password="${2:-}"
-  local lf_realm="${3:-${MY_KEYCLOAK_MASTER_REALM}}"
-  decho $lf_tracelevel "Parameters: |username=${lf_username:-<from secret>}| |realm=${lf_realm}|"
-
-  # If no credentials supplied, retrieve them from the Keycloak operator secret (temp-admin).
-  if [[ -z "${lf_username}" || -z "${lf_password}" ]]; then
-    local lf_cs_keycloak_initial_admin_secret=cs-keycloak-initial-admin
-    lf_username=$($MY_CLUSTER_COMMAND -n "${VAR_KEYCLOAK_NAMESPACE}" \
-      get secret "${lf_cs_keycloak_initial_admin_secret}" \
-      -o jsonpath='{.data.username}' 2>/dev/null | base64 --decode)
-    lf_password=$($MY_CLUSTER_COMMAND -n "${VAR_KEYCLOAK_NAMESPACE}" \
-      get secret "${lf_cs_keycloak_initial_admin_secret}" \
-      -o jsonpath='{.data.password}' 2>/dev/null | base64 --decode)
-    if [[ -z "${lf_username}" || -z "${lf_password}" ]]; then
-      mylog error "Could not retrieve Keycloak admin credentials from secret '${lf_cs_keycloak_initial_admin_secret}' in namespace '${VAR_KEYCLOAK_NAMESPACE}'." 1>&2
-      mylog error "  username='${lf_username}' password=$([ -n "${lf_password}" ] && echo '<set>' || echo '<empty>')" 1>&2
-      trace_out $lf_tracelevel ${FUNCNAME[0]}
-      return 1
-    fi
-  fi
-  decho $lf_tracelevel "lf_username: ${lf_username} | lf_realm: ${lf_realm} | EP_KEYCLOAK: ${EP_KEYCLOAK}"
-
-  # Obtain an access token for the requested realm / admin-cli client
-  local lf_token_url="${EP_KEYCLOAK}/realms/${lf_realm}/protocol/openid-connect/token"
-  decho $lf_tracelevel "curl -sk -X POST \"${lf_token_url}\" --data grant_type=password username=${lf_username} ..."
-  local lf_token_response lf_http_status
-  lf_token_response=$(curl -sk -o /tmp/kc_token_response.json -w "%{http_code}" -X POST \
-    "${lf_token_url}" \
-    -H "Content-Type: application/x-www-form-urlencoded" \
-    --data-urlencode "grant_type=password" \
-    --data-urlencode "client_id=${MY_KEYCLOAK_ADMIN_CLI_CLIENT}" \
-    --data-urlencode "username=${lf_username}" \
-    --data-urlencode "password=${lf_password}")
-  lf_http_status="${lf_token_response}"
-  lf_token_response=$(cat /tmp/kc_token_response.json 2>/dev/null)
-  decho $lf_tracelevel "HTTP status: ${lf_http_status} | lf_token_response: ${lf_token_response}"
-
-  KC_AT=$(printf '%s\n' "${lf_token_response}" | jq -r '.access_token // empty')
-  if [[ -z "${KC_AT}" ]]; then
-    mylog error "Failed to obtain Keycloak token for '${lf_username}' on realm '${lf_realm}'. HTTP status: ${lf_http_status} | Response: ${lf_token_response}" 1>&2
-    trace_out $lf_tracelevel ${FUNCNAME[0]}
-    return 1
-  else
-    mylog info "Token obtained for '${lf_username}' on realm '${lf_realm}' (valid ~1 minute)." 1>&2
-  fi
-
-  trace_out $lf_tracelevel ${FUNCNAME[0]}
-}
+# create_kc_token is defined in lib.sh and available to all demo scripts.
+# See lib.sh for the full implementation and parameter documentation.
 
 ################################################
 # Create a Keycloak administrator user in the master realm.

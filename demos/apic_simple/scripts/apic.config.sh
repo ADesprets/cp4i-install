@@ -1339,14 +1339,52 @@ function create_keycloak_oidc_registry() {
       return 1
     fi
 
-    # Retrieve the Keycloak client secret for the APIC client
-    export APIC_KEYCLOAK_CLIENT_SECRET
-    APIC_KEYCLOAK_CLIENT_SECRET=$($MY_CLUSTER_COMMAND -n "${VAR_KEYCLOAK_NAMESPACE}" get secret "${MY_KEYCLOAK_APIC_CLIENT_ID}-secret" \
-      -o jsonpath='{.data.secret}' 2>/dev/null | base64 --decode)
-    if [[ -z "$APIC_KEYCLOAK_CLIENT_SECRET" ]]; then
-      mylog warn "Keycloak client secret not found in secret '${MY_KEYCLOAK_APIC_CLIENT_ID}-secret'. Proceeding with empty secret (update manually if required)." 1>&2
-      APIC_KEYCLOAK_CLIENT_SECRET=""
+    # Retrieve the APIC client_id and client_secret from Keycloak via the Admin API.
+    # MY_USER lives in the master realm and holds cross-realm admin rights, so the token
+    # is obtained from master. The client lookup then targets the cloudpak realm where
+    # keycloak_create_apic_client registered the client.
+    # create_kc_token is defined in lib.sh.
+    local lf_kc_ep="https://${APIC_KEYCLOAK_HOST}"
+    EP_KEYCLOAK="${lf_kc_ep}" \
+      create_kc_token "${MY_USER}" "${MY_USER_PASSWORD}"
+    if [[ -z "${KC_AT}" ]]; then
+      mylog error "Cannot retrieve Keycloak client secret: failed to obtain token for '${MY_USER}'." 1>&2
+      trace_out $lf_tracelevel ${FUNCNAME[0]}
+      return 1
     fi
+
+    decho $lf_tracelevel "curl -sk -X GET \"${lf_kc_ep}/admin/realms/${MY_KEYCLOAK_CP4I_REALM}/clients?clientId=${MY_KEYCLOAK_APIC_CLIENT_ID}&exact=true\""
+    local lf_kc_client_json
+    lf_kc_client_json=$(curl -sk -X GET \
+      "${lf_kc_ep}/admin/realms/${MY_KEYCLOAK_CP4I_REALM}/clients?clientId=${MY_KEYCLOAK_APIC_CLIENT_ID}&exact=true" \
+      -H "Authorization: Bearer ${KC_AT}" \
+      -H "Accept: application/json")
+    decho $lf_tracelevel "lf_kc_client_json: $(echo "${lf_kc_client_json}" | jq -c '.[0] | {id,clientId}')"
+
+    local lf_kc_client_uuid
+    lf_kc_client_uuid=$(printf '%s\n' "${lf_kc_client_json}" | jq -r '.[0].id // empty')
+    if [[ -z "${lf_kc_client_uuid}" ]]; then
+      mylog error "APIC client '${MY_KEYCLOAK_APIC_CLIENT_ID}' not found in Keycloak realm '${MY_KEYCLOAK_CP4I_REALM}'. Run keycloak_create_apic_client first." 1>&2
+      trace_out $lf_tracelevel ${FUNCNAME[0]}
+      return 1
+    fi
+
+    export APIC_KEYCLOAK_CLIENT_ID
+    APIC_KEYCLOAK_CLIENT_ID=$(printf '%s\n' "${lf_kc_client_json}" | jq -r '.[0].clientId // empty')
+
+    decho $lf_tracelevel "curl -sk -X GET \"${lf_kc_ep}/admin/realms/${MY_KEYCLOAK_CP4I_REALM}/clients/${lf_kc_client_uuid}/client-secret\""
+    export APIC_KEYCLOAK_CLIENT_SECRET
+    APIC_KEYCLOAK_CLIENT_SECRET=$(curl -sk -X GET \
+      "${lf_kc_ep}/admin/realms/${MY_KEYCLOAK_CP4I_REALM}/clients/${lf_kc_client_uuid}/client-secret" \
+      -H "Authorization: Bearer ${KC_AT}" \
+      -H "Accept: application/json" \
+      | jq -r '.value // empty')
+    if [[ -z "${APIC_KEYCLOAK_CLIENT_SECRET}" ]]; then
+      mylog error "Could not retrieve client secret for '${MY_KEYCLOAK_APIC_CLIENT_ID}' from Keycloak." 1>&2
+      trace_out $lf_tracelevel ${FUNCNAME[0]}
+      return 1
+    fi
+    decho $lf_tracelevel "APIC_KEYCLOAK_CLIENT_ID: ${APIC_KEYCLOAK_CLIENT_ID} | APIC_KEYCLOAK_CLIENT_SECRET: <set>"
 
     adapt_file "${MY_APIC_SIMPLE_DEMODIR}resources/" "${MY_APIC_WORKINGDIR}resources/" OIDC_Registry_res.json
 
@@ -1660,26 +1698,34 @@ function apic_run_all () {
   mylog info "Downloading apic config json file (${MY_APIC_WORKINGDIR}resources/fullcreds.json)" 1>&2
   curl -sk "${TOOLKIT_CREDS_URL}" -H "Authorization: Bearer ${access_token}" -H "Accept: application/json" -H "Content-Type: application/json" -o "${MY_APIC_WORKINGDIR}resources/fullcreds.json"
   
-  create_mail_server "${VAR_SMTP_SERVER_IP}" "${VAR_SMTP_SERVER_PORT}"
+  # toto
+  # create_mail_server "${VAR_SMTP_SERVER_IP}" "${VAR_SMTP_SERVER_PORT}"
 
-  update_manager_lur
+  # toto
+  # update_manager_lur
 
-  create_topology
+  # toto
+  # create_topology
 
-  replace_dp_gtw_cert
+  # toto
+  # replace_dp_gtw_cert
 
-  create_org "${APIC_PROVIDER_ORG}" "${APIC_ORG1_USERNAME}" "${APIC_ORG1_PASSWORD}" "${APIC_ORG1_USER_EMAIL}"
+  # toto
+  # create_org "${APIC_PROVIDER_ORG}" "${APIC_ORG1_USERNAME}" "${APIC_ORG1_PASSWORD}" "${APIC_ORG1_USER_EMAIL}"
   
   # Create API Manager token
   create_am_token
 
   # download_projects
 
-  create_apic_resources $access_token $amToken $APIC_PROVIDER_ORG
+  # create_apic_resources $access_token $amToken $APIC_PROVIDER_ORG
 
-  create_catalog "${APIC_PROVIDER_ORG}"
+  # toto
+  # create_catalog "${APIC_PROVIDER_ORG}"
 
   create_keycloak_oidc_registry
+
+  exit 1
 
   # Push API into draft
   apic_provider_org_lower=$(echo "$APIC_PROVIDER_ORG" | awk '{print tolower($0)}')
