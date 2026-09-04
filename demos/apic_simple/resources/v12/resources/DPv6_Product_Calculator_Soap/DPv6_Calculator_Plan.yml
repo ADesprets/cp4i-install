@@ -1,0 +1,19 @@
+kind: Plan
+apiVersion: api.ibm.com/v1
+metadata:
+  name: DPv6_Calculator_Plan
+  namespace: DPv6_Product_Calculator_Soap
+  version: '1.0'
+  tags: []
+  description: ''
+spec:
+  qos:
+    withQuota:
+      unlimited: {}
+  extensions:
+    dp-nano-gateway:
+      apiVersion: api.ibm.com/v1
+      spec:
+        apis:
+          - $ref: DPv6_Product_Calculator_Soap:CalculatorApi:1.0
+            operations: []

@@ -1,0 +1,13 @@
+kind: Product
+apiVersion: api.ibm.com/v1
+metadata:
+  name: Dpv6_Calculator_Product
+  namespace: DPv6_Product_Calculator_Soap
+  version: '1.0'
+  tags: []
+  description: ''
+spec:
+  apis:
+    - $ref: DPv6_Product_Calculator_Soap:CalculatorApi:1.0
+  plans:
+    - $ref: DPv6_Product_Calculator_Soap:DPv6_Calculator_Plan:1.0

@@ -193,6 +193,10 @@ function adapt_files_recursive() {
 
 ################################################
 # Upload projects
+# This function loads projects into the APIC manager studio.
+# It supports two formats for projects in the projects directory:
+# - A directory: the function packages it as a zip file on-the-fly and uploads it.
+# - A zip file: the function uploads the file directly without any alteration.
 function upload_projects() {
   local lf_tracelevel=5
   trace_in $lf_tracelevel ${FUNCNAME[0]}
@@ -211,20 +215,28 @@ function upload_projects() {
   # adapt_files_recursive "${lf_projects_source_dir}" "${lf_projects_target_dir}"
 
   if [[ -d "${lf_projects_dir}" ]]; then
-    for project_dir in "${lf_projects_dir}"*/; do
-      if [[ -d "${project_dir}" ]]; then
-        local project_name=$(basename "${project_dir}")
-        mylog info "  - ${project_name}" 1>&2
-        local zip_path="/tmp/api_${RANDOM}.zip"
+    for entry in "${lf_projects_dir}"*; do
+      [[ -e "${entry}" ]] || continue
+
+      local zip_path=""
+      local should_cleanup_zip=false
+      local project_name=""
+
+      if [[ -d "${entry}" ]]; then
+        project_name=$(basename "${entry}")
+        mylog info "  - Directory project: ${project_name} (Zipping first)" 1>&2
+        zip_path="/tmp/api_${RANDOM}.zip"
+        should_cleanup_zip=true
+
         # Create temporary directory structure
         local temp_dir=$(mktemp -d)
-        mylog info "Copy project ${project_dir} files into ${temp_dir}" 1>&2
+        mylog info "Copy project ${entry} files into ${temp_dir}" 1>&2
 
         # meta data for the project
         # echo "$api_definition" > "${temp_dir}/${project_name}.yaml"
         
         mkdir -p "${temp_dir}/resources/${project_name}"
-        cp -r "${project_dir}"* "${temp_dir}/resources/${project_name}/"
+        cp -r "${entry}/"* "${temp_dir}/resources/${project_name}/"
         
         # Create zip
         (pushd "$temp_dir" > /dev/null && zip -r "$zip_path" . > /dev/null && popd > /dev/null)
@@ -240,14 +252,24 @@ function upload_projects() {
         # Cleanup temp directory
         rm -rf "$temp_dir"
 
-        # Now upload the zip to APIC Manager
+      elif [[ -f "${entry}" && "${entry}" == *.zip ]]; then
+        project_name=$(basename "${entry}" .zip)
+        mylog info "  - Zip project: ${project_name} (Uploading directly)" 1>&2
+        zip_path="${entry}"
+        should_cleanup_zip=false
+      else
+        continue
+      fi
+
+      # Now upload the zip to APIC Manager
+      if [[ -n "${zip_path}" && -f "${zip_path}" ]]; then
         local response
         local status_code
         
         local apic_provider_org_lower=$(echo "$APIC_PROVIDER_ORG" | awk '{print tolower($0)}')
         local catalog="sandbox"
         
-		    decho $lf_tracelevel "curl -sk -X POST -H \"Accept: application/json\" -H \"authorization: Bearer \$AT\" -F \"project=@${zip_path};type=application/zip\" \"${PLATFORM_API_URL}api/catalogs/${apic_provider_org_lower}/${catalog}/publish-project\""
+        decho $lf_tracelevel "curl -sk -X POST -H \"Accept: application/json\" -H \"authorization: Bearer \$AT\" -F \"project=@${zip_path};type=application/zip\" \"${PLATFORM_API_URL}api/catalogs/${apic_provider_org_lower}/${catalog}/publish-project\""
         response=$(curl -s -w "\n%{http_code}" -k \
             -X POST \
             -H "Authorization: Bearer ${amToken}" \
@@ -259,8 +281,10 @@ function upload_projects() {
         mylog info "Upload response status: ${status_code}" 1>&2
         decho $lf_tracelevel "Upload response: $response"
 
-        # Cleanup zip file
-        # rm -f "$zip_path"
+        # Cleanup temporary zip file if created on-the-fly
+        if [[ "${should_cleanup_zip}" == "true" ]]; then
+          rm -f "$zip_path"
+        fi
       fi
     done
   else
@@ -1782,10 +1806,13 @@ function apic_run_all () {
 
   create_keycloak_oidc_registry
 
-  # Push API into draft
-  apic_provider_org_lower=$(echo "$APIC_PROVIDER_ORG" | awk '{print tolower($0)}')
+  upload_projects
 
-  load_apis $PLATFORM_API_URL $apic_provider_org_lower $amToken
+
+  # Push API into draft
+  # apic_provider_org_lower=$(echo "$APIC_PROVIDER_ORG" | awk '{print tolower($0)}')
+
+  # load_apis $PLATFORM_API_URL $apic_provider_org_lower $amToken
 
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
