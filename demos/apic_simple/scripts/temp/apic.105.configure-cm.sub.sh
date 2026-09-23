@@ -187,7 +187,7 @@ catalog_title=("Prod" "UAT" "QA")
 catalog_name=("prod" "uat" "qa")
 catalog_summary=("Production" "UAT" "Quality and Acceptance")
 
-  portalServiceURL=$(curl -sk -X GET "${PLATFORM_API_URL}api/orgs/$org_name/portal-services?fields=url" \
+  portalServiceURL=$(curl -sk "${PLATFORM_API_URL}api/orgs/$org_name/portal-services?fields=url" \
     -H "Authorization: Bearer $amToken" \
     -H 'accept: application/json' \
     -H 'content-type: application/json' \
@@ -196,7 +196,7 @@ catalog_summary=("Production" "UAT" "Quality and Acceptance")
 
 for index in ${!catalog_name[@]}
     do
-      catURL=$(curl -sk -X GET "${PLATFORM_API_URL}api/catalogs/$org_name/${catalog_name[$index]}?fields=url" \
+      catURL=$(curl -sk "${PLATFORM_API_URL}api/catalogs/$org_name/${catalog_name[$index]}?fields=url" \
         -H "Authorization: Bearer $amToken" \
         -H 'accept: application/json' \
         -H 'content-type: application/json' \

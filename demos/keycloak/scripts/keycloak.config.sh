@@ -155,9 +155,9 @@ function keycloak_create_master_admin() {
   esac
 
   # Retrieve the user ID by username search (works for both 201 and 409)
-  decho $lf_tracelevel "curl -sk -X GET \"${EP_KEYCLOAK}/admin/realms/${MY_KEYCLOAK_MASTER_REALM}/users?username=${MY_USER}&exact=true\""
+  decho $lf_tracelevel "curl -sk \"${EP_KEYCLOAK}/admin/realms/${MY_KEYCLOAK_MASTER_REALM}/users?username=${MY_USER}&exact=true\""
   local lf_user_id
-  lf_user_id=$(curl -sk -X GET \
+  lf_user_id=$(curl -sk \
     "${EP_KEYCLOAK}/admin/realms/${MY_KEYCLOAK_MASTER_REALM}/users?username=${MY_USER}&exact=true" \
     -H "Authorization: Bearer ${KC_AT}" \
     -H "Content-Type: application/json" \
@@ -170,9 +170,9 @@ function keycloak_create_master_admin() {
   decho $lf_tracelevel "lf_user_id: ${lf_user_id}"
 
   # Fetch the 'admin' realm-role representation (id + name are required for the mapping call)
-  decho $lf_tracelevel "curl -sk -X GET \"${EP_KEYCLOAK}/admin/realms/${MY_KEYCLOAK_MASTER_REALM}/roles/admin\""
+  decho $lf_tracelevel "curl -sk \"${EP_KEYCLOAK}/admin/realms/${MY_KEYCLOAK_MASTER_REALM}/roles/admin\""
   local lf_role_payload
-  lf_role_payload=$(curl -sk -X GET \
+  lf_role_payload=$(curl -sk \
     "${EP_KEYCLOAK}/admin/realms/${MY_KEYCLOAK_MASTER_REALM}/roles/admin" \
     -H "Authorization: Bearer ${KC_AT}" \
     -H "Content-Type: application/json")
@@ -359,9 +359,9 @@ function keycloak_create_apic_client() {
   esac
 
   # Retrieve the internal client UUID (needed for the client-secret endpoint)
-  decho $lf_tracelevel "curl -sk -X GET \"${EP_KEYCLOAK}/admin/realms/${MY_KEYCLOAK_CP4I_REALM}/clients?clientId=${MY_KEYCLOAK_APIC_CLIENT_ID}&exact=true\""
+  decho $lf_tracelevel "curl -sk \"${EP_KEYCLOAK}/admin/realms/${MY_KEYCLOAK_CP4I_REALM}/clients?clientId=${MY_KEYCLOAK_APIC_CLIENT_ID}&exact=true\""
   local lf_client_uuid
-  lf_client_uuid=$(curl -sk -X GET \
+  lf_client_uuid=$(curl -sk \
     "${EP_KEYCLOAK}/admin/realms/${MY_KEYCLOAK_CP4I_REALM}/clients?clientId=${MY_KEYCLOAK_APIC_CLIENT_ID}&exact=true" \
     -H "Authorization: Bearer ${KC_AT}" \
     -H "Content-Type: application/json" \
@@ -374,9 +374,9 @@ function keycloak_create_apic_client() {
   decho $lf_tracelevel "lf_client_uuid: ${lf_client_uuid}"
 
   # Retrieve and display the generated client secret
-  decho $lf_tracelevel "curl -sk -X GET \"${EP_KEYCLOAK}/admin/realms/${MY_KEYCLOAK_CP4I_REALM}/clients/${lf_client_uuid}/client-secret\""
+  decho $lf_tracelevel "curl -sk \"${EP_KEYCLOAK}/admin/realms/${MY_KEYCLOAK_CP4I_REALM}/clients/${lf_client_uuid}/client-secret\""
   local lf_client_secret
-  lf_client_secret=$(curl -sk -X GET \
+  lf_client_secret=$(curl -sk \
     "${EP_KEYCLOAK}/admin/realms/${MY_KEYCLOAK_CP4I_REALM}/clients/${lf_client_uuid}/client-secret" \
     -H "Authorization: Bearer ${KC_AT}" \
     -H "Content-Type: application/json" \

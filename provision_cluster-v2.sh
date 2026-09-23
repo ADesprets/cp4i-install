@@ -731,14 +731,20 @@ function install_fs() {
     local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
     unset VAR_CATALOG_SOURCE
 
-    # Create a subscription object for common services Operator
-    create_operator_instance "${MY_COMMONSERVICES_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_COMMONSERVICES_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
+    # Create a namespace-scoped OperatorGroup for Common Services.
+    export VAR_OPERATORGROUP=$MY_COMMONSERVICES_OPERATORGROUP
+    export VAR_NAMESPACE=$MY_COMMONSERVICES_NAMESPACE
+    create_oc_resource "OperatorGroup" "$MY_COMMONSERVICES_OPERATORGROUP" "${MY_RESOURCESDIR}" "${MY_COMMONSERVICES_WORKINGDIR}" "operator-group-single.yaml" "$MY_COMMONSERVICES_NAMESPACE"
+    unset VAR_OPERATORGROUP VAR_NAMESPACE
+
+    # Install the Common Services operator only in ibm-common-services.
+    create_operator_instance "${MY_COMMONSERVICES_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_COMMONSERVICES_WORKINGDIR}" "${MY_COMMONSERVICES_NAMESPACE}"
 
     ## Setting hardware Accept the license to use foundational services by adding spec.license.accept: true in the spec section.
-    accept_license_fs CommonService $MY_COMMONSERVICES_INSTANCE_NAME $MY_OPERATORS_NAMESPACE
+    accept_license_fs CommonService $MY_COMMONSERVICES_INSTANCE_NAME $MY_COMMONSERVICES_NAMESPACE
 
     # Configuring foundational services by using the CommonService custom resource.
-    create_oc_resource "CommonService" "$MY_COMMONSERVICES_INSTANCE_NAME" "${MY_RESOURCESDIR}" "${MY_COMMONSERVICES_WORKINGDIR}" "foundational-services-cr.yaml" "$MY_OPERATORS_NAMESPACE"
+    create_oc_resource "CommonService" "$MY_COMMONSERVICES_INSTANCE_NAME" "${MY_RESOURCESDIR}" "${MY_COMMONSERVICES_WORKINGDIR}" "foundational-services-cr.yaml" "$MY_COMMONSERVICES_NAMESPACE"
   fi
     
   trace_out $lf_tracelevel ${FUNCNAME[0]}
@@ -877,8 +883,14 @@ function install_navigator() {
     local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
     unset VAR_CATALOG_SOURCE
 
+    # Operator group for Navigator in single namespace
+    export VAR_OPERATORGROUP=$MY_NAVIGATOR_OPERATORGROUP
+    export VAR_NAMESPACE=$VAR_NAVIGATOR_NAMESPACE
+    create_oc_resource "OperatorGroup" "$MY_NAVIGATOR_OPERATORGROUP" "${MY_RESOURCESDIR}" "${MY_NAVIGATOR_WORKINGDIR}" "operator-group-single.yaml" "$VAR_NAVIGATOR_NAMESPACE"
+    unset VAR_OPERATORGROUP VAR_NAMESPACE
+
     # Creating Navigator operator subscription
-    create_operator_instance "${MY_NAVIGATOR_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_NAVIGATOR_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"    
+    create_operator_instance "${MY_NAVIGATOR_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_NAVIGATOR_WORKINGDIR}" "${VAR_NAVIGATOR_NAMESPACE}"
   fi
 
   if $MY_NAVIGATOR_INSTANCE; then
@@ -927,8 +939,14 @@ function install_assetrepo() {
     local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
     unset VAR_CATALOG_SOURCE
 
+    # Operator group for Asset Repository in single namespace
+    export VAR_OPERATORGROUP=$MY_ASSETREPO_OPERATORGROUP
+    export VAR_NAMESPACE=$VAR_ASSETREPO_NAMESPACE
+    create_oc_resource "OperatorGroup" "$MY_ASSETREPO_OPERATORGROUP" "${MY_RESOURCESDIR}" "${MY_ASSETREPO_WORKINGDIR}" "operator-group-single.yaml" "$VAR_ASSETREPO_NAMESPACE"
+    unset VAR_OPERATORGROUP VAR_NAMESPACE
+
     # Creating Asset Repository operator subscription
-    create_operator_instance "${MY_ASSETREPO_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_ASSETREPO_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
+    create_operator_instance "${MY_ASSETREPO_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_ASSETREPO_WORKINGDIR}" "${VAR_ASSETREPO_NAMESPACE}"
 
     if $MY_ASSETREPO_INSTANCE; then
       #SB]20240612 prise en compte de l'existence ou non de la variable portant la version
@@ -1004,9 +1022,14 @@ function install_ace() {
     local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
     unset VAR_CATALOG_SOURCE
 
+    # Operator group for ACE in single namespace
+    export VAR_OPERATORGROUP=$MY_ACE_OPERATORGROUP
+    export VAR_NAMESPACE=$VAR_ACE_NAMESPACE
+    create_oc_resource "OperatorGroup" "$MY_ACE_OPERATORGROUP" "${MY_RESOURCESDIR}" "${MY_ACE_WORKINGDIR}" "operator-group-single.yaml" "$VAR_ACE_NAMESPACE"
+    unset VAR_OPERATORGROUP VAR_NAMESPACE
 
     # Creating ACE operator subscription
-    create_operator_instance "${MY_ACE_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_ACE_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
+    create_operator_instance "${MY_ACE_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_ACE_WORKINGDIR}" "${VAR_ACE_NAMESPACE}"
     
     create_operand_instance "SwitchServer" "${VAR_ACE_SWITCHSERVER_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_ACE_WORKINGDIR}" "ACE-SwitchServer-Capability.yaml" "$VAR_ACE_NAMESPACE" "{.status.conditions[0].type}" "Ready"
 
@@ -1391,9 +1414,18 @@ function install_datapower_gateway() {
       unset VAR_APP_VERSION
     fi
 
-    # Create the ibm-datapower-operator subscription
-    mylog info "Creating DataPower operator subscription" 1>&2
-    create_operator_instance "${MY_DPGW_OPERATOR}" "${MY_DPGW_CATALOGSOURCE_LABEL}" "${MY_OPERATORSDIR}" "${MY_APIC_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
+    # Create a dedicated OperatorGroup only when DataPower uses a separate namespace.
+    # When it shares the APIC namespace, the APIC OperatorGroup covers both operators.
+    if [ "$VAR_APIC_NAMESPACE" != "$VAR_DPGW_NAMESPACE" ]; then
+      export VAR_OPERATORGROUP=$MY_DPGW_OPERATORGROUP
+      export VAR_NAMESPACE=$VAR_DPGW_NAMESPACE
+      create_oc_resource "OperatorGroup" "$MY_DPGW_OPERATORGROUP" "${MY_RESOURCESDIR}" "${MY_DPGW_WORKINGDIR}" "operator-group-single.yaml" "$VAR_DPGW_NAMESPACE"
+      unset VAR_OPERATORGROUP VAR_NAMESPACE
+    fi
+
+    # The DataPower operator subscription is required in both namespace arrangements.
+    mylog info "Creating DataPower operator subscription in $VAR_DPGW_NAMESPACE" 1>&2
+    create_operator_instance "${MY_DPGW_OPERATOR}" "${MY_DPGW_CATALOGSOURCE_LABEL}" "${MY_OPERATORSDIR}" "${MY_DPGW_WORKINGDIR}" "${VAR_DPGW_NAMESPACE}"
 
   fi
 
@@ -1425,6 +1457,17 @@ function install_apic() {
     # Create projects for APIC
     create_project "${VAR_APIC_NAMESPACE}" "${VAR_APIC_NAMESPACE} project" "For API Connect" "${MY_RESOURCESDIR}" "${MY_APIC_WORKINGDIR}"
     add_ibm_entitlement "$VAR_APIC_NAMESPACE"
+
+    # Operator group for APIC in single namespace.
+    # Must be created BEFORE any sub-operator (DataPower, nano gateway) installs its
+    # subscription in this namespace, so that OLM never sees more than one OperatorGroup.
+    export VAR_OPERATORGROUP=$MY_APIC_OPERATORGROUP
+    export VAR_NAMESPACE=$VAR_APIC_NAMESPACE
+    create_oc_resource "OperatorGroup" "$MY_APIC_OPERATORGROUP" "${MY_RESOURCESDIR}" "${MY_APIC_WORKINGDIR}" "operator-group-single.yaml" "$VAR_APIC_NAMESPACE"
+    unset VAR_OPERATORGROUP VAR_NAMESPACE
+
+    # Create a subscription to the common service operator because we use a namespace scoped installation
+    create_operator_instance "${MY_COMMONSERVICES_OPERATOR}" "${MY_COMMONSERVICES_CATALOGSOURCE_LABEL}"  "${MY_OPERATORSDIR}" "${MY_COMMONSERVICES_WORKINGDIR}"  "${VAR_APIC_NAMESPACE}"
   
     # Create the Certificates required by API Connect
     mylog info "Setting up issuers and certificates for API Connect in ${VAR_APIC_NAMESPACE} namespace" 1>&2
@@ -1449,13 +1492,14 @@ function install_apic() {
 
     # Create the apiconnect subscription
     mylog info "Creating APIC operator subscription" 1>&2
-    create_operator_instance "${MY_APIC_OPERATOR}" "${MY_APIC_CATALOGSOURCE_LABEL}" "${MY_OPERATORSDIR}" "${MY_APIC_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
+    create_operator_instance "${MY_APIC_OPERATOR}" "${MY_APIC_CATALOGSOURCE_LABEL}" "${MY_OPERATORSDIR}" "${MY_APIC_WORKINGDIR}" "${VAR_APIC_NAMESPACE}"
 
     # Wait for the APIC operator manager deployment to be fully available so that
     # the ibm-apiconnect-service webhook (mmanagementcluster.kb.io, etc.) is reachable
     # before any operand (ManagementCluster, PortalCluster, …) is created.
+    # The Deployment lands in VAR_APIC_NAMESPACE (single-namespace OperatorGroup), not MY_OPERATORS_NAMESPACE.
     mylog info "Waiting for APIC operator webhook deployment to be available" 1>&2
-    wait_for_state "Deployment" "${MY_APIC_OPERATOR}" "{.status.conditions[?(@.type=='Available')].status}" "True" "${MY_OPERATORS_NAMESPACE}"
+    wait_for_state "Deployment" "${MY_APIC_OPERATOR}" "{.status.conditions[?(@.type=='Available')].status}" "True" "${VAR_APIC_NAMESPACE}"
 
     local lf_ingress=$($MY_CLUSTER_COMMAND get ingresses.config/cluster -o jsonpath='{.spec.domain}')
     export STACK_HOST="$lf_ingress"
@@ -1560,7 +1604,7 @@ function install_postgresql() {
 
   # Create the postgre operator subscription
   mylog info "Creating PostGre operator subscription" 1>&2
-  create_operator_instance "${MY_POSTGRES_OPERATOR}" "${MY_POSTGRES_CATALOGSOURCE_LABEL}" "${MY_OPERATORSDIR}" "${MY_POSTGRES_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
+  create_operator_instance "${MY_POSTGRES_OPERATOR}" "${MY_POSTGRES_CATALOGSOURCE_LABEL}" "${MY_OPERATORSDIR}" "${MY_POSTGRES_WORKINGDIR}" "${lf_in_postgre_namespace}"
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}
 
@@ -1814,8 +1858,14 @@ function install_es_oc() {
     local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
     unset VAR_CATALOG_SOURCE
     
+    # Operator group for EventStreams in single namespace
+    export VAR_OPERATORGROUP=$MY_ES_OPERATORGROUP
+    export VAR_NAMESPACE=$VAR_ES_NAMESPACE
+    create_oc_resource "OperatorGroup" "$MY_ES_OPERATORGROUP" "${MY_RESOURCESDIR}" "${MY_ES_WORKINGDIR}" "operator-group-single.yaml" "$VAR_ES_NAMESPACE"
+    unset VAR_OPERATORGROUP VAR_NAMESPACE
+
     # Creating EventStreams operator subscription
-    create_operator_instance "${MY_ES_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_ES_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
+    create_operator_instance "${MY_ES_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_ES_WORKINGDIR}" "${VAR_ES_NAMESPACE}"
   fi
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}
@@ -1997,8 +2047,14 @@ function install_hsts() {
     local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
     unset VAR_CATALOG_SOURCE
 
+    # Operator group for HSTS in single namespace
+    export VAR_OPERATORGROUP=$MY_HSTS_OPERATORGROUP
+    export VAR_NAMESPACE=$VAR_HSTS_NAMESPACE
+    create_oc_resource "OperatorGroup" "$MY_HSTS_OPERATORGROUP" "${MY_RESOURCESDIR}" "${MY_HSTS_WORKINGDIR}" "operator-group-single.yaml" "$VAR_HSTS_NAMESPACE"
+    unset VAR_OPERATORGROUP VAR_NAMESPACE
+
     # Creating Aspera HSTS operator subscription
-    create_operator_instance "${MY_HSTS_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_HSTS_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
+    create_operator_instance "${MY_HSTS_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_HSTS_WORKINGDIR}" "${VAR_HSTS_NAMESPACE}"
 
     create_operand_instance "IbmAsperaHsts" "${VAR_HSTS_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_HSTS_WORKINGDIR}" "AsperaHSTS-Capability.yaml" "$VAR_HSTS_NAMESPACE" "{.status.conditions[0].type}" "Ready"
     
@@ -2065,8 +2121,14 @@ function install_instana() {
 
     $MY_CLUSTER_COMMAND -n $MY_INSTANA_AGENT_NAMESPACE adm policy add-scc-to-user privileged -z instana-agent
 
+    # Operator group for Instana in single namespace
+    export VAR_OPERATORGROUP=$MY_INSTANA_OPERATORGROUP
+    export VAR_NAMESPACE=$MY_INSTANA_AGENT_NAMESPACE
+    create_oc_resource "OperatorGroup" "$MY_INSTANA_OPERATORGROUP" "${MY_RESOURCESDIR}" "${MY_INSTANA_WORKINGDIR}" "operator-group-single.yaml" "$MY_INSTANA_AGENT_NAMESPACE"
+    unset VAR_OPERATORGROUP VAR_NAMESPACE
+
     # Create a subscription object for instana Operator
-    create_operator_instance "${MY_INSTANA_OPERATOR}" "${MY_CERTIFIED_OPERATORS_CATALOG}" "${MY_OPERATORSDIR}" "${MY_INSTANA_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
+    create_operator_instance "${MY_INSTANA_OPERATOR}" "${MY_CERTIFIED_OPERATORS_CATALOG}" "${MY_OPERATORSDIR}" "${MY_INSTANA_WORKINGDIR}" "${MY_INSTANA_AGENT_NAMESPACE}"
 
     # Creating Instana agent
     create_operand_instance "daemonset" "${MY_INSTANA_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_INSTANA_WORKINGDIR}" "Instana-Agent-CloudIBM-Capability.yaml" "$MY_INSTANA_AGENT_NAMESPACE" "{.status.numberReady}" "${MY_CLUSTER_WORKERS}"

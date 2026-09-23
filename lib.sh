@@ -56,8 +56,14 @@ function install_mq_oc() {
     local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
     unset VAR_CATALOG_SOURCE
 
+    # Operator group for MQ in single namespace
+    export VAR_OPERATORGROUP=$MY_MQ_OPERATORGROUP
+    export VAR_NAMESPACE=$VAR_MQ_NAMESPACE
+    create_oc_resource "OperatorGroup" "$MY_MQ_OPERATORGROUP" "${MY_RESOURCESDIR}" "${MY_MQ_WORKINGDIR}" "operator-group-single.yaml" "$VAR_MQ_NAMESPACE"
+    unset VAR_OPERATORGROUP VAR_NAMESPACE
+
     # Creating MQ operator subscription
-    create_operator_instance "${MY_MQ_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_MQ_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
+    create_operator_instance "${MY_MQ_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_MQ_WORKINGDIR}" "${VAR_MQ_NAMESPACE}"
   fi
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}
@@ -137,11 +143,17 @@ function install_flink_oc() {
     local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
     unset VAR_CATALOG_SOURCE
 
+    # Operator group for Flink in single namespace
+    export VAR_OPERATORGROUP=$MY_FLINK_OPERATORGROUP
+    export VAR_NAMESPACE=$VAR_FLINK_NAMESPACE
+    create_oc_resource "OperatorGroup" "$MY_FLINK_OPERATORGROUP" "${MY_RESOURCESDIR}" "${MY_FLINK_WORKINGDIR}" "operator-group-single.yaml" "$VAR_FLINK_NAMESPACE"
+    unset VAR_OPERATORGROUP VAR_NAMESPACE
+
     ## SB]20231020 For Flink and Event processing install the operator with the following command :
     ## https://ibm.github.io/event-automation/ep/installing/installing/, Chapter : Install the operator by using the CLI ($MY_CLUSTER_COMMAND ibm-pak)
     ## event flink
     ## Creating Eventautomation Flink operator subscription
-    create_operator_instance "${MY_FLINK_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_FLINK_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
+    create_operator_instance "${MY_FLINK_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_FLINK_WORKINGDIR}" "${VAR_FLINK_NAMESPACE}"
 
     ## Creation of Event automation Flink PVC and instance
     # Even if it's a pvc we use the same generic function
@@ -327,8 +339,14 @@ function install_ep_keycloak_oc() {
     local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
     unset VAR_CATALOG_SOURCE
 
+    # Operator group for EP in single namespace
+    export VAR_OPERATORGROUP=$MY_EP_OPERATORGROUP
+    export VAR_NAMESPACE=$VAR_EP_NAMESPACE
+    create_oc_resource "OperatorGroup" "$MY_EP_OPERATORGROUP" "${MY_RESOURCESDIR}" "${MY_EP_WORKINGDIR}" "operator-group-single.yaml" "$VAR_EP_NAMESPACE"
+    unset VAR_OPERATORGROUP VAR_NAMESPACE
+
     ## Creating Event processing operator subscription
-    create_operator_instance "${MY_EP_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_EP_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
+    create_operator_instance "${MY_EP_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_EP_WORKINGDIR}" "${VAR_EP_NAMESPACE}"
     
     # Use LOCAL or OIDC
     # https://ibm.github.io/event-automation/ep/security/managing-access/
@@ -410,8 +428,14 @@ function install_ep_local_oc() {
     local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
     unset VAR_CATALOG_SOURCE
 
+    # Operator group for EP in single namespace
+    export VAR_OPERATORGROUP=$MY_EP_OPERATORGROUP
+    export VAR_NAMESPACE=$VAR_EP_NAMESPACE
+    create_oc_resource "OperatorGroup" "$MY_EP_OPERATORGROUP" "${MY_RESOURCESDIR}" "${MY_EP_WORKINGDIR}" "operator-group-single.yaml" "$VAR_EP_NAMESPACE"
+    unset VAR_OPERATORGROUP VAR_NAMESPACE
+
     ## Creating Event processing operator subscription
-    create_operator_instance "${MY_EP_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_EP_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
+    create_operator_instance "${MY_EP_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_EP_WORKINGDIR}" "${VAR_EP_NAMESPACE}"
     
     # Use LOCAL or OIDC
     # https://ibm.github.io/event-automation/ep/security/managing-access/
@@ -620,8 +644,14 @@ function install_eem_local_oc() {
     local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
     unset VAR_CATALOG_SOURCE
 
+    # Operator group for EEM in single namespace
+    export VAR_OPERATORGROUP=$MY_EEM_OPERATORGROUP
+    export VAR_NAMESPACE=$VAR_EEM_NAMESPACE
+    create_oc_resource "OperatorGroup" "$MY_EEM_OPERATORGROUP" "${MY_RESOURCESDIR}" "${MY_EEM_WORKINGDIR}" "operator-group-single.yaml" "$VAR_EEM_NAMESPACE"
+    unset VAR_OPERATORGROUP VAR_NAMESPACE
+
     # Creating Event Endpoint Management operator subscription
-    create_operator_instance "${MY_EEM_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_EEM_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
+    create_operator_instance "${MY_EEM_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_EEM_WORKINGDIR}" "${VAR_EEM_NAMESPACE}"
 
     # Creating EventEndpointManager instance (Event Processing)
     if $MY_KEYCLOAK_INTEGRATION; then
@@ -690,8 +720,14 @@ function install_eem_keycloak_oc() {
     local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
     unset VAR_CATALOG_SOURCE
 
+    # Operator group for EEM in single namespace
+    export VAR_OPERATORGROUP=$MY_EEM_OPERATORGROUP
+    export VAR_NAMESPACE=$VAR_EEM_NAMESPACE
+    create_oc_resource "OperatorGroup" "$MY_EEM_OPERATORGROUP" "${MY_RESOURCESDIR}" "${MY_EEM_WORKINGDIR}" "operator-group-single.yaml" "$VAR_EEM_NAMESPACE"
+    unset VAR_OPERATORGROUP VAR_NAMESPACE
+
     # Creating Event Endpoint Management operator subscription
-    create_operator_instance "${MY_EEM_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_EEM_WORKINGDIR}" "${MY_OPERATORS_NAMESPACE}"
+    create_operator_instance "${MY_EEM_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_EEM_WORKINGDIR}" "${VAR_EEM_NAMESPACE}"
 
     # Creating EventEndpointManager instance (Event Processing)
     export MY_EEM_AUTH_TYPE=INTEGRATION_KEYCLOAK

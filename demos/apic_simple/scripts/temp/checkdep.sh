@@ -477,7 +477,6 @@ function get_catalog_details() {
     local status_code
     
     response=$(curl -s -w "\n%{http_code}" $(get_curl_ssl_opts) \
-        -X GET \
         -H "Authorization: Bearer ${token}" \
         -H "Accept: application/json" \
         "https://${hostname}/api/catalogs/${org}/${catalog}/configured-gateway-services")
@@ -515,7 +514,6 @@ function get_analytics_records() {
     local status_code
     
     response=$(curl -s -w "\n%{http_code}" $(get_curl_ssl_opts) \
-        -X GET \
         -H "Authorization: Bearer ${token}" \
         -H "Accept: application/json" \
         "https://${hostname}/analytics/${a7s}/catalogs/${org}/${catalog}/events?api_name=${api_name}&timeframe=last15minutes")
@@ -605,7 +603,6 @@ function deploy_test() {
         local status_code
         
         response=$(curl -s -w "\n%{http_code}" $(get_curl_ssl_opts) \
-            -X GET \
             -D - \
             "${new_api}?eyecatcher=${eyecatcher}&attempt=${attempt}")
         
