@@ -391,6 +391,7 @@ function create_nano_gateway_tls_profile() {
   decho $lf_tracelevel "lf_keystore_url: $lf_keystore_url"
 
   # Then we need to create the TLS server profile used for the gateway endpoint to use this new keystore
+  # The calls to tls-server-profiles and tls-client-profiles always return http code 200, but the total_results is 0 if the entrey does not exist.
   local lf_sp_name="nano-gateway-tls-server-profile"
   local lf_tls_server_profile_url=""
   mylog info "Checking if TLS Server Profile ${lf_sp_name} exists." 1>&2
@@ -398,20 +399,15 @@ function create_nano_gateway_tls_profile() {
   decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles/${lf_sp_name}?fields=url\" -H \"Accept: application/json\" -H \"Authorization: Bearer \$AT\" -H \"Content-Type: application/json\""
 
   local lf_sp_response
-  local lf_sp_status
-  local lf_sp_body
 
-  lf_sp_response=$(curl -sk -w "\n%{http_code}" "${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles/${lf_sp_name}?fields=url" \
+  lf_sp_response=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles/${lf_sp_name}?fields=url" \
     -H "Accept: application/json" \
     -H "authorization: Bearer $access_token" \
     -H "content-type: application/json")
 
-  lf_sp_status=$(echo "$lf_sp_response" | tail -n1)
-  lf_sp_body=$(echo "$lf_sp_response" | sed '$d')
+  local lf_sp_total_results=$(echo "$lf_sp_response" | jq -r '.total_results // 1')
 
-  local lf_sp_total_results=$(echo "$lf_sp_body" | jq -r '.total_results // 1')
-
-  if [ "$lf_sp_status" != "200" ] || [ "$lf_sp_total_results" = "0" ]; then
+  if [ "$lf_sp_total_results" = "0" ]; then
     mylog info "Creating TLS Server profile $lf_sp_name" 1>&2
     local lf_sp_title="Nano gateway TLS server profile"
     local lf_sp_summary="TLS server profile used for the Nano gateway endpoint"
@@ -731,23 +727,25 @@ function create_topology() {
   if [ $(echo $dpUrl | jq .status ) = "404" ] || [ -z "$dpUrl" ] || [ "$dpUrl" = "null" ]; then
     mylog info "Create DataPower gateway Service" 1>&2
 
+    # Get the TLS server associated to the DataPower Gateway
     decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles\" -H \"Authorization: Bearer \$AT\" -H 'Accept: application/json'"
     tlsServer=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-server-profiles" \
     -H "Authorization: Bearer $access_token" \
     -H 'Accept: application/json' --compressed | jq .results[0].url  | sed -e s/\"//g);
     decho $lf_tracelevel "tlsServer: $tlsServer"
     
+    # Get the TLS client associated to the DataPower Gateway
     local lf_tls_client_profile_name="gateway-management-client-default"
-    decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/tls-client-profiles\" -H \"Authorization: Bearer \$AT\" -H 'Accept: application/json'"
-    tlsClientDefault=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-client-profiles" \
+    decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/tls-client-profiles/${lf_tls_client_profile_name}?fields=url\" -H \"Authorization: Bearer \$AT\" -H 'Accept: application/json'"
+    tlsClientDefault=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-client-profiles/${lf_tls_client_profile_name}?fields=url" \
     -H "Authorization: Bearer $access_token" \
-    -H 'Accept: application/json' --compressed | jq -r '.results[] | select(.name == "'"$lf_tls_client_profile_name"'") | .url' | head -1);
+    -H 'Accept: application/json' | jq -r '.url // empty');
     decho $lf_tracelevel "tlsClientDefault: $tlsClientDefault"
     
-    decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/cloud/integrations\" -H \"Authorization: Bearer \$AT\" -H 'Accept: application/json'"
-    integration_url=$(curl -sk "${PLATFORM_API_URL}api/cloud/integrations" \
+    decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/cloud/integrations/gateway-service/datapower-api-gateway?fields=url\" -H \"Authorization: Bearer \$AT\" -H 'Accept: application/json'"
+    integration_url=$(curl -sk "${PLATFORM_API_URL}api/cloud/integrations/gateway-service/datapower-api-gateway?fields=url" \
     -H "Authorization: Bearer $access_token" \
-    -H 'Accept: application/json' --compressed | jq -r '.results[] | select(.integration_type=="gateway_service" and .name=="datapower-api-gateway")| .url');
+    -H 'Accept: application/json' | jq -r '.url // empty');
     decho $lf_tracelevel "integration_url: $integration_url"
 
     local lf_gw_svc_Type="datapower-api-gateway"
@@ -812,6 +810,7 @@ function create_topology() {
   if [ $(echo $lf_a8s_url | jq .status ) = "404" ] || [ -z "$lf_a8s_url" ] || [ "$lf_a8s_url" = "null" ]; then
     mylog info "Create Analytics Service." 1>&2
 
+    # TODO Optimise the call to get the exact value
     local lf_a8s_ingestion_tls_name="analytics-ingestion-default"
     decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/tls-client-profiles\" -H \"Authorization: Bearer \$AT\" -H 'Accept: application/json'"
     a8sClientDefaultTLS=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-client-profiles" \
@@ -852,6 +851,7 @@ function create_topology() {
   fi
 
   mylog info "Associate Analytics Service with DataPower Gateway" 1>&2
+  # TODO Need to check if the DataPower Gateway was correctly added
   local jsonpayload=$(jq -n \
     --arg analytics_service_url "$lf_a8s_url" \
     '{analytics_service_url:$analytics_service_url,communication_to_analytics_kind:"external",communication_to_analytics_with_jwt:false}')
@@ -945,7 +945,7 @@ function create_topology() {
     trace_out $lf_tracelevel ${FUNCNAME[0]}
   fi
 
-  # Create a TLS Profile for the Nano gateway
+  # Create a Crypto TLS Profile for the Nano gateway
   create_nano_gateway_tls_profile
 
   local lf_nano_gtw_client_tls_name="datapower-nano-gateway-mgmt-client-default"
@@ -1026,6 +1026,7 @@ function create_topology() {
       --data "{\"gateway_service_default_urls\": [\"$dpUrl\", \"$lf_nano_gtw_url\"]}");
 
     mylog info "Associate Analytics Service with DataPower Nano gateway" 1>&2
+    # TODO Need to check if the DataPower Nano Gateway was correctly added
     decho $lf_tracelevel "curl -sk -X PATCH \"${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services/${lf_nano_gtw_name}\" -H 'Accept: application/json' -H \"Authorization: Bearer \$AT\" -H 'Content-Type: application/json' --data-raw \"{\\\"analytics_service_url\\\": \\\"$lf_a8s_url\\\"}\""
     analytGwy=$(curl -sk -X PATCH \
       "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services/${lf_nano_gtw_name}" \
@@ -1122,6 +1123,7 @@ function create_topology() {
     decho $lf_tracelevel "lf_wms_gtw_url: $lf_wms_gtw_url"
   
     mylog info "Associate Analytics Service with wMs API Gateway" 1>&2
+    # TODO Need to check if the wMs API Gateway was correctly added
     decho $lf_tracelevel "curl -sk -X PATCH \"${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services/${lf_wms_gtw_name}\" -H 'Accept: application/json' -H \"Authorization: Bearer \$AT\" -H 'Content-Type: application/json' --data-raw \"{\\\"analytics_service_url\\\": \\\"$lf_a8s_url\\\"}\""
     analytGwy=$(curl -sk -X PATCH \
       "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services/${lf_wms_gtw_name}" \
@@ -1897,13 +1899,13 @@ function create_am_token(){
    -H 'Accept: application/json' \
    --data-raw "{\"username\":\"$APIC_ORG1_USERNAME\",\"password\":\"$APIC_ORG1_PASSWORD\",\"realm\":\"provider/default-idp-2\",\"client_id\":\"$TOOLKIT_CLIENT_ID\",\"client_secret\":\"$TOOLKIT_CLIENT_SECRET\",\"grant_type\":\"password\"}" |  jq .access_token | sed -e s/\"//g  )
   
-  decho $lf_tracelevel "amToken: $amToken"
   # TODO Not sure the use of $? is good, this is the result of the sed command
   retVal=$?
   if [ $retVal -ne 0 ] || [ -z "$amToken" ] || [ "$amToken" = "null" ]; then
     mylog error "Error with login -> $retVal" 1>&2
     exit 1
   fi
+  decho $lf_tracelevel "amToken: $amToken"
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}
 }

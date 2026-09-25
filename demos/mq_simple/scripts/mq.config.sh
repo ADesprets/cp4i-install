@@ -8,20 +8,6 @@ function create_mq_root_certificate () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel ${FUNCNAME[0]}
 
-  export VAR_CERT_NAME=mq-root
-  export VAR_NAMESPACE=${VAR_MQ_NAMESPACE}
-  export VAR_CERT_ISSUER_REF="mq-self-signed"
-  export VAR_CERT_SECRET_NAME=${VAR_CERT_NAME}-secret
-  export VAR_CERT_COMMON_NAME=${VAR_CERT_NAME}
-  export VAR_CERT_ORGANISATION=${MY_CERT_ORGANISATION}
-  export VAR_CERT_COUNTRY=${MY_CERT_COUNTRY}
-  export VAR_CERT_LOCALITY=${MY_CERT_LOCALITY}
-  export VAR_CERT_STATE=${MY_CERT_STATE}
-  export VAR_CERT_JKS_SECRET_REF=mq-store-root-secret
-  # export VAR_CERT_SERIAL=$(uuidgen)
-
-  echo ">>> VAR_CERT_SECRET_NAME: ${VAR_CERT_SECRET_NAME}"
-
   # We are using a secure QM, we want to expose the jks in the secret associated to the root certificate.
   # Since this is secured we are going to create a secret for the password with the TLS certificate of the queue manager
   # TODO Need to check what is happening when the certificate is regenerated maybe automatically by Cert Manager
@@ -39,10 +25,25 @@ function create_mq_root_certificate () {
     export VAR_ES_MQ_SOURCE_STORE_PASSWORD=${lf_store_password}
   fi
 
+  # TODO Move the code, now it should work, need to check if it is working now
+  export VAR_CERT_NAME=mq-root
+  export VAR_NAMESPACE=${VAR_MQ_NAMESPACE}
+  export VAR_CERT_ISSUER_REF="mq-self-signed"
+  export VAR_CERT_SECRET_NAME=${VAR_CERT_NAME}-secret
+  export VAR_CERT_COMMON_NAME=${VAR_CERT_NAME}
+  export VAR_CERT_ORGANISATION=${MY_CERT_ORGANISATION}
+  export VAR_CERT_COUNTRY=${MY_CERT_COUNTRY}
+  export VAR_CERT_LOCALITY=${MY_CERT_LOCALITY}
+  export VAR_CERT_STATE=${MY_CERT_STATE}
+  export VAR_CERT_JKS_SECRET_REF=${lf_jks_secret_name}
+  # export VAR_CERT_SERIAL=$(uuidgen)
+
+  echo ">>> VAR_CERT_SECRET_NAME: ${VAR_CERT_SECRET_NAME}"
+
   create_oc_resource "Certificate" "${VAR_CERT_NAME}" "${MY_YAMLDIR}tls/" "${MY_MQ_WORKINGDIR}" "ca_certificate_jks.yaml" "${VAR_MQ_NAMESPACE}"
   wait_for_resource "Secret" "${VAR_CERT_SECRET_NAME}" "${VAR_MQ_NAMESPACE}"
  
-  unset VAR_CERT_NAME VAR_NAMESPACE VAR_CERT_ISSUER_REF VAR_CERT_COMMON_NAME VAR_CERT_ORGANISATION VAR_CERT_COUNTRY VAR_CERT_LOCALITY VAR_CERT_STATE VAR_CERT_JKS_SECRET_REF
+  unset VAR_CERT_NAME VAR_NAMESPACE VAR_CERT_ISSUER_REF VAR_CERT_SECRET_NAME VAR_CERT_COMMON_NAME VAR_CERT_ORGANISATION VAR_CERT_COUNTRY VAR_CERT_LOCALITY VAR_CERT_STATE VAR_CERT_JKS_SECRET_REF
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
