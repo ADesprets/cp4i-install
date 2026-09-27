@@ -374,7 +374,7 @@ function create_nano_gateway_tls_profile() {
     lf_post_body=$(echo "$lf_post_response" | sed '$d')
 
     decho $lf_tracelevel "Keystore creation status: $lf_post_status" 1>&2
-    decho $lf_tracelevel "Keystore creation body: $lf_post_body" 1>&2
+    # decho $lf_tracelevel "Keystore creation body: $lf_post_body" 1>&2
 
     if [ "$lf_post_status" = "201" ] || [ "$lf_post_status" = "200" ]; then
       lf_keystore_url=$(echo "$lf_post_body" | jq -r '.url // empty')
@@ -700,7 +700,7 @@ function update_manager_lur() {
     -H "authorization: Bearer $access_token" \
     -H "content-type: application/json" \
     --data-raw '{"visibility":{"type":"public"}}')
-  decho $lf_tracelevel "lf_lur_update: $(echo "$lf_lur_update" | jq -r '.visibility.type // .message // empty')"
+  decho $lf_tracelevel "API Manager Local User Registry visibility: $(echo "$lf_lur_update" | jq -r '.visibility.type // .message // empty')"
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
@@ -739,7 +739,7 @@ function create_topology() {
     decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/tls-client-profiles/${lf_tls_client_profile_name}?fields=url\" -H \"Authorization: Bearer \$AT\" -H 'Accept: application/json'"
     tlsClientDefault=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/tls-client-profiles/${lf_tls_client_profile_name}?fields=url" \
     -H "Authorization: Bearer $access_token" \
-    -H 'Accept: application/json' | jq -r '.url // empty');
+    -H 'Accept: application/json' --compressed | jq .results[0].url  | sed -e s/\"//g);
     decho $lf_tracelevel "tlsClientDefault: $tlsClientDefault"
     
     decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/cloud/integrations/gateway-service/datapower-api-gateway?fields=url\" -H \"Authorization: Bearer \$AT\" -H 'Accept: application/json'"
@@ -766,15 +766,16 @@ function create_topology() {
     decho $lf_tracelevel "jsonpayload: ${jsonpayload}"
 
     decho $lf_tracelevel "curl -sk \"${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services\" -H \"Authorization: Bearer \$AT\" -H \"Content-Type: application/json\" -H \"Accept: application/json\" --data-raw \"\$jsonpayload\""
-    dpUrl=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services" \
+    api-gateway-service=$(curl -sk "${PLATFORM_API_URL}api/orgs/admin/availability-zones/availability-zone-default/gateway-services" \
       -H "Authorization: Bearer $access_token" \
       -H "Content-Type: application/json" \
       -H "Accept: application/json" \
       --data-raw "$jsonpayload");
 
-    decho $lf_tracelevel "dp: $dpUrl"
+    # TODO if something wrong for example tls_client_profile_url empty, then it returns {"status":400,"message":["msg"],"errors":["error"]}, it should be better handled
+    decho $lf_tracelevel "api-gateway-service: $api-gateway-service"
 
-    dpUrl=$(printf '%s\n' "$dpUrl" | jq -r '.url // empty')
+    dpUrl=$(printf '%s\n' "$api-gateway-service" | jq -r '.url // empty')
 
     decho $lf_tracelevel "dpUrl: $dpUrl"
 

@@ -422,8 +422,10 @@ function keycloak_init() {
 
    # Initialise the Keycloak route (EP_KEYCLOAK)
   local lf_kc_route_name=keycloak
-  EP_KEYCLOAK=https://$($MY_CLUSTER_COMMAND -n "${VAR_KEYCLOAK_NAMESPACE}" get route "${lf_kc_route_name}" -o jsonpath={.spec.host} 2>/dev/null)
-  if [[ -z "${EP_KEYCLOAK}" ]]; then
+  local lf_kc_host
+  lf_kc_host=$($MY_CLUSTER_COMMAND -n "${VAR_KEYCLOAK_NAMESPACE}" get route "${lf_kc_route_name}" -o jsonpath={.spec.host} 2>/dev/null)
+  EP_KEYCLOAK="https://${lf_kc_host}"
+  if [[ -z "${lf_kc_host}" ]]; then
     mylog error "Could not resolve ${lf_kc_route_name} route in namespace '${VAR_KEYCLOAK_NAMESPACE}'." 1>&2
     trace_out $lf_tracelevel ${FUNCNAME[0]}
     return 1
@@ -431,7 +433,7 @@ function keycloak_init() {
     decho $lf_tracelevel "EP_KEYCLOAK: ${EP_KEYCLOAK}"
   fi
 
-  # Create the initial token using the operator-provisioned temp-admin credentials
+  # Create the initial token using the operator-provisioned temp-admin credentials located in cs-keycloak-initial-admin secret
   create_kc_token
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}

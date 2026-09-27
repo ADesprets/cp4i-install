@@ -3526,14 +3526,16 @@ function create_kc_token(){
   local lf_username="${1:-}"
   local lf_password="${2:-}"
   local lf_realm="${3:-${MY_KEYCLOAK_MASTER_REALM}}"
-  decho $lf_tracelevel "Parameters: |username=${lf_username:-<from secret>}| |realm=${lf_realm}|"
+  decho $lf_tracelevel "Parameters: |username=${lf_username:-<from secret>}| ****** |realm=${lf_realm}|"
 
-  # If no credentials supplied, retrieve them from the Keycloak operator secret (temp-admin).
+  # If no credentials supplied, retrieve them from the Keycloak operator secret (cs-keycloak-initial-admin).
   if [[ -z "${lf_username}" || -z "${lf_password}" ]]; then
     local lf_cs_keycloak_initial_admin_secret=cs-keycloak-initial-admin
+    decho $lf_tracelevel "$MY_CLUSTER_COMMAND -n ${VAR_KEYCLOAK_NAMESPACE} get secret ${lf_cs_keycloak_initial_admin_secret} -o jsonpath='{.data.username}' | base64 --decode"
     lf_username=$($MY_CLUSTER_COMMAND -n "${VAR_KEYCLOAK_NAMESPACE}" \
       get secret "${lf_cs_keycloak_initial_admin_secret}" \
       -o jsonpath='{.data.username}' 2>/dev/null | base64 --decode)
+    decho $lf_tracelevel "$MY_CLUSTER_COMMAND -n ${VAR_KEYCLOAK_NAMESPACE} get secret ${lf_cs_keycloak_initial_admin_secret} -o jsonpath='{.data.password}' | base64 --decode"
     lf_password=$($MY_CLUSTER_COMMAND -n "${VAR_KEYCLOAK_NAMESPACE}" \
       get secret "${lf_cs_keycloak_initial_admin_secret}" \
       -o jsonpath='{.data.password}' 2>/dev/null | base64 --decode)
