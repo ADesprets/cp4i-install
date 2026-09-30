@@ -1419,7 +1419,7 @@ function search_networkpolicies() {
   mylog info "Searching for deny-all networkpolicies..." 1>&2
   decho $lf_tracelevel "$MY_CLUSTER_COMMAND get networkpolicy --all-namespaces -o json | jq '.items[] | select(.spec.ingress == null and .spec.egress == null) | {namespace: .metadata.namespace, name: .metadata.name}'"
   lf_deny_all=$($MY_CLUSTER_COMMAND get networkpolicy --all-namespaces -o json | jq '.items[] | select(.spec.ingress == null and .spec.egress == null) | {namespace: .metadata.namespace, name: .metadata.name}')
-  decho $lf_tracelevel "Deny-all networkpolicies found: $lf_deny_all"
+  decho $lf_tracelevel "Deny-all networkpolicies found: $(echo "$lf_deny_all" | jq -c .)"
 
   # Search for allow-same-namespace networkpolicies
   mylog info "Searching for allow-same-namespace networkpolicies..." 1>&2

@@ -706,6 +706,49 @@ function update_manager_lur() {
 }
 
 ################################################
+# Add Git VCS configuration to user profile
+function add_git_cvs() {
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  if [ -z "$MY_GITHUB_SERVER" ] || [ -z "$MY_GITHUB_REPOSITORY" ]|| [ -z "$MY_GIT_PAT_TOKEN" ]; then
+    mylog warn "MY_GITHUB_SERVER or MY_GITHUB_REPOSITORY or MY_GIT_PAT_TOKEN is not defined, skipping add_git_cvs" 1>&2
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
+    return 0
+  fi
+
+  # Update user configuration
+  mylog info "Configuring Git VCS for user" 1>&2
+  local lf_repository_full_url="${MY_GITHUB_SERVER}/${MY_GITHUB_REPOSITORY}"
+
+  local jsonpayload=$(jq -n \
+    --arg server "$MY_GITHUB_SERVER" \
+    --arg repository "$MY_GITHUB_REPOSITORY" \
+    --arg repository_url "$lf_repository_full_url" \
+    --arg token "$MY_GIT_PAT_TOKEN" \
+    '{studio: {vcs_config: {server: $server, token: $token, repositories: [{name:$repository,url:$repository_url,default_branch:"main"}]}}}')
+
+  decho $lf_tracelevel "jsonpayload: ${jsonpayload}"
+
+  decho $lf_tracelevel "curl -sk -X PUT \"${PLATFORM_API_URL}api/me\" -H \"Accept: application/json\" -H \"Content-Type: application/json\" -H \"Authorization: Bearer \$amToken\" --data-raw \"\$jsonpayload\""
+  local lf_vcs_response=$(curl -sk -X PUT "${PLATFORM_API_URL}api/me" \
+    -H "Accept: application/json" \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $amToken" \
+    --data-raw "$jsonpayload")
+
+  decho $lf_tracelevel "add_git_cvs response: $lf_vcs_response"
+
+  # Update projects
+  
+
+
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+}
+
+################################################
 # Create the topology (check if needed for cp4i installation)
 function create_topology() {
   local lf_tracelevel=3
@@ -1505,7 +1548,7 @@ function create_keycloak_oidc_registry() {
 
     # Resolve the Keycloak route host
     export APIC_KEYCLOAK_HOST
-    APIC_KEYCLOAK_HOST=$($MY_CLUSTER_COMMAND -n "${VAR_KEYCLOAK_NAMESPACE}" get route keycloak-route -o jsonpath='{.spec.host}' 2>/dev/null)
+    APIC_KEYCLOAK_HOST=$($MY_CLUSTER_COMMAND -n "${VAR_KEYCLOAK_NAMESPACE}" get route keycloak -o jsonpath='{.spec.host}' 2>/dev/null)
     if [[ -z "$APIC_KEYCLOAK_HOST" ]]; then
       # Fallback: try the generic 'keycloak' route name used in ibm-common-services namespace
       APIC_KEYCLOAK_HOST=$($MY_CLUSTER_COMMAND -n "${MY_COMMONSERVICES_NAMESPACE}" get route keycloak -o jsonpath='{.spec.host}' 2>/dev/null)
@@ -1955,6 +1998,8 @@ function apic_run_all () {
   
   # Create API Manager token
   create_am_token
+  
+  add_git_cvs
 
   # download_projects
 
@@ -2070,6 +2115,7 @@ sc_provision_variable_properties_file="${PROVISION_SCRIPTDIR}properties/cp4i-var
 sc_provision_lib_file="${PROVISION_SCRIPTDIR}lib.sh"
 sc_component_properties_file="${sc_component_script_dir}../properties/apic.properties"
 sc_provision_preambule_file="${PROVISION_SCRIPTDIR}properties/preambule.properties"
+sc_provision_user_properties_file="${PROVISION_SCRIPTDIR}private/user.properties"
 
 # SB]20250319 Je suis obligé d'utiliser set -a et set +a parceque à cet instant je n'ai pas accès à la fonction read_config_file
 # load script parrameters fil
@@ -2087,6 +2133,11 @@ set -a
 
 # Load shared variables
 . "${sc_provision_preambule_file}"
+
+# Load private user properties
+if [ -f "${sc_provision_user_properties_file}" ]; then
+  . "${sc_provision_user_properties_file}"
+fi
 set +a
 
 # load helper functions
