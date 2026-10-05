@@ -1,0 +1,27 @@
+# Confluent KafkaTopic operand template
+# Creates a Kafka topic managed by the Confluent for Kubernetes operator
+# Reference: https://docs.confluent.io/operator/current/co-manage-topics.html
+#
+# Variables substituted at runtime (via adapt_file / envsubst):
+#   ${VAR_CONFLUENT_NAMESPACE}            - namespace (e.g. iwhi-confluent)
+#   ${VAR_CONFLUENT_TOPIC_NAME}           - topic name (e.g. topic-demo)
+#   ${VAR_CONFLUENT_TOPIC_PARTITIONS}     - number of partitions (e.g. 12)
+#   ${VAR_CONFLUENT_TOPIC_REPLICAS}       - replication factor (e.g. 3)
+#   ${VAR_CONFLUENT_TOPIC_CLEANUP_POLICY} - cleanup.policy (delete or compact)
+#
+apiVersion: platform.confluent.io/v1beta1
+kind: KafkaTopic
+metadata:
+  name: ${VAR_CONFLUENT_TOPIC_NAME}
+  namespace: ${VAR_CONFLUENT_NAMESPACE}
+  labels:
+    app.kubernetes.io/name: ${VAR_CONFLUENT_TOPIC_NAME}
+    app.kubernetes.io/part-of: confluent-platform
+spec:
+  partitionCount: ${VAR_CONFLUENT_TOPIC_PARTITIONS}
+  replicas: ${VAR_CONFLUENT_TOPIC_REPLICAS}
+  kafkaClusterRef:
+    name: kafka
+    namespace: ${VAR_CONFLUENT_NAMESPACE}
+  configs:
+    cleanup.policy: ${VAR_CONFLUENT_TOPIC_CLEANUP_POLICY}
