@@ -1,0 +1,21 @@
+apiVersion: platform.confluent.io/v1beta1
+kind: KafkaTopic
+metadata:
+  name: topic-demo
+  namespace: $VAR_CONFLUENT_NAMESPACE
+  ownerReferences:
+    - apiVersion: platform.confluent.io/v1beta1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Kafka
+      name: kafka
+  finalizers:
+    - kafkatopic.finalizers.platform.confluent.io
+spec:
+  configs:
+    cleanup.policy: compact
+  kafkaClusterRef:
+    name: kafka
+    namespace: iwhi-confluent
+  partitionCount: 12
+  replicas: 1

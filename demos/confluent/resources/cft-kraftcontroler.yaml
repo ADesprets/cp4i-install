@@ -1,0 +1,13 @@
+apiVersion: platform.confluent.io/v1beta1
+kind: KRaftController
+metadata:
+  name: kraftcontroller
+  namespace: $VAR_CONFLUENT_NAMESPACE
+  finalizers:
+    - kraftcontroller.finalizers.platform.confluent.io
+spec:
+  dataVolumeCapacity: 10Gi
+  image:
+    application: 'confluentinc/confluent-local:8.3.0'
+    init: 'confluentinc/confluent-init-container:3.3.1'
+  replicas: 3

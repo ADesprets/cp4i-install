@@ -1,0 +1,38 @@
+apiVersion: platform.confluent.io/v1beta1
+kind: KafkaUser
+metadata:
+  name: cft-all-access
+  namespace: $VAR_CONFLUENT_NAMESPACE
+  labels:
+    eventstreams.ibm.com/cluster: ${VAR_CONFLUENT_INSTANCE_NAME}
+spec:
+  authentication:
+    type: scram-sha-512
+  authorization:
+    type: simple
+    acls:
+      - resource:
+          type: topic
+          name: '*'
+          patternType: literal
+        operations: ["Create","Read","Write","Describe"]  # Now an array under 'operations'
+      - resource:
+          type: topic
+          name: __schema_
+          patternType: prefix
+        operations: ["Read","Alter"]  # Now an array under 'operations'
+      - resource:
+          type: group
+          name: '*'
+          patternType: literal
+        operations: ["Read"]  # Now an array under 'operations'
+      - resource:
+          type: group
+          name: '*'
+          patternType: literal
+        operations: ["Read"]  # Now an array under 'operations'
+      - resource:
+          type: transactionalId
+          name: '*'
+          patternType: literal
+        operations: ["Write"]  # Now an array under 'operations'

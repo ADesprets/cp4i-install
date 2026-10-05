@@ -1897,6 +1897,34 @@ function install_es() {
   mylog info "==== Installation of Eventstreams Operator (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
+
+################################################
+# Install Confluent
+function install_confluent() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing Confluent (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  # confluent
+  case $MY_CLUSTER_COMMAND in
+    kubectl) install_confluent_k8s;;
+    # oc) install_confluent_oc;;
+    oc) install_confluent_k8s;;
+  esac
+
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of Confluent (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+}
+
+
 ################################################
 # Install IBM Event Endpoint Management
 # https://ibm.github.io/event-automation/eem/installing/installing-on-kubernetes/
@@ -2470,6 +2498,48 @@ function customise_es() {
   local lf_ending_date=$(date)
   mylog info "==== Customisation of es (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
+
+
+################################################
+# Customise Confluent
+function customise_confluent() {
+  SECONDS=0
+  local lf_starting_date=$(date);
+  mylog info "==== Customise Confluent (confluent.config.sh)." 0
+
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  # start customization
+  # Takes all the templates associated with the capabilities and resources the files from the context variables
+  # The files are generated into ./working/<capability>/resources
+
+  if $MY_CONFLUENT_CUSTOM; then
+    mylog info "==== Customise Confluent (confluent.config.sh)." 0
+
+    check_directory_exist_create "${MY_CONFLUENT_WORKINGDIR}"
+
+    # generate the differents properties files
+    # SB]20231109 some generated files (yaml) are based on other generated files (properties), so :
+    # - in template custom dirs, separate the files to two categories : scripts (*.properties) and config (*.yaml)
+    # - generate first the *.properties files to be sourced then generate the *.yaml files
+    check_directory_exist_create "${MY_CONFLUENT_WORKINGDIR}scripts"
+    check_directory_exist_create "${MY_CONFLUENT_WORKINGDIR}resources"
+    generate_files $MY_CONFLUENT_SIMPLE_DEMODIR $MY_CONFLUENT_WORKINGDIR true
+
+    # launch custom script
+    chmod a+x ${MY_CONFLUENT_SIMPLE_DEMODIR}scripts/confluent.config.sh
+    ${MY_CONFLUENT_SIMPLE_DEMODIR}scripts/confluent.config.sh --call confluent_run_all
+  fi
+
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+
+  local lf_ending_date=$(date)
+  mylog info "==== Customisation of confluent (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+}
+
 
 ################################################
 # Customise EEM

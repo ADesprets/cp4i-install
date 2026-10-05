@@ -1,0 +1,96 @@
+apiVersion: platform.confluent.io/v1beta1
+kind: KafkaConnect
+metadata:
+  name: ${VAR_ES_KAFKA_CONNECT_INSTANCE_NAME}
+  annotations:
+    eventstreams.ibm.com/use-connector-resources: 'true'
+  labels:
+    backup.eventstreams.ibm.com/component: kafkaconnect
+  namespace: $VAR_CONFLUENT_NAMESPACE    
+spec:
+  config:
+    group.id: connect-cluster
+    offset.storage.topic: connect-cluster-offsets
+    config.storage.topic: connect-cluster-configs
+    status.storage.topic: connect-cluster-status
+    client.id: connect-cluster-client
+    config.providers: file
+    config.providers.file.class: org.apache.kafka.common.config.provider.DirectoryConfigProvider
+  bootstrapServers: '${VAR_CONFLUENT_INSTANCE_NAME}-kafka-bootstrap.${VAR_ES_NAMESPACE}.svc:9093'
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 2Gi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+  authentication:
+    certificateAndKey:
+      certificate: user.crt
+      key: user.key
+      secretName: kafka-user1
+    type: tls      
+  template:
+    buildConfig:
+      pullSecret: ${DEFAULT_IMAGE_PULL_SECRET}
+    connectContainer:
+      volumeMounts:
+        - mountPath: /mnt/mqca
+          name: certs
+          readOnly: true
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+        privileged: false
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true
+    pod:
+      imagePullSecrets: []
+      metadata:
+        annotations:
+          eventstreams.production.type: CloudPakForIntegrationNonProduction
+          productID: 2a79e49111f44ec3acd89608e56138f5
+          productName: IBM Event Streams for Non Production
+          productVersion: $MY_ES_VERSION_NUM
+          productMetric: VIRTUAL_PROCESSOR_CORE
+          productChargedContainers: All
+          cloudpakId: c8b82d189e7545f0892db9ef2731b90d
+          cloudpakName: IBM Cloud Pak for Integration
+          productCloudpakRatio: '2:1'
+      volumes:
+        - name: certs
+          secret:
+            secretName: mq-root-secret
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+                      - s390x
+                      - ppc64le
+  tls:
+    trustedCertificates:
+      - certificate: ca.crt
+        secretName: ${VAR_CONFLUENT_INSTANCE_NAME}-cluster-ca-cert
+  replicas: 1
+  build:
+    output:
+      type: docker
+      image: image-registry.openshift-image-registry.svc:5000/${VAR_ES_NAMESPACE}/datagen-producer:0.5.1
+    plugins:
+      - name: datagen
+        artifacts:
+          - type: jar
+            url: https://github.com/IBM/kafka-connect-loosehangerjeans-source/releases/download/0.5.1/kafka-connect-loosehangerjeans-source-0.5.1-jar-with-dependencies.jar
+          - type: zip
+            url: 'https://repo1.maven.org/maven2/io/apicurio/apicurio-registry-distro-connect-converter/2.6.13.Final/apicurio-registry-distro-connect-converter-2.6.13.Final.zip'
+      - name: mq-source
+        artifacts:
+          - type: jar
+            url: https://github.com/ibm-messaging/kafka-connect-mq-source/releases/download/v2.6.0/kafka-connect-mq-source-2.6.0-jar-with-dependencies.jar
