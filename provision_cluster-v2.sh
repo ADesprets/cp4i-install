@@ -1899,6 +1899,234 @@ function install_es() {
 
 
 ################################################
+# Wait until a Confluent CFK resource reaches the expected phase/readyReplicas.
+# @param $1 : resource kind   (e.g. KRaftController, Kafka, KafkaTopic)
+# @param $2 : resource name
+# @param $3 : jsonpath expression  (e.g. {.status.phase})
+# @param $4 : expected value       (e.g. RUNNING)
+# @param $5 : namespace
+function wait_for_confluent_resource() {
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  local lf_kind="$1"
+  local lf_name="$2"
+  local lf_jsonpath="$3"
+  local lf_expected="$4"
+  local lf_ns="$5"
+  local lf_retries=0
+  local lf_max=${MY_MAX_RETRIES:-60}
+  local lf_delay=${MY_DELAY_SECONDS:-15}
+
+  mylog info "Waiting for ${lf_kind}/${lf_name} in ${lf_ns} : ${lf_jsonpath} = ${lf_expected}" 1>&2
+
+  while [[ $lf_retries -lt $lf_max ]]; do
+    local lf_actual
+    lf_actual=$($MY_CLUSTER_COMMAND -n "${lf_ns}" get "${lf_kind}" "${lf_name}" \
+      -o jsonpath="${lf_jsonpath}" 2>/dev/null)
+    if [[ "$lf_actual" == "$lf_expected" ]]; then
+      mylog info "${lf_kind}/${lf_name} reached state '${lf_expected}'." 1>&2
+      trace_out $lf_tracelevel ${FUNCNAME[0]}
+      return 0
+    fi
+    mylog info "  ${lf_kind}/${lf_name}: current='${lf_actual}', expected='${lf_expected}' (attempt $((lf_retries+1))/${lf_max})" 1>&2
+    sleep "$lf_delay"
+    (( lf_retries++ ))
+  done
+
+  mylog warn "${lf_kind}/${lf_name} did not reach '${lf_expected}' after $((lf_max * lf_delay))s — continuing." 1>&2
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+  return 1
+}
+
+################################################
+# Core Confluent Platform installation (Helm-based, works for both kubectl and oc).
+# Installs ONLY the Confluent for Kubernetes Operator — same pattern as install_mq(),
+# install_es(), install_eem() which install the operator only.
+# Operands (KRaftController, Kafka, KafkaTopic) are created during the demo phase
+# via customise_confluent() → confluent.config.sh --call confluent_run_all.
+function install_confluent_k8s() {
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  if ! $MY_CONFLUENT; then
+    mylog info "MY_CONFLUENT=false — skipping Confluent installation." 1>&2
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
+    return 0
+  fi
+
+  check_directory_exist_create "${MY_CONFLUENT_WORKINGDIR}"
+
+  # ── 1. Namespace ─────────────────────────────────────────────────────────
+  mylog info "Step 1/2 — Creating namespace ${VAR_CONFLUENT_NAMESPACE}" 1>&2
+  create_project "${VAR_CONFLUENT_NAMESPACE}" \
+    "${VAR_CONFLUENT_NAMESPACE} project" \
+    "Confluent Platform (KRaft mode)" \
+    "${MY_RESOURCESDIR}" "${MY_CONFLUENT_WORKINGDIR}"
+
+  # OpenShift SCC strategy — official Confluent recommendation:
+  # Set podSecurity.enabled=false in Helm values so CFK does NOT inject fixed UIDs.
+  # OpenShift then assigns an UID from the namespace range automatically.
+  # This avoids granting anyuid to all ServiceAccounts in the namespace.
+  # Ref: https://github.com/confluentinc/confluent-kubernetes-examples/tree/master/security/openshift-security
+  # Note: if pods still fail admission, inspect the actual SCC selected with:
+  #   oc -n <ns> get pods -o json | jq '.items[].metadata.annotations["openshift.io/scc"]'
+  # and open a targeted exception only for the specific ServiceAccount that needs it.
+
+  # ── 2. Confluent for Kubernetes Operator (Helm) ──────────────────────────
+  mylog info "Step 2/2 — Installing Confluent for Kubernetes Operator via Helm" 1>&2
+  if ! helm repo list 2>/dev/null | grep -q "${MY_CONFLUENT_HELM_REPO_NAME}"; then
+    mylog info "Adding Helm repo ${MY_CONFLUENT_HELM_REPO_NAME} → ${MY_CONFLUENT_HELM_REPO}" 1>&2
+    helm repo add "${MY_CONFLUENT_HELM_REPO_NAME}" "${MY_CONFLUENT_HELM_REPO}"
+  fi
+  helm repo update "${MY_CONFLUENT_HELM_REPO_NAME}" >/dev/null
+
+  # namespaced=true : operator and all Confluent workloads share VAR_CONFLUENT_NAMESPACE.
+  # Documentation: https://docs.confluent.io/operator/current/co-operator-scope.html
+  mylog check "Checking Helm release ${MY_CONFLUENT_OPERATOR_RELEASE} in ${VAR_CONFLUENT_NAMESPACE}" 1>&2
+  if ! helm status "${MY_CONFLUENT_OPERATOR_RELEASE}" -n "${VAR_CONFLUENT_NAMESPACE}" >/dev/null 2>&1; then
+    mylog info "Installing Confluent for Kubernetes Helm chart (namespace-scoped)" 1>&2
+    helm install "${MY_CONFLUENT_OPERATOR_RELEASE}" "${MY_CONFLUENT_HELM_CHART}" \
+      --namespace "${VAR_CONFLUENT_NAMESPACE}" \
+      --set namespaced=true \
+      --set podSecurity.enabled=false
+    # podSecurity.enabled=false lets OpenShift assign UIDs from the namespace range.
+    # Ref: https://github.com/confluentinc/confluent-kubernetes-examples/tree/master/security/openshift-security
+  else
+    mylog info "Helm release ${MY_CONFLUENT_OPERATOR_RELEASE} already present — skipping install." 1>&2
+    # Do NOT auto-upgrade: version changes require an explicit upgrade procedure.
+    # Ref: https://docs.confluent.io/operator/current/co-upgrade.html
+  fi
+
+  # Wait for operator Deployment to be available before returning
+  wait_for_state "Deployment" "confluent-operator" \
+    "{.status.conditions[?(@.type=='Available')].status}" "True" \
+    "${VAR_CONFLUENT_NAMESPACE}"
+
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+}
+
+################################################
+# Install Confluent (OpenShift path — currently delegates to Helm, same as k8s)
+function install_confluent_oc() {
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+  # OpenShift-specific SCC relaxation is already handled inside install_confluent_k8s
+  install_confluent_k8s
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+}
+
+################################################
+# Display Confluent Platform access information
+# Prints bootstrap servers, internal endpoints, and operator status.
+function display_confluent_access_info() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Confluent Platform Access Info (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  if ! $MY_CONFLUENT; then
+    mylog info "MY_CONFLUENT=false — skipping Confluent access info." 1>&2
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
+    return 0
+  fi
+
+  local lf_ns="${VAR_CONFLUENT_NAMESPACE}"
+
+  echo ""
+  echo "============================================================"
+  echo "  CONFLUENT PLATFORM — Access Information"
+  echo "  Namespace : ${lf_ns}"
+  echo "============================================================"
+  echo ""
+
+  # ── KRaftController ──────────────────────────────────────────────────────
+  echo "KRaftController:"
+  echo "----------------"
+  local lf_krc_phase lf_krc_ready lf_krc_replicas
+  lf_krc_phase=$($MY_CLUSTER_COMMAND -n "${lf_ns}" get kraftcontrollers.platform.confluent.io kraftcontroller \
+    -o jsonpath='{.status.phase}' 2>/dev/null || echo "N/A")
+  lf_krc_ready=$($MY_CLUSTER_COMMAND -n "${lf_ns}" get kraftcontrollers.platform.confluent.io kraftcontroller \
+    -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "N/A")
+  lf_krc_replicas=$($MY_CLUSTER_COMMAND -n "${lf_ns}" get kraftcontrollers.platform.confluent.io kraftcontroller \
+    -o jsonpath='{.status.replicas}' 2>/dev/null || echo "N/A")
+  echo "  Phase         : ${lf_krc_phase}"
+  echo "  Replicas      : ${lf_krc_ready}/${lf_krc_replicas} ready"
+  echo ""
+
+  # ── Kafka Cluster ────────────────────────────────────────────────────────
+  echo "Kafka Cluster:"
+  echo "--------------"
+  local lf_kafka_phase lf_kafka_ready lf_kafka_replicas
+  lf_kafka_phase=$($MY_CLUSTER_COMMAND -n "${lf_ns}" get kafkas.platform.confluent.io kafka \
+    -o jsonpath='{.status.phase}' 2>/dev/null || echo "N/A")
+  lf_kafka_ready=$($MY_CLUSTER_COMMAND -n "${lf_ns}" get kafkas.platform.confluent.io kafka \
+    -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "N/A")
+  lf_kafka_replicas=$($MY_CLUSTER_COMMAND -n "${lf_ns}" get kafkas.platform.confluent.io kafka \
+    -o jsonpath='{.status.replicas}' 2>/dev/null || echo "N/A")
+  echo "  Phase         : ${lf_kafka_phase}"
+  echo "  Brokers       : ${lf_kafka_ready}/${lf_kafka_replicas} ready"
+  echo ""
+
+  # ── Bootstrap Servers ───────────────────────────────────────────────────
+  echo "Bootstrap Servers (internal):"
+  echo "  PLAINTEXT : kafka.${lf_ns}.svc.cluster.local:9092"
+  echo "  INTERNAL  : kafka.${lf_ns}.svc.cluster.local:9071"
+  echo "  REPLICATION: kafka.${lf_ns}.svc.cluster.local:9072"
+  echo ""
+
+  # ── Kafka REST Proxy ─────────────────────────────────────────────────────
+  local lf_rest_ep
+  lf_rest_ep=$($MY_CLUSTER_COMMAND -n "${lf_ns}" get kafkas.platform.confluent.io kafka \
+    -o jsonpath='{.status.services.kafka-rest.internalEndpoint}' 2>/dev/null || echo "N/A")
+  echo "Kafka REST Proxy:"
+  echo "  Internal  : ${lf_rest_ep}"
+  echo ""
+
+  # ── KafkaTopics ──────────────────────────────────────────────────────────
+  echo "KafkaTopics:"
+  echo "------------"
+  $MY_CLUSTER_COMMAND -n "${lf_ns}" get kafkatopics.platform.confluent.io \
+    -o custom-columns="NAME:.metadata.name,PARTITIONS:.spec.partitionCount,REPLICAS:.spec.replicas,STATE:.status.state" \
+    2>/dev/null || echo "  (none or CRD not installed)"
+  echo ""
+
+  # ── Pods ─────────────────────────────────────────────────────────────────
+  echo "Pods:"
+  echo "-----"
+  $MY_CLUSTER_COMMAND -n "${lf_ns}" get pods \
+    -o custom-columns="NAME:.metadata.name,STATUS:.status.phase,READY:.status.containerStatuses[0].ready" \
+    2>/dev/null || echo "  (no pods)"
+  echo ""
+
+  # ── PVCs ────────────────────────────────────────────────────────────────
+  echo "PersistentVolumeClaims:"
+  echo "-----------------------"
+  $MY_CLUSTER_COMMAND -n "${lf_ns}" get pvc \
+    -o custom-columns="NAME:.metadata.name,STATUS:.status.phase,CAPACITY:.status.capacity.storage" \
+    2>/dev/null || echo "  (no PVCs)"
+  echo ""
+
+  echo "============================================================"
+  echo ""
+
+  # ── Save CA certificate (same pattern as APIC: save_certificate) ─────────
+  # The CA cert is in the cert-manager Secret MY_CONFLUENT_CA_SECRET (tls.crt).
+  # Save it to the working directory so clients can trust the Kafka cluster.
+  save_certificate "${MY_CONFLUENT_CA_SECRET}" "tls.crt" "${MY_CONFLUENT_WORKINGDIR}" "${lf_ns}"
+
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Confluent Platform Access Info (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+}
+
+################################################
 # Install Confluent
 function install_confluent() {
   SECONDS=0
@@ -1913,8 +2141,7 @@ function install_confluent() {
   # confluent
   case $MY_CLUSTER_COMMAND in
     kubectl) install_confluent_k8s;;
-    # oc) install_confluent_oc;;
-    oc) install_confluent_k8s;;
+    oc)      install_confluent_oc;;
   esac
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}
@@ -2905,6 +3132,8 @@ function install_part() {
   install_hsts
   install_apic_graphql
 
+  install_confluent
+
   install_instana
   install_cluster_monitoring
 
@@ -2935,7 +3164,8 @@ function customise_part() {
   customise_flink_ep
   customise_hsts
   customise_mq
-  
+  customise_confluent
+
   customise_instana
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}

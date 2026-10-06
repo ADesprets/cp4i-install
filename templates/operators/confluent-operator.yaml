@@ -1,0 +1,37 @@
+# Confluent Platform for Kubernetes - Operator Subscription
+# Installed via Helm from the Confluent official Helm repository.
+# This file is a documentation/reference template; the actual installation
+# is driven by the install_confluent_k8s() function in provision_cluster-v2.sh
+# which uses: helm upgrade --install confluent-operator confluentinc/confluent-for-kubernetes
+#
+# Operator watches all namespaces by default.
+#
+# Reference: https://docs.confluent.io/operator/current/co-deploy-cfk.html
+#
+# Variables substituted at runtime:
+#   ${VAR_CONFLUENT_NAMESPACE}  - target namespace (e.g. iwhi-confluent)
+#
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: confluent-operator
+  namespace: ${VAR_CONFLUENT_NAMESPACE}
+  labels:
+    app: confluent-operator
+    app.kubernetes.io/name: confluent-operator
+    app.kubernetes.io/part-of: confluent-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: confluent-operator
+  template:
+    metadata:
+      labels:
+        app: confluent-operator
+    spec:
+      serviceAccountName: confluent-for-kubernetes
+      containers:
+        - name: confluent-operator
+          image: confluentinc/confluent-operator:latest
+          imagePullPolicy: IfNotPresent
