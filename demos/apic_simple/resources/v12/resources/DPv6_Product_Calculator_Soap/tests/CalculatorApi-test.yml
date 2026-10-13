@@ -1,0 +1,105 @@
+kind: test
+apiVersion: api.ibm.com/v1
+metadata:
+  name: CalculatorApi-test
+  namespace: DPv6_Product_Calculator_Soap
+  version: "1.0"
+  tags: []
+spec:
+  api:
+    $endpoint: https://gateway:port/calculator-api
+  request:
+    - method: POST
+      resource: /Add
+      headers:
+        - key: content-type
+          value: application/json
+        - key: accept
+          value: application/json
+        - key: X-IBM-Client-Id
+          value: ${client_id}
+      payload:
+        raw:
+          json: |-
+            {
+              "intA": 10,
+              "intB": 20
+            }
+      parameters: []
+      assertions:
+        - $ref: DPv6_Product_Calculator_Soap:200-add-response:1.0
+    - method: GET
+      resource: /Add
+      headers:
+        - key: accept
+          value: application/json
+        - key: X-IBM-Client-Id
+          value: ${client_id}
+      parameters:
+        - key: intA
+          value: "10"
+          type: query
+        - key: intB
+          value: "20"
+          type: query
+      assertions:
+        - $ref: DPv6_Product_Calculator_Soap:200-add-response:1.0
+    - method: POST
+      resource: /Subtract
+      headers:
+        - key: content-type
+          value: application/json
+        - key: accept
+          value: application/json
+        - key: X-IBM-Client-Id
+          value: ${client_id}
+      payload:
+        raw:
+          json: |-
+            {
+              "intA": 50,
+              "intB": 20
+            }
+      parameters: []
+      assertions:
+        - $ref: DPv6_Product_Calculator_Soap:200-subtract-response:1.0
+    - method: POST
+      resource: /Multiply
+      headers:
+        - key: content-type
+          value: application/json
+        - key: accept
+          value: application/json
+        - key: X-IBM-Client-Id
+          value: ${client_id}
+      payload:
+        raw:
+          json: |-
+            {
+              "intA": 5,
+              "intB": 6
+            }
+      parameters: []
+      assertions:
+        - $ref: DPv6_Product_Calculator_Soap:200-multiply-response:1.0
+    - method: POST
+      resource: /Divide
+      headers:
+        - key: content-type
+          value: application/json
+        - key: accept
+          value: application/json
+        - key: X-IBM-Client-Id
+          value: ${client_id}
+      payload:
+        raw:
+          json: |-
+            {
+              "intA": 100,
+              "intB": 10
+            }
+      parameters: []
+      assertions:
+        - $ref: DPv6_Product_Calculator_Soap:200-divide-response:1.0
+  environment:
+    $ref: DPv6_Product_Calculator_Soap:CalculatorApi-environment:1.0

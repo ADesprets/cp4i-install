@@ -1,0 +1,94 @@
+{
+  "mcpServers": {
+    "apic-analytics-mcp-server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "-p",
+        "C:/IBM/FlowPilot/apic/FlowPilot-APIC-Setup/resources/ibm-apic-flow-pilot-kit/mcp-servers/analytics/apic-analytics-mcp-server-0.0.1.tgz",
+        "apic-analytics-mcp-server"
+      ],
+      "env": {
+        "NODE_TLS_REJECT_UNAUTHORIZED": "0",
+        "PROVIDER_ORG": "org1",
+        "API_KEY": "2c520a2f-f8ec-4058-9142-74089a803cc3",
+        "client_id": "38d247f2-25bd-4770-97fc-89865aa78ae1",
+        "client_secret": "f103cc21-af59-4be4-b650-9ac1f845969b",
+        "APIC_PLATFORM_URL": "https://api.apps.itz-x5bicj.hub04-lb.techzone.ibm.com",
+        "APIC_MANAGEMENT_URL": "https://manager.apps.itz-x5bicj.hub04-lb.techzone.ibm.com"
+      }
+    },
+    "apic-governance-mcp-server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "-p",
+        "C:/IBM/FlowPilot/apic/FlowPilot-APIC-Setup/resources/ibm-apic-flow-pilot-kit/mcp-servers/governance/apic-governance-mcp-server-0.0.1.tgz",
+        "apic-governance-mcp-server"
+      ],
+      "env": {
+        "NODE_TLS_REJECT_UNAUTHORIZED": "0",
+        "PROVIDER_ORG": "org1",
+        "API_KEY": "2c520a2f-f8ec-4058-9142-74089a803cc3",
+        "client_id": "38d247f2-25bd-4770-97fc-89865aa78ae1",
+        "client_secret": "f103cc21-af59-4be4-b650-9ac1f845969b",
+        "APIC_PLATFORM_URL": "https://api.apps.itz-x5bicj.hub04-lb.techzone.ibm.com",
+        "APIC_MANAGEMENT_URL": "https://manager.apps.itz-x5bicj.hub04-lb.techzone.ibm.com"
+      }
+    },
+    "apic-management-mcp-server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "-p",
+        "C:/IBM/FlowPilot/apic/FlowPilot-APIC-Setup/resources/ibm-apic-flow-pilot-kit/mcp-servers/management/apic-management-mcp-server-0.0.1.tgz",
+        "apic-management-mcp-server"
+      ],
+      "env": {
+        "NODE_TLS_REJECT_UNAUTHORIZED": "0",
+        "PROVIDER_ORG": "org1",
+        "API_KEY": "2c520a2f-f8ec-4058-9142-74089a803cc3",
+        "client_id": "38d247f2-25bd-4770-97fc-89865aa78ae1",
+        "client_secret": "f103cc21-af59-4be4-b650-9ac1f845969b",
+        "APIC_PLATFORM_URL": "https://api.apps.itz-x5bicj.hub04-lb.techzone.ibm.com",
+        "APIC_MANAGEMENT_URL": "https://manager.apps.itz-x5bicj.hub04-lb.techzone.ibm.com"
+      }
+    },
+    "apic-genai-spec-mcp-server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "-p",
+        "C:/IBM/FlowPilot/apic/FlowPilot-APIC-Setup/resources/ibm-apic-flow-pilot-kit/mcp-servers/genai-spec/apic-genai-spec-mcp-server-0.0.1.tgz",
+        "apic-genai-spec-mcp-server"
+      ],
+      "env": {
+        "NODE_TLS_REJECT_UNAUTHORIZED": "0",
+        "PROVIDER_ORG": "org1",
+        "API_KEY": "2c520a2f-f8ec-4058-9142-74089a803cc3",
+        "client_id": "38d247f2-25bd-4770-97fc-89865aa78ae1",
+        "client_secret": "f103cc21-af59-4be4-b650-9ac1f845969b",
+        "APIC_PLATFORM_URL": "https://api.apps.itz-x5bicj.hub04-lb.techzone.ibm.com",
+        "APIC_MANAGEMENT_URL": "https://manager.apps.itz-x5bicj.hub04-lb.techzone.ibm.com"
+      }
+    },
+    "ai-gateway-management-mcp-server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "-p",
+        "C:/IBM/FlowPilot/apic/FlowPilot-APIC-Setup/resources/ibm-apic-flow-pilot-kit/mcp-servers/ai-gateway-management/ai-gateway-management-mcp-server-0.0.1.tgz",
+        "ai-gateway-management-mcp-server"
+      ],
+      "env": {
+        "NODE_TLS_REJECT_UNAUTHORIZED": "0",
+        "PROVIDER_ORG": "org1",
+        "API_KEY": "2c520a2f-f8ec-4058-9142-74089a803cc3",
+        "client_id": "38d247f2-25bd-4770-97fc-89865aa78ae1",
+        "client_secret": "f103cc21-af59-4be4-b650-9ac1f845969b",
+        "APIC_PLATFORM_URL": "https://api.apps.itz-x5bicj.hub04-lb.techzone.ibm.com",
+        "APIC_MANAGEMENT_URL": "https://manager.apps.itz-x5bicj.hub04-lb.techzone.ibm.com"
+      }
+    }
+  }
+}

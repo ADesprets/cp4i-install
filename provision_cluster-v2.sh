@@ -1979,9 +1979,17 @@ function install_confluent_k8s() {
   mylog info "Step 2/2 — Installing Confluent for Kubernetes Operator via Helm" 1>&2
   if ! helm repo list 2>/dev/null | grep -q "${MY_CONFLUENT_HELM_REPO_NAME}"; then
     mylog info "Adding Helm repo ${MY_CONFLUENT_HELM_REPO_NAME} → ${MY_CONFLUENT_HELM_REPO}" 1>&2
-    helm repo add "${MY_CONFLUENT_HELM_REPO_NAME}" "${MY_CONFLUENT_HELM_REPO}"
+    helm repo add "${MY_CONFLUENT_HELM_REPO_NAME}" "${MY_CONFLUENT_HELM_REPO}" || {
+      mylog error "Failed to add Helm repo ${MY_CONFLUENT_HELM_REPO_NAME} (${MY_CONFLUENT_HELM_REPO})" 1>&2
+      trace_out $lf_tracelevel ${FUNCNAME[0]}
+      return 1
+    }
   fi
-  helm repo update "${MY_CONFLUENT_HELM_REPO_NAME}" >/dev/null
+  helm repo update "${MY_CONFLUENT_HELM_REPO_NAME}" || {
+    mylog error "Failed to update Helm repo ${MY_CONFLUENT_HELM_REPO_NAME}" 1>&2
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
+    return 1
+  }
 
   # namespaced=true : operator and all Confluent workloads share VAR_CONFLUENT_NAMESPACE.
   # Documentation: https://docs.confluent.io/operator/current/co-operator-scope.html

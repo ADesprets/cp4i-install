@@ -1,0 +1,29 @@
+kind: assertion
+apiVersion: api.ibm.com/v1
+metadata:
+  name: 200-divide-response
+  namespace: DPv6_Product_Calculator_Soap
+  version: "1.0"
+  tags:
+    - assertion
+spec:
+  - name: Validate response status code
+    key: responseStatus
+    value: 200
+    action: equals
+    stopOnFail: false
+  - name: Validate content type
+    key: responseHeaders.content-type
+    value: application/json
+    action: equals
+    stopOnFail: false
+  - name: Validate response schema
+    key: responseBody
+    value: '{"type":"object","required":["DivideResult"],"properties":{"DivideResult":{"type":"integer"}}}'
+    action: validateSchema
+    stopOnFail: false
+  - name: "Validate required property: DivideResult"
+    key: responseBody
+    value: DivideResult
+    action: haveProperty
+    stopOnFail: false

@@ -1,0 +1,14 @@
+kind: assertion
+apiVersion: api.ibm.com/v1
+metadata:
+  name: 401-unauthorized
+  namespace: DPv6_Product_Calculator_Soap
+  version: "1.0"
+  tags:
+    - assertion
+spec:
+  - name: Validate response status code
+    key: responseStatus
+    value: 401
+    action: equals
+    stopOnFail: false

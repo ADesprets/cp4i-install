@@ -1731,7 +1731,7 @@ api_files=("ping-api_1.0.0.json" "ibm-sample-order-api_1.0.0.json" "stock_1.0.0.
 
 for index in ${!api_names[@]}
   do
-    adapt_file ${MY_APIC_SIMPLE_DEMODIR}resources/ ${MY_APIC_WORKINGDIR}resources/ ${api_files[$index]}
+    adapt_file ${MY_APIC_SIMPLE_DEMODIR}resources/V10/APIs ${MY_APIC_WORKINGDIR}resources/ ${api_files[$index]}
     decho $lf_tracelevel "curl -sk \"${platform_api_url}api/orgs/${apic_provider_org}/drafts/draft-apis/${api_names[$index]}?fields=url\" -H \"Authorization: Bearer <token>\" -H 'Accept: application/json'"
     local api_uri_result=$(curl -sk "${platform_api_url}api/orgs/${apic_provider_org}/drafts/draft-apis/${api_names[$index]}?fields=url" -H "Authorization: Bearer $token" -H 'Accept: application/json' | jq -r .total_results)
     if [[ $api_uri_result -eq 0 ]]; then

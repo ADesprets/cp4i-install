@@ -1,0 +1,12 @@
+kind: environment
+apiVersion: api.ibm.com/v1
+metadata:
+  name: CalculatorApi-environment
+  namespace: DPv6_Product_Calculator_Soap
+  version: "1.0"
+  tags: []
+spec:
+  variables:
+    - key: client_id
+      isSecret: true
+      value: ""
