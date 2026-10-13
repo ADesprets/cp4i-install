@@ -221,11 +221,51 @@ function create_confluent_operands() {
     "${VAR_CONFLUENT_NAMESPACE}" \
     "{.status.state}" "CREATED"
 
+
+  # VAR_CONFLUENT_CA_ANNOTATION, VAR_CONFLUENT_STORAGE_CLASS, VAR_CONFLUENT_INIT_IMAGE
+  # and VAR_CONFLUENT_DATA_VOLUME_CAPACITY are still needed by Control Center
+  # and are unset after it (together with VAR_CONFLUENT_TLS_AUTO_CERTS).
   unset VAR_CONFLUENT_KRAFTCONTROLLER_REPLICAS VAR_CONFLUENT_KAFKA_REPLICAS \
-        VAR_CONFLUENT_DATA_VOLUME_CAPACITY VAR_CONFLUENT_SERVER_IMAGE \
-        VAR_CONFLUENT_KAFKA_IMAGE VAR_CONFLUENT_INIT_IMAGE VAR_CONFLUENT_STORAGE_CLASS \
-        VAR_CONFLUENT_TLS_AUTO_CERTS VAR_CONFLUENT_CA_ANNOTATION \
-        VAR_CONFLUENT_TOPIC_PARTITIONS VAR_CONFLUENT_TOPIC_REPLICAS VAR_CONFLUENT_TOPIC_CLEANUP_POLICY
+        VAR_CONFLUENT_SERVER_IMAGE VAR_CONFLUENT_KAFKA_IMAGE  \
+        VAR_CONFLUENT_TOPIC_PARTITIONS \
+        VAR_CONFLUENT_TOPIC_REPLICAS VAR_CONFLUENT_TOPIC_CLEANUP_POLICY
+
+  # Deploy Control Center (depends on Kafka)
+  # controlcenters.platform.confluent.io uses the fully-qualified API group like the other CFK operands
+  mylog info "Deploying Control Center" 1>&2
+  export VAR_CONFLUENT_CONTROLCENTER_IMAGE=${MY_CONFLUENT_CONTROLCENTER_IMAGE}
+  create_operand_instance "controlcenters.platform.confluent.io" "controlcenter" \
+    "${MY_OPERANDSDIR}" "${MY_CONFLUENT_WORKINGDIR}" \
+    "CFT-ControlCenter-Capability.yaml" \
+    "${VAR_CONFLUENT_NAMESPACE}" \
+    "{.status.phase}" "RUNNING"
+
+  unset VAR_CONFLUENT_CONTROLCENTER_IMAGE VAR_CONFLUENT_TLS_AUTO_CERTS VAR_CONFLUENT_CA_ANNOTATION \
+        VAR_CONFLUENT_STORAGE_CLASS VAR_CONFLUENT_INIT_IMAGE \
+        VAR_CONFLUENT_DATA_VOLUME_CAPACITY
+
+  # Create Route for Control Center Web UI
+  create_controlcenter_route
+
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+}
+
+################################################
+# Create Confluent Control Center Route
+function create_controlcenter_route() {
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  local lf_source_directory="${MY_CONFLUENT_SIMPLE_DEMODIR}resources/"
+  local lf_target_directory="${MY_CONFLUENT_WORKINGDIR}resources/"
+
+  mylog info "Creating Route for Confluent Control Center in ${VAR_CONFLUENT_NAMESPACE}" 1>&2
+  create_oc_resource "Route" "controlcenter" "${lf_source_directory}" "${lf_target_directory}" "cft-controlcenter-route.yaml" "${VAR_CONFLUENT_NAMESPACE}"
+
+  local lf_c3_host=$($MY_CLUSTER_COMMAND -n "${VAR_CONFLUENT_NAMESPACE}" get route controlcenter -o jsonpath='{.spec.host}' 2>/dev/null || true)
+  if [[ -n "$lf_c3_host" ]]; then
+    mylog info "Confluent Control Center Web UI: https://${lf_c3_host}" 1>&2
+  fi
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
@@ -247,7 +287,7 @@ function confluent_run_all () {
     "For Confluent customisation" \
     "${MY_RESOURCESDIR}" "${MY_CONFLUENT_WORKINGDIR}"
 
-  # Deploy operands (KRaftController, Kafka, KafkaTopic)
+  # Deploy operands (KRaftController, Kafka, KafkaTopic, ControlCenter)
   create_confluent_operands
 
   # Grant monitoring permissions

@@ -1,0 +1,58 @@
+# Confluent Control Center operand template
+# Depends on the Kafka cluster named "kafka".
+# Reference: https://docs.confluent.io/operator/current/co-configure-control-center.html
+#
+# Bootstrap: Kafka "internal" listener (9071). The Kafka CR deployed by this project
+# exposes it as security.protocol=PLAINTEXT (see `oc get kafka kafka -o jsonpath='{.status.listeners}'`),
+# so Control Center must NOT use TLS towards Kafka (dependencies.kafka.tls.enabled: false).
+# A TLS client on a PLAINTEXT port fails with "terminated during authentication".
+#
+# Image note: Confluent Platform 8.x only ships Control Center "next-gen"
+# (confluentinc/cp-enterprise-control-center-next-gen). Verify the tag against the registry.
+#
+# StorageClass: must be a block StorageClass (e.g. ocs-storagecluster-ceph-rbd).
+# Ref: https://docs.confluent.io/operator/current/co-storage.html
+#
+# SCC: empty podSecurityContext so OpenShift assigns UIDs from namespace range.
+#
+# Variables substituted at runtime (via adapt_file / envsubst):
+#   ${VAR_CONFLUENT_NAMESPACE}            - namespace (e.g. iwhi-confluent)
+#   ${VAR_CONFLUENT_CONTROLCENTER_IMAGE}  - Control Center image
+#   ${VAR_CONFLUENT_INIT_IMAGE}           - init-container image
+#   ${VAR_CONFLUENT_DATA_VOLUME_CAPACITY} - PVC size (e.g. 10Gi)
+#   ${VAR_CONFLUENT_STORAGE_CLASS}        - block StorageClass
+#   ${VAR_CONFLUENT_CA_ANNOTATION}        - annotation line for cfk-managed CA, or empty
+#
+apiVersion: platform.confluent.io/v1beta1
+kind: ControlCenter
+metadata:
+  name: controlcenter
+  namespace: ${VAR_CONFLUENT_NAMESPACE}
+  annotations:
+    ${VAR_CONFLUENT_CA_ANNOTATION}
+  labels:
+    app.kubernetes.io/name: controlcenter
+    app.kubernetes.io/part-of: confluent-platform
+spec:
+  replicas: 1
+  image:
+    application: ${VAR_CONFLUENT_CONTROLCENTER_IMAGE}
+    init: ${VAR_CONFLUENT_INIT_IMAGE}
+  dataVolumeCapacity: ${VAR_CONFLUENT_DATA_VOLUME_CAPACITY}
+  storageClass:
+    name: ${VAR_CONFLUENT_STORAGE_CLASS}
+  dependencies:
+    kafka:
+      bootstrapEndpoint: kafka.${VAR_CONFLUENT_NAMESPACE}.svc.cluster.local:9071
+      tls:
+        enabled: false
+  podTemplate:
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: "2"
+        memory: 4Gi
+    # Empty podSecurityContext: let OpenShift assign UIDs from the namespace range.
+    podSecurityContext: {}
