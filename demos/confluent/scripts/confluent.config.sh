@@ -209,6 +209,16 @@ function create_confluent_operands() {
         VAR_CONFLUENT_TOPIC_PARTITIONS \
         VAR_CONFLUENT_TOPIC_REPLICAS VAR_CONFLUENT_TOPIC_CLEANUP_POLICY
 
+  # Create admin credentials Secret for the Control Center UI before deploying the CR.
+  export VAR_CONFLUENT_C3_CREDENTIALS_SECRET="controlcenter-credentials"
+  mylog info "Creating Control Center admin credentials secret (${VAR_CONFLUENT_C3_CREDENTIALS_SECRET})" 1>&2
+  export VAR_CONFLUENT_C3_ADMIN_USERNAME="${MY_CONFLUENT_C3_ADMIN_USERNAME}"
+  export VAR_CONFLUENT_C3_ADMIN_PASSWORD="${MY_CONFLUENT_C3_ADMIN_PASSWORD}"
+  create_oc_resource "Secret" "${VAR_CONFLUENT_C3_CREDENTIALS_SECRET}" \
+    "${MY_CONFLUENT_SIMPLE_DEMODIR}resources/" "${MY_CONFLUENT_WORKINGDIR}resources/" \
+    "cft-controlcenter-credentials.yaml" "${VAR_CONFLUENT_NAMESPACE}"
+  unset VAR_CONFLUENT_C3_ADMIN_USERNAME VAR_CONFLUENT_C3_ADMIN_PASSWORD
+
   # Deploy Control Center (depends on Kafka)
   # controlcenters.platform.confluent.io uses the fully-qualified API group like the other CFK operands
   mylog info "Deploying Control Center" 1>&2
@@ -221,7 +231,7 @@ function create_confluent_operands() {
 
   unset VAR_CONFLUENT_CONTROLCENTER_IMAGE VAR_CONFLUENT_TLS_AUTO_CERTS VAR_CONFLUENT_CA_ANNOTATION \
         VAR_CONFLUENT_STORAGE_CLASS VAR_CONFLUENT_INIT_IMAGE \
-        VAR_CONFLUENT_DATA_VOLUME_CAPACITY
+        VAR_CONFLUENT_DATA_VOLUME_CAPACITY VAR_CONFLUENT_C3_CREDENTIALS_SECRET
 
   # Create Route for Control Center Web UI
   create_controlcenter_route

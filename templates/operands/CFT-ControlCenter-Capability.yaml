@@ -22,6 +22,7 @@
 #   ${VAR_CONFLUENT_DATA_VOLUME_CAPACITY} - PVC size (e.g. 10Gi)
 #   ${VAR_CONFLUENT_STORAGE_CLASS}        - block StorageClass
 #   ${VAR_CONFLUENT_CA_ANNOTATION}        - annotation line for cfk-managed CA, or empty
+#   ${VAR_CONFLUENT_C3_CREDENTIALS_SECRET} - name of the Secret holding plain-users.json
 #
 apiVersion: platform.confluent.io/v1beta1
 kind: ControlCenter
@@ -46,6 +47,14 @@ spec:
       bootstrapEndpoint: kafka.${VAR_CONFLUENT_NAMESPACE}.svc.cluster.local:9071
       tls:
         enabled: false
+  # Admin authentication for the Control Center UI.
+  # The referenced Secret must contain a "plain-users.json" key with a JSON object
+  # mapping usernames to passwords, e.g.: {"admin": "secret-password"}
+  # Reference: https://docs.confluent.io/operator/current/co-configure-control-center.html#configure-control-center-authentication
+  authentication:
+    type: basic
+    jaasConfigPassThrough:
+      secretRef: ${VAR_CONFLUENT_C3_CREDENTIALS_SECRET}
   podTemplate:
     resources:
       requests:
