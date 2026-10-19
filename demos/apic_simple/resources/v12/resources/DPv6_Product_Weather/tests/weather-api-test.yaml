@@ -1,0 +1,52 @@
+kind: test
+apiVersion: api.ibm.com/v1
+metadata:
+  name: weather-api-test
+  namespace: dpv6
+  version: "1.0"
+  tags:
+    - weather
+    - datapower
+spec:
+  api:
+    $endpoint: https://api-gateway.example.com/weather
+  request:
+    - method: GET
+      resource: /air-temperature
+      headers:
+        - key: accept
+          value: application/json
+        - key: X-IBM-Client-Id
+          value: ${client_id}
+        - key: X-IBM-Client-Secret
+          value: ${client_secret}
+      parameters: []
+      assertions:
+        - $ref: dpv6:200-weather-response:1.0
+
+    - method: GET
+      resource: /air-temperature
+      headers:
+        - key: accept
+          value: application/json
+        - key: X-IBM-Client-Id
+          value: ${client_id}
+        - key: X-IBM-Client-Secret
+          value: ${client_secret}
+      parameters:
+        - key: date
+          value: ${date}
+          type: query
+      assertions:
+        - $ref: dpv6:200-success:1.0
+
+    - method: GET
+      resource: /air-temperature
+      headers:
+        - key: accept
+          value: application/json
+      parameters: []
+      assertions:
+        - $ref: dpv6:401-unauthorized:1.0
+  environment:
+    $ref: dpv6:weather-environment:1.0

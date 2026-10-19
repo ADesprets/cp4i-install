@@ -1,0 +1,22 @@
+kind: environment
+apiVersion: api.ibm.com/v1
+metadata:
+  name: weather-environment
+  namespace: dpv6
+  version: "1.0"
+  tags:
+    - environment
+spec:
+  variables:
+    - key: client_id
+      value: ""
+      isSecret: true
+    - key: client_secret
+      value: ""
+      isSecret: true
+    - key: bearer_token
+      value: ""
+      isSecret: true
+    - key: date
+      value: "2024-01-15"
+      isSecret: false

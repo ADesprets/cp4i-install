@@ -10,6 +10,6 @@ spec:
   config:
     min.insync.replicas: "1"
     retention.ms: "86400000"
-  partitions: ${VAR_CONFLUENT_SPEC_TOPIC_PARTITION}
-  replicas: ${VAR_CONFLUENT_SPEC_TOPIC_REPLICA}
-  topicName: ${VAR_CONFLUENT_SPEC_TOPIC_NAME}
+  partitions: ${VAR_CONFLUENT_TOPIC_PARTITION}
+  replicas: ${VAR_CONFLUENT_TOPIC_REPLICA}
+  topicName: ${VAR_CONFLUENT_TOPIC_NAME}

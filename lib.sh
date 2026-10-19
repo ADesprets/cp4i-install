@@ -15,7 +15,7 @@ function install_mq_k8s() {
     mylog info "Creating entitlement, need to check if it is needed or works" 1>&2
     add_ibm_entitlement "$VAR_MQ_NAMESPACE"
 
-    # create a mq service 
+    # create a MQ service 
     check_create_oc_yaml "Service" "${VAR_QMGR}-ibm-mq" "${MY_YAMLDIR}mq/" "${MY_MQ_WORKINGDIR}" "service.yaml" "${VAR_MQ_NAMESPACE}"
 
     # Create a service account for the MQ
@@ -1107,7 +1107,8 @@ function display_access_info() {
   # Initialisation of the bookmark
   mylog info "All links in ${MY_WORKINGDIR}bookmarks.html" 0
   echo "<TR><TD><A HREF=${lf_console_url}>OpenShift console</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
-  echo ${BOOKMARK_PROLOGUE} > ${MY_WORKINGDIR}bookmarks.html
+  echo ${BOOKMARK_PROLOGUE1} > ${MY_WORKINGDIR}bookmarks.html
+  echo ${BOOKMARK_PROLOGUE2} >> ${MY_WORKINGDIR}bookmarks.html
 
   # OpenShift Console
   local lf_console_url
@@ -1247,6 +1248,15 @@ function display_access_info() {
     mylog info "Event Processing UI endpoint: ${lf_ep_ui_url}" 0
     echo "<TR><TD><A HREF=${lf_ep_ui_url}>Event Processing UI</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
     mylog info "The credentials are defined in the file ./working/EP/resources/user-credentials.yaml" 0
+  fi
+
+  # Confluent
+  local lf_cf_ui_url
+  if $MY_CONFLUENT; then
+    lf_cf_ui_url=$($MY_CLUSTER_COMMAND -n $VAR_CONFLUENT_NAMESPACE get route controlcenter -o=jsonpath='{.spec.host}')
+    lf_cf_ui_url=https://${lf_cf_ui_url%/}
+    mylog info "Confluent Control Center endpoint: ${lf_cf_ui_url}" 0
+    echo "<TR><TD><A HREF=${lf_cf_ui_url}>Confluent Control Center</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
   fi
   
   # LDAP

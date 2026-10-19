@@ -213,7 +213,8 @@ function es_display_access_info() {
   local lf_bookmarks_file="${VAR_ES_WORKINGDIR}es_mm2_bookmarks.html"
 
   # Initialisation of the bookmark
-  echo ${BOOKMARK_PROLOGUE} > ${lf_bookmarks_file}
+  echo ${BOOKMARK_PROLOGUE1} > ${MY_WORKINGDIR}bookmarks.html
+  echo ${BOOKMARK_PROLOGUE2} >> ${MY_WORKINGDIR}bookmarks.html
 
   # Event Streams
   local lf_index lf_es_ui_url lf_es_admin_url lf_es_apicurioregistry_url lf_es_restproducer_url lf_es_bootstrap_urls lf_es_admin_pwd

@@ -1,0 +1,14 @@
+kind: assertion
+apiVersion: api.ibm.com/v1
+metadata:
+  name: 400-bad-request
+  namespace: dpv6
+  version: "1.0"
+  tags:
+    - assertion
+spec:
+  - name: Validate response status code is 400
+    key: responseStatus
+    value: 400
+    action: equals
+    stopOnFail: false

@@ -34,35 +34,14 @@ function create_kafka_topics () {
       # Need to make those variables visible to the envsubst command used in lib.sh
       export VAR_CONFLUENT_TOPIC_NAME=${topic_names[$index]}
       export VAR_CONFLUENT_SPEC_TOPIC_NAME=${topic_spec_names[$index]}
-      export VAR_CONFLUENT_TOPIC_PARTITIONS=${topic_partitions[$index]}
-      export VAR_CONFLUENT_TOPIC_REPLICAS=${topic_replicas[$index]}
+      export VAR_CONFLUENT_TOPIC_PARTITION=${topic_partitions[$index]}
+      export VAR_CONFLUENT_TOPIC_REPLICA=${topic_replicas[$index]}
       export VAR_CONFLUENT_TOPIC_CLEANUP_POLICY="delete"
 
       # Use the project template for Confluent KafkaTopic CRD
       create_oc_resource "KafkaTopic" "${VAR_CONFLUENT_TOPIC_NAME}" "${lf_source_directory}" "${lf_target_directory}" "topic.yaml" "${VAR_CONFLUENT_NAMESPACE}"
   done
       
-  trace_out $lf_tracelevel ${FUNCNAME[0]}
-}
-
-################################################
-# Create kafka users
-function create_kafka_users () {
-  local lf_tracelevel=4
-  trace_in $lf_tracelevel ${FUNCNAME[0]}
-
-  local lf_source_directory="${MY_CONFLUENT_SIMPLE_DEMODIR}resources/"
-  local lf_target_directory="${MY_CONFLUENT_WORKINGDIR}resources/"
-
-  # Creation of Kafka users in the Confluent namespace
-  create_oc_resource "KafkaUser" "cft-admin" "${lf_source_directory}" "${lf_target_directory}" "cft-admin-user.yaml" "${VAR_CONFLUENT_NAMESPACE}"
-
-  create_oc_resource "KafkaUser" "cft-all-access" "${lf_source_directory}" "${lf_target_directory}" "cft-all-access-user.yaml" "${VAR_CONFLUENT_NAMESPACE}"
-
-  create_oc_resource "KafkaUser" "kafka-connect-credentials" "${lf_source_directory}" "${lf_target_directory}" "kafka-connect-credentials.yaml" "${VAR_CONFLUENT_NAMESPACE}"
-
-  create_oc_resource "KafkaUser" "kafka-user1" "${lf_source_directory}" "${lf_target_directory}" "kafka-user1.yaml" "${VAR_CONFLUENT_NAMESPACE}"
-
   trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 
@@ -295,9 +274,6 @@ function confluent_run_all () {
 
   # Create additional demo topics
   create_kafka_topics
-
-  # Create Kafka users
-  create_kafka_users
 
   # Create connectors (requires MQ — guarded inside the function)
   # create_kafka_connector

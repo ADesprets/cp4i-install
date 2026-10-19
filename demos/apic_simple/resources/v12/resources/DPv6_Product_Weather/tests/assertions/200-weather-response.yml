@@ -1,0 +1,29 @@
+kind: assertion
+apiVersion: api.ibm.com/v1
+metadata:
+  name: 200-weather-response
+  namespace: dpv6
+  version: "1.0"
+  tags:
+    - assertion
+spec:
+  - name: Validate response status code is 200
+    key: responseStatus
+    value: 200
+    action: equals
+    stopOnFail: false
+  - name: Validate content type
+    key: responseHeaders.content-type
+    value: application/json
+    action: include
+    stopOnFail: false
+  - name: Validate response has items property
+    key: responseBody
+    value: items
+    action: haveProperty
+    stopOnFail: false
+  - name: Validate response has api_info property
+    key: responseBody
+    value: api_info
+    action: haveProperty
+    stopOnFail: false

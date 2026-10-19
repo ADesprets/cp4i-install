@@ -10,7 +10,8 @@ function ace_display_access_info() {
   local lf_bookmarks_file="${VAR_ACE_WORKINGDIR}ace_simple_bookmarks.html"
 
   # Initialisation of the bookmark
-  echo ${BOOKMARK_PROLOGUE} > ${lf_bookmarks_file}
+  echo ${BOOKMARK_PROLOGUE1} > ${MY_WORKINGDIR}bookmarks.html
+  echo ${BOOKMARK_PROLOGUE2} >> ${MY_WORKINGDIR}bookmarks.html
 
   # Loop through files in the barfiles directory
   for sc_barfiledir in ${sc_ace_barfiles_dir}*; do
