@@ -1106,7 +1106,6 @@ function display_access_info() {
 
   # Initialisation of the bookmark
   mylog info "All links in ${MY_WORKINGDIR}bookmarks.html" 0
-  echo "<TR><TD><A HREF=${lf_console_url}>OpenShift console</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
   echo ${BOOKMARK_PROLOGUE1} > ${MY_WORKINGDIR}bookmarks.html
   echo ${BOOKMARK_PROLOGUE2} >> ${MY_WORKINGDIR}bookmarks.html
 
