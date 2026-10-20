@@ -35,6 +35,7 @@ metadata:
     app.kubernetes.io/name: controlcenter
     app.kubernetes.io/part-of: confluent-platform
 spec:
+  id: c3-control-center
   replicas: 1
   image:
     application: ${VAR_CONFLUENT_CONTROLCENTER_IMAGE}
@@ -53,8 +54,13 @@ spec:
   # Reference: https://docs.confluent.io/operator/current/co-configure-control-center.html#configure-control-center-authentication
   authentication:
     type: basic
-    jaasConfigPassThrough:
+    basic:
       secretRef: ${VAR_CONFLUENT_C3_CREDENTIALS_SECRET}
+      roles:
+        - Administrators
+        - Restricted
+      restrictedRoles:
+        - Restricted
   podTemplate:
     resources:
       requests:

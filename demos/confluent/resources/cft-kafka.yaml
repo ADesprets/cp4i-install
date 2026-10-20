@@ -6,7 +6,7 @@ metadata:
   finalizers:
     - kafka.finalizers.platform.confluent.io
 spec:
-  dataVolumeCapacity: 10Gi
+  dataVolumeCapacity: 20Gi
   dependencies:
     kRaftController:
       clusterRef:
