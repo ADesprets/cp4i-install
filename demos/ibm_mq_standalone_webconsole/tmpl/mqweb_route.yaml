@@ -1,0 +1,13 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: ${VAR_MQWEB_APP_NAME}
+  namespace: ${VAR_MQWEB_NAMESPACE}
+spec:
+  to:
+    kind: Service
+    name: ${VAR_MQWEB_APP_NAME}
+  port:
+    targetPort: https
+  tls:
+    termination: passthrough

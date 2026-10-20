@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ${VAR_MQWEB_APP_NAME}-data
+  namespace: ${VAR_MQWEB_NAMESPACE}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ${OCP_BLOCK_STORAGE}
+  resources:
+    requests:
+      storage: ${VAR_MQWEB_PVC_SIZE}

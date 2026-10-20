@@ -1,0 +1,28 @@
+{
+    "channel":
+    [
+        {
+            "name": "${VAR_MQWEB_CHL}",
+            "connectionManagement":
+            {
+              "heartbeatInterval": 30
+            },
+            "clientConnection":
+            {
+                "connection":
+                [
+                    {
+                        "host": "${VAR_QMGR_HOST}",
+                        "port": 1414
+                    }
+                ],
+                "queueManager": "${VAR_QMGR}"
+            },
+            "transmissionSecurity":
+            {
+              "cipherSpecification": "ANY_TLS12_OR_HIGHER"
+            },
+            "type": "clientConnection"
+        }
+   ]
+}

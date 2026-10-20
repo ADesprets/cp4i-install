@@ -1,0 +1,24 @@
+# IBM MQ stand-alone Web Server image
+# OpenShift runs the container with a random UID in group 0: every writable path is owned by group 0 and group-writable.
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
+
+RUN microdnf install -y tar gzip findutils procps-ng && microdnf clean all
+
+ENV MQWEB_HOME=/opt/mqweb \
+    MQ_OVERRIDE_DATA_PATH=/var/mqweb
+
+# mqweb.tar.gz is the Fix Central tarball, copied into the build context by mqweb.config.sh
+COPY mqweb.tar.gz /tmp/mqweb.tar.gz
+# strmqweb refuses to start until the MQ license is accepted (status stored in ${MQWEB_HOME}/licenses/status.dat)
+RUN mkdir -p ${MQWEB_HOME} ${MQ_OVERRIDE_DATA_PATH} \
+ && tar -xzf /tmp/mqweb.tar.gz -C ${MQWEB_HOME} && rm /tmp/mqweb.tar.gz \
+ && ${MQWEB_HOME}/bin/mqlicense -accept \
+ && chgrp -R 0 ${MQWEB_HOME} ${MQ_OVERRIDE_DATA_PATH} \
+ && chmod -R g=u ${MQWEB_HOME} ${MQ_OVERRIDE_DATA_PATH}
+
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod 0775 /usr/local/bin/entrypoint.sh
+
+USER 1001
+EXPOSE 9443
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

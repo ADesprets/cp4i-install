@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${VAR_MQWEB_APP_NAME}
+  namespace: ${VAR_MQWEB_NAMESPACE}
+  labels:
+    app: ${VAR_MQWEB_APP_NAME}
+spec:
+  # One replica only: console sessions and remote queue manager definitions live on the RWO PVC
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: ${VAR_MQWEB_APP_NAME}
+  template:
+    metadata:
+      labels:
+        app: ${VAR_MQWEB_APP_NAME}
+    spec:
+      containers:
+        - name: mqweb
+          image: ${VAR_MQWEB_IMAGE}
+          imagePullPolicy: Always
+          ports:
+            - name: https
+              containerPort: 9443
+          envFrom:
+            - secretRef:
+                name: ${VAR_MQWEB_CREDENTIALS_SECRET}
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          readinessProbe:
+            tcpSocket:
+              port: 9443
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 9443
+            initialDelaySeconds: 120
+            periodSeconds: 20
+          volumeMounts:
+            - name: data
+              mountPath: /var/mqweb
+            - name: config
+              mountPath: /config
+            - name: ccdt
+              mountPath: /ccdt
+            - name: mq-certs
+              mountPath: /mq-certs
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: ${VAR_MQWEB_APP_NAME}-data
+        - name: config
+          configMap:
+            name: ${VAR_MQWEB_CONFIG_CM}
+        - name: ccdt
+          configMap:
+            name: ${VAR_MQWEB_CCDT_CM}
+            # only created when queue managers are pre-registered (VAR_MQWEB_QMGRS)
+            optional: true
+        - name: mq-certs
+          secret:
+            secretName: ${VAR_MQWEB_CERTS_SECRET}
+            optional: true

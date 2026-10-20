@@ -1307,6 +1307,18 @@ function display_access_info() {
     fi
   fi
 
+  # MQ stand-alone web console (demos/ibm_mq_standalone_webconsole), displayed only if deployed
+  local lf_mqweb_hostname lf_mqweb_admin_pwd lf_mqweb_reader_pwd
+  lf_mqweb_hostname=$($MY_CLUSTER_COMMAND -n ${VAR_MQWEB_NAMESPACE} get route ${VAR_MQWEB_APP_NAME} -o jsonpath='{.spec.host}' 2>/dev/null)
+  if [[ -n $lf_mqweb_hostname ]]; then
+    lf_mqweb_admin_pwd=$($MY_CLUSTER_COMMAND -n ${VAR_MQWEB_NAMESPACE} get secret ${VAR_MQWEB_CREDENTIALS_SECRET} -o jsonpath='{.data.MQWEB_ADMIN_PWD}' | base64 -d)
+    lf_mqweb_reader_pwd=$($MY_CLUSTER_COMMAND -n ${VAR_MQWEB_NAMESPACE} get secret ${VAR_MQWEB_CREDENTIALS_SECRET} -o jsonpath='{.data.MQWEB_READER_PWD}' | base64 -d)
+    mylog info "MQ stand-alone Web Console: https://${lf_mqweb_hostname}/ibmmq/console/" 0
+    mylog info "MQ stand-alone Web Console admin/password: ${VAR_MQWEB_ADMIN_USER}/${lf_mqweb_admin_pwd}" 0
+    mylog info "MQ stand-alone Web Console read-only/password: ${VAR_MQWEB_READER_USER}/${lf_mqweb_reader_pwd}" 0
+    echo "<TR><TD><A HREF=https://${lf_mqweb_hostname}/ibmmq/console/>MQ stand-alone Web Console</A></TD><TD>admin: ${VAR_MQWEB_ADMIN_USER}/${lf_mqweb_admin_pwd}</TD><TD>read-only: ${VAR_MQWEB_READER_USER}/${lf_mqweb_reader_pwd}</TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
+  fi
+
   # WebSphere Application Server
   local lf_was_liberty_app_demo_url
   if $MY_WASLIBERTY_CUSTOM; then
