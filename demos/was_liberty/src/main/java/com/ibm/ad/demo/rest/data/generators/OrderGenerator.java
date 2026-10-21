@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
-import com.github.javafaker.Faker;
+import net.datafaker.Faker;
 import com.ibm.ad.demo.rest.data.Customer;
 import com.ibm.ad.demo.rest.data.Order;
 import com.ibm.ad.demo.rest.data.generators.config.DataGenConfig;
