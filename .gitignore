@@ -8,6 +8,7 @@ demos/mq_simple/client/target/*
 demos/es_simple/client/target/*
 generated-bob/*
 tmp/*
-.apiclog/*
 images/*
 *.class
+.apiclog/*
+.bob/*

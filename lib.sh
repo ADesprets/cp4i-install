@@ -1155,7 +1155,7 @@ function display_access_info() {
   # API Connect
   local lf_gtw_url lf_apic_gtw_admin_pwd_secret_name lf_cm_admin_pwd lf_cm_url lf_cm_admin_pwd_secret_name lf_cm_admin_pwd lf_mgr_url lf_ptl_url lf_jwks_url
   if $MY_APIC; then
-    lf_platform_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get ManagementCluster -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].status.endpoints[?(@.name=="navigator")].uri}')
+    lf_platform_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get ManagementCluster -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].status.endpoints[?(@.name=="platformApi")].uri}')
     mylog info "APIC Platform API endpoint: ${lf_platform_url}" 0
     # APIC Cloud Manager
     lf_cm_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get ManagementCluster -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].status.endpoints[?(@.name=="admin")].uri}')
