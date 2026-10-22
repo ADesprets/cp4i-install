@@ -88,7 +88,7 @@ function create_kafka_connector () {
 }
 
 ################################################
-# Deploy Confluent operands: KRaftController → Kafka → KafkaTopic (demo)
+# Deploy Confluent operands: KRaftController â†’ Kafka â†’ KafkaTopic (demo)
 # Called by confluent_run_all as part of the demo/customisation phase.
 # The Confluent for Kubernetes Operator must already be installed (install_confluent).
 function create_confluent_operands() {
@@ -109,10 +109,10 @@ function create_confluent_operands() {
   # KRaftController uses cp-server (same as Kafka brokers) per CFK API reference.
   export VAR_CONFLUENT_KAFKA_IMAGE=${MY_CONFLUENT_SERVER_IMAGE}
   export VAR_CONFLUENT_INIT_IMAGE=${MY_CONFLUENT_INIT_IMAGE}
-  # Block StorageClass — CephFS excluded for Kafka data volumes.
+  # Block StorageClass â€” CephFS excluded for Kafka data volumes.
   export VAR_CONFLUENT_STORAGE_CLASS=${MY_CONFLUENT_STORAGE_CLASS}
 
-  # TLS mode — explicit, no silent fallback.
+  # TLS mode â€” explicit, no silent fallback.
   # Ref: https://docs.confluent.io/operator/current/co-network-encryption.html
   case "${MY_CONFLUENT_TLS_MODE:-cfk-managed}" in
     cfk-managed)
@@ -132,12 +132,12 @@ function create_confluent_operands() {
       ;;
   esac
 
-  # ── TLS: cert-manager certificate chain ──────────────────────────────────
+  # â”€â”€ TLS: cert-manager certificate chain â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   # Pattern identical to Valkey (see provision_cluster-v2.sh).
   # 1. Self-signed root issuer
   create_self_signed_issuer "${VAR_CONFLUENT_ISSUER}-root" "${VAR_CONFLUENT_NAMESPACE}" "${MY_CONFLUENT_WORKINGDIR}"
 
-  # 2. Root CA certificate → Secret name = MY_CONFLUENT_CA_SECRET
+  # 2. Root CA certificate â†’ Secret name = MY_CONFLUENT_CA_SECRET
   export VAR_CERT_NAME="${VAR_CONFLUENT_NAMESPACE}-confluent-root"
   export VAR_NAMESPACE="${VAR_CONFLUENT_NAMESPACE}"
   export VAR_CERT_ISSUER_REF="${VAR_CONFLUENT_ISSUER}-root"
@@ -270,7 +270,7 @@ function confluent_run_all () {
 
   check_directory_exist_create "${MY_CONFLUENT_WORKINGDIR}"
 
-  # Ensure namespace exists (idempotent — already created by install_confluent)
+  # Ensure namespace exists (idempotent â€” already created by install_confluent)
   create_project "${VAR_CONFLUENT_NAMESPACE}" \
     "${VAR_CONFLUENT_NAMESPACE} project" \
     "For Confluent customisation" \
@@ -285,7 +285,7 @@ function confluent_run_all () {
   # Create additional demo topics
   create_kafka_topics
 
-  # Create connectors (requires MQ — guarded inside the function)
+  # Create connectors (requires MQ â€” guarded inside the function)
   # create_kafka_connector
 
   local lf_ending_date=$(date)
@@ -369,7 +369,7 @@ function main() {
 # SB] getting the path of this script independently from using it directly or calling it from another script
 # sc_component_script_dir="$( cd "$( dirname "$0" )" && pwd )/": this statement returns the calling script path
 
-# Voir aussi comment on peut utiliser l'option suivante (trouvée dans un sript de Dale Lane)
+# Voir aussi comment on peut utiliser l'option suivante (trouvÃ©e dans un sript de Dale Lane)
 # allow this script to be run from other locations, despite the
 # relative file paths used in it
 #OPTION# if [[ $BASH_SOURCE = */* ]]; then
@@ -387,7 +387,7 @@ sc_provision_lib_file="${PROVISION_SCRIPTDIR}lib.sh"
 sc_component_properties_file="${sc_component_script_dir}../properties/confluent.properties"
 sc_provision_preambule_file="${PROVISION_SCRIPTDIR}properties/preambule.properties"
 
-# SB]20250319 Je suis obligé d'utiliser set -a et set +a parceque à cet instant je n'ai pas accès à la fonction read_config_file
+# SB]20250319 Je suis obligÃ© d'utiliser set -a et set +a parceque Ã  cet instant je n'ai pas accÃ¨s Ã  la fonction read_config_file
 # load script parrameters fil
 set -a
 . "${sc_provision_script_parameters_file}"

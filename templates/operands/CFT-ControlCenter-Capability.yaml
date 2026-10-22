@@ -35,7 +35,7 @@ metadata:
     app.kubernetes.io/name: controlcenter
     app.kubernetes.io/part-of: confluent-platform
 spec:
-  id: c3-control-center
+  id: 1
   replicas: 1
   image:
     application: ${VAR_CONFLUENT_CONTROLCENTER_IMAGE}

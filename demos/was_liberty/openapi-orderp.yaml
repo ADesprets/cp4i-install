@@ -1,0 +1,510 @@
+openapi: 3.0.4
+info:
+  title: Order Management API with Persistence
+  description: |
+    API REST complète pour la gestion des commandes avec persistance PostgreSQL.
+    Cette API fournit des opérations CRUD complètes pour gérer les commandes (orders).
+  version: 1.0.0
+  contact:
+    name: IBM Demo Team
+    email: demo@ibm.com
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+
+servers:
+  - url: http://localhost:9080/demo/apip
+    description: Serveur de développement local
+  - url: https://api.example.com/apip
+    description: Serveur de production
+
+tags:
+  - name: Orders
+    description: Opérations de gestion des commandes
+  - name: Health
+    description: Endpoints de santé et monitoring
+
+paths:
+  /orderp:
+    get:
+      tags:
+        - Orders
+      summary: Récupérer toutes les commandes
+      description: |
+        Récupère la liste de toutes les commandes avec support de pagination et filtrage.
+        Supporte les filtres par customerId et region.
+      operationId: getAllOrders
+      parameters:
+        - name: offset
+          in: query
+          description: Nombre de commandes à ignorer (pour la pagination)
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+            example: 0
+        - name: limit
+          in: query
+          description: Nombre maximum de commandes à retourner
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            example: 10
+        - name: customerId
+          in: query
+          description: Filtrer par ID client
+          required: false
+          schema:
+            type: string
+            format: uuid
+            example: "03c2ae4d-4d6e-4589-844b-e2a7a90803dd"
+        - name: region
+          in: query
+          description: Filtrer par région
+          required: false
+          schema:
+            type: string
+            enum: [EMEA, APAC, AMER]
+            example: "EMEA"
+      responses:
+        '200':
+          description: Liste des commandes récupérée avec succès
+          headers:
+            X-Pod-Name:
+              description: Nom du pod Kubernetes qui a traité la requête
+              schema:
+                type: string
+            X-Total-Count:
+              description: Nombre total de commandes en base de données
+              schema:
+                type: integer
+            X-Returned-Count:
+              description: Nombre de commandes retournées dans cette réponse
+              schema:
+                type: integer
+            X-Offset:
+              description: Offset utilisé pour la pagination
+              schema:
+                type: string
+            X-Limit:
+              description: Limite utilisée pour la pagination
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+              examples:
+                orders:
+                  summary: Exemple de liste de commandes
+                  value:
+                    - id: "82a55abc-6c44-4e53-a4c6-03f6d2fb0c0a"
+                      customerid: "03c2ae4d-4d6e-4589-844b-e2a7a90803dd"
+                      customer: "Lottie Krajcik"
+                      description: "S Navy Skinny Jeans"
+                      price: 22.81
+                      quantity: 10
+                      region: "APAC"
+                      ordertime: "2024-06-10T19:06:13.969"
+        '500':
+          description: Erreur interne du serveur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      tags:
+        - Orders
+      summary: Créer une nouvelle commande
+      description: Crée une nouvelle commande dans la base de données
+      operationId: createOrder
+      requestBody:
+        description: Données de la commande à créer
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderInput'
+            examples:
+              newOrder:
+                summary: Exemple de nouvelle commande
+                value:
+                  customerid: "cust-123"
+                  customer: "John Doe"
+                  description: "Laptop Computer"
+                  price: 1299.99
+                  quantity: 1
+                  region: "EMEA"
+      responses:
+        '201':
+          description: Commande créée avec succès
+          headers:
+            X-Pod-Name:
+              description: Nom du pod Kubernetes qui a traité la requête
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          description: Données invalides
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Erreur interne du serveur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /orderp/{orderId}:
+    get:
+      tags:
+        - Orders
+      summary: Récupérer une commande par ID
+      description: Récupère les détails d'une commande spécifique
+      operationId: getOrderById
+      parameters:
+        - name: orderId
+          in: path
+          description: ID unique de la commande
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: "82a55abc-6c44-4e53-a4c6-03f6d2fb0c0a"
+      responses:
+        '200':
+          description: Commande récupérée avec succès
+          headers:
+            X-Pod-Name:
+              description: Nom du pod Kubernetes qui a traité la requête
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '404':
+          description: Commande non trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Erreur interne du serveur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags:
+        - Orders
+      summary: Mettre à jour une commande
+      description: Met à jour les informations d'une commande existante
+      operationId: updateOrder
+      parameters:
+        - name: orderId
+          in: path
+          description: ID unique de la commande à mettre à jour
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: "82a55abc-6c44-4e53-a4c6-03f6d2fb0c0a"
+      requestBody:
+        description: Nouvelles données de la commande
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderInput'
+            examples:
+              updateOrder:
+                summary: Exemple de mise à jour
+                value:
+                  customerid: "cust-123"
+                  customer: "John Doe"
+                  description: "Updated Laptop"
+                  price: 1399.99
+                  quantity: 2
+                  region: "EMEA"
+      responses:
+        '200':
+          description: Commande mise à jour avec succès
+          headers:
+            X-Pod-Name:
+              description: Nom du pod Kubernetes qui a traité la requête
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          description: Données invalides
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Commande non trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Erreur interne du serveur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags:
+        - Orders
+      summary: Supprimer une commande
+      description: Supprime définitivement une commande de la base de données
+      operationId: deleteOrder
+      parameters:
+        - name: orderId
+          in: path
+          description: ID unique de la commande à supprimer
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: "82a55abc-6c44-4e53-a4c6-03f6d2fb0c0a"
+      responses:
+        '200':
+          description: Commande supprimée avec succès
+          headers:
+            X-Pod-Name:
+              description: Nom du pod Kubernetes qui a traité la requête
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Order deleted successfully"
+                  id:
+                    type: string
+                    format: uuid
+                    example: "82a55abc-6c44-4e53-a4c6-03f6d2fb0c0a"
+        '404':
+          description: Commande non trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Erreur interne du serveur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /orderp/count:
+    get:
+      tags:
+        - Orders
+      summary: Compter les commandes
+      description: Retourne le nombre total de commandes en base de données
+      operationId: getOrderCount
+      responses:
+        '200':
+          description: Nombre de commandes récupéré avec succès
+          headers:
+            X-Pod-Name:
+              description: Nom du pod Kubernetes qui a traité la requête
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                    format: int64
+                    example: 42
+        '500':
+          description: Erreur interne du serveur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /orderp/health:
+    get:
+      tags:
+        - Health
+      summary: Vérification de santé
+      description: Endpoint de health check pour vérifier l'état du service
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service opérationnel
+          headers:
+            X-Pod-Name:
+              description: Nom du pod Kubernetes qui a traité la requête
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [UP, DOWN]
+                    example: "UP"
+                  service:
+                    type: string
+                    example: "OrderResourceP"
+
+components:
+  schemas:
+    Order:
+      type: object
+      description: Représentation complète d'une commande
+      required:
+        - id
+        - customerid
+        - customer
+        - description
+        - price
+        - quantity
+        - region
+        - ordertime
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identifiant unique de la commande (UUID)
+          example: "82a55abc-6c44-4e53-a4c6-03f6d2fb0c0a"
+        customerid:
+          type: string
+          format: uuid
+          description: Identifiant unique du client
+          example: "03c2ae4d-4d6e-4589-844b-e2a7a90803dd"
+        customer:
+          type: string
+          description: Nom du client
+          minLength: 1
+          maxLength: 255
+          example: "Lottie Krajcik"
+        description:
+          type: string
+          description: Description de la commande
+          minLength: 1
+          maxLength: 500
+          example: "S Navy Skinny Jeans"
+        price:
+          type: number
+          format: double
+          description: Prix unitaire
+          minimum: 0
+          example: 22.81
+        quantity:
+          type: integer
+          format: int32
+          description: Quantité commandée
+          minimum: 1
+          example: 10
+        region:
+          type: string
+          description: Région de la commande
+          enum:
+            - EMEA
+            - APAC
+            - AMER
+          example: "APAC"
+        ordertime:
+          type: string
+          format: date-time
+          description: Date et heure de la commande (ISO 8601)
+          example: "2024-06-10T19:06:13.969"
+
+    OrderInput:
+      type: object
+      description: Données requises pour créer ou mettre à jour une commande
+      required:
+        - customer
+        - description
+        - price
+        - quantity
+        - region
+      properties:
+        customerid:
+          type: string
+          format: uuid
+          description: Identifiant unique du client (optionnel, généré si absent)
+          example: "03c2ae4d-4d6e-4589-844b-e2a7a90803dd"
+        customer:
+          type: string
+          description: Nom du client
+          minLength: 1
+          maxLength: 255
+          example: "John Doe"
+        description:
+          type: string
+          description: Description de la commande
+          minLength: 1
+          maxLength: 500
+          example: "Laptop Computer"
+        price:
+          type: number
+          format: double
+          description: Prix unitaire
+          minimum: 0
+          example: 1299.99
+        quantity:
+          type: integer
+          format: int32
+          description: Quantité commandée
+          minimum: 1
+          example: 1
+        region:
+          type: string
+          description: Région de la commande
+          enum:
+            - EMEA
+            - APAC
+            - AMER
+          example: "EMEA"
+
+    Error:
+      type: object
+      description: Représentation d'une erreur
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Message d'erreur descriptif
+          example: "Order not found with ID: 82a55abc-6c44-4e53-a4c6-03f6d2fb0c0a"
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Authentification JWT Bearer Token
+
+security:
+  - bearerAuth: []

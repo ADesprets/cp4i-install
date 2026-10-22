@@ -1,0 +1,59 @@
+apiVersion: liberty.websphere.ibm.com/v1
+kind: WebSphereLibertyApplication
+metadata:
+  name: ${MY_WASLIBERTY_APP_NAME}
+  namespace: ${VAR_WASLIBERTY_NAMESPACE}
+spec:
+  license:
+    accept: true
+    edition: IBM WebSphere Application Server
+    productEntitlementSource: Standalone
+  serviceAccount:
+    mountToken: true
+  applicationImage: 'image-registry.openshift-image-registry.svc:5000/${VAR_WASLIBERTY_NAMESPACE}/${MY_WASLIBERTY_APP_NAME_VERSION}'
+  expose: true
+  resources:
+    limits:
+      cpu: '1'
+      ephemeral-storage: 100Mi
+      memory: 500Mi
+    requests:
+      cpu: 150m
+      ephemeral-storage: 20Mi
+      memory: 150Mi
+  manageTLS: true
+  replicas: 1
+  pullPolicy: Always
+  
+  # PostgreSQL Database Configuration
+  env:
+    - name: POSTGRES_HOST
+      value: "orders-postgres-primary.${VAR_WASLIBERTY_NAMESPACE}.svc"
+    - name: POSTGRES_PORT
+      value: "5432"
+    - name: POSTGRES_DATABASE
+      value: "ordersdb"
+    - name: POSTGRES_USER
+      valueFrom:
+        secretKeyRef:
+          name: orders-postgres-pguser-ordersuser
+          key: user
+    - name: POSTGRES_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: orders-postgres-pguser-ordersuser
+          key: password
+    - name: POSTGRES_JDBC_URL
+      value: "jdbc:postgresql://orders-postgres-primary.${VAR_WASLIBERTY_NAMESPACE}.svc:5432/ordersdb"
+  
+  # Mount PostgreSQL CA certificate for SSL connection
+  volumeMounts:
+    - name: postgres-ca
+      mountPath: /etc/postgres-certs
+      readOnly: true
+  
+  volumes:
+    - name: postgres-ca
+      secret:
+        secretName: orders-postgres-cluster-cert
+        optional: true

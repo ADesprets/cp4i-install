@@ -57,5 +57,5 @@ spec:
         cpu: "2"
         memory: 4Gi
     # Empty podSecurityContext: let OpenShift assign UIDs from the namespace range.
-    # Do NOT set fsGroup or runAsUser here — see SCC note above.
+    # Do NOT set fsGroup or runAsUser here â€” see SCC note above.
     podSecurityContext: {}

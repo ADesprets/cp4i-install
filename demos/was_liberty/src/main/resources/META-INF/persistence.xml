@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence version="3.0"
+             xmlns="https://jakarta.ee/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence
+                                 https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd">
+    
+    <persistence-unit name="ordersPU" transaction-type="JTA">
+        <jta-data-source>jdbc/ordersDB</jta-data-source>
+        
+        <class>com.ibm.ad.demo.rest.data.OrderEntity</class>
+        
+        <properties>
+            <!-- PostgreSQL Dialect -->
+            <property name="eclipselink.target-database" value="PostgreSQL"/>
+            
+            <!-- Schema generation -->
+            <property name="jakarta.persistence.schema-generation.database.action" value="create"/>
+            
+            <!-- Logging -->
+            <property name="eclipselink.logging.level" value="FINE"/>
+            <property name="eclipselink.logging.level.sql" value="FINE"/>
+            <property name="eclipselink.logging.parameters" value="true"/>
+            
+            <!-- Connection pool settings -->
+            <property name="eclipselink.jdbc.batch-writing" value="JDBC"/>
+            <property name="eclipselink.jdbc.cache-statements" value="true"/>
+            
+            <!-- Performance optimizations -->
+            <property name="eclipselink.cache.shared.default" value="false"/>
+            <property name="eclipselink.flush-clear.cache" value="Drop"/>
+        </properties>
+    </persistence-unit>
+</persistence>

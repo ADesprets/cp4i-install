@@ -34,6 +34,28 @@ function prepare_internal_registry() {
   # Get the default registry route:
   export IMAGE_REGISTRY_HOST=$($MY_CLUSTER_COMMAND get route default-route -n openshift-image-registry --template='{{ .spec.host }}')
 
+  # Wait for registry to be ready
+  mylog info "Waiting for internal registry to be ready..." 1
+  local lf_ready=false
+  local lf_attempts=0
+  local lf_max_attempts=2
+  while [[ "$lf_ready" == "false" && $lf_attempts -lt $lf_max_attempts ]]; do
+    if curl -k -s -o /dev/null -w "%{http_code}" "https://${IMAGE_REGISTRY_HOST}/v2/" | grep -q "200\|401"; then
+      lf_ready=true
+      mylog info "Internal registry is ready" 1
+    else
+      mylog info "Waiting for registry... (attempt $((lf_attempts + 1))/$lf_max_attempts)" 1
+      sleep 10
+      lf_attempts=$((lf_attempts + 1))
+    fi
+  done
+
+  if [[ "$lf_ready" == "false" ]]; then
+    mylog error "Internal registry did not become ready after $lf_max_attempts attempts"
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
+    # exit 1
+  fi
+
   # Get the certificate of the Ingress Operator and add it in the trust store, need to check if this is in /usr/local/share/ca-certificates
   # $MY_CLUSTER_COMMAND get secret -n openshift-ingress  router-certs-default -o go-template='{{index .data "tls.crt"}}' | base64 -d | sudo tee /etc/pki/ca-trust/source/anchors/${HOST}.crt  > /dev/null
   # $MY_CLUSTER_COMMAND -n openshift-ingress get secret letsencrypt-certs -o go-template='{{index .data "tls.crt7"}}' | base64 -d | sudo tee /etc/pki/ca-trust/source/anchors/${HOST}.crt
@@ -104,6 +126,39 @@ function push_image_to_registry() {
 }
 
 ################################################
+# Deploy PostgreSQL using Crunchy Operator
+################################################
+function deploy_postgresql() {
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  mylog info "Deploying PostgreSQL cluster for Orders database"
+  check_directory_exist_create "${MY_WASLIBERTY_WORKINGDIR}"
+
+  mylog info "Creating PostgresCluster CR from template"
+
+  # Apply the ConfigMap and PostgresCluster
+  mylog info "Applying PostgreSQL resources to namespace ${VAR_WASLIBERTY_NAMESPACE}"
+  create_oc_resource "ConfigMap" "orders-db-init" "${MY_WASLIBERTY_TMPLDIR}" "${MY_WASLIBERTY_WORKINGDIR}" "orders-db-init-cm.yaml" "${VAR_WASLIBERTY_NAMESPACE}"
+  create_oc_resource "PostgresCluster" "orders-postgres" "${MY_WASLIBERTY_TMPLDIR}" "${MY_WASLIBERTY_WORKINGDIR}" "postgres-cluster.yaml" "${VAR_WASLIBERTY_NAMESPACE}"
+
+  # Wait for PostgresCluster to be ready
+  mylog info "Waiting for PostgresCluster to be ready..."
+  wait_for_resource "PostgresCluster" "orders-postgres" "$VAR_WASLIBERTY_NAMESPACE"
+
+  # Get connection information
+  mylog info "PostgreSQL cluster deployed successfully"
+  mylog info "Connection details:"
+  mylog info "  - Host: orders-postgres-primary.${VAR_WASLIBERTY_NAMESPACE}.svc"
+  mylog info "  - Port: 5432"
+  mylog info "  - Database: ordersdb"
+  mylog info "  - User: ordersuser"
+  mylog info "  - Password secret: orders-postgres-pguser-ordersuser"
+
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+}
+
+################################################
 # Create application from image
 ################################################
 function create_application() {
@@ -114,7 +169,19 @@ function create_application() {
 
   check_directory_exist_create "${MY_WASLIBERTY_WORKINGDIR}"
 
-  create_operand_instance "WebSphereLibertyApplication" "$MY_WASLIBERTY_APP_NAME" "$MY_OPERANDSDIR" "$MY_WASLIBERTY_WORKINGDIR" "WAS-WLApp.yaml" "$VAR_WASLIBERTY_NAMESPACE" "{.status.conditions[-1].type}" "ResourcesReady"
+  # Use PostgreSQL-enabled template if PostgreSQL is deployed
+  local lf_template="WAS-WLApp.yaml"
+  if $MY_CLUSTER_COMMAND get postgrescluster orders-postgres -n "$VAR_WASLIBERTY_NAMESPACE" &>/dev/null; then
+    mylog info "PostgreSQL cluster detected, using PostgreSQL-enabled template" 1
+    lf_template="WAS-WLApp-postgres.yaml"
+    # Use adapt_file to substitute variables in template
+    adapt_file "${MY_WASLIBERTY_TMPLDIR}" "${MY_WASLIBERTY_WORKINGDIR}" "${lf_template}"
+    $MY_CLUSTER_COMMAND apply -f "${MY_WASLIBERTY_WORKINGDIR}${lf_template}" -n "$VAR_WASLIBERTY_NAMESPACE"
+    wait_for_resource "WebSphereLibertyApplication" "$MY_WASLIBERTY_APP_NAME" "$VAR_WASLIBERTY_NAMESPACE"
+  else
+    mylog info "Using standard template without PostgreSQL" 1
+    create_operand_instance "WebSphereLibertyApplication" "$MY_WASLIBERTY_APP_NAME" "$MY_OPERANDSDIR" "$MY_WASLIBERTY_WORKINGDIR" "$lf_template" "$VAR_WASLIBERTY_NAMESPACE" "{.status.conditions[-1].type}" "ResourcesReady"
+  fi
   
   trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
@@ -130,6 +197,9 @@ function was_run_all () {
   local lf_starting_date=$(date);
   
   mylog info "Create back end applications (WAS Liberty)" 0
+
+  # Deploy PostgreSQL first
+  deploy_postgresql
 
   prepare_internal_registry
   # Build the image

@@ -807,7 +807,7 @@ function install_openliberty() {
 }
 
 ################################################
-# Install WebSphere Liberty
+# Install WebSphere Liberty and postgreSQL
 function install_wasliberty() {
   SECONDS=0
   local lf_starting_date=$(date)
@@ -841,7 +841,12 @@ function install_wasliberty() {
     create_oc_resource "OperatorGroup" "$MY_WASLIBERTY_OPERATORGROUP" "${MY_RESOURCESDIR}" "${MY_WASLIBERTY_WORKINGDIR}" "operator-group-single.yaml" "$VAR_WASLIBERTY_NAMESPACE"
     unset VAR_OPERATORGROUP VAR_NAMESPACE
 
+    # Install Crunchy PostgreSQL Operator in namespace scope
+    mylog info "Installing Crunchy PostgreSQL Operator in namespace ${VAR_WASLIBERTY_NAMESPACE}"
+    create_operator_instance "crunchy-postgres-operator" "certified-operators" "${MY_OPERATORSDIR}" "${MY_WASLIBERTY_WORKINGDIR}" "${VAR_WASLIBERTY_NAMESPACE}"
+
     # Creating WebSphere Liberty operator subscription
+    mylog info "Installing WebSphere Liberty operator in namespace ${VAR_WASLIBERTY_NAMESPACE}"
     create_operator_instance "${MY_WASLIBERTY_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_WASLIBERTY_WORKINGDIR}" "${VAR_WASLIBERTY_NAMESPACE}"
   fi
 

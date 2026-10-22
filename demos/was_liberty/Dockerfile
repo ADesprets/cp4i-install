@@ -6,4 +6,10 @@ RUN features.sh
 
 COPY --chown=1001:0 target/*.war /config/apps
 
+# Copy PostgreSQL JDBC driver
+COPY --chown=1001:0 target/postgresql-*.jar /config/lib/
+
+# Copy server.xml with PostgreSQL configuration
+COPY --chown=1001:0 resources/server.xml /config/
+
 RUN configure.sh

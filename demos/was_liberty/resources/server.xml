@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<server description="WebSphere Liberty Server with PostgreSQL DataSource">
+
+    <!-- Enable features -->
+    <featureManager>
+        <feature>jakartaee-10.0</feature>
+        <feature>jdbc-4.3</feature>
+        <feature>jpa-3.1</feature>
+        <feature>jsonb-3.0</feature>
+        <feature>jsonp-2.1</feature>
+        <feature>cdi-4.0</feature>
+        <feature>restfulWS-3.1</feature>
+        <feature>mpHealth-4.0</feature>
+        <feature>mpMetrics-5.0</feature>
+        <feature>mpOpenAPI-3.1</feature>
+    </featureManager>
+
+    <!-- HTTP Endpoint -->
+    <httpEndpoint id="defaultHttpEndpoint"
+                  httpPort="9080"
+                  httpsPort="9443"
+                  host="*" />
+
+    <!-- Automatically expand WAR files and EAR files -->
+    <applicationManager autoExpand="true"/>
+
+    <!-- PostgreSQL Library -->
+    <library id="PostgreSQLLib">
+        <fileset dir="${server.config.dir}/lib" includes="postgresql-*.jar"/>
+    </library>
+
+    <!-- PostgreSQL DataSource Configuration -->
+    <dataSource id="ordersDS" jndiName="jdbc/ordersDB" type="javax.sql.DataSource">
+        <jdbcDriver libraryRef="PostgreSQLLib"/>
+        <properties.postgresql 
+            serverName="${env.POSTGRES_HOST}"
+            portNumber="${env.POSTGRES_PORT}"
+            databaseName="${env.POSTGRES_DATABASE}"
+            user="${env.POSTGRES_USER}"
+            password="${env.POSTGRES_PASSWORD}"
+            ssl="true"
+            sslmode="require"
+            sslrootcert="/etc/postgres-certs/ca.crt"/>
+        <connectionManager 
+            maxPoolSize="20" 
+            minPoolSize="2"
+            connectionTimeout="30s"
+            maxIdleTime="5m"
+            reapTime="3m"
+            agedTimeout="30m"/>
+    </dataSource>
+
+    <!-- Application Configuration -->
+    <webApplication id="demo" 
+                    location="demo.war" 
+                    name="demo"
+                    contextRoot="/demo">
+        <classloader delegation="parentLast"/>
+    </webApplication>
+
+    <!-- Logging Configuration -->
+    <logging 
+        traceSpecification="*=info:com.ibm.ad.demo.*=all:org.eclipse.persistence.*=fine"
+        maxFileSize="20"
+        maxFiles="10"
+        consoleLogLevel="INFO"/>
+
+    <!-- JPA Configuration -->
+    <jpa defaultPersistenceProvider="org.eclipse.persistence.jpa.PersistenceProvider"/>
+
+    <!-- Health Check Configuration -->
+    <mpHealth>
+        <readinessCheck>
+            <check name="database" />
+        </readinessCheck>
+        <livenessCheck>
+            <check name="application" />
+        </livenessCheck>
+    </mpHealth>
+
+    <!-- Metrics Configuration -->
+    <mpMetrics authentication="false"/>
+
+    <!-- OpenAPI Configuration -->
+    <mpOpenAPI docPath="/openapi" />
+
+    <!-- Security Configuration (if needed) -->
+    <quickStartSecurity userName="admin" userPassword="admin"/>
+
+    <!-- CORS Configuration for REST APIs -->
+    <cors domain="/demo"
+          allowedOrigins="*"
+          allowedMethods="GET, POST, PUT, DELETE, OPTIONS"
+          allowedHeaders="*"
+          allowCredentials="true"
+          maxAge="3600"/>
+
+</server>

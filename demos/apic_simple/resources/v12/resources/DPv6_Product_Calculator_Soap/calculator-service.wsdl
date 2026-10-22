@@ -89,7 +89,7 @@
 	</wsdl:message>
 	<wsdl:portType name="CalculatorSoap">
 		<wsdl:operation name="Add">
-			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Adds two integers. This is a test WebService. ©DNE Online</wsdl:documentation>
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Adds two integers. This is a test WebService. Â©DNE Online</wsdl:documentation>
 			<wsdl:input message="tns:AddSoapIn"/>
 			<wsdl:output message="tns:AddSoapOut"/>
 		</wsdl:operation>

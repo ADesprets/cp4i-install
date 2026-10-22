@@ -21,7 +21,7 @@
     {
       "name": "category",
       "type": "string",
-      "doc": "Catégory of the product"
+      "doc": "CatÃ©gory of the product"
     },
     {
       "name": "quantityAvailable",
