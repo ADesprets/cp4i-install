@@ -1,6 +1,7 @@
 package com.ibm.ad.demo.rest;
 
 import com.ibm.ad.demo.rest.data.Order;
+import com.ibm.ad.demo.rest.data.OrderUpdateRequest;
 import com.ibm.ad.demo.rest.service.OrderService;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -139,24 +140,31 @@ public class OrderResourceP {
     }
 
     /**
-     * Update an existing order
+     * Update an existing order (partial update)
      * PUT /api/orderp/{orderId}
+     * Only the fields provided in the request body will be updated
      */
     @PUT
     @Path("/{orderId}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response updateOrder(@PathParam("orderId") String orderId, Order order) {
+    public Response updateOrder(@PathParam("orderId") String orderId, OrderUpdateRequest updateRequest) {
         logger.info("Updating order with ID: " + orderId);
         
         try {
-            if (order == null) {
+            if (updateRequest == null) {
                 return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("{\"error\": \"Order data is required\"}")
+                    .entity("{\"error\": \"Update data is required\"}")
                     .build();
             }
 
-            Order updatedOrder = orderService.updateOrder(orderId, order);
+            if (!updateRequest.hasUpdates()) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("{\"error\": \"At least one field must be provided for update\"}")
+                    .build();
+            }
+
+            Order updatedOrder = orderService.updateOrder(orderId, updateRequest);
             
             if (updatedOrder == null) {
                 return Response.status(Response.Status.NOT_FOUND)

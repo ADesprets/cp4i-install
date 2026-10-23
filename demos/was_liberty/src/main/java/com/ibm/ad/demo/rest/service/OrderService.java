@@ -2,6 +2,7 @@ package com.ibm.ad.demo.rest.service;
 
 import com.ibm.ad.demo.rest.data.Order;
 import com.ibm.ad.demo.rest.data.OrderEntity;
+import com.ibm.ad.demo.rest.data.OrderUpdateRequest;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
@@ -119,10 +120,11 @@ public class OrderService {
     }
 
     /**
-     * Update an existing order
+     * Update an existing order (partial update)
+     * Only updates fields that are non-null in the updateRequest
      */
     @Transactional
-    public Order updateOrder(String id, Order order) {
+    public Order updateOrder(String id, OrderUpdateRequest updateRequest) {
         logger.info("Updating order with ID: " + id);
         
         OrderEntity entity = entityManager.find(OrderEntity.class, id);
@@ -131,13 +133,31 @@ public class OrderService {
             return null;
         }
         
-        // Update fields
-        entity.setCustomerid(order.getCustomerid());
-        entity.setCustomer(order.getCustomer());
-        entity.setDescription(order.getDescription());
-        entity.setPrice(order.getPrice());
-        entity.setQuantity(order.getQuantity());
-        entity.setRegion(order.getRegion());
+        // Update only non-null fields
+        if (updateRequest.getCustomerid() != null) {
+            entity.setCustomerid(updateRequest.getCustomerid());
+            logger.info("Updating customerid");
+        }
+        if (updateRequest.getCustomer() != null) {
+            entity.setCustomer(updateRequest.getCustomer());
+            logger.info("Updating customer");
+        }
+        if (updateRequest.getDescription() != null) {
+            entity.setDescription(updateRequest.getDescription());
+            logger.info("Updating description");
+        }
+        if (updateRequest.getPrice() != null) {
+            entity.setPrice(updateRequest.getPrice());
+            logger.info("Updating price");
+        }
+        if (updateRequest.getQuantity() != null) {
+            entity.setQuantity(updateRequest.getQuantity());
+            logger.info("Updating quantity");
+        }
+        if (updateRequest.getRegion() != null) {
+            entity.setRegion(updateRequest.getRegion());
+            logger.info("Updating region");
+        }
         
         entityManager.merge(entity);
         entityManager.flush();
