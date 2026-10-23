@@ -6,8 +6,8 @@ RUN features.sh
 
 COPY --chown=1001:0 target/*.war /config/apps
 
-# Copy PostgreSQL JDBC driver
-COPY --chown=1001:0 target/postgresql-*.jar /config/lib/
+# Copy PostgreSQL JDBC driver to shared resources (Liberty best practice)
+COPY --chown=1001:0 target/*.jar /opt/ibm/wlp/usr/shared/resources
 
 # Copy server.xml with PostgreSQL configuration
 COPY --chown=1001:0 resources/server.xml /config/

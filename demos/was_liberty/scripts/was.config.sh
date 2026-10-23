@@ -120,7 +120,12 @@ function push_image_to_registry() {
   #	tag the local image with details of image registry
   decho $lf_tracelevel "$MY_CONTAINER_ENGINE tag ${MY_WASLIBERTY_APP_NAME_VERSION} ${IMAGE_REGISTRY_HOST}/${VAR_WASLIBERTY_NAMESPACE}/${MY_WASLIBERTY_APP_NAME_VERSION}"
   $MY_CONTAINER_ENGINE tag ${MY_WASLIBERTY_APP_NAME_VERSION} ${IMAGE_REGISTRY_HOST}/${VAR_WASLIBERTY_NAMESPACE}/${MY_WASLIBERTY_APP_NAME_VERSION}
+  decho $lf_tracelevel "$MY_CONTAINER_ENGINE push ${IMAGE_REGISTRY_HOST}/${VAR_WASLIBERTY_NAMESPACE}/${MY_WASLIBERTY_APP_NAME_VERSION}"
   $MY_CONTAINER_ENGINE push ${IMAGE_REGISTRY_HOST}/${VAR_WASLIBERTY_NAMESPACE}/${MY_WASLIBERTY_APP_NAME_VERSION}
+  
+  # Create ConfigMap with SQL initialization script for PostgreSQL database
+  decho $lf_tracelevel "Creating ConfigMap 'orders-db-init-cm' with SQL initialization script"
+
     
   trace_out $lf_tracelevel ${FUNCNAME[0]}
 }

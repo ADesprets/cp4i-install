@@ -1,0 +1,81 @@
+apiVersion: ocs.openshift.io/v1
+kind: StorageCluster
+metadata:
+  name: ocs-storagecluster
+  namespace: openshift-storage
+spec:
+  arbiter: {}
+  encryption:
+    kms: {}
+  externalStorage: {}
+  flexibleScaling: true
+  resources:
+    mds:
+      limits:
+        cpu: "3"
+        memory: "8Gi"
+      requests:
+        cpu: "1"
+        memory: "8Gi"
+    mgr:
+      limits:
+        cpu: "1"
+        memory: "3Gi"
+      requests:
+        cpu: "1"
+        memory: "3Gi"
+    mon:
+      limits:
+        cpu: "1"
+        memory: "2Gi"
+      requests:
+        cpu: "1"
+        memory: "2Gi"
+    noobaa-core:
+      limits:
+        cpu: "1"
+        memory: "4Gi"
+      requests:
+        cpu: "1"
+        memory: "4Gi"
+    noobaa-db:
+      limits:
+        cpu: "1"
+        memory: "4Gi"
+      requests:
+        cpu: "1"
+        memory: "4Gi"
+  managedResources:
+    cephBlockPools:
+      reconcileStrategy: manage
+    cephConfig: {}
+    cephDashboard: {}
+    cephFilesystems:
+      reconcileStrategy: manage
+    cephObjectStoreUsers: {}
+    cephObjectStores: {}
+  monDataDirHostPath: /var/lib/rook
+  multiCloudGateway:
+    reconcileStrategy: manage
+  storageDeviceSets:
+  - count: 1
+    dataPVCTemplate:
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: "100Gi"
+        storageClassName: gp3-csi
+        volumeMode: Block
+    name: ocs-deviceset
+    placement: {}
+    portable: true
+    replica: 3
+    resources:
+      limits:
+        cpu: "2"
+        memory: "5Gi"
+      requests:
+        cpu: "1"
+        memory: "5Gi"

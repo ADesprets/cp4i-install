@@ -9,5 +9,5 @@ spec:
   resources:
     requests:
       storage: 10Mi
-  storageClassName: ocs-storagecluster-ceph-rbd
+  storageClassName: ${OCP_BLOCK_STORAGE}
   volumeMode: Filesystem

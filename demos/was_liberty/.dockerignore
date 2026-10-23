@@ -1,3 +1,4 @@
 target/
 !target/*.war
+!target/*.jar
 !target/liberty/wlp/usr/shared/resources/*

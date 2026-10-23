@@ -26,7 +26,7 @@
 
     <!-- PostgreSQL Library -->
     <library id="PostgreSQLLib">
-        <fileset dir="${server.config.dir}/lib" includes="postgresql-*.jar"/>
+        <fileset dir="${shared.resource.dir}" includes="postgresql-*.jar"/>
     </library>
 
     <!-- PostgreSQL DataSource Configuration -->

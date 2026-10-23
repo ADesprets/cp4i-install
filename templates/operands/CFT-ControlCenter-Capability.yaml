@@ -10,7 +10,7 @@
 # Image note: Confluent Platform 8.x only ships Control Center "next-gen"
 # (confluentinc/cp-enterprise-control-center-next-gen). Verify the tag against the registry.
 #
-# StorageClass: must be a block StorageClass (e.g. ocs-storagecluster-ceph-rbd).
+# StorageClass: must be a block StorageClass.
 # Ref: https://docs.confluent.io/operator/current/co-storage.html
 #
 # SCC: empty podSecurityContext so OpenShift assigns UIDs from namespace range.
