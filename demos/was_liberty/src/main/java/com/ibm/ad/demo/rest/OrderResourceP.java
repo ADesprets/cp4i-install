@@ -14,7 +14,6 @@ import java.util.logging.Logger;
 
 @Path("/orderp")
 @ApplicationScoped
-@Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 public class OrderResourceP {
 
@@ -26,10 +25,10 @@ public class OrderResourceP {
     /**
      * Create a new order
      * POST /api/orderp
+     * Requires Content-Type: application/json
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
     public Response createOrder(Order order) {
         logger.info("Creating new order via REST API");
         
@@ -65,10 +64,10 @@ public class OrderResourceP {
     /**
      * Get order by ID
      * GET /api/orderp/{orderId}
+     * Returns: application/json
      */
     @GET
     @Path("/{orderId}")
-    @Produces(MediaType.APPLICATION_JSON)
     public Response getOrder(@PathParam("orderId") String orderId) {
         logger.info("Fetching order with ID: " + orderId);
         
@@ -98,9 +97,9 @@ public class OrderResourceP {
      * GET /api/orderp?offset=0&limit=10
      * GET /api/orderp?customerId=xxx
      * GET /api/orderp?region=EMEA
+     * Returns: application/json
      */
     @GET
-    @Produces(MediaType.APPLICATION_JSON)
     public Response getAllOrders(
             @QueryParam("customerId") String customerId,
             @QueryParam("region") String region,
@@ -142,12 +141,12 @@ public class OrderResourceP {
     /**
      * Update an existing order (partial update)
      * PUT /api/orderp/{orderId}
+     * Requires Content-Type: application/json
      * Only the fields provided in the request body will be updated
      */
     @PUT
     @Path("/{orderId}")
     @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
     public Response updateOrder(@PathParam("orderId") String orderId, OrderUpdateRequest updateRequest) {
         logger.info("Updating order with ID: " + orderId);
         
@@ -187,10 +186,10 @@ public class OrderResourceP {
     /**
      * Delete an order
      * DELETE /api/orderp/{orderId}
+     * Returns: application/json
      */
     @DELETE
     @Path("/{orderId}")
-    @Produces(MediaType.APPLICATION_JSON)
     public Response deleteOrder(@PathParam("orderId") String orderId) {
         logger.info("Deleting order with ID: " + orderId);
         
@@ -219,10 +218,10 @@ public class OrderResourceP {
     /**
      * Get order count
      * GET /api/orderp/count
+     * Returns: application/json
      */
     @GET
     @Path("/count")
-    @Produces(MediaType.APPLICATION_JSON)
     public Response getOrderCount() {
         logger.info("Fetching order count");
         
@@ -245,10 +244,10 @@ public class OrderResourceP {
     /**
      * Health check endpoint
      * GET /api/orderp/health
+     * Returns: application/json
      */
     @GET
     @Path("/health")
-    @Produces(MediaType.APPLICATION_JSON)
     public Response healthCheck() {
         return Response.ok()
             .entity("{\"status\": \"UP\", \"service\": \"OrderResourceP\"}")

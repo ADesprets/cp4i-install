@@ -36,4 +36,22 @@
 
     <!-- Default SSL configuration enables trust for default certificates from the Java runtime -->
     <ssl id="defaultSSLConfig" trustDefaultCerts="true"/>
+    
+    <!-- API Key Security Configuration
+         The API key authentication is handled by ApiKeyFilter (JAX-RS @Provider)
+         which is automatically discovered and registered by the Liberty runtime.
+         
+         Configuration options for API keys (in order of priority):
+         1. System property: -Dapi.keys=key1,key2,key3
+         2. Environment variable: API_KEYS=key1,key2,key3
+         3. Properties file: src/main/resources/apikeys.properties
+         
+         To configure API keys via environment variable in Liberty:
+         <variable name="API_KEYS" value="your-api-key-1,your-api-key-2"/>
+         
+         Example for production:
+         <variable name="API_KEYS" value="${env.API_KEYS}"/>
+         
+         IMPORTANT: Always use HTTPS in production to protect API keys in transit.
+    -->
 </server>

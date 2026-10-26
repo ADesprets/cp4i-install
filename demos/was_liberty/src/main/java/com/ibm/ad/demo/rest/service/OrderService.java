@@ -122,48 +122,95 @@ public class OrderService {
     /**
      * Update an existing order (partial update)
      * Only updates fields that are non-null in the updateRequest
+     * Uses dynamic JPQL to update only the provided fields
      */
     @Transactional
     public Order updateOrder(String id, OrderUpdateRequest updateRequest) {
         logger.info("Updating order with ID: " + id);
         
+        // First verify the order exists
         OrderEntity entity = entityManager.find(OrderEntity.class, id);
         if (entity == null) {
             logger.warning("Order not found with ID: " + id);
             return null;
         }
         
-        // Update only non-null fields
+        // Build dynamic UPDATE query with only non-null fields
+        StringBuilder jpql = new StringBuilder("UPDATE OrderEntity o SET ");
+        boolean first = true;
+        
         if (updateRequest.getCustomerid() != null) {
-            entity.setCustomerid(updateRequest.getCustomerid());
-            logger.info("Updating customerid");
+            if (!first) jpql.append(", ");
+            jpql.append("o.customerid = :customerid");
+            first = false;
+            logger.info("Updating customerid to: " + updateRequest.getCustomerid());
         }
         if (updateRequest.getCustomer() != null) {
-            entity.setCustomer(updateRequest.getCustomer());
-            logger.info("Updating customer");
+            if (!first) jpql.append(", ");
+            jpql.append("o.customer = :customer");
+            first = false;
+            logger.info("Updating customer to: " + updateRequest.getCustomer());
         }
         if (updateRequest.getDescription() != null) {
-            entity.setDescription(updateRequest.getDescription());
-            logger.info("Updating description");
+            if (!first) jpql.append(", ");
+            jpql.append("o.description = :description");
+            first = false;
+            logger.info("Updating description to: " + updateRequest.getDescription());
         }
         if (updateRequest.getPrice() != null) {
-            entity.setPrice(updateRequest.getPrice());
-            logger.info("Updating price");
+            if (!first) jpql.append(", ");
+            jpql.append("o.price = :price");
+            first = false;
+            logger.info("Updating price to: " + updateRequest.getPrice());
         }
         if (updateRequest.getQuantity() != null) {
-            entity.setQuantity(updateRequest.getQuantity());
-            logger.info("Updating quantity");
+            if (!first) jpql.append(", ");
+            jpql.append("o.quantity = :quantity");
+            first = false;
+            logger.info("Updating quantity to: " + updateRequest.getQuantity());
         }
         if (updateRequest.getRegion() != null) {
-            entity.setRegion(updateRequest.getRegion());
-            logger.info("Updating region");
+            if (!first) jpql.append(", ");
+            jpql.append("o.region = :region");
+            first = false;
+            logger.info("Updating region to: " + updateRequest.getRegion());
         }
         
-        entityManager.merge(entity);
-        entityManager.flush();
+        jpql.append(" WHERE o.id = :id");
+        
+        // Create and execute the update query
+        var query = entityManager.createQuery(jpql.toString());
+        
+        // Set parameters for non-null fields
+        if (updateRequest.getCustomerid() != null) {
+            query.setParameter("customerid", updateRequest.getCustomerid());
+        }
+        if (updateRequest.getCustomer() != null) {
+            query.setParameter("customer", updateRequest.getCustomer());
+        }
+        if (updateRequest.getDescription() != null) {
+            query.setParameter("description", updateRequest.getDescription());
+        }
+        if (updateRequest.getPrice() != null) {
+            query.setParameter("price", updateRequest.getPrice());
+        }
+        if (updateRequest.getQuantity() != null) {
+            query.setParameter("quantity", updateRequest.getQuantity());
+        }
+        if (updateRequest.getRegion() != null) {
+            query.setParameter("region", updateRequest.getRegion());
+        }
+        query.setParameter("id", id);
+        
+        int updatedCount = query.executeUpdate();
+        logger.info("Updated " + updatedCount + " order(s)");
+        
+        // Refresh and return the updated entity
+        entityManager.clear(); // Clear persistence context to force reload
+        OrderEntity updatedEntity = entityManager.find(OrderEntity.class, id);
         
         logger.info("Order updated successfully");
-        return entity.toOrder();
+        return updatedEntity.toOrder();
     }
 
     /**
