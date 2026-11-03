@@ -1897,7 +1897,7 @@ function create_cm_token(){
 
   APIC_CRED=$($MY_CLUSTER_COMMAND -n "${apic_project}" get secret ${APIC_INSTANCE_NAME}-mgmt-cli-cred -o jsonpath='{.data.credential\.json}' | base64 --decode)
   
-  # We ue the toolkit cli credentials to interact with APIC
+  # We use the toolkit cli credentials to interact with APIC
   TOOLKIT_CLIENT_ID=$(echo ${APIC_CRED} | jq -r .id)
   TOOLKIT_CLIENT_SECRET=$(echo ${APIC_CRED} | jq -r .secret)
   mylog info "Creating ${MY_APIC_WORKINGDIR}resources/creds.json" 1>&2

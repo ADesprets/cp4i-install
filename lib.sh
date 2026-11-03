@@ -1138,7 +1138,7 @@ function display_access_info() {
     mylog info "Integration admin, user: integration-admin, password: ${lf_temp_integration_admin_pwd}" 0
     iwhi_url=$($MY_CLUSTER_COMMAND -n $VAR_NAVIGATOR_NAMESPACE get PlatformNavigator navigator -o jsonpath='{range .status.endpoints[?(@.name=="navigator")]}{.uri}{end}')
     mylog info "CP4I Platform UI URL: $iwhi_url" 0
-    echo "<TR><TD><A HREF=${iwhi_url}>CP4I Platform UI</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html 
+    echo "<TR><TD><A HREF=${iwhi_url}>CP4I Platform UI</A></TD><TD>${lf_temp_integration_admin_user}/${lf_temp_integration_admin_pwd} (initial temporary password)</TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
   fi
 
   # App Connect Entreprise
@@ -1169,8 +1169,10 @@ function display_access_info() {
     # API Manager
     echo "<TR><TD><A HREF=${lf_mgr_url}>APIC API Manager UI</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
     mylog info "APIC API Manager endpoint: ${lf_mgr_url}" 0
+    # CMS Portal
     lf_ptl_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get PortalCluster -o=jsonpath='{.items[?(@.kind=="PortalCluster")].status.endpoints[?(@.name=="portalWeb")].uri}')
     mylog info "APIC Web Portal root endpoint: ${lf_ptl_url}" 0
+    # JWKS Endpoint
     lf_jwks_url=$($MY_CLUSTER_COMMAND -n $VAR_APIC_NAMESPACE get ManagementCluster -o=jsonpath='{.items[?(@.kind=="ManagementCluster")].status.endpoints[?(@.name=="jwksUrl")].uri}')
     mylog info "APIC jwksUrl endpoint for EEM: ${lf_jwks_url}" 0
     # DataPower Gateway
@@ -1205,7 +1207,11 @@ function display_access_info() {
     mylog info "APIC WM Gateway endpoint: ${lf_wmgtw_ep_url}" 0
     lf_wmgtw_aep_url=$($MY_CLUSTER_COMMAND -n $VAR_WMGW_NAMESPACE get WMAPIGatewayCluster -o=jsonpath='{.items[?(@.kind=="WMAPIGatewayCluster")].status.endpoints[?(@.name=="mgmtEndpoint")].uri}')
     mylog info "APIC WM Gateway administrative endpoint: ${lf_wmgtw_aep_url}" 0
-
+    # MCP information
+    APIC_CRED=$($MY_CLUSTER_COMMAND -n "${VAR_APIC_NAMESPACE}" get secret ${VAR_APIC_INSTANCE_NAME}-mgmt-cli-cred -o jsonpath='{.data.credential\.json}' | base64 --decode)
+    lf_toolkit_client_id=$(echo ${APIC_CRED} | jq -r .id)
+    lf_toolkit_client_secret=$(echo ${APIC_CRED} | jq -r .secret)
+    mylog info "MCP information for BOB: \"env\":{\"NODE_TLS_REJECT_UNAUTHORIZED\":\"0\",\"PROVIDER_ORG\":\"org1\",\"API_KEY\":\"API_KEY_REPLACE_VALUE\",\"client_id\":\"${lf_toolkit_client_id}\",\"client_secret\":\"${lf_toolkit_client_secret}\",\"APIC_PLATFORM_URL\":\"${lf_platform_url}\",\"APIC_MANAGEMENT_URL\":\"${lf_mgr_url}\"}" 0
   fi
 
   # Event Streams
@@ -1304,6 +1310,16 @@ function display_access_info() {
       mylog info "MQ admin/password: mqadmin/${lf_mq_admin_password}" 0
     else
       mylog info "MQ Management Console authentication method: $lf_mq_authentication_method" 0
+    fi
+  fi
+
+  # End-to-end monitoring, login through the CP4I Keycloak (same users as the Platform UI)
+  local lf_e2em_ui_url
+  if $MY_E2E_MONITORING_CUSTOM; then
+    lf_e2em_ui_url=$($MY_CLUSTER_COMMAND -n $VAR_E2E_MONITORING_NAMESPACE get Monitoring ${VAR_E2E_MONITORING_INSTANCE_NAME} -o jsonpath='{.status.endpoints[?(@.name=="ui")].uri}' 2>/dev/null)
+    if [[ -n $lf_e2em_ui_url ]]; then
+      mylog info "End-to-end monitoring UI: ${lf_e2em_ui_url} (CP4I Platform UI credentials)" 0
+      echo "<TR><TD><A HREF=${lf_e2em_ui_url}>End-to-end monitoring UI</A></TD><TD>CP4I Platform UI credentials</TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
     fi
   fi
 

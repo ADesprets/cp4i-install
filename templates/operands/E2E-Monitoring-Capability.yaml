@@ -1,0 +1,46 @@
+apiVersion: integration.ibm.com/v1beta1
+kind: Monitoring
+metadata:
+  # The name must not contain a number
+  name: ${VAR_E2E_MONITORING_INSTANCE_NAME}
+  namespace: ${VAR_E2E_MONITORING_NAMESPACE}
+spec:
+  license:
+    accept: true
+    license: ${MY_E2E_MONITORING_LIC}
+  version: ${MY_E2E_MONITORING_VERSION}
+  # Sizing based on the "small" profile provided by the operator
+  collector:
+    replicas: 1
+    resources:
+      limits:
+        cpu: 500m
+        memory: 3Gi
+      requests:
+        cpu: 500m
+        memory: 3Gi
+  datastore:
+    replicas: 1
+    resources:
+      limits:
+        cpu: 500m
+        memory: 2Gi
+      requests:
+        cpu: 500m
+        memory: 2Gi
+    storage:
+      # Block storage class supporting RWO volumes
+      class: ${OCP_BLOCK_STORAGE}
+      data:
+        size: 2Gi
+      deployment:
+        size: 2Gi
+  ui:
+    replicas: 1
+    resources:
+      limits:
+        cpu: 500m
+        memory: 2Gi
+      requests:
+        cpu: 500m
+        memory: 2Gi

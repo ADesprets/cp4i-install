@@ -693,6 +693,10 @@ function install_lic_reporter_svc() {
 }
 
 ################################################
+# SB]20261020 https://www.ibm.com/docs/en/cloud-paks/cp-integration/16.2.1?topic=upgrading-cloud-pak-foundational-services
+# Important: Upgrade Cloud Pak foundational services only if you have an API Connect cluster or an API Manager instance. 
+# Otherwise, Cloud Pak foundational services is no longer required.
+# 
 #SB]20231214 Installing Foundational services v4.3
 # Referring to https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.4?topic=whats-new-in-cloud-pak-integration-202341
 # "The IBM Cloud Pak foundational services operator is no longer installed automatically.
@@ -917,6 +921,80 @@ function install_navigator() {
 }
 
 ################################################
+# Enable the Integration Software Agent in the Platform UI (Navigator)
+# https://www.ibm.com/docs/en/cloud-paks/cp-integration/16.2.1?topic=agent-configuring-integration-software
+# Prerequisites: Platform UI instance (install_navigator) >= 16.2.1, watsonx.ai project with ibm/granite-4-h-small and openai/gpt-oss-120b
+function install_integration_software_agent() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing CP4I Integration Software Agent (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  if $MY_INTEGRATION_AGENT; then
+    check_directory_exist_create "${MY_INTEGRATION_AGENT_WORKINGDIR}"
+
+    # The agent is an add-on of an existing Platform UI instance
+    if ! $MY_CLUSTER_COMMAND -n "$VAR_NAVIGATOR_NAMESPACE" get PlatformNavigator "$VAR_NAVIGATOR_INSTANCE_NAME" >/dev/null 2>&1; then
+      mylog error "PlatformNavigator ${VAR_NAVIGATOR_INSTANCE_NAME} not found in namespace ${VAR_NAVIGATOR_NAMESPACE}, install it first (MY_NAVIGATOR_INSTANCE=true)"
+      trace_out $lf_tracelevel ${FUNCNAME[0]}
+      exit 1
+    fi
+
+    # spec.agents is only supported from Platform UI 16.2.1
+    local lf_navigator_version=$($MY_CLUSTER_COMMAND -n "$VAR_NAVIGATOR_NAMESPACE" get PlatformNavigator "$VAR_NAVIGATOR_INSTANCE_NAME" -o jsonpath='{.spec.version}')
+    cmp_versions "$lf_navigator_version" "$MY_INTEGRATION_AGENT_MIN_NAVIGATOR_VERSION"
+    if [[ $? -eq 1 ]]; then
+      mylog error "PlatformNavigator ${VAR_NAVIGATOR_INSTANCE_NAME} version is ${lf_navigator_version}, the Integration Software Agent needs at least ${MY_INTEGRATION_AGENT_MIN_NAVIGATOR_VERSION} (update MY_NAVIGATOR_VERSION)"
+      trace_out $lf_tracelevel ${FUNCNAME[0]}
+      exit 1
+    fi
+
+    # watsonx.ai credentials: host url and project id from [WATSONX.AI] properties, api key from the private folder
+    check_file_exist "${MY_PRIVATEDIR}ibm_watsonxai_api_key.txt"
+    export VAR_INTEGRATION_AGENT_WATSONX_API_KEY=$(cat "${MY_PRIVATEDIR}ibm_watsonxai_api_key.txt")
+    export VAR_INTEGRATION_AGENT_WATSONX_HOST_URL=${MY_INTEGRATION_AGENT_WATSONX_HOST_URL:-$MY_WATSONXAI_HOST_URL}
+    export VAR_INTEGRATION_AGENT_WATSONX_PROJECT_ID=${MY_INTEGRATION_AGENT_WATSONX_PROJECT_ID:-$MY_WATSONXAI_PROJECT_ID}
+    var_fail VAR_INTEGRATION_AGENT_WATSONX_HOST_URL "Please define MY_INTEGRATION_AGENT_WATSONX_HOST_URL or MY_WATSONXAI_HOST_URL"
+    var_fail VAR_INTEGRATION_AGENT_WATSONX_PROJECT_ID "Please define MY_INTEGRATION_AGENT_WATSONX_PROJECT_ID or MY_WATSONXAI_PROJECT_ID"
+    var_fail VAR_INTEGRATION_AGENT_WATSONX_API_KEY "Please put the watsonx.ai api key in ${MY_PRIVATEDIR}ibm_watsonxai_api_key.txt"
+
+    # Secret integration-agents-credentials in the Platform UI namespace
+    create_oc_resource "Secret" "${MY_INTEGRATION_AGENT_SECRET}" "${MY_RESOURCESDIR}" "${MY_INTEGRATION_AGENT_WORKINGDIR}" "integration-agents-secret.yaml" "$VAR_NAVIGATOR_NAMESPACE"
+    unset VAR_INTEGRATION_AGENT_WATSONX_API_KEY VAR_INTEGRATION_AGENT_WATSONX_HOST_URL VAR_INTEGRATION_AGENT_WATSONX_PROJECT_ID
+
+    # Enable the agent: the Platform UI pods restart and an agent deployment (3 containers) is created
+    if $MY_APPLY_FLAG; then
+      mylog info "Enabling the Integration Software Agent on PlatformNavigator ${VAR_NAVIGATOR_INSTANCE_NAME}"
+      $MY_CLUSTER_COMMAND patch PlatformNavigator "${VAR_NAVIGATOR_INSTANCE_NAME}" -n "${VAR_NAVIGATOR_NAMESPACE}" --type=merge -p '{"spec":{"agents":{"enabled":true}}}' || exit 1
+      # The agent reads the secret only at startup: restart it when it already exists (ex: new api key)
+      local lf_agent_deployment="ibm-integration-agents-${VAR_NAVIGATOR_INSTANCE_NAME}"
+      if $MY_CLUSTER_COMMAND -n "${VAR_NAVIGATOR_NAMESPACE}" get deployment "${lf_agent_deployment}" >/dev/null 2>&1; then
+        $MY_CLUSTER_COMMAND -n "${VAR_NAVIGATOR_NAMESPACE}" rollout restart deployment "${lf_agent_deployment}"
+      fi
+      # Wait with a timeout: on a wrong watsonx.ai configuration the agent pod crashloops and the Platform UI never gets Ready
+      sleep $MY_DELAY_SECONDS
+      if ! $MY_CLUSTER_COMMAND -n "${VAR_NAVIGATOR_NAMESPACE}" rollout status deployment/"${lf_agent_deployment}" --timeout=${MY_MAX_TIMEOUT}s; then
+        mylog error "Integration Software Agent not ready, check: $MY_CLUSTER_COMMAND -n ${VAR_NAVIGATOR_NAMESPACE} logs deployment/${lf_agent_deployment} -c ibm-integration-agents"
+        trace_out $lf_tracelevel ${FUNCNAME[0]}
+        exit 1
+      fi
+      $MY_CLUSTER_COMMAND get pods -n "${VAR_NAVIGATOR_NAMESPACE}" -l app.kubernetes.io/instance="${VAR_NAVIGATOR_INSTANCE_NAME}"
+    fi
+  else
+    mylog info "MY_INTEGRATION_AGENT is false, skipping the Integration Software Agent"
+  fi
+
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of CP4I Integration Software Agent (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+}
+
+################################################
 # Install Asset Repository
 function install_assetrepo() {
   SECONDS=0
@@ -970,6 +1048,56 @@ function install_assetrepo() {
   local lf_duration=$SECONDS
   local lf_ending_date=$(date)
   mylog info "==== Installation of CP4I Asset Repository (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+}
+
+################################################
+# Install End-to-end monitoring operator in its own namespace
+# https://www.ibm.com/docs/en/cloud-paks/cp-integration/16.2.1?topic=operators-installing-by-using-cli
+# Prerequisite: cert-manager (installed by install_cert_manager)
+function install_e2e_monitoring() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing CP4I End-to-end monitoring (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  if $MY_E2E_MONITORING; then
+    check_directory_exist_create "${MY_E2E_MONITORING_WORKINGDIR}"
+
+    create_project "$VAR_E2E_MONITORING_NAMESPACE" "$VAR_E2E_MONITORING_NAMESPACE project" "For CP4I End-to-end monitoring" "${MY_RESOURCESDIR}" "${MY_E2E_MONITORING_WORKINGDIR}"
+
+    # add catalog sources using ibm_pak plugin
+    check_add_cs_ibm_pak $MY_E2E_MONITORING_CASE $MY_E2E_MONITORING_OPERATOR $MY_E2E_MONITORING_CATALOGSOURCE_LABEL amd64
+    unset VAR_APP_VERSION
+
+    # Suppress the "" from the variable because when used in jq expression it does not return the expected value !
+    local lf_catalog_source_name=${VAR_CATALOG_SOURCE//\"/}
+    unset VAR_CATALOG_SOURCE
+
+    # Operator group for End-to-end monitoring in single namespace
+    # Only one OperatorGroup is allowed per namespace: reuse the existing one (ex: the Platform Navigator one in ${VAR_NAVIGATOR_NAMESPACE})
+    local lf_existing_og=$($MY_CLUSTER_COMMAND -n "$VAR_E2E_MONITORING_NAMESPACE" get operatorgroup -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+    if [[ -n $lf_existing_og ]]; then
+      mylog info "Reusing OperatorGroup ${lf_existing_og} of namespace ${VAR_E2E_MONITORING_NAMESPACE}"
+    else
+      export VAR_OPERATORGROUP=$MY_E2E_MONITORING_OPERATORGROUP
+      export VAR_NAMESPACE=$VAR_E2E_MONITORING_NAMESPACE
+      create_oc_resource "OperatorGroup" "$MY_E2E_MONITORING_OPERATORGROUP" "${MY_RESOURCESDIR}" "${MY_E2E_MONITORING_WORKINGDIR}" "operator-group-single.yaml" "$VAR_E2E_MONITORING_NAMESPACE"
+      unset VAR_OPERATORGROUP VAR_NAMESPACE
+    fi
+
+    # Creating End-to-end monitoring operator subscription (templates/operators/subscription.yaml)
+    create_operator_instance "${MY_E2E_MONITORING_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_E2E_MONITORING_WORKINGDIR}" "${VAR_E2E_MONITORING_NAMESPACE}"
+  fi
+
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of CP4I End-to-end monitoring (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 }
 
 ################################################
@@ -2782,6 +2910,65 @@ function customise_confluent() {
 
 
 ################################################
+# Customise End-to-end monitoring: create the Monitoring instance
+# https://www.ibm.com/docs/en/cloud-paks/cp-integration/16.2.1?topic=cli-deploying-end-end-monitoring-by-using
+# Prerequisites: operator installed by install_e2e_monitoring, cert-manager, a block storage class (RWO)
+function customise_e2e_monitoring() {
+  SECONDS=0
+  local lf_starting_date=$(date);
+  mylog info "==== Customise End-to-end monitoring (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  if $MY_E2E_MONITORING_CUSTOM; then
+    check_directory_exist_create "${MY_E2E_MONITORING_WORKINGDIR}"
+
+    if [[ -z $MY_E2E_MONITORING_VERSION ]]; then
+      export MY_E2E_MONITORING_VERSION=$($MY_CLUSTER_COMMAND ibm-pak list -o json | jq -r --arg case "$MY_E2E_MONITORING_CASE" '.[] | select (.name == $case ) | .latestAppVersion')
+      decho $lf_tracelevel "MY_E2E_MONITORING_VERSION=$MY_E2E_MONITORING_VERSION"
+    fi
+
+    # Creating End-to-end monitoring instance
+    create_operand_instance "Monitoring" "${VAR_E2E_MONITORING_INSTANCE_NAME}" "${MY_OPERANDSDIR}" "${MY_E2E_MONITORING_WORKINGDIR}" "E2E-Monitoring-Capability.yaml" "$VAR_E2E_MONITORING_NAMESPACE" "" "NOWAIT"
+
+    # Right after creation the operator briefly reports Ready=True (AllComponentsConverged) before planning the components,
+    # so Ready=True alone is not enough: also wait for the endpoints, and stop on an Error condition
+    if $MY_APPLY_FLAG; then
+      local lf_status lf_timeout=$MY_MAX_TIMEOUT
+      mylog info "Waiting for Monitoring ${VAR_E2E_MONITORING_INSTANCE_NAME} to be Ready with its endpoints (timeout ${MY_MAX_TIMEOUT}s)"
+      while [[ $lf_timeout -gt 0 ]]; do
+        lf_status=$($MY_CLUSTER_COMMAND -n "$VAR_E2E_MONITORING_NAMESPACE" get Monitoring "${VAR_E2E_MONITORING_INSTANCE_NAME}" -o json | \
+                    jq -r '[(.status.conditions[]? | select(.type=="Ready").status), (.status.conditions[]? | select(.type=="Error" and .status=="True") | "Error"), ((.status.endpoints // []) | length | tostring)] | join(" ")')
+        decho $lf_tracelevel "Ready/Error/endpoints: $lf_status"
+        case $lf_status in
+          *Error*)  mylog error "Monitoring ${VAR_E2E_MONITORING_INSTANCE_NAME} failed: $($MY_CLUSTER_COMMAND -n "$VAR_E2E_MONITORING_NAMESPACE" get Monitoring "${VAR_E2E_MONITORING_INSTANCE_NAME}" -o jsonpath='{.status.conditions[?(@.type=="Error")].message}')"
+                    trace_out $lf_tracelevel ${FUNCNAME[0]}
+                    exit 1;;
+          "True 0") ;;
+          True\ *)  mylog info "Monitoring ${VAR_E2E_MONITORING_INSTANCE_NAME} is Ready"
+                    break;;
+        esac
+        sleep $MY_DELAY_SECONDS
+        lf_timeout=$((lf_timeout - MY_DELAY_SECONDS))
+      done
+      if [[ $lf_timeout -le 0 ]]; then
+        mylog error "Timeout waiting for Monitoring ${VAR_E2E_MONITORING_INSTANCE_NAME} to be Ready"
+        trace_out $lf_tracelevel ${FUNCNAME[0]}
+        exit 1
+      fi
+    fi
+  fi
+
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+
+  local lf_ending_date=$(date)
+  mylog info "==== Customisation of End-to-end monitoring (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+}
+
+################################################
 # Customise EEM
 function customise_eem() {
   SECONDS=0
@@ -3131,6 +3318,7 @@ function install_part() {
   
   # CP4I Components
   install_navigator
+  install_integration_software_agent
   install_assetrepo
   install_intassembly 
   install_ace
@@ -3144,8 +3332,8 @@ function install_part() {
   install_mq
   install_hsts
   install_apic_graphql
-
   install_confluent
+  install_e2e_monitoring
 
   install_instana
   install_cluster_monitoring
@@ -3178,6 +3366,7 @@ function customise_part() {
   customise_hsts
   customise_mq
   customise_confluent
+  customise_e2e_monitoring
 
   customise_instana
 
