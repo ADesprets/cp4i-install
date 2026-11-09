@@ -1136,9 +1136,9 @@ function display_access_info() {
   if $MY_NAVIGATOR_INSTANCE; then
     lf_temp_integration_admin_pwd=$($MY_CLUSTER_COMMAND -n $MY_COMMONSERVICES_NAMESPACE get secret integration-admin-initial-temporary-credentials -o jsonpath={.data.password} | base64 -d)
     mylog info "Integration admin, user: integration-admin, password: ${lf_temp_integration_admin_pwd}" 0
-    iwhi_url=$($MY_CLUSTER_COMMAND -n $VAR_NAVIGATOR_NAMESPACE get PlatformNavigator navigator -o jsonpath='{range .status.endpoints[?(@.name=="navigator")]}{.uri}{end}')
-    mylog info "CP4I Platform UI URL: $iwhi_url" 0
-    echo "<TR><TD><A HREF=${iwhi_url}>CP4I Platform UI</A></TD><TD>${lf_temp_integration_admin_user}/${lf_temp_integration_admin_pwd} (initial temporary password)</TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
+    ibmint_url=$($MY_CLUSTER_COMMAND -n $VAR_NAVIGATOR_NAMESPACE get PlatformNavigator navigator -o jsonpath='{range .status.endpoints[?(@.name=="navigator")]}{.uri}{end}')
+    mylog info "CP4I Platform UI URL: $ibmint_url" 0
+    echo "<TR><TD><A HREF=${ibmint_url}>CP4I Platform UI</A></TD><TD>${lf_temp_integration_admin_user}/${lf_temp_integration_admin_pwd} (initial temporary password)</TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
   fi
 
   # App Connect Entreprise

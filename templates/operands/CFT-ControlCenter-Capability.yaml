@@ -16,7 +16,7 @@
 # SCC: empty podSecurityContext so OpenShift assigns UIDs from namespace range.
 #
 # Variables substituted at runtime (via adapt_file / envsubst):
-#   ${VAR_CONFLUENT_NAMESPACE}            - namespace (e.g. iwhi-confluent)
+#   ${VAR_CONFLUENT_NAMESPACE}            - namespace (e.g. ibmint-confluent)
 #   ${VAR_CONFLUENT_CONTROLCENTER_IMAGE}  - Control Center image
 #   ${VAR_CONFLUENT_INIT_IMAGE}           - init-container image
 #   ${VAR_CONFLUENT_DATA_VOLUME_CAPACITY} - PVC size (e.g. 10Gi)

@@ -15,7 +15,7 @@
 # Ref: https://github.com/confluentinc/confluent-kubernetes-examples/tree/master/security/openshift-security
 #
 # Variables substituted at runtime (via adapt_file / envsubst):
-#   ${VAR_CONFLUENT_NAMESPACE}            - namespace (e.g. iwhi-confluent)
+#   ${VAR_CONFLUENT_NAMESPACE}            - namespace (e.g. ibmint-confluent)
 #   ${VAR_CONFLUENT_KAFKA_REPLICAS}       - number of broker replicas (default 3)
 #   ${VAR_CONFLUENT_SERVER_IMAGE}         - Kafka server image (confluentinc/cp-server:8.3.2)
 #   ${VAR_CONFLUENT_INIT_IMAGE}           - init-container image

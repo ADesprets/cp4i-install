@@ -12,9 +12,9 @@
 #                                   includes the service name (svc, svc.ns, svc.ns.svc.cluster.local)
 #
 # Usage: ./get-svc-certs.sh [namespace]
-#   namespace: defaults to iwhi-apic
+#   namespace: defaults to ibmint-apic
 
-NAMESPACE="${1:-iwhi-apic}"
+NAMESPACE="${1:-ibmint-apic}"
 
 echo "=== Service → Certificate mapping in namespace: ${NAMESPACE} ==="
 echo ""

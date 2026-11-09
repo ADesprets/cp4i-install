@@ -9,7 +9,7 @@
 # Reference: https://docs.confluent.io/operator/current/co-deploy-cfk.html
 #
 # Variables substituted at runtime:
-#   ${VAR_CONFLUENT_NAMESPACE}  - target namespace (e.g. iwhi-confluent)
+#   ${VAR_CONFLUENT_NAMESPACE}  - target namespace (e.g. ibmint-confluent)
 #
 apiVersion: apps/v1
 kind: Deployment

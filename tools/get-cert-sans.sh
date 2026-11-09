@@ -4,9 +4,9 @@
 # backing a cert-manager Certificate in a given namespace.
 #
 # Usage: ./get-cert-sans.sh [namespace]
-#   namespace: defaults to iwhi-apic
+#   namespace: defaults to ibmint-apic
 
-NAMESPACE="${1:-iwhi-apic}"
+NAMESPACE="${1:-ibmint-apic}"
 
 echo "=== Certificate SANs in namespace: ${NAMESPACE} ==="
 echo ""

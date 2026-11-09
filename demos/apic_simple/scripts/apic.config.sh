@@ -1785,9 +1785,9 @@ function init_apic_variables() {
   # ngw-nanogw
   EP_NANO_GW=$($MY_CLUSTER_COMMAND -n ${apic_project} get NanoGatewayCluster ngw -o jsonpath="{.spec.gatewayDomain}")
     # TODO Check if it is working with this call
-    # WRONG (old): oc -n iwhi-apic get route "ngw-nanogw" -o jsonpath="{.spec.host}"
+    # WRONG (old): oc -n ibmint-apic get route "ngw-nanogw" -o jsonpath="{.spec.host}"
     # >>> wildcard.nanogw.apps.itz-c4h13x.hub04-lb.techzone.ibm.com
-    # OK oc -n iwhi-apic get NanoGatewayCluster ngw -o jsonpath="{.spec.gatewayDomain}"
+    # OK oc -n ibmint-apic get NanoGatewayCluster ngw -o jsonpath="{.spec.gatewayDomain}"
     # >>> nanogw.apps.itz-c4h13x.hub04-lb.techzone.ibm.com
   # cms portal-portal-director
   EP_PADMIN=$($MY_CLUSTER_COMMAND -n ${apic_project} get route "${APIC_INSTANCE_NAME}-ptl-portal-director" -o jsonpath="{.spec.host}")

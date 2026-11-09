@@ -221,7 +221,7 @@ The instructions provide information on enabloing the AI API Agent in APIC [here
 Create a pod to debug and install python libraries for Milvus
 
 ``` bash
-oc -n iwhi run python-client --rm -it --image=python:3.11 -- bash
+oc -n ibmint run python-client --rm -it --image=python:3.11 -- bash
 pip install pymilvus
 ```
 

@@ -11,7 +11,7 @@
       "env": {
         "NODE_TLS_REJECT_UNAUTHORIZED": "0",
         "PROVIDER_ORG": "org1",
-        "API_KEY": "36b34533-ea94-487b-9c8d-a3bc6ad721d1",
+        "API_KEY": "1ab82d84-4569-4dc4-a204-817e59cd9cfd",
         "client_id": "708cc89a-740d-4976-9faf-66a8d3cbd635",
         "client_secret": "bcc52200-b93b-4752-b8f1-1da4c28714d9",
         "APIC_PLATFORM_URL": "https://api.apps.itz-x1bamh.infra01-lb.lon04.techzone.ibm.com",
@@ -29,7 +29,7 @@
       "env": {
         "NODE_TLS_REJECT_UNAUTHORIZED": "0",
         "PROVIDER_ORG": "org1",
-        "API_KEY": "36b34533-ea94-487b-9c8d-a3bc6ad721d1",
+        "API_KEY": "1ab82d84-4569-4dc4-a204-817e59cd9cfd",
         "client_id": "708cc89a-740d-4976-9faf-66a8d3cbd635",
         "client_secret": "bcc52200-b93b-4752-b8f1-1da4c28714d9",
         "APIC_PLATFORM_URL": "https://api.apps.itz-x1bamh.infra01-lb.lon04.techzone.ibm.com",
@@ -47,7 +47,7 @@
       "env": {
         "NODE_TLS_REJECT_UNAUTHORIZED": "0",
         "PROVIDER_ORG": "org1",
-        "API_KEY": "36b34533-ea94-487b-9c8d-a3bc6ad721d1",
+        "API_KEY": "1ab82d84-4569-4dc4-a204-817e59cd9cfd",
         "client_id": "708cc89a-740d-4976-9faf-66a8d3cbd635",
         "client_secret": "bcc52200-b93b-4752-b8f1-1da4c28714d9",
         "APIC_PLATFORM_URL": "https://api.apps.itz-x1bamh.infra01-lb.lon04.techzone.ibm.com",
@@ -65,7 +65,7 @@
       "env": {
         "NODE_TLS_REJECT_UNAUTHORIZED": "0",
         "PROVIDER_ORG": "org1",
-        "API_KEY": "36b34533-ea94-487b-9c8d-a3bc6ad721d1",
+        "API_KEY": "1ab82d84-4569-4dc4-a204-817e59cd9cfd",
         "client_id": "708cc89a-740d-4976-9faf-66a8d3cbd635",
         "client_secret": "bcc52200-b93b-4752-b8f1-1da4c28714d9",
         "APIC_PLATFORM_URL": "https://api.apps.itz-x1bamh.infra01-lb.lon04.techzone.ibm.com",
@@ -83,7 +83,7 @@
       "env": {
         "NODE_TLS_REJECT_UNAUTHORIZED": "0",
         "PROVIDER_ORG": "org1",
-        "API_KEY": "36b34533-ea94-487b-9c8d-a3bc6ad721d1",
+        "API_KEY": "1ab82d84-4569-4dc4-a204-817e59cd9cfd",
         "client_id": "708cc89a-740d-4976-9faf-66a8d3cbd635",
         "client_secret": "bcc52200-b93b-4752-b8f1-1da4c28714d9",
         "APIC_PLATFORM_URL": "https://api.apps.itz-x1bamh.infra01-lb.lon04.techzone.ibm.com",

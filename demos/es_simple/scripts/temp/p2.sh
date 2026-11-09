@@ -5,8 +5,8 @@
 # NAMESPACE=eventendpointmanagement
 # INSTANCE=eem
 MANAGER_CR=managementclusters.management.apiconnect.ibm.com
-NAMESPACE=iwhi
-INSTANCE=iwhi-apic-mgmt
+NAMESPACE=ibmint
+INSTANCE=ibmint-apic-mgmt
 
 echo "\n\033[1;33m getting SSL/TLS details for Event Gateway in...\033[0m"
 echo "namespace      : $NAMESPACE"

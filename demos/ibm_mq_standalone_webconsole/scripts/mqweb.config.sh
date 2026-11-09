@@ -4,7 +4,7 @@
 # - builds an image from the stand-alone MQ Web Server tarball (Fix Central)
 # - deploys it (PVC, Deployment, Service, passthrough Route)
 # - add_qmgr_to_mqweb registers a queue manager of the MQ Operator in the console (channel, certificates, CCDT)
-#   ex: ./mqweb.config.sh --call add_qmgr_to_mqweb orders iwhi-mq
+#   ex: ./mqweb.config.sh --call add_qmgr_to_mqweb orders ibmint-mq
 #   (VAR_MQWEB_QMGRS lists queue managers to register during --all)
 # Prerequisite: the MQ Web Server tarball in Src/ (VAR_MQWEB_ARCHIVE)
 ################################################
@@ -108,7 +108,7 @@ SET AUTHREC PROFILE('**') OBJTYPE(QUEUE) PRINCIPAL('${VAR_MQWEB_READER_USER}') A
 # param 1: QueueManager resource name, ex: orders
 # param 2: namespace of the queue manager (optional, default ${VAR_MQ_NAMESPACE})
 # param 3: restart the console (optional, true|false, default true)
-# example: ./mqweb.config.sh --call add_qmgr_to_mqweb orders iwhi-mq
+# example: ./mqweb.config.sh --call add_qmgr_to_mqweb orders ibmint-mq
 function add_qmgr_to_mqweb () {
   local lf_tracelevel=3
   trace_in $lf_tracelevel ${FUNCNAME[0]}

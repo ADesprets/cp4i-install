@@ -3,7 +3,7 @@
 # Reference: https://docs.confluent.io/operator/current/co-manage-topics.html
 #
 # Variables substituted at runtime (via adapt_file / envsubst):
-#   ${VAR_CONFLUENT_NAMESPACE}            - namespace (e.g. iwhi-confluent)
+#   ${VAR_CONFLUENT_NAMESPACE}            - namespace (e.g. ibmint-confluent)
 #   ${VAR_CONFLUENT_TOPIC_NAME}           - topic name (e.g. topic-demo)
 #   ${VAR_CONFLUENT_TOPIC_PARTITIONS}     - number of partitions (e.g. 12)
 #   ${VAR_CONFLUENT_TOPIC_REPLICAS}       - replication factor (e.g. 3)

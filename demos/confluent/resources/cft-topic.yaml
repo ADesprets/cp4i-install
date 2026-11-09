@@ -16,6 +16,6 @@ spec:
     cleanup.policy: compact
   kafkaClusterRef:
     name: kafka
-    namespace: iwhi-confluent
+    namespace: ibmint-confluent
   partitionCount: 12
   replicas: 1
