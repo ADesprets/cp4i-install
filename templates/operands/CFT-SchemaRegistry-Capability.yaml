@@ -1,0 +1,37 @@
+# Confluent Schema Registry operand template
+# Depends on the Kafka cluster named "kafka".
+# Reference: https://docs.confluent.io/operator/current/co-configure-schema-registry.html
+#
+# Variables substituted at runtime (via adapt_file / envsubst):
+#   ${VAR_CONFLUENT_NAMESPACE}            - namespace (e.g. ibmint-confluent)
+#   ${VAR_CONFLUENT_SCHEMAREGISTRY_IMAGE} - Schema Registry image (confluentinc/cp-schema-registry:8.3.2)
+#   ${VAR_CONFLUENT_INIT_IMAGE}           - init-container image
+#
+apiVersion: platform.confluent.io/v1beta1
+kind: SchemaRegistry
+metadata:
+  name: schemaregistry
+  namespace: ${VAR_CONFLUENT_NAMESPACE}
+  labels:
+    app.kubernetes.io/name: schemaregistry
+    app.kubernetes.io/part-of: confluent-platform
+spec:
+  replicas: 1
+  image:
+    application: ${VAR_CONFLUENT_SCHEMAREGISTRY_IMAGE}
+    init: ${VAR_CONFLUENT_INIT_IMAGE}
+  dependencies:
+    kafka:
+      bootstrapEndpoint: kafka.${VAR_CONFLUENT_NAMESPACE}.svc.cluster.local:9071
+      tls:
+        enabled: false
+  podTemplate:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        cpu: "1"
+        memory: 2Gi
+    # Empty podSecurityContext: let OpenShift assign UIDs from the namespace range.
+    podSecurityContext: {}

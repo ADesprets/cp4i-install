@@ -109,6 +109,7 @@ function create_confluent_operands() {
   # KRaftController uses cp-server (same as Kafka brokers) per CFK API reference.
   export VAR_CONFLUENT_KAFKA_IMAGE=${MY_CONFLUENT_SERVER_IMAGE}
   export VAR_CONFLUENT_INIT_IMAGE=${MY_CONFLUENT_INIT_IMAGE}
+  export VAR_CONFLUENT_SCHEMAREGISTRY_IMAGE=${MY_CONFLUENT_SCHEMAREGISTRY_IMAGE}
   # Block StorageClass â€” CephFS excluded for Kafka data volumes.
   export VAR_CONFLUENT_STORAGE_CLASS=${MY_CONFLUENT_STORAGE_CLASS}
 
@@ -200,6 +201,14 @@ function create_confluent_operands() {
     "${VAR_CONFLUENT_NAMESPACE}" \
     "{.status.state}" "CREATED"
 
+  # Deploy Schema Registry (depends on Kafka cluster)
+  mylog info "Deploying Schema Registry" 1>&2
+  create_operand_instance "schemaregistries.platform.confluent.io" "schemaregistry" \
+    "${MY_OPERANDSDIR}" "${MY_CONFLUENT_WORKINGDIR}" \
+    "CFT-SchemaRegistry-Capability.yaml" \
+    "${VAR_CONFLUENT_NAMESPACE}" \
+    "{.status.phase}" "RUNNING"
+
 
   # VAR_CONFLUENT_CA_ANNOTATION, VAR_CONFLUENT_STORAGE_CLASS, VAR_CONFLUENT_INIT_IMAGE
   # and VAR_CONFLUENT_DATA_VOLUME_CAPACITY are still needed by Control Center
@@ -231,7 +240,8 @@ function create_confluent_operands() {
 
   unset VAR_CONFLUENT_CONTROLCENTER_IMAGE VAR_CONFLUENT_TLS_AUTO_CERTS VAR_CONFLUENT_CA_ANNOTATION \
         VAR_CONFLUENT_STORAGE_CLASS VAR_CONFLUENT_INIT_IMAGE \
-        VAR_CONFLUENT_DATA_VOLUME_CAPACITY VAR_CONFLUENT_C3_CREDENTIALS_SECRET
+        VAR_CONFLUENT_DATA_VOLUME_CAPACITY VAR_CONFLUENT_C3_CREDENTIALS_SECRET \
+        VAR_CONFLUENT_SCHEMAREGISTRY_IMAGE
 
   # Create Route for Control Center Web UI
   create_controlcenter_route

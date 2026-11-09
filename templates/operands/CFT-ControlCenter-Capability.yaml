@@ -48,6 +48,8 @@ spec:
       bootstrapEndpoint: kafka.${VAR_CONFLUENT_NAMESPACE}.svc.cluster.local:9071
       tls:
         enabled: false
+    schemaRegistry:
+      url: http://schemaregistry.${VAR_CONFLUENT_NAMESPACE}.svc.cluster.local:8081
   # Admin authentication for the Control Center UI.
   # The referenced Secret must contain a "plain-users.json" key with a JSON object
   # mapping usernames to passwords, e.g.: {"admin": "secret-password"}

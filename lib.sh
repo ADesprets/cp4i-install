@@ -1256,11 +1256,23 @@ function display_access_info() {
   fi
 
   # Confluent
-  local lf_cf_ui_url
+  local lf_cf_ui_url lf_cf_ui_cred
   if $MY_CONFLUENT; then
     lf_cf_ui_url=$($MY_CLUSTER_COMMAND -n $VAR_CONFLUENT_NAMESPACE get route controlcenter -o=jsonpath='{.spec.host}')
     lf_cf_ui_url=https://${lf_cf_ui_url%/}
     mylog info "Confluent Control Center endpoint: ${lf_cf_ui_url}" 0
+    lf_cf_ui_cred=$($MY_CLUSTER_COMMAND -n $VAR_CONFLUENT_NAMESPACE get secret controlcenter-credentials -o jsonpath='{.data.basic\.txt}' 2>/dev/null | base64 -d)
+    if [[ -z "${lf_cf_ui_cred}" ]]; then
+      lf_cf_ui_cred="admin: ${MY_CONFLUENT_C3_ADMIN_PASSWORD}!,Administrators
+viewer: ${MY_CONFLUENT_C3_ADMIN_PASSWORD},Restricted"
+    fi
+    # need this loop to support LF
+    mylog info "Confluent Control Center credentials:" 0
+    echo "${lf_cf_ui_cred}" | while IFS= read -r line; do
+      if [[ -n "$line" ]]; then
+        mylog info "  $line" 0
+      fi
+    done
     echo "<TR><TD><A HREF=${lf_cf_ui_url}>Confluent Control Center</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
   fi
   
