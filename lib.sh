@@ -1263,8 +1263,7 @@ function display_access_info() {
     mylog info "Confluent Control Center endpoint: ${lf_cf_ui_url}" 0
     lf_cf_ui_cred=$($MY_CLUSTER_COMMAND -n $VAR_CONFLUENT_NAMESPACE get secret controlcenter-credentials -o jsonpath='{.data.basic\.txt}' 2>/dev/null | base64 -d)
     if [[ -z "${lf_cf_ui_cred}" ]]; then
-      lf_cf_ui_cred="admin: ${MY_CONFLUENT_C3_ADMIN_PASSWORD}!,Administrators
-viewer: ${MY_CONFLUENT_C3_ADMIN_PASSWORD},Restricted"
+      lf_cf_ui_cred="admin: ${MY_CONFLUENT_C3_ADMIN_PASSWORD}!,Administrators\nviewer: ${MY_CONFLUENT_C3_ADMIN_PASSWORD},Restricted"
     fi
     # need this loop to support LF
     mylog info "Confluent Control Center credentials:" 0
@@ -1294,6 +1293,8 @@ viewer: ${MY_CONFLUENT_C3_ADMIN_PASSWORD},Restricted"
     mylog info "Asset Repository UI endpoint: ${lf_ar_ui_url}" 0
     echo  "<TR><TD><A HREF=${lf_ar_ui_url}>Asset Repository UI</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
   fi
+
+  # End to End monitoring - Control Plane
 
   # DataPower
   if $MY_DPGW; then

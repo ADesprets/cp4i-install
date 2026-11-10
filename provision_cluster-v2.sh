@@ -1091,6 +1091,21 @@ function install_e2e_monitoring() {
 
     # Creating End-to-end monitoring operator subscription (templates/operators/subscription.yaml)
     create_operator_instance "${MY_E2E_MONITORING_OPERATOR}" "${lf_catalog_source_name}" "${MY_OPERATORSDIR}" "${MY_E2E_MONITORING_WORKINGDIR}" "${VAR_E2E_MONITORING_NAMESPACE}"
+
+    # Patch the ClusterServiceVersion to increase the manager container memory from 128Mi to 512Mi
+    mylog info "Patch the ClusterServiceVersion to increase the manager container memory from 128Mi to 512Mi, this should be a temporary fix"
+    local lf_csv_name=$($MY_CLUSTER_COMMAND -n "$VAR_E2E_MONITORING_NAMESPACE" get csv -o jsonpath="{.items[?(@.spec.displayName=='IBM Integration - End-to-End Monitoring')].metadata.name}" 2>/dev/null)
+    if [[ -n "$lf_csv_name" ]]; then
+      mylog info "Patching CSV ${lf_csv_name} to set manager container memory to 512Mi"
+      local lf_deploy_index=$($MY_CLUSTER_COMMAND -n "$VAR_E2E_MONITORING_NAMESPACE" get csv "$lf_csv_name" \
+        -o json | jq '.spec.install.spec.deployments | to_entries[] | select(.value.name == "ibm-e2em-operator-e2em-controller-manager") | .key')
+      local lf_container_index=$($MY_CLUSTER_COMMAND -n "$VAR_E2E_MONITORING_NAMESPACE" get csv "$lf_csv_name" \
+        -o json | jq ".spec.install.spec.deployments[${lf_deploy_index}].spec.template.spec.containers | to_entries[] | select(.value.name == \"manager\") | .key")
+      $MY_CLUSTER_COMMAND -n "$VAR_E2E_MONITORING_NAMESPACE" patch csv "$lf_csv_name" --type=json \
+        -p "[{\"op\":\"replace\",\"path\":\"/spec/install/spec/deployments/${lf_deploy_index}/spec/template/spec/containers/${lf_container_index}/resources/limits/memory\",\"value\":\"512Mi\"},{\"op\":\"replace\",\"path\":\"/spec/install/spec/deployments/${lf_deploy_index}/spec/template/spec/containers/${lf_container_index}/resources/requests/memory\",\"value\":\"512Mi\"}]"
+    else
+      mylog warn "CSV for ${MY_E2E_MONITORING_OPERATOR} not found in namespace ${VAR_E2E_MONITORING_NAMESPACE}, skipping memory patch"
+    fi
   fi
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}
