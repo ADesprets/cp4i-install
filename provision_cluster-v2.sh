@@ -3221,6 +3221,30 @@ function start_podman_machine () {
 ################################################
 # function for the installtion of needed resources
 # namespaces, operatorgroup, entitlement, ...
+# SB]20261110 The cluster setup is done only once per cluster: when it succeeds, a marker ConfigMap
+# ($MY_INIT_MARKER_CM in $MY_OPERATORS_NAMESPACE) is created and the next runs skip it.
+# To force it again: MY_FORCE_INIT=true ./provision_cluster-v2.sh --call ...
+#              or  : oc -n openshift-operators delete configmap cp4i-install-init
+# The cluster variables (VAR_CLUSTER_DOMAIN, ...) are always computed, they are needed by the other functions.
+################################################
+function provision_cluster_set_vars() {
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  # get the dns name which will be used for certficate generation and other usages
+  export VAR_CLUSTER_DOMAIN=$($MY_CLUSTER_COMMAND get dns cluster -o jsonpath='{.spec.baseDomain}')
+  export VAR_SAN_DNS="*.${VAR_CLUSTER_DOMAIN}"
+  export VAR_CERT_COMMON_NAME=$VAR_SAN_DNS
+
+  # Get the default registry route:
+  export VAR_IMAGE_REGISTRY_HOST=$($MY_CLUSTER_COMMAND get route default-route -n openshift-image-registry --template='{{ .spec.host }}' 2>/dev/null)
+
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+}
+
+################################################
+# function for the installtion of needed resources
+# namespaces, operatorgroup, entitlement, ...
 ################################################
 function provision_cluster_init() {
   local lf_tracelevel=2
@@ -3228,11 +3252,22 @@ function provision_cluster_init() {
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
+  check_directory_exist_create "$MY_WORKINGDIR"
+  check_directory_exist_create "${MY_CP4I_WORKINGDIR}"
+
+  if [[ "${MY_FORCE_INIT:-false}" != "true" ]] && \
+     $MY_CLUSTER_COMMAND -n "$MY_OPERATORS_NAMESPACE" get configmap "$MY_INIT_MARKER_CM" >/dev/null 2>&1; then
+    local lf_init_date=$($MY_CLUSTER_COMMAND -n "$MY_OPERATORS_NAMESPACE" get configmap "$MY_INIT_MARKER_CM" -o jsonpath='{.data.date}')
+    mylog info "Cluster already initialised (${lf_init_date}), skipping provision_cluster_init. Use MY_FORCE_INIT=true to run it again." 0
+    provision_cluster_set_vars
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
+    return 0
+  fi
+
   # check the differents pre requisites
   check_exec_prereqs
   check_resource_exist storageclass $OCP_BLOCK_STORAGE "default" true
   check_resource_exist storageclass $MY_FILE_STORAGE_CLASS "default" true
-  check_directory_exist_create "$MY_WORKINGDIR"
 
   # Get all manifests
   #if [[ ! -e $MY_RAM_MANIFEST_FILE ]]; then
@@ -3257,7 +3292,6 @@ function provision_cluster_init() {
   
   # https://www.ibm.com/docs/en/cloud-paks/cp-integration/2023.4?topic=operators-installing-by-using-cli
   # (Only if your preferred installation mode is a specific namespace on the cluster) Create an OperatorGroup
-  check_directory_exist_create "${MY_CP4I_WORKINGDIR}"
 
   create_project "$MY_OPERATORS_NAMESPACE" "$MY_OPERATORS_NAMESPACE project" "For openshift-operators" "${MY_RESOURCESDIR}" "${MY_CP4I_WORKINGDIR}"
   create_project "openshift-image-registry" "openshift-image-registry project" "For openshift-operators" "${MY_RESOURCESDIR}" "${MY_CP4I_WORKINGDIR}"
@@ -3277,9 +3311,7 @@ function provision_cluster_init() {
   #export VAR_CLUSTER_DOMAIN=$(echo "$lf_url" | cut -d'/' -f3 | cut -d':' -f1 | cut -d'.' -f2-)
 
   # get the dns name which will be used for certficate generation and other usages
-  export VAR_CLUSTER_DOMAIN=$($MY_CLUSTER_COMMAND get dns cluster -o jsonpath='{.spec.baseDomain}')
-  export VAR_SAN_DNS="*.${VAR_CLUSTER_DOMAIN}"
-  export VAR_CERT_COMMON_NAME=$VAR_SAN_DNS
+  provision_cluster_set_vars
 
   # create PVC for registry ($MY_CLUSTER_COMMAND get config cluster)
   create_operand_instance "PersistentVolumeClaim" "registry-storage" "${MY_RESOURCESDIR}" "${MY_WORKINGDIR}" "registry_pvc.yaml" "openshift-image-registry" "{.status.phase}" "Bound"
@@ -3294,7 +3326,13 @@ function provision_cluster_init() {
 
   # Get the default registry route:
   export VAR_IMAGE_REGISTRY_HOST=$($MY_CLUSTER_COMMAND get route default-route -n openshift-image-registry --template='{{ .spec.host }}')
-  
+
+  # Marker: the next runs will skip this initialisation (functions above exit on error, so we only get here on success)
+  $MY_CLUSTER_COMMAND -n "$MY_OPERATORS_NAMESPACE" create configmap "$MY_INIT_MARKER_CM" \
+    --from-literal=date="$(date '+%Y-%m-%d %H:%M:%S')" --from-literal=user="$(whoami)" \
+    --dry-run=client -o yaml | $MY_CLUSTER_COMMAND apply -f - >/dev/null
+  mylog info "Cluster initialisation done, marker configmap ${MY_INIT_MARKER_CM} created in ${MY_OPERATORS_NAMESPACE}." 0
+
   trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
 

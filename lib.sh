@@ -1138,7 +1138,7 @@ function display_access_info() {
     mylog info "Integration admin, user: integration-admin, password: ${lf_temp_integration_admin_pwd}" 0
     ibmint_url=$($MY_CLUSTER_COMMAND -n $VAR_NAVIGATOR_NAMESPACE get PlatformNavigator navigator -o jsonpath='{range .status.endpoints[?(@.name=="navigator")]}{.uri}{end}')
     mylog info "CP4I Platform UI URL: $ibmint_url" 0
-    echo "<TR><TD><A HREF=${ibmint_url}>CP4I Platform UI</A></TD><TD>${lf_temp_integration_admin_user}/${lf_temp_integration_admin_pwd} (initial temporary password)</TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
+    echo "<TR><TD><A HREF=${ibmint_url}>CP4I Platform UI</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html 
   fi
 
   # App Connect Entreprise
