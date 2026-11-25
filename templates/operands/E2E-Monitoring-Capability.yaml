@@ -11,36 +11,39 @@ spec:
   version: ${MY_E2E_MONITORING_VERSION}
   # Sizing based on the "small" profile provided by the operator
   collector:
-    replicas: 1
+    replicas: 2
     resources:
       limits:
-        cpu: 500m
+        cpu: 700m
         memory: 3Gi
       requests:
-        cpu: 500m
+        cpu: 700m
         memory: 3Gi
+  configurations:
+    ruleViolation:
+      schedule: '*/5 * * * *'
   datastore:
-    replicas: 1
+    replicas: 3
     resources:
       limits:
-        cpu: 500m
-        memory: 2Gi
+        cpu: '1'
+        memory: 3Gi
       requests:
-        cpu: 500m
-        memory: 2Gi
+        cpu: '1'
+        memory: 3Gi
     storage:
       # Block storage class supporting RWO volumes
       class: ${OCP_BLOCK_STORAGE}
       data:
-        size: 2Gi
+        size: 16Gi
       deployment:
-        size: 2Gi
+        size: 4Gi
   ui:
     replicas: 1
     resources:
       limits:
-        cpu: 500m
-        memory: 2Gi
+        cpu: 600m
+        memory: 3Gi
       requests:
-        cpu: 500m
-        memory: 2Gi
+        cpu: 600m
+        memory: 3Gi

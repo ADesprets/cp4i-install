@@ -759,58 +759,6 @@ function install_fs() {
 }
  
 ################################################
-# Install Open Liberty
-function install_openliberty() {
-  SECONDS=0
-  local lf_starting_date=$(date)
-  mylog info "==== Installing OPEN Liberty (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
-
-  local lf_tracelevel=2
-  trace_in $lf_tracelevel ${FUNCNAME[0]}
-
-  decho $lf_tracelevel "Parameters: |no parameters|"
-
-  # backend J2EE applications
-  if $MY_OPENLIBERTY; then
-    check_directory_exist_create "${MY_OPENLIBERTY_WORKINGDIR}"
-
-    create_project "$VAR_OPENLIBERTY_NAMESPACE" "$VAR_OPENLIBERTY_NAMESPACE project" "For Open Liberty" "${MY_RESOURCESDIR}" "${MY_OPENLIBERTY_WORKINGDIR}"
-
-    # TODO other approach is to use the catalog which already inludes the Open Liberty operator and use a subscription
-    # Case exists 1.3.1, and IBM/RedHat Catalog
-
-    export OPEN_LIBERTY_OPERATOR_NAMESPACE=$VAR_OPENLIBERTY_NAMESPACE
-    export OPEN_LIBERTY_OPERATOR_WATCH_NAMESPACE=$VAR_OPENLIBERTY_NAMESPACE
-
-    # TODO Check that is this value
-    export WATCH_NAMESPACE='""'
-    adapt_file ${MY_OPENLIBERTY_SCRIPTDIR}resources/ ${MY_OPENLIBERTY_WORKINGDIR}resources/ openliberty-app-rbac-watch-all.yaml
-    adapt_file ${MY_OPENLIBERTY_SCRIPTDIR}resources/ ${MY_OPENLIBERTY_WORKINGDIR}resources/ openliberty-app-crd.yaml
-    adapt_file ${MY_OPENLIBERTY_SCRIPTDIR}resources/ ${MY_OPENLIBERTY_WORKINGDIR}resources/ openliberty-app-operator.yaml
-
-    # Creating Open Liberty operator subscription (Check arbitrarely one resource, the deployment of the operator)
-    local lf_octype='deployment'
-    local lf_name='olo-controller-manager'
-
-    # check if deployment of the operator already performed
-    mylog check "Checking ${lf_name}/${lf_octype} in ${VAR_OPENLIBERTY_NAMESPACE}"
-    if ! $MY_CLUSTER_COMMAND -n ${VAR_OPENLIBERTY_NAMESPACE} get ${lf_octype} ${lf_name} >/dev/null 2>&1; then
-      if $MY_APPLY_FLAG; then     
-        $MY_CLUSTER_COMMAND apply --server-side -f ${MY_OPENLIBERTY_WORKINGDIR}resources/openliberty-app-crd.yaml
-        $MY_CLUSTER_COMMAND apply -f ${MY_OPENLIBERTY_WORKINGDIR}resources/openliberty-app-rbac-watch-all.yaml
-        $MY_CLUSTER_COMMAND -n ${VAR_OPENLIBERTY_NAMESPACE} apply -f ${MY_OPENLIBERTY_WORKINGDIR}resources/openliberty-app-operator.yaml
-      fi
-    fi
-  fi
-
-  trace_out $lf_tracelevel ${FUNCNAME[0]}
-
-  local lf_duration=$SECONDS
-  local lf_ending_date=$(date)
-  mylog info "==== Installation of OPEN Liberty (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
-}
-
-################################################
 # Install WebSphere Liberty and postgreSQL
 function install_wasliberty() {
   SECONDS=0
@@ -2609,31 +2557,6 @@ function customise_keycloak() {
 }
 
 ################################################
-# Customise Open Liberty
-function customise_openliberty() {
-  SECONDS=0
-  local lf_starting_date=$(date);
-  mylog info "==== Customise Open Liberty (olp.config.sh)." 0
-
-  local lf_tracelevel=2
-  trace_in $lf_tracelevel ${FUNCNAME[0]}
-
-  decho $lf_tracelevel "Parameters: |no parameters|"
-
-  # backend J2EE applications
-  # launch custom script
-  if $MY_OPENLIBERTY_CUSTOM; then
-    chmod a+x ${MY_OPENLIBERTY_SCRIPTDIR}scripts/olp.config.sh
-    ${MY_OPENLIBERTY_SCRIPTDIR}scripts/olp.config.sh --call olp_run_all
-  fi
-
-  trace_out $lf_tracelevel ${FUNCNAME[0]}
-
-  local lf_ending_date=$(date)    
-  mylog info "==== Customisation of Open Liberty (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
-}
-
-################################################
 # Customise WebSphere Liberty
 function customise_wasliberty() {
   SECONDS=0
@@ -2975,6 +2898,56 @@ function customise_e2e_monitoring() {
         exit 1
       fi
     fi
+
+    # Create the service account, its role binding (on the Role created by the operator) and its token secret are used to send traces to the Monitoring instance
+    mylog info "Create Service account ${MY_E2E_MONITORING_SERVICEACCOUNT} in $VAR_E2E_MONITORING_NAMESPACE"
+    create_oc_resource "ServiceAccount" "${MY_E2E_MONITORING_SERVICEACCOUNT}" "${MY_RESOURCESDIR}" "${MY_E2E_MONITORING_WORKINGDIR}" "serviceaccount.yaml" "$VAR_E2E_MONITORING_NAMESPACE"
+    mylog info "Create Role Binding ${MY_E2E_MONITORING_ROLEBINDING} in $VAR_E2E_MONITORING_NAMESPACE"
+    create_oc_resource "RoleBinding" "${MY_E2E_MONITORING_ROLEBINDING}" "${MY_RESOURCESDIR}" "${MY_E2E_MONITORING_WORKINGDIR}" "e2e-monitoring-role-binding.yaml" "$VAR_E2E_MONITORING_NAMESPACE"
+    mylog info "Create Secret ${MY_E2E_MONITORING_SECRET} in $VAR_E2E_MONITORING_NAMESPACE"
+    create_oc_resource "Secret" "${MY_E2E_MONITORING_SECRET}" "${MY_RESOURCESDIR}" "${MY_E2E_MONITORING_WORKINGDIR}" "e2e-monitoring-secret.yaml" "$VAR_E2E_MONITORING_NAMESPACE"
+
+    # Create the Config Map for the CA certificate (the CA bundle is injected by OpenShift) and the Secret containing the service CA certificate
+    mylog info "Create the config map ${MY_E2E_MONITORING_CA_CONFIGMAP} containing the CA certificate used to access the end to end monitoring feature in $VAR_E2E_MONITORING_NAMESPACE"
+    create_oc_resource "ConfigMap" "${MY_E2E_MONITORING_CA_CONFIGMAP}" "${MY_RESOURCESDIR}" "${MY_E2E_MONITORING_WORKINGDIR}" "e2e-monitoring-ca-configmap.yaml" "$VAR_E2E_MONITORING_NAMESPACE"
+
+    if $MY_APPLY_FLAG; then
+      mylog check "Checking Secret ${MY_E2E_MONITORING_CA_SECRET} in namespace ${VAR_E2E_MONITORING_NAMESPACE}" 1>&2
+      if ! $MY_CLUSTER_COMMAND -n "$VAR_E2E_MONITORING_NAMESPACE" get secret "${MY_E2E_MONITORING_CA_SECRET}" >/dev/null 2>&1; then
+        mylog info "Creating Secret ${MY_E2E_MONITORING_CA_SECRET} with the service CA certificate"
+        $MY_CLUSTER_COMMAND -n "$VAR_E2E_MONITORING_NAMESPACE" get configmap openshift-service-ca.crt -o jsonpath="{.data['service-ca\.crt']}" > "${MY_E2E_MONITORING_WORKINGDIR}${MY_E2E_MONITORING_CA_FILE}"
+        $MY_CLUSTER_COMMAND -n "$VAR_E2E_MONITORING_NAMESPACE" create secret generic "${MY_E2E_MONITORING_CA_SECRET}" --from-file=${MY_E2E_MONITORING_CA_FILE}="${MY_E2E_MONITORING_WORKINGDIR}${MY_E2E_MONITORING_CA_FILE}" || exit 1
+      else
+        mylog info "Secret ${MY_E2E_MONITORING_CA_SECRET} already exists"
+      fi
+    fi
+
+    # Create the mail configuration: patch the Monitoring instance with the mailConfig (notification settings)
+    mylog info "Creating the email configuration in end to end monitoring"
+    if $MY_APPLY_FLAG; then
+      local lf_mail_host lf_mail_patch
+      lf_mail_host=$($MY_CLUSTER_COMMAND -n ${VAR_MAIL_NAMESPACE} get svc/${VAR_MAIL_SERVICE} -o jsonpath='{.spec.clusterIP}')
+      if [[ -z "$lf_mail_host" ]]; then
+        mylog error "Could not resolve mail service ClusterIP for '${VAR_MAIL_SERVICE}' in namespace '${VAR_MAIL_NAMESPACE}'." 1>&2
+        trace_out $lf_tracelevel ${FUNCNAME[0]}
+        exit 1
+      fi
+      decho $lf_tracelevel "lf_mail_host: ${lf_mail_host} port: ${VAR_SMTP_SERVER_PORT}"
+
+      lf_mail_patch=$(jq -n -c \
+        --arg from "e2eadmin@mail.com" \
+        --arg to "admin1@ibm.com,admin2@ibm.com" \
+        --arg host "${lf_mail_host}" \
+        --arg port "${VAR_SMTP_SERVER_PORT}" \
+        '{spec:{configurations:{mailConfig:{mailFrom:$from,mailTo:$to,mailServerHost:$host,mailServerPort:$port,mailServerProtocol:"smtp"}}}}')
+
+      mylog info "Patching Monitoring ${VAR_E2E_MONITORING_INSTANCE_NAME} with the mail configuration (${lf_mail_host}:${VAR_SMTP_SERVER_PORT})"
+      $MY_CLUSTER_COMMAND -n "$VAR_E2E_MONITORING_NAMESPACE" patch Monitoring "${VAR_E2E_MONITORING_INSTANCE_NAME}" --type=merge -p "${lf_mail_patch}" || exit 1
+    fi
+    
+    # Get OTel endpoint
+    E2EM_OTEL_ENDPOINT=$(oc -n ${VAR_E2E_MONITORING_NAMESPACE} get Monitoring ${VAR_E2E_MONITORING_INSTANCE_NAME} -o jsonpath='{.status.endpoints[?(@.name=="grpcs")].uri}')
+
   fi
 
   trace_out $lf_tracelevel ${FUNCNAME[0]}
@@ -3363,10 +3336,11 @@ function install_part() {
   install_lic_svc
   install_lic_reporter_svc
   install_fs
-  
+
+  install_e2e_monitoring
+
   # install_xxx: For each capability install : case, operator, operand
   
-  # install_openliberty
   install_wasliberty
   
   # CP4I Components
@@ -3386,7 +3360,6 @@ function install_part() {
   install_hsts
   install_apic_graphql
   install_confluent
-  install_e2e_monitoring
 
   install_instana
   install_cluster_monitoring
@@ -3405,8 +3378,7 @@ function customise_part() {
 
   customise_openldap
   customise_keycloak
-  
-  # customise_openliberty
+  customise_e2e_monitoring
   
   customise_wasliberty
   
@@ -3419,7 +3391,7 @@ function customise_part() {
   customise_hsts
   customise_mq
   customise_confluent
-  customise_e2e_monitoring
+  
 
   customise_instana
 

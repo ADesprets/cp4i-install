@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ${MY_E2E_MONITORING_CA_CONFIGMAP}
+  namespace: ${VAR_E2E_MONITORING_NAMESPACE}
+  annotations:
+    # OpenShift injects the service CA bundle into this ConfigMap
+    service.beta.openshift.io/inject-cabundle: "true"
