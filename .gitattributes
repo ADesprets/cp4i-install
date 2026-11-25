@@ -1,0 +1,39 @@
+# Enforce LF line endings for all text files
+* text=auto eol=lf
+
+# Explicitly LF for common text formats
+*.sh        text eol=lf
+*.bash      text eol=lf
+*.yaml      text eol=lf
+*.yml       text eol=lf
+*.json      text eol=lf
+*.xml       text eol=lf
+*.properties text eol=lf
+*.md        text eol=lf
+*.txt       text eol=lf
+*.conf      text eol=lf
+*.cfg       text eol=lf
+*.env       text eol=lf
+*.js        text eol=lf
+*.ts        text eol=lf
+*.py        text eol=lf
+*.java      text eol=lf
+*.html      text eol=lf
+*.css       text eol=lf
+*.sql       text eol=lf
+*.tf        text eol=lf
+*.tfvars    text eol=lf
+
+# Binary files — no line ending conversion
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.gif       binary
+*.ico       binary
+*.zip       binary
+*.tar       binary
+*.gz        binary
+*.jar       binary
+*.war       binary
+*.class     binary
+*.pdf       binary
