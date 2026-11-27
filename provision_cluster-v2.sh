@@ -2226,10 +2226,11 @@ function crt_postgresql_db() {
   
   # Create pgAdmin instance
   # User is defined in PGAdmin operand under the user property, it is fixed to pgadmin@example.com
-  # The password is defined in the secret pg-s5n-cluster-pgadmin-pwd set to Passw0rd!
+  # The password is defined in the secret pg-s5n-cluster-pgadmin-pwd, its value comes from MY_PGADMIN_PASSWORD (private/user.properties)
+  var_fail MY_PGADMIN_PASSWORD "Missing MY_PGADMIN_PASSWORD in private/user.properties"
 
   # Create generic secret for PGAdmin
-  local lf_pgadmin_password="Passw0rd!"
+  local lf_pgadmin_password="${MY_PGADMIN_PASSWORD}"
   create_generic_secret "${lf_in_pg_cluster_name}-pgadmin-pwd" "" "" "password" "${lf_pgadmin_password}" "${lf_in_namespace}" "${lf_in_working_dir}" "false"
 
   export VAR_PG_PGADMIN_NAME="${lf_in_pg_cluster_name}-pgadmin"
