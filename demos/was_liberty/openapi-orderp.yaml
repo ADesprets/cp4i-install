@@ -1,9 +1,24 @@
-openapi: 3.0.4
+openapi: 3.0.3
 info:
   title: Order Management API with Persistence
   description: |
-    API REST complète pour la gestion des commandes avec persistance PostgreSQL.
-    Cette API fournit des opérations CRUD complètes pour gérer les commandes (orders).
+    API REST de gestion des commandes clients, avec persistance dans PostgreSQL.
+
+    Une commande (order) représente l'achat d'un article par un client : elle contient
+    l'identifiant du client, son nom, la description de l'article, le prix unitaire,
+    la quantité, la région de vente (EMEA, APAC ou AMER) et la date de création.
+
+    Opérations disponibles : lister (avec pagination et filtres), créer, consulter,
+    modifier et supprimer une commande, compter les commandes et vérifier l'état du service.
+
+    Conseils d'utilisation :
+    - L'identifiant `id` d'une commande est généré par le serveur à la création. Pour
+      consulter, modifier ou supprimer une commande, il faut d'abord obtenir son `id`
+      en créant la commande ou en listant les commandes.
+    - Les identifiants (`id`, `customerid`) sont des UUID.
+    - Les montants (`price`) sont des prix unitaires ; le total d'une commande est
+      `price` multiplié par `quantity`.
+    - Les dates (`ordertime`) sont au format ISO 8601.
   version: 1.0.0
   contact:
     name: IBM Demo Team
@@ -13,31 +28,42 @@ info:
     url: https://www.apache.org/licenses/LICENSE-2.0.html
 
 servers:
-  - url: http://localhost:9080/demo/apip
-    description: Serveur de développement local
-  - url: https://api.example.com/apip
-    description: Serveur de production
+  - url: /demo/apip
+    description: Chemin de base exposé par la gateway (identique au backend Liberty)
 
 tags:
   - name: Orders
-    description: Opérations de gestion des commandes
+    description: |
+      Consulter, créer, modifier et supprimer les commandes clients, et obtenir leur nombre.
   - name: Health
-    description: Endpoints de santé et monitoring
+    description: |
+      Vérifier que le service est disponible. Ne retourne aucune donnée métier.
 
 paths:
   /orderp:
     get:
       tags:
         - Orders
-      summary: Récupérer toutes les commandes
+      summary: Lister les commandes
       description: |
-        Récupère la liste de toutes les commandes avec support de pagination et filtrage.
-        Supporte les filtres par customerId et region.
+        Retourne la liste des commandes enregistrées, de la plus récente à la plus ancienne.
+        À utiliser pour rechercher des commandes, parcourir le catalogue des commandes ou
+        retrouver l'`id` d'une commande avant de la consulter, la modifier ou la supprimer.
+
+        Les résultats peuvent être filtrés par client (`customerId`) ou par région
+        (`region`). Les deux filtres ne se combinent pas : si `customerId` est fourni,
+        `region` est ignoré. Les filtres retournent toutes les commandes correspondantes.
+        La pagination (`limit` et `offset`) ne s'applique que sans filtre : par exemple
+        `limit=10&offset=20` retourne les commandes 21 à 30.
+
+        Retourne un tableau JSON, vide s'il n'y a aucun résultat. Les en-têtes de réponse
+        `X-Total-Count` et `X-Returned-Count` indiquent le nombre total de commandes et le
+        nombre de commandes retournées.
       operationId: getAllOrders
       parameters:
         - name: offset
           in: query
-          description: Nombre de commandes à ignorer (pour la pagination)
+          description: Nombre de commandes à ignorer avant de commencer la liste (pagination, sans filtre uniquement). 0 pour commencer au début.
           required: false
           schema:
             type: integer
@@ -46,7 +72,7 @@ paths:
             example: 0
         - name: limit
           in: query
-          description: Nombre maximum de commandes à retourner
+          description: Nombre maximum de commandes à retourner (pagination, sans filtre uniquement)
           required: false
           schema:
             type: integer
@@ -55,7 +81,7 @@ paths:
             example: 10
         - name: customerId
           in: query
-          description: Filtrer par ID client
+          description: Ne retourner que les commandes de ce client (UUID du client, champ `customerid` des commandes). Prioritaire sur `region`.
           required: false
           schema:
             type: string
@@ -63,7 +89,7 @@ paths:
             example: "03c2ae4d-4d6e-4589-844b-e2a7a90803dd"
         - name: region
           in: query
-          description: Filtrer par région
+          description: Ne retourner que les commandes de cette région de vente (EMEA, APAC ou AMER). Ignoré si `customerId` est fourni.
           required: false
           schema:
             type: string
@@ -121,8 +147,19 @@ paths:
     post:
       tags:
         - Orders
-      summary: Créer une nouvelle commande
-      description: Crée une nouvelle commande dans la base de données
+      summary: Créer une commande
+      description: |
+        Enregistre une nouvelle commande dans la base de données et retourne la commande
+        créée, avec son `id` et sa date de création (`ordertime`) générés par le serveur.
+        À utiliser pour enregistrer l'achat d'un article par un client.
+
+        Tous les champs sont à fournir : `customerid`, `customer`, `description`, `price`,
+        `quantity` et `region`. Ne pas envoyer `id` ni `ordertime`.
+
+        Retourne le code 201 et la commande créée. Retourne 400 si le nom du client est
+        absent, et 500 si un autre champ obligatoire manque (par exemple `customerid`).
+        Le serveur ne contrôle pas les valeurs : respecter les contraintes indiquées
+        (prix positif, quantité d'au moins 1, région EMEA, APAC ou AMER).
       operationId: createOrder
       requestBody:
         description: Données de la commande à créer
@@ -135,7 +172,7 @@ paths:
               newOrder:
                 summary: Exemple de nouvelle commande
                 value:
-                  customerid: "cust-123"
+                  customerid: "03c2ae4d-4d6e-4589-844b-e2a7a90803dd"
                   customer: "John Doe"
                   description: "Laptop Computer"
                   price: 1299.99
@@ -170,13 +207,18 @@ paths:
     get:
       tags:
         - Orders
-      summary: Récupérer une commande par ID
-      description: Récupère les détails d'une commande spécifique
+      summary: Consulter une commande
+      description: |
+        Retourne le détail d'une commande à partir de son identifiant : client, article,
+        prix, quantité, région et date. À utiliser quand l'`id` de la commande est connu ;
+        sinon, le retrouver avec la liste des commandes.
+
+        Retourne 404 si aucune commande ne porte cet identifiant.
       operationId: getOrderById
       parameters:
         - name: orderId
           in: path
-          description: ID unique de la commande
+          description: Identifiant (UUID) de la commande, champ `id` d'une commande existante
           required: true
           schema:
             type: string
@@ -210,13 +252,22 @@ paths:
     put:
       tags:
         - Orders
-      summary: Mettre à jour une commande
-      description: Met à jour les informations d'une commande existante
+      summary: Modifier une commande
+      description: |
+        Modifie une commande existante et retourne la commande à jour.
+        À utiliser pour corriger une commande : changer l'article, le prix, la quantité,
+        le client ou la région.
+
+        La mise à jour est partielle : n'envoyer que les champs à changer, les autres
+        gardent leur valeur. Au moins un champ est nécessaire. L'`id` et la date de
+        création ne sont pas modifiables.
+
+        Retourne 404 si la commande n'existe pas et 400 si le corps est vide.
       operationId: updateOrder
       parameters:
         - name: orderId
           in: path
-          description: ID unique de la commande à mettre à jour
+          description: Identifiant (UUID) de la commande à modifier, champ `id` d'une commande existante
           required: true
           schema:
             type: string
@@ -228,12 +279,12 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OrderInput'
+              $ref: '#/components/schemas/OrderUpdate'
             examples:
               updateOrder:
                 summary: Exemple de mise à jour
                 value:
-                  customerid: "cust-123"
+                  customerid: "03c2ae4d-4d6e-4589-844b-e2a7a90803dd"
                   customer: "John Doe"
                   description: "Updated Laptop"
                   price: 1399.99
@@ -274,12 +325,17 @@ paths:
       tags:
         - Orders
       summary: Supprimer une commande
-      description: Supprime définitivement une commande de la base de données
+      description: |
+        Supprime définitivement une commande de la base de données. L'opération est
+        irréversible : à utiliser seulement pour une commande annulée ou créée par erreur.
+
+        Retourne un message de confirmation et l'`id` supprimé, ou 404 si la commande
+        n'existe pas.
       operationId: deleteOrder
       parameters:
         - name: orderId
           in: path
-          description: ID unique de la commande à supprimer
+          description: Identifiant (UUID) de la commande à supprimer, champ `id` d'une commande existante
           required: true
           schema:
             type: string
@@ -323,7 +379,10 @@ paths:
       tags:
         - Orders
       summary: Compter les commandes
-      description: Retourne le nombre total de commandes en base de données
+      description: |
+        Retourne le nombre total de commandes enregistrées, sous la forme `{"count": 42}`.
+        À utiliser pour une question du type « combien y a-t-il de commandes ? », sans
+        avoir besoin de récupérer la liste.
       operationId: getOrderCount
       responses:
         '200':
@@ -353,8 +412,11 @@ paths:
     get:
       tags:
         - Health
-      summary: Vérification de santé
-      description: Endpoint de health check pour vérifier l'état du service
+      summary: Vérifier l'état du service
+      description: |
+        Indique si le service des commandes est opérationnel : retourne `{"status": "UP"}`
+        quand il fonctionne. À utiliser pour diagnostiquer un problème (par exemple après
+        une erreur 500) ; n'accède pas aux commandes.
       operationId: healthCheck
       responses:
         '200':
@@ -381,7 +443,9 @@ components:
   schemas:
     Order:
       type: object
-      description: Représentation complète d'une commande
+      description: |
+        Commande client : l'achat d'une certaine quantité d'un article, à un prix unitaire
+        donné, par un client, dans une région de vente.
       required:
         - id
         - customerid
@@ -395,40 +459,40 @@ components:
         id:
           type: string
           format: uuid
-          description: Identifiant unique de la commande (UUID)
+          description: Identifiant unique de la commande (UUID), généré par le serveur à la création
           example: "82a55abc-6c44-4e53-a4c6-03f6d2fb0c0a"
         customerid:
           type: string
           format: uuid
-          description: Identifiant unique du client
+          description: Identifiant unique du client (UUID), commun à toutes les commandes d'un même client
           example: "03c2ae4d-4d6e-4589-844b-e2a7a90803dd"
         customer:
           type: string
-          description: Nom du client
+          description: Nom complet du client
           minLength: 1
           maxLength: 255
           example: "Lottie Krajcik"
         description:
           type: string
-          description: Description de la commande
+          description: Article commandé (nom et caractéristiques, par exemple taille ou couleur)
           minLength: 1
           maxLength: 500
           example: "S Navy Skinny Jeans"
         price:
           type: number
           format: double
-          description: Prix unitaire
+          description: Prix d'une unité de l'article (le total de la commande est price multiplié par quantity)
           minimum: 0
           example: 22.81
         quantity:
           type: integer
           format: int32
-          description: Quantité commandée
+          description: Nombre d'unités commandées (au moins 1)
           minimum: 1
           example: 10
         region:
           type: string
-          description: Région de la commande
+          description: Région de vente - EMEA (Europe, Moyen-Orient, Afrique), APAC (Asie-Pacifique) ou AMER (Amériques)
           enum:
             - EMEA
             - APAC
@@ -437,13 +501,16 @@ components:
         ordertime:
           type: string
           format: date-time
-          description: Date et heure de la commande (ISO 8601)
+          description: Date et heure de création de la commande (ISO 8601), générées par le serveur
           example: "2024-06-10T19:06:13.969"
 
     OrderInput:
       type: object
-      description: Données requises pour créer ou mettre à jour une commande
+      description: |
+        Données à fournir pour créer une commande. L'`id` et la date de création ne sont
+        jamais envoyés : ils sont gérés par le serveur.
       required:
+        - customerid
         - customer
         - description
         - price
@@ -453,35 +520,79 @@ components:
         customerid:
           type: string
           format: uuid
-          description: Identifiant unique du client (optionnel, généré si absent)
+          description: Identifiant unique du client (UUID). Réutiliser celui d'un client existant pour rattacher la commande à ce client, sinon en choisir un nouveau.
           example: "03c2ae4d-4d6e-4589-844b-e2a7a90803dd"
         customer:
           type: string
-          description: Nom du client
+          description: Nom complet du client
           minLength: 1
           maxLength: 255
           example: "John Doe"
         description:
           type: string
-          description: Description de la commande
+          description: Article commandé (nom et caractéristiques, par exemple taille ou couleur)
           minLength: 1
           maxLength: 500
           example: "Laptop Computer"
         price:
           type: number
           format: double
-          description: Prix unitaire
+          description: Prix d'une unité de l'article, supérieur ou égal à 0
           minimum: 0
           example: 1299.99
         quantity:
           type: integer
           format: int32
-          description: Quantité commandée
+          description: Nombre d'unités commandées (au moins 1)
           minimum: 1
           example: 1
         region:
           type: string
-          description: Région de la commande
+          description: Région de vente - EMEA (Europe, Moyen-Orient, Afrique), APAC (Asie-Pacifique) ou AMER (Amériques)
+          enum:
+            - EMEA
+            - APAC
+            - AMER
+          example: "EMEA"
+
+    OrderUpdate:
+      type: object
+      description: |
+        Champs à modifier sur une commande existante. Tous sont facultatifs, mais au moins
+        un doit être fourni ; les champs absents gardent leur valeur.
+      properties:
+        customerid:
+          type: string
+          format: uuid
+          description: Nouvel identifiant (UUID) du client
+          example: "03c2ae4d-4d6e-4589-844b-e2a7a90803dd"
+        customer:
+          type: string
+          description: Nouveau nom complet du client
+          minLength: 1
+          maxLength: 255
+          example: "John Doe"
+        description:
+          type: string
+          description: Nouvel article commandé
+          minLength: 1
+          maxLength: 500
+          example: "Updated Laptop"
+        price:
+          type: number
+          format: double
+          description: Nouveau prix d'une unité de l'article, supérieur ou égal à 0
+          minimum: 0
+          example: 1399.99
+        quantity:
+          type: integer
+          format: int32
+          description: Nouvelle quantité (au moins 1)
+          minimum: 1
+          example: 2
+        region:
+          type: string
+          description: Nouvelle région de vente - EMEA, APAC ou AMER
           enum:
             - EMEA
             - APAC
@@ -490,7 +601,7 @@ components:
 
     Error:
       type: object
-      description: Représentation d'une erreur
+      description: Réponse retournée en cas d'erreur (400, 404 ou 500)
       required:
         - error
       properties:
@@ -500,11 +611,18 @@ components:
           example: "Order not found with ID: 82a55abc-6c44-4e53-a4c6-03f6d2fb0c0a"
 
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-      description: Authentification JWT Bearer Token
+    clientID:
+      type: apiKey
+      in: header
+      name: X-IBM-Client-Id
+      description: Client ID de l'application abonnée au plan, vérifié par la gateway
+    clientSecret:
+      type: apiKey
+      in: header
+      name: X-IBM-Client-Secret
+      x-key-type: client_secret
+      description: Client secret de l'application, vérifié par la gateway
 
 security:
-  - bearerAuth: []
+  - clientID: []
+    clientSecret: []

@@ -1296,6 +1296,27 @@ function display_access_info() {
 
   # End to End monitoring - Control Plane
 
+  # DataPower Interact Gateway (IDIG)
+  if $MY_IDIG; then
+    local lf_idig_cr lf_idig_web_url lf_idig_dp_web
+    lf_idig_cr=$($MY_CLUSTER_COMMAND -n $VAR_IDIG_NAMESPACE get ${MY_IDIG_CR_KIND} -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+    if [[ -n "${lf_idig_cr}" ]]; then
+      lf_idig_web_url=$($MY_CLUSTER_COMMAND -n $VAR_IDIG_NAMESPACE get ${MY_IDIG_CR_KIND} ${lf_idig_cr} -o jsonpath="{.status.endpoints[?(@.name==\"${MY_IDIG_CONSOLE_ENDPOINT}\")].uri}")
+      # Passwords are never written to the log: they are read from the secrets listed below
+      mylog info "IDIG Console: ${lf_idig_web_url}" 0
+      mylog info "IDIG Console login: user=${MY_IDIG_ADMIN_USER} password in secret ${lf_idig_cr}${MY_IDIG_ADMIN_SECRET_SUFFIX} (key password, namespace ${VAR_IDIG_NAMESPACE})" 0
+      echo "<TR><TD><A HREF=${lf_idig_web_url}>IDIG Console</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
+      if $MY_IDIG_DEVPORTAL; then
+        lf_idig_dp_web=$($MY_CLUSTER_COMMAND -n $VAR_IDIG_NAMESPACE get route ${lf_idig_cr}${MY_IDIG_DEVPORTAL_WEB_ROUTE_SUFFIX} -o jsonpath='{.spec.host}' 2>/dev/null)
+        mylog info "IDIG Developer Portal Web UI: https://${lf_idig_dp_web}" 0
+        mylog info "IDIG Developer Portal login: user=${MY_IDIG_ADMIN_USER} password in secret ${lf_idig_cr}${MY_IDIG_DEVPORTAL_SECRET_SUFFIX} (key password, namespace ${VAR_IDIG_NAMESPACE})" 0
+        echo "<TR><TD><A HREF=https://${lf_idig_dp_web}>IDIG Developer Portal</A></TD></TR>" >> ${MY_WORKINGDIR}bookmarks.html
+      fi
+    else
+      mylog warn "IDIG is enabled but no ${MY_IDIG_CR_KIND} found in ${VAR_IDIG_NAMESPACE}" 1>&2
+    fi
+  fi
+
   # DataPower
   if $MY_DPGW; then
     mylog info "Datapower Gateway UI endpoint/admin password are the same as : APIC Gateway endpoint/APIC Gateway admin password" 0
@@ -1554,6 +1575,59 @@ function appendToFile() {
 }
 
 ################################################
+# Write one entry in the debug log file (MY_LOGFILE), without colors.
+# Does nothing if MY_LOGFILE is not set. Must not call mylog (mylog calls it).
+# Best-effort masking of key=value pairs that look like secrets: never rely on it,
+# do not pass secrets to this function.
+# @param 1: level
+# @param 2...: text
+function log_file_write() {
+  [[ -z "$MY_LOGFILE" ]] && return 0
+  local lf_in_level="$1"
+  shift
+  printf '%s [%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$lf_in_level" "$*" \
+    | sed -E 's/([Pp]assword|[Pp]asswd|[Tt]oken|[Kk]ey|[Ss]ecret)=[^[:space:]]+/\1=****/g' >> "$MY_LOGFILE"
+  return 0
+}
+
+################################################
+# Create the debug log file for this run (tmp/logs/provision-<date>.log, ignored by git, mode 600)
+# and write a header (script arguments, tool versions, cluster, main flags). No secrets.
+# @param 1...: script arguments
+function init_logging() {
+  local lf_dir="${MY_LOGDIR:-${PROVISION_SCRIPTDIR}tmp/logs/}"
+  mkdir -p "$lf_dir" && chmod 700 "$lf_dir"
+  export MY_LOGFILE="${lf_dir}provision-$(date +%Y%m%d-%H%M%S).log"
+  ( umask 077; : > "$MY_LOGFILE" )
+  ln -sf "$MY_LOGFILE" "${lf_dir}latest.log"
+
+  log_file_write "init" "script=$0 args=$*"
+  log_file_write "init" "bash=${BASH_VERSION} host=$(uname -sm)"
+  log_file_write "init" "oc client: $($MY_CLUSTER_COMMAND version --client 2>&1 | head -1)"
+  log_file_write "init" "cluster server: $($MY_CLUSTER_COMMAND whoami --show-server 2>&1 | head -1)"
+  log_file_write "init" "cluster user: $($MY_CLUSTER_COMMAND whoami --request-timeout=10s 2>&1 | head -1)"
+  log_file_write "init" "flags: MY_APPLY_FLAG=${MY_APPLY_FLAG} MY_APIC=${MY_APIC} MY_DPGW=${MY_DPGW} MY_IDIG=${MY_IDIG}"
+  mylog info "Debug log file: ${MY_LOGFILE}" 0
+}
+
+################################################
+# Run a command, display its output, and record the command line, the output and the return code
+# in the debug log file. Never use it with a command that has a secret in its arguments.
+# @param 1...: the command and its arguments
+function run_logged() {
+  local lf_out lf_rc
+  log_file_write "cmd" "$*"
+  lf_out=$("$@" 2>&1)
+  lf_rc=$?
+  if [[ -n "$lf_out" ]]; then
+    echo "$lf_out"
+    log_file_write "out" "$lf_out"
+  fi
+  log_file_write "rc" "$lf_rc"
+  return $lf_rc
+}
+
+################################################
 # simple logging with colors
 # @param 1: level (info/error/warn/wait/check/ok/no)
 # @param 2: text
@@ -1562,7 +1636,9 @@ function mylog() {
 
   local lf_in_level=$1
   local lf_in_text=$2
-  local lf_in_indent_level=$3 
+  local lf_in_indent_level=$3
+
+  log_file_write "$lf_in_level" "$lf_in_text"
 
   local lf_spaces=$(printf "%0.s " $(seq 1 $SC_SPACES_COUNTER))
 
@@ -1923,17 +1999,34 @@ function check_exec_prereqs() {
   check_command_exist awk
   check_command_exist tr
   check_command_exist curl
-  check_command_exist $MY_CONTAINER_ENGINE
   # check_command_exist ibmcloud
   check_command_exist jq
   check_command_exist yq
-  check_command_exist keytool
   check_command_exist $MY_CLUSTER_COMMAND
-  check_command_exist "$MY_CLUSTER_COMMAND ibm-pak"
-  lf_ibm_pak_version=$($MY_CLUSTER_COMMAND ibm-pak --version)
-  decho $lf_tracelevel "ibm-pak version: $lf_ibm_pak_version"
   check_command_exist openssl
-  check_command_exist mvn
+
+  # Container engine: only needed to build/push images (demos) and to validate the entitlement key
+  if [ "${MY_WASLIBERTY_CUSTOM:-false}" = "true" ] || [ "${MY_LDAP_CUSTOM_BUILD:-false}" = "true" ] || [ "${MY_DEBUG_TOOL:-false}" = "true" ]; then
+    check_command_exist $MY_CONTAINER_ENGINE
+  fi
+
+  # oc ibm-pak: only needed by the components installed from an IBM CASE
+  local lf_flag
+  local lf_need_ibm_pak=false
+  for lf_flag in MY_ACE MY_APIC MY_APIC_GRAPHQL MY_ASSETREPO MY_COMMONSERVICES MY_DPGW MY_E2E_MONITORING MY_ES MY_HSTS MY_LIC_SRV MY_LIC_SRV_REPORTER MY_NAVIGATOR MY_WASLIBERTY; do
+    if [ "${!lf_flag:-false}" = "true" ]; then lf_need_ibm_pak=true; fi
+  done
+  if $lf_need_ibm_pak; then
+    check_command_exist "$MY_CLUSTER_COMMAND ibm-pak"
+    lf_ibm_pak_version=$($MY_CLUSTER_COMMAND ibm-pak --version)
+    decho $lf_tracelevel "ibm-pak version: $lf_ibm_pak_version"
+  fi
+
+  # keytool and mvn: only needed by the Kafka demos
+  if [ "${MY_ES_CUSTOM:-false}" = "true" ] || [ "${MY_CONFLUENT_CUSTOM:-false}" = "true" ]; then
+    check_command_exist keytool
+    check_command_exist mvn
+  fi
 
   if $MY_MQ_CUSTOM; then
     check_command_exist runmqakm

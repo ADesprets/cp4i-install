@@ -1,0 +1,13 @@
+kind: Authorize
+apiVersion: api.ibm.com/v1
+metadata:
+  name: Orders_Authorize
+  namespace: Orders_Nano
+  version: '1'
+  tags: []
+  labels:
+    gatewayTypes:
+      - nano
+spec:
+  operation:
+    subscription: {}

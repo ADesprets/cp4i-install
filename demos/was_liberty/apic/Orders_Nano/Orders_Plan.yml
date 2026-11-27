@@ -1,0 +1,12 @@
+kind: Plan
+apiVersion: api.ibm.com/v1
+metadata:
+  name: Orders_Plan
+  namespace: Orders_Nano
+  version: '1'
+  tags: []
+  description: ''
+spec:
+  qos:
+    withQuota:
+      unlimited: {}

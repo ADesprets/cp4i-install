@@ -193,107 +193,270 @@ function adapt_files_recursive() {
 }
 
 ################################################
-# Upload projects
-# This function loads projects into the APIC manager studio.
-# It supports two formats for projects in the projects directory:
-# - A directory: the function packages it as a zip file on-the-fly and uploads it.
-# - A zip file: the function uploads the file directly without any alteration.
-function upload_projects() {
-  local lf_tracelevel=5
+# Run the apic toolkit and hide its node warnings
+function apic_quiet() {
+  apic "$@" 2>&1 | grep -v -E '^\(node|^\(Use .node|^\[?WARNING|node --trace' || true
+}
+
+################################################
+# Print the source directory of every API Studio project handled by upload_projects and publish_projects
+# - every sub directory of apic_simple/resources/v12/resources/
+# - Orders_Nano: the orderp API of the WAS Liberty backend, exposed by the Nano gateway
+function get_apic_project_dirs() {
+  local lf_entry
+
+  for lf_entry in "${MY_APIC_SIMPLE_DEMODIR}resources/v12/resources/"*/; do
+    [[ -d "${lf_entry}" ]] && echo "${lf_entry%/}"
+  done
+
+  [[ -d "${MY_WASLIBERTY_DEMODIR}apic/Orders_Nano" ]] && echo "${MY_WASLIBERTY_DEMODIR}apic/Orders_Nano"
+  return 0
+}
+
+################################################
+# Print the gateway service a staged project must be published to.
+# Projects whose policies are labelled gatewayTypes "nano" go to the Nano gateway, the others to the DataPower API gateway.
+# @param 1: staged project directory
+function get_apic_project_gateway() {
+  if grep -rqsE --include='*.yml' --include='*.yaml' '^[[:space:]]*-[[:space:]]+nano[[:space:]]*$' "$1"; then
+    echo "datapower-nano-gateway"
+  else
+    echo "api-gateway-service"
+  fi
+}
+
+################################################
+# Make sure the platform API url and the tokens are available, so upload_projects and publish_projects can be called alone
+function ensure_apic_session() {
+  if [[ -z "${PLATFORM_API_URL:-}" ]]; then
+    mkdir -p "${MY_APIC_WORKINGDIR}resources"
+    adapt_file ${MY_APIC_SIMPLE_DEMODIR}properties/ ${MY_APIC_WORKINGDIR}properties/ apic.properties
+    read_config_file "${MY_APIC_WORKINGDIR}properties/apic.properties"
+    init_apic_variables
+  fi
+  [[ -z "${access_token:-}" ]] && create_cm_token
+  [[ -z "${amToken:-}" ]] && create_am_token
+  return 0
+}
+
+################################################
+# Stage the projects in a temporary workspace that the apic toolkit understands (apic create, then copy of the sources).
+# The staged project names are returned in the global array STAGED_APIC_PROJECTS.
+# Directories without any asset (only tests for example) are skipped.
+# @param 1: stage directory (must exist and be empty)
+# @param 2..n: names of the projects to stage, all the projects when omitted
+function stage_apic_projects() {
+  local lf_tracelevel=3
   trace_in $lf_tracelevel ${FUNCNAME[0]}
 
-  decho $lf_tracelevel "Parameters: |no parameters|"
+  local lf_stage="$1"
+  shift
+  local lf_wanted=" $* "
+  local lf_nb_wanted=$#
+  local lf_dir
+  local lf_name
 
-  # the trailing / is mandatory
-  local lf_projects_dir="${MY_APIC_SIMPLE_DEMODIR}resources/v12/resources/"
+  decho $lf_tracelevel "Parameters: \"${lf_stage}\"|\"${lf_wanted}\"|"
 
-  mylog info "Upload projects for projects defined under ${lf_projects_dir}" 1>&2
+  STAGED_APIC_PROJECTS=()
 
-  # local lf_projects_source_dir="${MY_APIC_SIMPLE_DEMODIR}resources/projects/"
-  # local lf_projects_target_dir="${MY_APIC_WORKINGDIR}resources/projects/"
- 
-  # TODO adaptation of each files will be done later, assume that the files are directly loaded into the manager for now
-  # adapt_files_recursive "${lf_projects_source_dir}" "${lf_projects_target_dir}"
+  while IFS= read -r lf_dir; do
+    lf_name=$(basename "${lf_dir}")
 
-  if [[ -d "${lf_projects_dir}" ]]; then
-    for entry in "${lf_projects_dir}"*; do
-      [[ -e "${entry}" ]] || continue
+    if [[ ${lf_nb_wanted} -gt 0 && "${lf_wanted}" != *" ${lf_name} "* ]]; then
+      continue
+    fi
 
-      local zip_path=""
-      local should_cleanup_zip=false
-      local project_name=""
+    if ! find "${lf_dir}" -path '*/tests' -prune -o -type f \( -name '*.yml' -o -name '*.yaml' \) -print -quit | grep -q .; then
+      mylog warn "Project ${lf_name} has no asset (only tests?), skipped." 1>&2
+      continue
+    fi
 
-      if [[ -d "${entry}" ]]; then
-        project_name=$(basename "${entry}")
-        mylog info "  - Directory project: ${project_name} (Zipping first)" 1>&2
-        zip_path="/tmp/api_${RANDOM}.zip"
-        should_cleanup_zip=true
+    (cd "${lf_stage}" && apic_quiet create "${lf_name}" -l "${lf_stage}" > /dev/null)
+    if [[ ! -d "${lf_stage}/${lf_name}" ]]; then
+      mylog error "apic create did not create the project ${lf_name}, skipped." 1>&2
+      continue
+    fi
 
-        # Create temporary directory structure
-        local temp_dir=$(mktemp -d)
-        mylog info "Copy project ${entry} files into ${temp_dir}" 1>&2
+    cp -R "${lf_dir}/." "${lf_stage}/${lf_name}/"
 
-        # meta data for the project
-        # echo "$api_definition" > "${temp_dir}/${project_name}.yaml"
-        
-        mkdir -p "${temp_dir}/resources/${project_name}"
-        cp -r "${entry}/"* "${temp_dir}/resources/${project_name}/"
-        
-        # Create zip
-        (pushd "$temp_dir" > /dev/null && zip -r "$zip_path" . > /dev/null && popd > /dev/null)
-        
-        local zip_size=$(stat -f%z "$zip_path" 2>/dev/null || stat -c%s "$zip_path" 2>/dev/null)
-        mylog info "Created project zip file at $zip_path with size: $zip_size bytes" 1>&2
-        
-        # Display debug information
-        unzip -l "$zip_path" | while read -r line; do
-          decho $lf_tracelevel "$line"
-        done
+    # The orderp API specification is the one of the WAS Liberty backend, no copy to maintain
+    if [[ "${lf_name}" == "Orders_Nano" ]]; then
+      cp "${MY_WASLIBERTY_DEMODIR}openapi-orderp.yaml" "${lf_stage}/${lf_name}/Orders_Api-spec.yml"
+    fi
 
-        # Cleanup temp directory
-        rm -rf "$temp_dir"
+    STAGED_APIC_PROJECTS+=("${lf_name}")
+    mylog info "  - Project ${lf_name} staged (from ${lf_dir})" 1>&2
+  done < <(get_apic_project_dirs)
 
-      elif [[ -f "${entry}" && "${entry}" == *.zip ]]; then
-        project_name=$(basename "${entry}" .zip)
-        mylog info "  - Zip project: ${project_name} (Uploading directly)" 1>&2
-        zip_path="${entry}"
-        should_cleanup_zip=false
-      else
-        continue
-      fi
-
-      # Now upload the zip to APIC Manager
-      if [[ -n "${zip_path}" && -f "${zip_path}" ]]; then
-        local response
-        local status_code
-        
-        local apic_provider_org_lower=$(echo "$APIC_PROVIDER_ORG" | awk '{print tolower($0)}')
-        local catalog="sandbox"
-        
-        decho $lf_tracelevel "curl -sk -X POST -H \"Accept: application/json\" -H \"authorization: Bearer \$AT\" -F \"project=@${zip_path};type=application/zip\" \"${PLATFORM_API_URL}api/catalogs/${apic_provider_org_lower}/${catalog}/publish-project\""
-        response=$(curl -s -w "\n%{http_code}" -k \
-            -X POST \
-            -H "Authorization: Bearer ${amToken}" \
-            -H "Accept: application/json" \
-            -F "project=@${zip_path};type=application/zip" \
-            "${PLATFORM_API_URL}api/catalogs/${apic_provider_org_lower}/${catalog}/publish-project")
-        
-        status_code=$(echo "$response" | tail -n1)
-        mylog info "Upload response status: ${status_code}" 1>&2
-        decho $lf_tracelevel "Upload response: $response"
-
-        # Cleanup temporary zip file if created on-the-fly
-        if [[ "${should_cleanup_zip}" == "true" ]]; then
-          rm -f "$zip_path"
-        fi
-      fi
-    done
-  else
-    mylog warn "Projects directory not found: ${lf_projects_dir}" 1>&2
-  fi
-  
   trace_out $lf_tracelevel ${FUNCNAME[0]}
 }
+
+################################################
+# Upload projects: import the projects into API Manager (API Studio), without publishing them
+# The backend api key is never stored: the placeholder is kept in the project.
+# @param 1..n: names of the projects to upload, all the projects when omitted
+# Examples:
+#   ./apic.config.sh --call upload_projects
+#   ./apic.config.sh --call upload_projects Orders_Nano
+function upload_projects() {
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  decho $lf_tracelevel "Parameters: \"$*\"|"
+
+  ensure_apic_session
+
+  local lf_org=$(echo "$APIC_PROVIDER_ORG" | tr '[:upper:]' '[:lower:]')
+  local lf_server="${PLATFORM_API_URL%/}"
+  local lf_stage=$(mktemp -d)
+  local lf_out
+
+  mylog info "Upload (apic import) projects into API Manager, org ${lf_org}" 1>&2
+
+  stage_apic_projects "${lf_stage}" "$@"
+
+  if [[ ${#STAGED_APIC_PROJECTS[@]} -eq 0 ]]; then
+    mylog error "No project to upload" 1>&2
+    rm -rf "${lf_stage}"
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
+    return 1
+  fi
+
+  decho $lf_tracelevel "apic import -a -l ${lf_stage} -s ${lf_server} -o ${lf_org} --token <hidden>"
+  lf_out=$(apic_quiet import -a -l "${lf_stage}" -s "${lf_server}" -o "${lf_org}" --token "${amToken}")
+  decho $lf_tracelevel "apic import result: ${lf_out}"
+
+  if grep -qiE 'error|fail' <<<"${lf_out}"; then
+    mylog error "apic import reported an error: ${lf_out}" 1>&2
+  else
+    mylog info "Projects uploaded: ${STAGED_APIC_PROJECTS[*]}" 1>&2
+  fi
+
+  rm -rf "${lf_stage}"
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+}
+
+################################################
+# Publish projects: build each project and publish it to a catalog and its gateway service (publish-project)
+# The backend api key of the Orders_Nano project is read from the secret orders-api-keys and injected in the
+# temporary archive only, it is never written in the repository nor in API Manager.
+# @param 1..n: names of the projects to publish (all when omitted), and optionally
+#   catalog=<name>  catalog to publish to, default sandbox
+#   gateway=<name>  gateway service, default: datapower-nano-gateway for the nano projects, api-gateway-service for the others
+# Examples:
+#   ./apic.config.sh --call publish_projects
+#   ./apic.config.sh --call publish_projects Orders_Nano catalog=sandbox
+function publish_projects() {
+  local lf_tracelevel=3
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  decho $lf_tracelevel "Parameters: \"$*\"|"
+
+  local lf_catalog="sandbox"
+  local lf_gateway=""
+  local lf_names=()
+  local lf_arg
+
+  for lf_arg in "$@"; do
+    case "${lf_arg}" in
+      catalog=*) lf_catalog="${lf_arg#catalog=}" ;;
+      gateway=*) lf_gateway="${lf_arg#gateway=}" ;;
+      *) lf_names+=("${lf_arg}") ;;
+    esac
+  done
+
+  ensure_apic_session
+
+  local lf_org=$(echo "$APIC_PROVIDER_ORG" | tr '[:upper:]' '[:lower:]')
+  local lf_stage=$(mktemp -d)
+  local lf_placeholder="__BACKEND_API_KEY__"
+  local lf_project
+  local lf_gw
+  local lf_key
+  local lf_key_escaped
+  local lf_key_file
+  local lf_ns
+  local lf_zip
+  local lf_response
+  local lf_status
+  local lf_body
+  local lf_failed=0
+
+  mylog info "Publish projects to catalog ${lf_catalog}, org ${lf_org}" 1>&2
+
+  stage_apic_projects "${lf_stage}" "${lf_names[@]}"
+
+  if [[ ${#STAGED_APIC_PROJECTS[@]} -eq 0 ]]; then
+    mylog error "No project to publish" 1>&2
+    rm -rf "${lf_stage}"
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
+    return 1
+  fi
+
+  for lf_project in "${STAGED_APIC_PROJECTS[@]}"; do
+    lf_gw="${lf_gateway:-$(get_apic_project_gateway "${lf_stage}/${lf_project}")}"
+    mylog info "Publishing project ${lf_project} on gateway service ${lf_gw}" 1>&2
+
+    # Inject the backend api key (only in the staged copy)
+    if grep -rqs "${lf_placeholder}" "${lf_stage}/${lf_project}"; then
+      lf_key=""
+      for lf_ns in "${VAR_WASLIBERTY_NAMESPACE}" "backend"; do
+        lf_key=$($MY_CLUSTER_COMMAND -n "${lf_ns}" get secret orders-api-keys -o jsonpath='{.data.api-keys}' 2>/dev/null | base64 --decode | cut -d, -f1)
+        [[ -n "${lf_key}" ]] && break
+      done
+      if [[ -z "${lf_key}" ]]; then
+        mylog error "Backend api key not found (secret orders-api-keys), project ${lf_project} skipped." 1>&2
+        lf_failed=$((lf_failed + 1))
+        continue
+      fi
+      lf_key_escaped=$(printf '%s' "${lf_key}" | sed -e 's/[\\&|]/\\&/g')
+      for lf_key_file in $(grep -rls "${lf_placeholder}" "${lf_stage}/${lf_project}"); do
+        sed -i.bak "s|${lf_placeholder}|${lf_key_escaped}|" "${lf_key_file}" && rm -f "${lf_key_file}.bak"
+      done
+      mylog info "  Backend api key injected in the temporary archive only" 1>&2
+    fi
+
+    lf_zip="${lf_stage}/${lf_project}.zip"
+    decho $lf_tracelevel "apic build ${lf_project} -l ${lf_stage} -o ${lf_zip}"
+    apic_quiet build "${lf_project}" -l "${lf_stage}" -o "${lf_zip}" > /dev/null
+    if [[ ! -s "${lf_zip}" ]]; then
+      mylog error "apic build failed for project ${lf_project}, skipped." 1>&2
+      lf_failed=$((lf_failed + 1))
+      continue
+    fi
+
+    decho $lf_tracelevel "curl -sk -X POST -H \"Authorization: Bearer <hidden>\" -F \"project=@${lf_zip};type=application/zip\" \"${PLATFORM_API_URL}api/catalogs/${lf_org}/${lf_catalog}/publish-project?gateway_services=${lf_gw}&migrate_subscriptions=true\""
+    lf_response=$(curl -sk -w '\n%{http_code}' -X POST \
+      -H "Authorization: Bearer ${amToken}" \
+      -H "Accept: application/json" \
+      -F "project=@${lf_zip};type=application/zip" \
+      "${PLATFORM_API_URL}api/catalogs/${lf_org}/${lf_catalog}/publish-project?gateway_services=${lf_gw}&migrate_subscriptions=true")
+    lf_status=$(echo "${lf_response}" | tail -n1)
+    lf_body=$(echo "${lf_response}" | sed '$d')
+    decho $lf_tracelevel "Publish response: ${lf_status} ${lf_body}"
+
+    if [[ "${lf_status}" == "201" ]]; then
+      mylog info "  Project ${lf_project} published (HTTP ${lf_status})" 1>&2
+      echo "${lf_body}" | jq -r '((.products // [])[]? | "    product \(.name) \(.version) : \(.state)"), ((.apis // [])[]? | "    API \(.name) \(.version) : \(.state)")' 1>&2 2>/dev/null || true
+    else
+      mylog error "  Publish of project ${lf_project} refused (HTTP ${lf_status}): ${lf_body}" 1>&2
+      lf_failed=$((lf_failed + 1))
+    fi
+  done
+
+  rm -rf "${lf_stage}"
+
+  if [[ ${lf_failed} -gt 0 ]]; then
+    mylog error "${lf_failed} project(s) not published" 1>&2
+    trace_out $lf_tracelevel ${FUNCNAME[0]}
+    return 1
+  fi
+
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+}
+
+
 ################################################
 # Create TLS Profile for the Nano gateway with wildcard support
 # Certificate name: ngw-server-wildcard
@@ -2010,6 +2173,8 @@ function apic_run_all () {
   create_keycloak_oidc_registry
 
   upload_projects
+
+  publish_projects
 
 
   # Push API into draft

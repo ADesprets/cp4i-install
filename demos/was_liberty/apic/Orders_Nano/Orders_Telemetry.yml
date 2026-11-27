@@ -1,0 +1,11 @@
+kind: Telemetry
+apiVersion: api.ibm.com/v1
+metadata:
+  name: Orders_Telemetry
+  namespace: Orders_Nano
+  version: '1'
+  tags: []
+  labels:
+    gatewayTypes:
+      - nano
+spec: {}

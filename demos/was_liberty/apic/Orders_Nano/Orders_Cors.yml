@@ -1,0 +1,12 @@
+kind: CORS
+apiVersion: api.ibm.com/v1
+metadata:
+  name: Orders_Cors
+  namespace: Orders_Nano
+  version: '1'
+  tags: []
+spec:
+  rules:
+    - action: allow
+      originList:
+        - '*'

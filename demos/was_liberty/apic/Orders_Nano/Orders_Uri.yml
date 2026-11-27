@@ -1,0 +1,10 @@
+kind: URISchemes
+apiVersion: api.ibm.com/v1
+metadata:
+  name: Orders_Uri
+  namespace: Orders_Nano
+  version: '1'
+  tags: []
+spec:
+  uriSchemes:
+    - https
