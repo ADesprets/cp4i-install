@@ -527,7 +527,7 @@ function install_cert_manager() {
 
   decho $lf_tracelevel "Parameters: |no parameters|"
 
-  if $MY_CERT_MANAGER; then
+  if $MY_CERTMANAGER; then
     check_directory_exist_create "${MY_CERTMANAGER_WORKINGDIR}"
     
     create_project "$MY_CERTMANAGER_OPERATOR_NAMESPACE" "${MY_CERTMANAGER_OPERATOR_NAMESPACE} project" "For Cert Manager" "${MY_RESOURCESDIR}" "${MY_CERTMANAGER_WORKINGDIR}"
@@ -1532,6 +1532,478 @@ function install_datapower_gateway() {
   mylog info "==== Installation of the DataPower gateway (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
 
 }
+
+
+################################################
+# APIC and IDIG are mutually exclusive: IDIG ships its own API Connect operator and CRDs (single-namespace model).
+# Fail fast, before any oc command.
+function check_apic_idig_exclusive() {
+  if [ "${MY_APIC}" = "true" ] && [ "${MY_IDIG}" = "true" ]; then
+    mylog error "MY_APIC and MY_IDIG cannot both be true: IDIG installs its own API Connect operator. Set only one of them in script-parameters.properties." 1>&2
+    exit 1
+  fi
+}
+
+################################################
+# IDIG helpers. idig_run executes (and logs in MY_LOGFILE) a mutating command; with MY_APPLY_FLAG=false it only displays it.
+function idig_run() {
+  if $MY_APPLY_FLAG; then
+    run_logged "$@"
+  else
+    mylog info "[MY_APPLY_FLAG=false] $*" 0
+  fi
+}
+
+# Same as idig_run but stops the script on failure
+function idig_must() {
+  idig_run "$@" || { mylog error "Command failed (see ${MY_LOGFILE}): $*" 1>&2; exit 1; }
+}
+
+# Replace the placeholders of the release YAML files into a copy (the release package is never modified).
+# sed without -i: works with GNU sed and BSD sed (macOS), unlike the 'sed -i' of the IBM documentation.
+# @param 1: source file, @param 2: target file
+function idig_prepare_yaml() {
+  sed -e "s|REPLACE-NAMESPACE|${VAR_IDIG_NAMESPACE}|g" \
+      -e "s|REPLACE-DOCKER-REGISTRY|${MY_IDIG_REGISTRY}|g" \
+      -e "s|DEFAULT_IMAGE_PULL_SECRET|${MY_IDIG_PULL_SECRET}|g" \
+      -e "s|REPLACE-STORAGE-CLASS|${MY_IDIG_STORAGE_CLASS}|g" \
+      "$1" > "$2" || exit 1
+  local lf_left=$(grep -c "REPLACE-NAMESPACE\|REPLACE-DOCKER-REGISTRY\|DEFAULT_IMAGE_PULL_SECRET\|REPLACE-STORAGE-CLASS" "$2")
+  mylog info "Prepared $2 (remaining placeholders: ${lf_left})" 0
+}
+
+################################################
+# Pull secret for the entitled registry: when no key is available in private/ibm_container_entitlement_key.txt,
+# the cp.icr.io entry of the global pull secret of the cluster is copied into the secret ${DEFAULT_IMAGE_PULL_SECRET}.
+# The credentials are only piped between oc and jq, never written to disk nor displayed.
+# @param 1: namespace
+function idig_entitlement_from_global_pull_secret() {
+  local lf_ns=$1
+  if $MY_CLUSTER_COMMAND -n "${lf_ns}" get secret "${DEFAULT_IMAGE_PULL_SECRET}" >/dev/null 2>&1; then
+    return 0
+  fi
+  mylog warn "No entitlement key (private/ibm_container_entitlement_key.txt): copying the cp.icr.io entry of the cluster pull-secret into ${DEFAULT_IMAGE_PULL_SECRET}. If it is not entitled to cp/datapower, the NanoGateway pods will be in ImagePullBackOff." 1>&2
+  if $MY_APPLY_FLAG; then
+    local lf_dcj
+    lf_dcj=$($MY_CLUSTER_COMMAND -n openshift-config get secret pull-secret -o jsonpath='{.data.\.dockerconfigjson}' | base64 -d \
+      | jq -c '{auths: (.auths | with_entries(select(.key | startswith("cp.icr.io"))))}') || exit 1
+    if [[ "$(printf '%s' "${lf_dcj}" | jq '.auths | length')" -eq 0 ]]; then
+      mylog error "No cp.icr.io entry in openshift-config/pull-secret: provide private/ibm_container_entitlement_key.txt" 1>&2
+      exit 1
+    fi
+    IDIG_DCJ="${lf_dcj}" IDIG_SECRET="${DEFAULT_IMAGE_PULL_SECRET}" IDIG_NS="${lf_ns}" \
+      jq -n '{apiVersion:"v1",kind:"Secret",type:"kubernetes.io/dockerconfigjson",metadata:{name:env.IDIG_SECRET,namespace:env.IDIG_NS},data:{".dockerconfigjson":(env.IDIG_DCJ|@base64)}}' \
+      | $MY_CLUSTER_COMMAND apply -f - >/dev/null || exit 1
+    unset lf_dcj
+  fi
+}
+
+################################################
+# Pull secret for the OpenShift internal registry (MY_IDIG_REGISTRY=image-registry.openshift-image-registry.svc:5000/<ns>):
+# a dedicated service account with the role system:image-puller and a long-lived token secret, stored in the cluster only.
+# @param 1: namespace
+function idig_internal_registry_secret() {
+  local lf_ns=$1
+  local lf_host="${MY_IDIG_REGISTRY%%/*}"
+  local lf_sa="${MY_IDIG_PULLER_SA}"
+  mylog info "Creating pull secret ${MY_IDIG_PULL_SECRET} for the internal registry ${lf_host} (service account ${lf_sa})" 0
+  if $MY_APPLY_FLAG; then
+    $MY_CLUSTER_COMMAND -n "${lf_ns}" create serviceaccount "${lf_sa}" --dry-run=client -o yaml | $MY_CLUSTER_COMMAND apply -f - >/dev/null || exit 1
+    $MY_CLUSTER_COMMAND -n "${lf_ns}" policy add-role-to-user system:image-puller -z "${lf_sa}" >/dev/null || exit 1
+    printf 'apiVersion: v1\nkind: Secret\ntype: kubernetes.io/service-account-token\nmetadata:\n  name: %s-token\n  namespace: %s\n  annotations:\n    kubernetes.io/service-account.name: %s\n' "${lf_sa}" "${lf_ns}" "${lf_sa}" \
+      | $MY_CLUSTER_COMMAND apply -f - >/dev/null || exit 1
+    local lf_token=""
+    local lf_try
+    for lf_try in 1 2 3 4 5 6 7 8 9 10; do
+      lf_token=$($MY_CLUSTER_COMMAND -n "${lf_ns}" get secret "${lf_sa}-token" -o jsonpath='{.data.token}' | base64 -d)
+      [[ -n "${lf_token}" ]] && break
+      sleep 2
+    done
+    [[ -n "${lf_token}" ]] || { mylog error "No token generated for ${lf_sa}-token" 1>&2; exit 1; }
+    IDIG_TOKEN="${lf_token}" IDIG_HOST="${lf_host}" IDIG_SA="${lf_sa}" IDIG_SECRET="${MY_IDIG_PULL_SECRET}" IDIG_NS="${lf_ns}" \
+      jq -n '{apiVersion:"v1",kind:"Secret",type:"kubernetes.io/dockerconfigjson",metadata:{name:env.IDIG_SECRET,namespace:env.IDIG_NS},
+              data:{".dockerconfigjson":({auths:{(env.IDIG_HOST):{username:env.IDIG_SA,password:env.IDIG_TOKEN,auth:((env.IDIG_SA+":"+env.IDIG_TOKEN)|@base64)}}}|tojson|@base64)}}' \
+      | $MY_CLUSTER_COMMAND apply -f - >/dev/null || exit 1
+    unset lf_token
+  fi
+}
+
+################################################
+# IDIG prerequisites: every check is READ ONLY (nothing is created on the cluster, whatever MY_APPLY_FLAG).
+# Each result goes to the screen and to the debug log file (levels ok/warn/error), with [prereq] summary lines.
+# When something is missing, the script lists the actions to do and stops (exit 1) BEFORE any change on the cluster.
+# Run it alone: ./provision_cluster-v2.sh --call check_idig_prerequisites
+IDIG_PREREQ_KO=0
+IDIG_PREREQ_ACTIONS=""
+
+# @param 1: message
+function idig_prereq_ok() {
+  mylog ok " $1"
+}
+
+# @param 1: what is missing, @param 2: what the user has to do
+function idig_prereq_ko() {
+  IDIG_PREREQ_KO=$((IDIG_PREREQ_KO + 1))
+  mylog error "[PREREQ] $1" 1>&2
+  IDIG_PREREQ_ACTIONS="${IDIG_PREREQ_ACTIONS}
+  ${IDIG_PREREQ_KO}. $2
+"
+}
+
+# Text of the manual download of the release package and of the images (the same steps as the section
+# "Downloading Release Build Files" of the README of the package). Not automated on purpose: the files are on
+# Passport Advantage / IBM Artifactory, they need your own credentials, and the PPA 'urls.txt' is a script to execute.
+function idig_prereq_download_help() {
+  local lf_route=$($MY_CLUSTER_COMMAND -n openshift-image-registry get route default-route -o jsonpath='{.spec.host}' 2>/dev/null)
+  cat <<EOF
+    A. Release package (YAML files): download the IDIG release files (idig-operator-release-files_<version>.zip, from
+       Passport Advantage or IBM Artifactory) and extract them in ${MY_IDIG_PACKAGE_DIR:-<MY_IDIG_PACKAGE_DIR>}
+       (it must contain dependencies/, samples/, helper_files/, ibm-idig-nanogw.yaml, ibm-idig-operator.yaml, idig-crds.yaml).
+    B. Images: download the PPA archives of the release, unzip the first one (it contains idig-image-tool_<version>.tar.gz)
+       and load the image tool:
+         ${MY_CONTAINER_ENGINE} load < idig-image-tool_<version>.tar.gz
+    C. Upload the images to the registry of the cluster (the namespace ${VAR_IDIG_NAMESPACE} must exist first:
+         oc new-project ${VAR_IDIG_NAMESPACE}). The default route of the internal registry must be exposed
+         (oc patch configs.imageregistry.operator.openshift.io/cluster --type merge -p '{"spec":{"defaultRoute":true}}'):
+         ${MY_CONTAINER_ENGINE} run --rm idig-image-tool-<version> upload ${lf_route:-<default-route-host>}/${VAR_IDIG_NAMESPACE} \\
+           --username \$(oc whoami) --password \$(oc whoami -t)
+    D. Check the upload, then run this script again:
+         ${MY_CONTAINER_ENGINE} run --rm idig-image-tool-<version> version --images
+EOF
+}
+
+function check_idig_prerequisites() {
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+  mylog info "==== Checking the prerequisites of IDIG (read only)" 0
+  log_file_write "prereq" "start: package=${MY_IDIG_PACKAGE_DIR} registry=${MY_IDIG_REGISTRY} namespace=${VAR_IDIG_NAMESPACE} valkey=${MY_IDIG_VALKEY} analytics=${MY_IDIG_ANALYTICS}"
+
+  IDIG_PREREQ_KO=0
+  IDIG_PREREQ_ACTIONS=""
+  local lf_pkg="${MY_IDIG_PACKAGE_DIR%/}/"
+  local lf_ns="${VAR_IDIG_NAMESPACE}"
+  local lf_t lf_f lf_n lf_user lf_missing lf_total lf_need_help=false
+  local lf_cluster_ok=false
+
+  # 1. Local tools
+  for lf_t in "${MY_CLUSTER_COMMAND}" yq jq openssl sed; do
+    if command -v "${lf_t}" >/dev/null 2>&1; then
+      idig_prereq_ok "tool ${lf_t}"
+    else
+      idig_prereq_ko "tool ${lf_t} not found in the PATH" "Install the tool '${lf_t}' and make it available in the PATH."
+    fi
+  done
+  if command -v "${MY_CONTAINER_ENGINE}" >/dev/null 2>&1; then
+    idig_prereq_ok "container engine ${MY_CONTAINER_ENGINE} (needed to run the idig-image-tool)"
+  else
+    mylog warn "Container engine ${MY_CONTAINER_ENGINE} not found: only needed to run the idig-image-tool when the images are not yet uploaded" 1>&2
+  fi
+
+  # 2. Cluster access
+  lf_user=$($MY_CLUSTER_COMMAND whoami 2>/dev/null)
+  if [[ -z "${lf_user}" ]]; then
+    idig_prereq_ko "not logged in to the cluster" "Log in to the cluster (oc login ... or ./login_to_cluster.sh), then run this script again."
+  else
+    lf_cluster_ok=true
+    idig_prereq_ok "logged in to the cluster as ${lf_user}"
+    if [[ "$($MY_CLUSTER_COMMAND auth can-i '*' '*' --all-namespaces 2>/dev/null)" == "yes" ]]; then
+      idig_prereq_ok "cluster-admin rights (CRDs, cluster roles and webhooks are created)"
+    else
+      idig_prereq_ko "${lf_user} is not cluster-admin" "Log in with a cluster-admin user: IDIG creates CRDs, ClusterRoles and webhook configurations."
+    fi
+  fi
+
+  # 3. Release package
+  if [[ -z "${MY_IDIG_PACKAGE_DIR}" ]]; then
+    idig_prereq_ko "MY_IDIG_PACKAGE_DIR is not set in script-parameters.properties" "Set MY_IDIG_PACKAGE_DIR (directory of the extracted release package), see the download steps below."
+    lf_need_help=true
+  elif [[ ! -d "${lf_pkg}" ]]; then
+    idig_prereq_ko "release package directory ${lf_pkg} not found" "Download and extract the IDIG release package in ${lf_pkg} (step A below)."
+    lf_need_help=true
+  else
+    lf_missing=""
+    for lf_f in dependencies/ibm-apiconnect-crds.yaml dependencies/ibm-apiconnect.yaml dependencies/ibm-nanogw-crds.yaml \
+                ibm-idig-nanogw.yaml ibm-idig-operator.yaml idig-crds.yaml samples/idig-cluster.yaml helper_files/ingress-issuer-v1.yaml \
+                retagged-idig-image-list.yaml; do
+      [[ -f "${lf_pkg}${lf_f}" ]] || lf_missing="${lf_missing} ${lf_f}"
+    done
+    if $MY_IDIG_VALKEY; then
+      for lf_f in dependencies/valkey-crds.yaml dependencies/valkey-operator.yaml dependencies/valkey-extra-config.yaml dependencies/valkey_standalone_cr.yaml; do
+        [[ -f "${lf_pkg}${lf_f}" ]] || lf_missing="${lf_missing} ${lf_f}"
+      done
+    fi
+    if [[ -z "${lf_missing}" ]]; then
+      idig_prereq_ok "release package ${lf_pkg}"
+    else
+      idig_prereq_ko "files missing in ${lf_pkg}:${lf_missing}" "Download the full IDIG release package and extract it in ${lf_pkg} (step A below)."
+      lf_need_help=true
+    fi
+  fi
+
+  # 4. Storage and cert-manager (README: OpenShift prerequisites OCP-1 and OCP-2)
+  if $lf_cluster_ok; then
+    if $MY_CLUSTER_COMMAND get storageclass -o json 2>/dev/null \
+       | jq -e '[.items[] | select(.metadata.annotations["storageclass.kubernetes.io/is-default-class"]=="true")] | length > 0' >/dev/null 2>&1; then
+      idig_prereq_ok "default StorageClass present"
+    else
+      idig_prereq_ko "no default StorageClass" "Annotate one StorageClass with storageclass.kubernetes.io/is-default-class=true (required by the API Connect analytics webhook)."
+    fi
+    if $MY_CLUSTER_COMMAND get storageclass "${MY_IDIG_STORAGE_CLASS}" >/dev/null 2>&1; then
+      idig_prereq_ok "StorageClass ${MY_IDIG_STORAGE_CLASS}"
+    else
+      idig_prereq_ko "StorageClass ${MY_IDIG_STORAGE_CLASS} not found" "Create it, or set another one in OCP_BLOCK_STORAGE / MY_IDIG_STORAGE_CLASS."
+    fi
+    if $MY_CLUSTER_COMMAND get crd certificates.cert-manager.io >/dev/null 2>&1; then
+      idig_prereq_ok "cert-manager (CRD certificates.cert-manager.io)"
+    else
+      idig_prereq_ko "cert-manager is not installed" "Install the cert-manager Operator for Red Hat OpenShift: set MY_CERTMANAGER=true and run ./provision_cluster-v2.sh --call install_cert_manager."
+    fi
+  fi
+
+  # 5. Images, already uploaded in the registry (the YAML files of the package point to MY_IDIG_REGISTRY)
+  if [[ -z "${MY_IDIG_REGISTRY}" ]]; then
+    idig_prereq_ko "MY_IDIG_REGISTRY is not set in script-parameters.properties" "Set MY_IDIG_REGISTRY (registry path of the uploaded images, as seen by the pods)."
+    lf_need_help=true
+  elif [[ "${MY_IDIG_REGISTRY}" == image-registry.openshift-image-registry.svc* ]]; then
+    if $lf_cluster_ok && [[ -f "${lf_pkg}retagged-idig-image-list.yaml" ]]; then
+      # Image streams are flat names in the namespace: <name>:<tag> or <name>@sha256:<digest> in the list
+      lf_missing=""
+      lf_total=0
+      for lf_n in $(yq e '.[]' "${lf_pkg}retagged-idig-image-list.yaml" | sed -e 's/[:@].*//'); do
+        lf_total=$((lf_total + 1))
+        $MY_CLUSTER_COMMAND -n "${lf_ns}" get imagestream "${lf_n}" >/dev/null 2>&1 || lf_missing="${lf_missing} ${lf_n}"
+      done
+      if [[ -z "${lf_missing}" ]]; then
+        idig_prereq_ok "${lf_total} images present in the internal registry (namespace ${lf_ns})"
+      else
+        idig_prereq_ko "images missing in the internal registry (namespace ${lf_ns}):${lf_missing}" "Upload the IDIG images with the idig-image-tool (steps B, C and D below)."
+        lf_need_help=true
+      fi
+    fi
+  else
+    mylog warn "Registry ${MY_IDIG_REGISTRY} is external: the presence of the images cannot be checked from here" 1>&2
+    if ! $lf_cluster_ok || ! $MY_CLUSTER_COMMAND -n "${lf_ns}" get secret "${MY_IDIG_PULL_SECRET}" >/dev/null 2>&1; then
+      if [[ -z "${MY_IDIG_REGISTRY_USER}" || -z "${MY_IDIG_REGISTRY_PASSWORD}" ]]; then
+        idig_prereq_ko "no credentials for ${MY_IDIG_REGISTRY}" "Set MY_IDIG_REGISTRY_USER and MY_IDIG_REGISTRY_PASSWORD in private/user.properties (git ignored)."
+      fi
+    fi
+  fi
+
+  # 6. Entitlement key (the NanoGateway images come from cp.icr.io/cp/datapower) and optional items
+  if [[ -n "${MY_ENTITLEMENT_KEY}" ]]; then
+    idig_prereq_ok "IBM entitlement key (private/ibm_container_entitlement_key.txt)"
+  elif $lf_cluster_ok && $MY_CLUSTER_COMMAND -n openshift-config get secret pull-secret -o jsonpath='{.data.\.dockerconfigjson}' 2>/dev/null | base64 -d | jq -e '.auths | keys | map(startswith("cp.icr.io")) | any' >/dev/null 2>&1; then
+    mylog warn "No private/ibm_container_entitlement_key.txt: the cp.icr.io entry of the cluster pull-secret will be used (the NanoGateway pods fail with ImagePullBackOff if it is not entitled to cp/datapower)" 1>&2
+  else
+    idig_prereq_ko "no IBM entitlement key and no cp.icr.io entry in the cluster pull-secret" "Put your IBM entitlement key (myibm.ibm.com/products-services/containerlibrary) in private/ibm_container_entitlement_key.txt."
+  fi
+  if $lf_cluster_ok && ! $MY_IDIG_PATCH_WILDCARD && [[ "$($MY_CLUSTER_COMMAND -n openshift-ingress-operator get ingresscontroller default -o jsonpath='{.spec.routeAdmission.wildcardPolicy}' 2>/dev/null)" != "WildcardsAllowed" ]]; then
+    mylog warn "Wildcard routes are not allowed (MY_IDIG_PATCH_WILDCARD=false): the NanoGateway route will stay RouteNotAdmitted until a cluster admin enables wildcardPolicy=WildcardsAllowed" 1>&2
+  fi
+  mylog info "Optional: secret watsonx-credentials (WATSONX_API_KEY, WATSONX_PROJECT_ID) in ${lf_ns} to enable the GenAI service; without it the script removes spec.watsonxSecret and GenAI is not deployed" 0
+
+  # 7. Result
+  if [[ ${IDIG_PREREQ_KO} -gt 0 ]]; then
+    log_file_write "prereq" "result: ${IDIG_PREREQ_KO} prerequisite(s) missing"
+    mylog error "==== ACTION REQUIRED: ${IDIG_PREREQ_KO} IDIG prerequisite(s) missing. Nothing was changed on the cluster. To do:" 1>&2
+    echo "${IDIG_PREREQ_ACTIONS}" | while IFS= read -r lf_f; do [[ -n "${lf_f}" ]] && mylog error "${lf_f}" 0 1>&2; done
+    if $lf_need_help; then
+      mylog error "Download steps (to do by yourself, outside of this script):" 1>&2
+      idig_prereq_download_help | while IFS= read -r lf_f; do mylog warn "${lf_f}" 0; done
+    fi
+    mylog error "Then run again: ./provision_cluster-v2.sh --call install_idig" 1>&2
+    exit 1
+  fi
+  log_file_write "prereq" "result: all prerequisites are met"
+  mylog info "All IDIG prerequisites are met." 0
+
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+}
+
+################################################
+# Install DataPower Interact Gateway (IDIG) 12.1.1.2+ on OpenShift, from the YAML files of the release package
+# (https://www.ibm.com/docs/en/dp-interact-gateway/12.1.1, "Deploying on OpenShift"). Not OLM based.
+# Order: namespace/secrets, cert-manager issuer, API Connect operator, NanoGateway CRDs, Valkey (optional),
+# IDIG NanoGateway operator, IDIG operator, IDIG cluster CR, wildcard routes.
+function install_idig() {
+  SECONDS=0
+  local lf_starting_date=$(date)
+  mylog info "==== Installing DataPower Interact Gateway IDIG (${FUNCNAME[0]}) [started : $lf_starting_date]." 0
+  local lf_tracelevel=2
+  trace_in $lf_tracelevel ${FUNCNAME[0]}
+
+  decho $lf_tracelevel "Parameters: |no parameters|"
+
+  if $MY_IDIG; then
+    local lf_pkg="${MY_IDIG_PACKAGE_DIR%/}/"
+    local lf_wd="${MY_IDIG_WORKINGDIR}"
+    local lf_ns="${VAR_IDIG_NAMESPACE}"
+    local lf_f
+
+    # 0. Prerequisites (read only): stops here, before any change, and tells what to do/download when something is missing
+    check_idig_prerequisites
+
+    # 1. Inputs: the release package and the registry cannot be guessed
+    log_file_write "idig" "config: namespace=${lf_ns} package=${lf_pkg} registry=${MY_IDIG_REGISTRY} pull_secret_name=${MY_IDIG_PULL_SECRET} storage_class=${MY_IDIG_STORAGE_CLASS} profile=${MY_IDIG_PROFILE} analytics=${MY_IDIG_ANALYTICS} devportal=${MY_IDIG_DEVPORTAL} valkey=${MY_IDIG_VALKEY} patch_wildcard=${MY_IDIG_PATCH_WILDCARD} tenant=${MY_IDIG_TENANT} group=${MY_IDIG_GROUP} lic_use=${MY_IDIG_LIC_USE} cr_timeout=${MY_IDIG_CR_TIMEOUT} apply=${MY_APPLY_FLAG}"
+    log_file_write "idig" "step 1: checking inputs (release package files)"
+    if [[ -z "${MY_IDIG_PACKAGE_DIR}" || -z "${MY_IDIG_REGISTRY}" ]]; then
+      mylog error "MY_IDIG_PACKAGE_DIR and MY_IDIG_REGISTRY must be set in script-parameters.properties" 1>&2
+      exit 1
+    fi
+    for lf_f in dependencies/ibm-apiconnect-crds.yaml dependencies/ibm-apiconnect.yaml dependencies/ibm-nanogw-crds.yaml \
+                ibm-idig-nanogw.yaml ibm-idig-operator.yaml idig-crds.yaml samples/idig-cluster.yaml helper_files/ingress-issuer-v1.yaml; do
+      check_file_exist "${lf_pkg}${lf_f}"
+    done
+    check_directory_exist_create "${lf_wd}"
+
+    # 2. operand-version.yaml of the package: minOCPVersion 4.14, recomendedOCPVersion ">=4.14, <4.20" (a recommendation, not a hard stop)
+    local lf_ocp=$($MY_CLUSTER_COMMAND get clusterversion version -o jsonpath='{.status.desired.version}' 2>/dev/null)
+    log_file_write "idig" "OCP version=${lf_ocp}"
+    case "${lf_ocp}" in
+      4.14.*|4.15.*|4.16.*|4.17.*|4.18.*|4.19.*) ;;
+      *) mylog warn "OCP ${lf_ocp} is outside the OCP range recommended by IDIG (>=4.14, <4.20): not validated by IBM, expect surprises" 1>&2;;
+    esac
+
+    # 3. Namespace, entitlement key and registry pull secret
+    log_file_write "idig" "step 3: namespace ${lf_ns}, entitlement and pull secret ${MY_IDIG_PULL_SECRET}"
+    create_project "${lf_ns}" "${lf_ns} project" "For DataPower Interact Gateway" "${MY_RESOURCESDIR}" "${lf_wd}"
+    # Entitlement key (cp.icr.io/cp/datapower: the NanoGateway images are pulled from there): file in private/, otherwise the cluster pull-secret
+    if [[ -n "${MY_ENTITLEMENT_KEY}" ]]; then
+      add_ibm_entitlement "${lf_ns}"
+    else
+      idig_entitlement_from_global_pull_secret "${lf_ns}"
+    fi
+    if ! $MY_CLUSTER_COMMAND -n "${lf_ns}" get secret "${MY_IDIG_PULL_SECRET}" >/dev/null 2>&1; then
+      if [[ "${MY_IDIG_REGISTRY}" == image-registry.openshift-image-registry.svc* ]]; then
+        idig_internal_registry_secret "${lf_ns}"
+      else
+        # Credentials of the image registry (IBM Artifactory for this build): MY_IDIG_REGISTRY_USER and
+        # MY_IDIG_REGISTRY_PASSWORD come from private/user.properties (git ignored). Never displayed nor logged.
+        var_fail MY_IDIG_REGISTRY_USER "Missing MY_IDIG_REGISTRY_USER in private/user.properties"
+        var_fail MY_IDIG_REGISTRY_PASSWORD "Missing MY_IDIG_REGISTRY_PASSWORD in private/user.properties"
+        mylog info "Creating secret ${MY_IDIG_PULL_SECRET} for ${MY_IDIG_REGISTRY}" 0
+        if $MY_APPLY_FLAG; then
+          # The dockerconfigjson is built from environment variables so the password never appears on a command line (ps)
+          local lf_dockercfg lf_create_rc
+          lf_dockercfg=$(mktemp) || exit 1
+          MY_IDIG_R="${MY_IDIG_REGISTRY}" MY_IDIG_U="${MY_IDIG_REGISTRY_USER}" MY_IDIG_P="${MY_IDIG_REGISTRY_PASSWORD}" \
+            jq -n '{auths: {(env.MY_IDIG_R): {username: env.MY_IDIG_U, password: env.MY_IDIG_P, auth: ((env.MY_IDIG_U + ":" + env.MY_IDIG_P) | @base64)}}}' > "${lf_dockercfg}" || exit 1
+          $MY_CLUSTER_COMMAND -n "${lf_ns}" create secret generic "${MY_IDIG_PULL_SECRET}" --type=kubernetes.io/dockerconfigjson \
+            --from-file=.dockerconfigjson="${lf_dockercfg}" >/dev/null
+          lf_create_rc=$?
+          rm -f "${lf_dockercfg}"
+          [ "${lf_create_rc}" -eq 0 ] || exit 1
+        fi
+      fi
+    fi
+    $MY_CLUSTER_COMMAND get storageclass "${MY_IDIG_STORAGE_CLASS}" >/dev/null 2>&1 || mylog warn "StorageClass ${MY_IDIG_STORAGE_CLASS} not found (Analytics needs persistent storage)" 1>&2
+
+    # 4. cert-manager (installed earlier by install_cert_manager) and the ingress issuer
+    log_file_write "idig" "step 4: cert-manager issuer ${MY_IDIG_ISSUER_NAME}"
+    $MY_CLUSTER_COMMAND get crd certificates.cert-manager.io >/dev/null 2>&1 || { mylog error "cert-manager CRDs not found: run install_cert_manager first" 1>&2; exit 1; }
+    idig_must $MY_CLUSTER_COMMAND apply -f "${lf_pkg}helper_files/ingress-issuer-v1.yaml" -n "${lf_ns}"
+    idig_must $MY_CLUSTER_COMMAND wait --for=condition=ready issuer "${MY_IDIG_ISSUER_NAME}" -n "${lf_ns}" --timeout="${MY_IDIG_TIMEOUT_ISSUER}s"
+
+    # 5. API Connect operator (CRDs applied server side to avoid 'metadata.annotations: Too long')
+    log_file_write "idig" "step 5: API Connect operator (deployment ${MY_IDIG_APIC_DEPLOY})"
+    idig_must $MY_CLUSTER_COMMAND apply --server-side --force-conflicts -f "${lf_pkg}dependencies/ibm-apiconnect-crds.yaml" -n "${lf_ns}"
+    idig_prepare_yaml "${lf_pkg}dependencies/ibm-apiconnect.yaml" "${lf_wd}ibm-apiconnect.yaml"
+    idig_must $MY_CLUSTER_COMMAND apply -f "${lf_wd}ibm-apiconnect.yaml" -n "${lf_ns}"
+    idig_must $MY_CLUSTER_COMMAND -n "${lf_ns}" wait --for=condition=Available "deployment/${MY_IDIG_APIC_DEPLOY}" --timeout="${MY_IDIG_TIMEOUT_APIC}s"
+
+    # 6. NanoGateway CRDs
+    log_file_write "idig" "step 6: NanoGateway CRDs"
+    idig_must $MY_CLUSTER_COMMAND apply --server-side --force-conflicts -f "${lf_pkg}dependencies/ibm-nanogw-crds.yaml"
+    local lf_crd
+    for lf_crd in $(yq e 'select(.kind == "CustomResourceDefinition") | .metadata.name' "${lf_pkg}dependencies/ibm-nanogw-crds.yaml" | grep -v '^---$'); do
+      idig_must $MY_CLUSTER_COMMAND wait "crd/${lf_crd}" --for=condition=Established --timeout="${MY_IDIG_TIMEOUT_CRD}s"
+    done
+
+    # 7. Valkey (optional)
+    log_file_write "idig" "step 7: Valkey enabled=${MY_IDIG_VALKEY} tls_secret_name=${MY_IDIG_VALKEY_TLS_SECRET} creds_secret_name=${MY_IDIG_VALKEY_SECRET}"
+    if $MY_IDIG_VALKEY; then
+      check_directory_exist_create "${MY_IDIG_CERTSDIR}"
+      local lf_c="${MY_IDIG_CERTSDIR}"
+      if [[ ! -f "${lf_c}tls.crt" ]]; then
+        mylog info "Generating Valkey TLS certificates in ${lf_c} (private keys, ignored by git)" 0
+        ( umask 077
+          openssl genrsa -out "${lf_c}ca.key" "${MY_IDIG_CERT_BITS}" \
+          && openssl req -x509 -new -nodes -key "${lf_c}ca.key" -sha256 -days "${MY_IDIG_CERT_DAYS}" -out "${lf_c}ca.crt" -subj "/CN=ValkeyCA" \
+          && openssl genrsa -out "${lf_c}tls.key" "${MY_IDIG_CERT_BITS}" \
+          && openssl req -new -key "${lf_c}tls.key" -out "${lf_c}tls.csr" -subj "/CN=valkey.${lf_ns}.svc.cluster.local" \
+          && printf '[v3_req]\nbasicConstraints=CA:FALSE\nkeyUsage=nonRepudiation,digitalSignature,keyEncipherment\nsubjectAltName=@alt\n[alt]\nDNS.1=valkey.%s.svc.cluster.local\nDNS.2=valkey.%s.svc\n' "${lf_ns}" "${lf_ns}" > "${lf_c}san.cnf" \
+          && openssl x509 -req -in "${lf_c}tls.csr" -CA "${lf_c}ca.crt" -CAkey "${lf_c}ca.key" -CAcreateserial -out "${lf_c}tls.crt" -days "${MY_IDIG_CERT_DAYS}" -sha256 -extfile "${lf_c}san.cnf" -extensions v3_req ) >> "${MY_LOGFILE:-/dev/null}" 2>&1 || exit 1
+      fi
+      if $MY_APPLY_FLAG; then
+        $MY_CLUSTER_COMMAND -n "${lf_ns}" create secret generic "${MY_IDIG_VALKEY_TLS_SECRET}" --from-file=ca.crt="${lf_c}ca.crt" --from-file=tls.crt="${lf_c}tls.crt" --from-file=tls.key="${lf_c}tls.key" --dry-run=client -o yaml | $MY_CLUSTER_COMMAND apply -f - >/dev/null || exit 1
+        if ! $MY_CLUSTER_COMMAND -n "${lf_ns}" get secret "${MY_IDIG_VALKEY_SECRET}" >/dev/null 2>&1; then
+          # random password (the documentation uses a fixed one), never displayed
+          generate_password 16
+          $MY_CLUSTER_COMMAND -n "${lf_ns}" create secret generic "${MY_IDIG_VALKEY_SECRET}" --from-literal=username=default --from-literal=password="${VAR_USER_PASSWORD_GEN}" >/dev/null || exit 1
+          unset VAR_USER_PASSWORD_GEN
+        fi
+      fi
+      idig_must $MY_CLUSTER_COMMAND apply --server-side --force-conflicts -f "${lf_pkg}dependencies/valkey-crds.yaml"
+      idig_prepare_yaml "${lf_pkg}dependencies/valkey-operator.yaml" "${lf_wd}valkey-operator.yaml"
+      idig_must $MY_CLUSTER_COMMAND apply --server-side --force-conflicts -f "${lf_wd}valkey-operator.yaml" -n "${lf_ns}"
+      idig_must $MY_CLUSTER_COMMAND -n "${lf_ns}" wait --for=condition=Available "deployment/${MY_IDIG_VALKEY_DEPLOY}" --timeout="${MY_IDIG_TIMEOUT_VALKEY_OPERATOR}s"
+      idig_prepare_yaml "${lf_pkg}dependencies/valkey-extra-config.yaml" "${lf_wd}valkey-extra-config.yaml"
+      idig_must $MY_CLUSTER_COMMAND apply -f "${lf_wd}valkey-extra-config.yaml" -n "${lf_ns}"
+      idig_prepare_yaml "${lf_pkg}dependencies/valkey_standalone_cr.yaml" "${lf_wd}valkey_standalone_cr.yaml"
+      idig_must $MY_CLUSTER_COMMAND apply -f "${lf_wd}valkey_standalone_cr.yaml" -n "${lf_ns}"
+      idig_must $MY_CLUSTER_COMMAND -n "${lf_ns}" wait --for=condition=ready pod -l "${MY_IDIG_VALKEY_POD_LABEL}" --timeout="${MY_IDIG_TIMEOUT_VALKEY}s"
+    fi
+
+    # 8. IDIG NanoGateway operator, then IDIG operator (README of the package, steps 8 and 9)
+    log_file_write "idig" "step 8: operators ${MY_IDIG_NANOGW_DEPLOY} and ${MY_IDIG_OPERATOR_DEPLOY}"
+    idig_prepare_yaml "${lf_pkg}ibm-idig-nanogw.yaml" "${lf_wd}ibm-idig-nanogw.yaml"
+    idig_must $MY_CLUSTER_COMMAND apply -f "${lf_wd}ibm-idig-nanogw.yaml" -n "${lf_ns}"
+    idig_must $MY_CLUSTER_COMMAND -n "${lf_ns}" wait --for=condition=Available "deployment/${MY_IDIG_NANOGW_DEPLOY}" --timeout="${MY_IDIG_TIMEOUT_NANOGW}s"
+    idig_prepare_yaml "${lf_pkg}ibm-idig-operator.yaml" "${lf_wd}ibm-idig-operator.yaml"
+    idig_must $MY_CLUSTER_COMMAND apply -f "${lf_wd}ibm-idig-operator.yaml" -n "${lf_ns}"
+    idig_must $MY_CLUSTER_COMMAND -n "${lf_ns}" wait --for=condition=Available "deployment/${MY_IDIG_OPERATOR_DEPLOY}" --timeout="${MY_IDIG_TIMEOUT_OPERATOR}s"
+
+    # 9. IDIG CRDs (step 10a), then the IDIG cluster CR from the sample.
+    log_file_write "idig" "step 9: IDIG CRDs and cluster CR"
+    # The CR name must be 5 characters or fewer (webhook): the sample name 'idig' is kept.
+    idig_must $MY_CLUSTER_COMMAND apply --server-side --force-conflicts -f "${lf_pkg}idig-crds.yaml"
+    local lf_domain=$($MY_CLUSTER_COMMAND get ingresses.config/cluster -o jsonpath='{.spec.domain}')
+    local lf_cr="${lf_wd}idig-cluster.yaml"
+    idig_prepare_yaml "${lf_pkg}samples/idig-cluster.yaml" "${lf_cr}"
+    sed -i.bak -e "s|REPLACE_ENDPOINT_DOMAIN|${lf_domain}|g" -e "s|REPLACE_TENANT_NAME|${MY_IDIG_TENANT}|g" -e "s|REPLACE_GROUP_NAME|${MY_IDIG_GROUP}|g" "${lf_cr}" && rm -f "${lf_cr}.bak"
+    MY_V_PROFILE="${MY_IDIG_PROFILE}" MY_V_AN="${MY_IDIG_ANALYTICS}" MY_V_DP="${MY_IDIG_DEVPORTAL}" MY_V_SC="${MY_IDIG_STORAGE_CLASS}" MY_V_USE="${MY_IDIG_LIC_USE}" \
+      yq e -i '.spec.profile = strenv(MY_V_PROFILE) | .spec.enableAnalytics = (strenv(MY_V_AN) == "true") | .spec.enableDevPortal = (strenv(MY_V_DP) == "true") | .spec.storageClassName = strenv(MY_V_SC) | .spec.license.use = strenv(MY_V_USE)' "${lf_cr}" || exit 1
+    # The watsonx secret is optional (README step 4): without it the GenAI service is simply not deployed.
+    # The webhook rejects the CR when it references a secret that does not exist.
+    local lf_wxsecret=$(yq e '.spec.watsonxSecret // ""' "${lf_cr}")
+    if [[ -n "${lf_wxsecret}" ]] && ! $MY_CLUSTER_COMMAND -n "${lf_ns}" get secret "${lf_wxsecret}" >/dev/null 2>&1; then
+      mylog warn "Secret ${lf_wxsecret} not found in ${lf_ns}: spec.watsonxSecret removed, the GenAI service will not be deployed" 1>&2
+      yq e -i 'del(.spec.watsonxSecret)' "${lf_cr}" || exit 1
+    fi
+    idig_must $MY_CLUSTER_COMMAND apply -f "${lf_cr}" -n "${lf_ns}"
+    local lf_kind=$(yq e '.kind' "${lf_cr}")
+    # README: status.phase must reach Ready (up to ~20 minutes). A timeout is only a warning.
+    idig_run $MY_CLUSTER_COMMAND -n "${lf_ns}" wait --for=jsonpath='{.status.phase}'=Ready "${lf_kind}" --all --timeout="${MY_IDIG_CR_TIMEOUT}s" \
+      || mylog warn "${lf_kind} not Ready after ${MY_IDIG_CR_TIMEOUT}s: check '${MY_CLUSTER_COMMAND} -n ${lf_ns} get pods' and ${MY_LOGFILE}" 1>&2
+
+    # 10. Wildcard routes (CLUSTER-WIDE setting on the default IngressController)
+    log_file_write "idig" "step 10: wildcard routes patch=${MY_IDIG_PATCH_WILDCARD}"
+    if $MY_IDIG_PATCH_WILDCARD; then
+      idig_must $MY_CLUSTER_COMMAND -n openshift-ingress-operator patch ingresscontroller/default --type=merge -p '{"spec":{"routeAdmission":{"wildcardPolicy":"WildcardsAllowed"}}}'
+    else
+      mylog warn "Wildcard routes NOT enabled (cluster-wide). After approval by a cluster admin: oc -n openshift-ingress-operator patch ingresscontroller/default --type=merge -p '{\"spec\":{\"routeAdmission\":{\"wildcardPolicy\":\"WildcardsAllowed\"}}}' (or MY_IDIG_PATCH_WILDCARD=true)" 1>&2
+    fi
+    $MY_CLUSTER_COMMAND -n "${lf_ns}" get routes 2>&1 | while IFS= read -r lf_line; do mylog info "${lf_line}" 0; done
+    log_file_write "idig" "result: $($MY_CLUSTER_COMMAND -n "${lf_ns}" get ${MY_IDIG_CR_KIND} -o jsonpath='{range .items[*]}{.metadata.name} phase={.status.phase}{"\n"}{end}' 2>&1 | tr '\n' ' ')"
+  fi
+
+  trace_out $lf_tracelevel ${FUNCNAME[0]}
+
+  local lf_duration=$SECONDS
+  local lf_ending_date=$(date)
+  mylog info "==== Installation of DataPower Interact Gateway IDIG (${FUNCNAME[0]}) [ended : $lf_ending_date and took : $SECONDS seconds]." 0
+}
+
 
 
 ################################################
@@ -3350,6 +3822,7 @@ function install_part() {
   install_intassembly 
   install_ace
   install_apic
+  install_idig
   install_es
   install_eem
   install_egw
@@ -3429,6 +3902,12 @@ function main() {
     mylog error "No arguments provided. Use --all or --call function_name parameters, function_name parameters, ...."
     return 1
   fi
+
+  # Debug log file (tmp/logs/provision-<date>.log, latest.log points to it)
+  init_logging "$@"
+
+  # APIC and IDIG are mutually exclusive: stop before any oc command
+  check_apic_idig_exclusive
 
   # Main script logic
   local lf_calls=""  # Initialize calls variable

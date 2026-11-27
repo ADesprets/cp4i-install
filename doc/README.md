@@ -15,6 +15,7 @@ The principles followed to implement this asset are the following:
 * Follow good practice around scripting
 * Run everywhere, the use of ibm-pak allows an installation on IBM Red Hat Openshift in IBM Cloud, onPremise, with CRC - RedHat Code Ready Container, on TechZone. (It has been tested on the three first platforms)
 * Install CP4I components but also what is required to have interesting scenarios: LDAP, Mailhog, WAS liberty backends with JAX-RS applications
+* TEMPORARY: DataPower Interact Gateway (IDIG, MCP tools hosting) is installed by the script (`install_idig`, `MY_IDIG=true`, exclusive with APIC) until the Expert Labs solution is ready to be merged. This installation is temporary.
 
 ## Scenarios
 	Basics MQ
