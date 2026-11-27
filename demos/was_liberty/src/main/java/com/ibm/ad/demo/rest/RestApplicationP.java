@@ -11,6 +11,8 @@ public class RestApplicationP extends Application {
     public Set<Class<?>> getClasses() {
         Set<Class<?>> s = new HashSet<Class<?>>();
         s.add(com.ibm.ad.demo.rest.OrderResourceP.class);
+        // Providers must be registered explicitly when getClasses() is overridden
+        s.add(com.ibm.ad.demo.rest.security.ApiKeyFilter.class);
         return s;
     }
 }

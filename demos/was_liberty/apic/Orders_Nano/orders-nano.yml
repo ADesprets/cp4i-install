@@ -1,0 +1,28 @@
+kind: Product
+apiVersion: api.ibm.com/v1
+metadata:
+  name: orders-nano
+  namespace: Orders_Nano
+  version: 1.0.0
+  tags: []
+  description: Orders API (Liberty + PostgreSQL) exposée par la Nano Gateway
+spec:
+  apis:
+    - $ref: Orders_Nano:Orders_Api:1.0.0
+  plans:
+    - $ref: Orders_Nano:Orders_Plan:1
+  extensions:
+    portal-config:
+      apiVersion: api.ibm.com/v1
+      spec:
+        visibility:
+          view:
+            type: public
+            orgs: []
+            enabled: true
+            tags: []
+          subscribe:
+            type: authenticated
+            orgs: []
+            enabled: true
+            tags: []

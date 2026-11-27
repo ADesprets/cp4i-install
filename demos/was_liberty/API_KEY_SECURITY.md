@@ -11,32 +11,32 @@ L'API Order est maintenant sécurisée par authentification via API Key. Toutes 
 ```bash
 # GET - Récupérer tous les orders
 curl -H "X-API-Key: demo-api-key-change-me-in-production" \
-     http://localhost:9080/demo/api/orderp
+     http://localhost:9080/demo/apip/orderp
 
 # POST - Créer un order
 curl -X POST \
      -H "X-API-Key: demo-api-key-change-me-in-production" \
      -H "Content-Type: application/json" \
      -d '{"customer":"John Doe","customerid":"123","description":"Test","price":100,"quantity":1,"region":"EMEA"}' \
-     http://localhost:9080/demo/api/orderp
+     http://localhost:9080/demo/apip/orderp
 
 # PUT - Mise à jour partielle
 curl -X PUT \
      -H "X-API-Key: demo-api-key-change-me-in-production" \
      -H "Content-Type: application/json" \
      -d '{"quantity":5,"price":150}' \
-     http://localhost:9080/demo/api/orderp/{orderId}
+     http://localhost:9080/demo/apip/orderp/{orderId}
 
 # DELETE - Supprimer un order
 curl -X DELETE \
      -H "X-API-Key: demo-api-key-change-me-in-production" \
-     http://localhost:9080/demo/api/orderp/{orderId}
+     http://localhost:9080/demo/apip/orderp/{orderId}
 ```
 
 ### 2. Health Check (pas d'authentification requise)
 
 ```bash
-curl http://localhost:9080/demo/api/orderp/health
+curl http://localhost:9080/demo/apip/orderp/health
 ```
 
 ## ⚙️ Configuration des API Keys
@@ -222,7 +222,7 @@ public void testApiWithValidKey() {
     given()
         .header("X-API-Key", "demo-api-key-change-me-in-production")
         .when()
-        .get("/api/orderp")
+        .get("/apip/orderp")
         .then()
         .statusCode(200);
 }
@@ -231,7 +231,7 @@ public void testApiWithValidKey() {
 public void testApiWithoutKey() {
     given()
         .when()
-        .get("/api/orderp")
+        .get("/apip/orderp")
         .then()
         .statusCode(401);
 }
@@ -251,9 +251,9 @@ public void testApiWithoutKey() {
 Les logs incluent automatiquement:
 
 ```
-INFO: API key validated successfully for path: /api/orderp
-WARNING: Invalid API key attempt for path: /api/orderp
-WARNING: Missing API key in request to: /api/orderp
+INFO: API key validated successfully for path: /apip/orderp
+WARNING: Invalid API key attempt for path: /apip/orderp
+WARNING: Missing API key in request to: /apip/orderp
 ```
 
 ## 🔧 Dépannage

@@ -1,0 +1,17 @@
+kind: API
+apiVersion: api.ibm.com/v1
+metadata:
+  name: Orders_Api
+  namespace: Orders_Nano
+  version: 1.0.0
+  tags: []
+  type: REST
+spec:
+  api-spec:
+    $path: ./Orders_Api-spec.yml
+  policy-sequence:
+    - $ref: Orders_Nano:Orders_PolicySequence:1
+  uriSchemes:
+    $ref: Orders_Nano:Orders_Uri:1
+  cors:
+    $ref: Orders_Nano:Orders_Cors:1

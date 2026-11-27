@@ -1,0 +1,19 @@
+kind: ExtractIdentity
+apiVersion: api.ibm.com/v1
+metadata:
+  name: Orders_ExtractIdentity
+  namespace: Orders_Nano
+  version: '1'
+  tags: []
+  labels:
+    gatewayTypes:
+      - nano
+spec:
+  credentialType:
+    apiKey:
+      clientId:
+        httpHeader:
+          name: X-IBM-Client-Id
+      clientSecret:
+        httpHeader:
+          name: X-IBM-Client-Secret

@@ -1,0 +1,17 @@
+kind: Set
+apiVersion: api.ibm.com/v1
+metadata:
+  name: Orders_SetBackendKey
+  namespace: Orders_Nano
+  version: '1'
+  tags: []
+  labels:
+    gatewayTypes:
+      - nano
+spec:
+  messageHeader:
+    action: set
+    headerName: X-API-Key
+    value: __BACKEND_API_KEY__
+    messageName: request
+    valueType: plain

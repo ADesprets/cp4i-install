@@ -1,0 +1,21 @@
+kind: Invoke
+apiVersion: api.ibm.com/v1
+metadata:
+  name: Orders_Invoke
+  namespace: Orders_Nano
+  version: '1'
+  tags: []
+  labels:
+    gatewayTypes:
+      - nano
+spec:
+  endpoint:
+    http:
+      target:
+        timeout: 60
+        url: >-
+          'https://demo-backend.apps.itz-v3bkx8.infra01-lb.fra02.techzone.ibm.com/demo/apip' & $substringAfter($pathAndQuery(), '/demo/apip')
+        urlType: jsonata
+        tlsClientProfile: tls-client-profile-catalog-default:1.0.0
+        version: HTTP/1.1
+  output: response

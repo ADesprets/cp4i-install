@@ -5,7 +5,7 @@
     <featureManager>
         <feature>jakartaee-10.0</feature>
         <feature>jdbc-4.3</feature>
-        <feature>jpa-3.1</feature>
+        <feature>persistence-3.1</feature>
         <feature>jsonb-3.0</feature>
         <feature>jsonp-2.1</feature>
         <feature>cdi-4.0</feature>

@@ -1,0 +1,19 @@
+kind: FreeFlowPolicySequence
+apiVersion: api.ibm.com/v1
+metadata:
+  name: Orders_PolicySequence
+  namespace: Orders_Nano
+  version: '1'
+  tags: []
+  labels:
+    gatewayTypes:
+      - nano
+spec:
+  main:
+    - $ref: Orders_Nano:Orders_ExtractIdentity:1
+    - $ref: Orders_Nano:Orders_Authenticate:1
+    - $ref: Orders_Nano:Orders_Authorize:1
+    - $ref: Orders_Nano:Orders_SetBackendKey:1
+    - $ref: Orders_Nano:Orders_Invoke:1
+  monitoring:
+    $ref: Orders_Nano:Orders_Telemetry:1
